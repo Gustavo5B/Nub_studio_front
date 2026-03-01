@@ -12,6 +12,7 @@ import DetalleObra from "../pages/public/DetalleObra"; // ← NUEVO
 import Artistas from "../pages/public/Artistas";
 import DetalleArtistaPublico from "../pages/public/DetalleArtistaPublico";
 import Register from "../pages/public/Register";  // ← agregar import
+import ArtistaEnRevision from "../pages/public/ArtistaEnRevision"
 
 export default function PublicRoutes() {
   return (
@@ -26,11 +27,13 @@ export default function PublicRoutes() {
         <Route path="/obras/:slug" element={<DetalleObra />} /> {/* ← NUEVO */}
         <Route path="/artistas" element={<Artistas />} />
         <Route path="/artistas/:id" element={<DetalleArtistaPublico />} />
+       
       </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />  {/* ← AGREGAR */}
       <Route path="/two-factor-verify" element={<TwoFactorVerify />} />
       <Route path="/verify-email-code" element={<VerifyEmailCode />} />
+       <Route path="/artista/pendiente" element={<ArtistaEnRevision />} />
     </Routes>
   );
 }

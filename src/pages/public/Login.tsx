@@ -90,7 +90,15 @@ export default function Login() {
       }
       localStorage.setItem("isLoggedIn", "true");
       showMessage("Inicio de sesión exitoso ✓", false);
-      setTimeout(() => { navigate(response.usuario?.rol === "admin" ? "/admin" : "/"); }, 1000);
+      setTimeout(() => {
+  const rol = response.usuario?.rol;
+  const artista_estado = response.usuario?.artista_estado;
+  
+  if (rol === "admin") navigate("/admin");
+  else if (rol === "artista" && artista_estado === "pendiente") navigate("/artista/pendiente");
+  else if (rol === "artista") navigate("/artista/dashboard");
+  else navigate("/");
+}, 1000);
 
     } catch (err) {
       const error = err as LoginError;

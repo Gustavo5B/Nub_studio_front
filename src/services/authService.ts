@@ -19,6 +19,7 @@ interface LoginResponse {
     correo: string;
     estado: string;
     rol: string;   // ← AGREGA ESTO
+    artista_estado?: string;  // ← AGREGA ESTO
   };
   attemptsRemaining?: number;
   totalAttempts?: number;

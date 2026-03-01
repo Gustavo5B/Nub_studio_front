@@ -11,8 +11,13 @@ import CrearArtista from "../pages/private/admin/CrearArtista";
 import EditarArtista from "../pages/private/admin/EditarArtista";
 import DetalleArtista from "../pages/private/admin/DetalleArtista";
 import PrivateRoute from "../components/PrivateRoute";
-import AdminRoute from "../components/AdminRoute";  // ← NUEVO
+import AdminRoute from "../components/AdminRoute";
+import ArtistaRoute from "../components/ArtistaRoute";   // ← AGREGA
+import ArtistaDashboard from "../pages/private/artista/ArtistaDashboard";  // ← AGREGA
 import RegistroArtista from "../pages/public/RegistroArtista";
+import NuevaObra from "../pages/private/artista/NuevaObra";
+import MisObras from "../pages/private/artista/MisObras";
+
 
 export default function AppRoutes() {
   return (
@@ -22,36 +27,32 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={
         <PrivateRoute><NuBDashboard /></PrivateRoute>
       } />
-  <Route path="/registro-artista" element={<RegistroArtista />} />
+
+      {/* ← AGREGA ESTAS DOS RUTAS */}
+      <Route path="/artista/dashboard" element={
+        <ArtistaRoute><ArtistaDashboard /></ArtistaRoute>
+      } />
+
+<Route path="/artista/nueva-obra" element={
+  <ArtistaRoute><NuevaObra /></ArtistaRoute>
+} />
+<Route path="/artista/mis-obras" element={
+  <ArtistaRoute><MisObras /></ArtistaRoute>
+} />
+    
+
+      <Route path="/registro-artista" element={<RegistroArtista />} />
+      
       <Route path="/admin" element={
         <AdminRoute><AdminDashboard /></AdminRoute>
       } />
-
-      {/* Obras */}
-      <Route path="/admin/obras" element={
-        <AdminRoute><ListaObras /></AdminRoute>
-      } />
-      <Route path="/admin/obras/crear" element={
-        <AdminRoute><CrearObra /></AdminRoute>
-      } />
-      <Route path="/admin/obras/editar/:id" element={
-        <AdminRoute><EditarObra /></AdminRoute>
-      } />
-
-      {/* Artistas */}
-      <Route path="/admin/artistas" element={
-        <AdminRoute><ListaArtistas /></AdminRoute>
-      } />
-      <Route path="/admin/artistas/crear" element={
-        <AdminRoute><CrearArtista /></AdminRoute>
-      } />
-      <Route path="/admin/artistas/editar/:id" element={
-        <AdminRoute><EditarArtista /></AdminRoute>
-      } />
-      <Route path="/admin/artistas/:id" element={
-        <AdminRoute><DetalleArtista /></AdminRoute>
-      } />
-      
+      <Route path="/admin/obras" element={<AdminRoute><ListaObras /></AdminRoute>} />
+      <Route path="/admin/obras/crear" element={<AdminRoute><CrearObra /></AdminRoute>} />
+      <Route path="/admin/obras/editar/:id" element={<AdminRoute><EditarObra /></AdminRoute>} />
+      <Route path="/admin/artistas" element={<AdminRoute><ListaArtistas /></AdminRoute>} />
+      <Route path="/admin/artistas/crear" element={<AdminRoute><CrearArtista /></AdminRoute>} />
+      <Route path="/admin/artistas/editar/:id" element={<AdminRoute><EditarArtista /></AdminRoute>} />
+      <Route path="/admin/artistas/:id" element={<AdminRoute><DetalleArtista /></AdminRoute>} />
     </Routes>
   );
 }
