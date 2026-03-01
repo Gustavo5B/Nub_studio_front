@@ -91,14 +91,14 @@ export default function ArtistaDashboard() {
       borrador:  { c: C.muted, bg: "rgba(255,255,255,0.06)", label: "Borrador" },
     };
     const s = map[estado] || map.borrador;
-    return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 11px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, color: s.c, background: s.bg, border: `1px solid ${s.c}35`, textTransform: "uppercase", whiteSpace: "nowrap" }}>
-        {estado === "publicada" && <CheckCircle size={10} />}
-        {estado === "pendiente" && <Clock size={10} />}
-        {estado === "rechazada" && <XCircle size={10} />}
-        {s.label}
-      </span>
-    );
+   return (
+  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, color: s.c, background: "rgba(8,6,18,0.82)", border: `1px solid ${s.c}60`, textTransform: "uppercase", whiteSpace: "nowrap", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", boxShadow: `0 2px 12px rgba(0,0,0,0.5), inset 0 0 0 1px ${s.c}40` }}>
+    {estado === "publicada" && <CheckCircle size={10} />}
+    {estado === "pendiente" && <Clock size={10} />}
+    {estado === "rechazada" && <XCircle size={10} />}
+    {s.label}
+  </span>
+);
   };
 
   const navItems = [
@@ -231,7 +231,9 @@ export default function ArtistaDashboard() {
               </div>
               <div style={{ flex: 1, overflow: "hidden" }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>{obra.titulo}</div>
-                <div style={{ fontSize: 12, color: C.orange, fontWeight: 700 }}>${obra.precio?.toLocaleString("es-MX")} MXN</div>
+               <div style={{ fontSize: 12, color: C.orange, fontWeight: 700 }}>
+  {obra.precio_base ? `$${Number(obra.precio_base).toLocaleString("es-MX")} MXN` : "Sin precio"}
+</div>
               </div>
               <Badge estado={obra.estado} />
             </div>
@@ -324,12 +326,16 @@ export default function ArtistaDashboard() {
                   ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}><Palette size={30} color="rgba(255,255,255,0.1)" /><span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>Sin imagen</span></div>
                 }
-                <div style={{ position: "absolute", top: 10, left: 10 }}><Badge estado={obra.estado} /></div>
+              <div style={{ position: "absolute", bottom: 10, left: 10 }}><Badge estado={obra.estado} /></div>
               </div>
               <div style={{ padding: "16px" }}>
                 <h4 style={{ fontSize: 14, fontWeight: 800, color: C.text, margin: "0 0 2px", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h4>
                 {obra.categoria && <p style={{ fontSize: 10.5, color: C.muted, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600 }}>{obra.categoria}</p>}
-                <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 14px", fontFamily: "'Playfair Display', serif" }}>${obra.precio?.toLocaleString("es-MX")} <span style={{ fontSize: 10, fontWeight: 600, color: C.muted }}>MXN</span></p>
+
+<p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 14px", fontFamily: "'Playfair Display', serif" }}>
+  {obra.precio_base ? `$${Number(obra.precio_base).toLocaleString("es-MX")}` : "—"}
+  <span style={{ fontSize: 10, fontWeight: 600, color: C.muted }}> MXN</span>
+</p>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600 }}>
                     <Edit3 size={13} /> Editar
