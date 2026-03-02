@@ -1,6 +1,6 @@
 // src/pages/private/artista/ArtistaDashboard.tsx
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // ✅ fix: useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Image, User, LogOut, Plus, Eye, Edit3,
   Clock, CheckCircle, XCircle, Menu,
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 import logoImg from "../../../assets/images/logo.png";
+import MiPerfil, { type ArtistaInfo } from "./MiPerfil";
 
 const C = {
   orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
@@ -24,11 +25,6 @@ interface Obra {
   categoria?: string; tecnica?: string; activa?: boolean;
   vistas?: number; permite_marco?: boolean; con_certificado?: boolean;
   motivo_rechazo?: string | null; destacada?: boolean;
-}
-interface ArtistaInfo {
-  id_artista: number; nombre_completo: string; nombre_artistico?: string;
-  biografia?: string; estado: string; porcentaje_comision: number;
-  correo?: string; telefono?: string; matricula?: string; categoria_nombre?: string;
 }
 interface Stats { total: number; publicadas: number; pendientes: number; rechazadas: number; borradores: number; }
 
@@ -49,7 +45,6 @@ function Counter({ to, duration = 1200 }: { to: number; duration?: number }) {
   return <>{val}</>;
 }
 
-// ✅ Badge unificado — mismo en ambas vistas
 const getBadge = (estado: string, activa?: boolean) => {
   if (estado === "aprobada"  && activa)  return { label: "Publicada",   color: C.green };
   if (estado === "aprobada"  && !activa) return { label: "Inactiva",    color: C.muted };
@@ -61,9 +56,9 @@ const getBadge = (estado: string, activa?: boolean) => {
 
 export default function ArtistaDashboard() {
   const navigate  = useNavigate();
-  const location  = useLocation(); // ✅ fix
+  const location  = useLocation();
   const nombre    = localStorage.getItem("userName") || "Artista";
-  const token     = authService.getToken();
+  const token     = authService.getToken() ?? "";
 
   const [seccion, setSeccion]     = useState<"dashboard" | "obras" | "perfil">("dashboard");
   const [obras,   setObras]       = useState<Obra[]>([]);
@@ -73,8 +68,8 @@ export default function ArtistaDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filtro,  setFiltro]      = useState("todas");
   const [mounted, setMounted]     = useState(false);
+  const [fotoPreview, setFotoPreview] = useState<string>("");
 
-  // ✅ fix: si la URL es /artista/perfil, abrir sección perfil automáticamente
   useEffect(() => {
     if (location.pathname === "/artista/perfil") setSeccion("perfil");
   }, [location.pathname]);
@@ -88,11 +83,14 @@ export default function ArtistaDashboard() {
         fetch(`${API}/api/artista-portal/mi-perfil`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API}/api/artista-portal/mis-obras`,  { headers: { Authorization: `Bearer ${token}` } }),
       ]);
-      if (resArtista.ok) setArtista(await resArtista.json());
+      if (resArtista.ok) {
+        const data = await resArtista.json();
+        setArtista(data);
+        setFotoPreview(data.foto_perfil ?? "");
+      }
       if (resObras.ok) {
         const data = await resObras.json();
         setObras(data.obras || []);
-        // ✅ fix: compatible con pendientes y en_revision
         const s = data.stats || {};
         setStats({
           total:      s.total      || 0,
@@ -106,13 +104,18 @@ export default function ArtistaDashboard() {
     finally { setLoading(false); }
   };
 
+  // Callback que recibe MiPerfil cuando guarda con éxito
+  const handlePerfilActualizado = (nuevaFoto?: string) => {
+    if (nuevaFoto) setFotoPreview(nuevaFoto);
+    setArtista(prev => prev ? { ...prev, foto_perfil: nuevaFoto ?? prev.foto_perfil } : prev);
+  };
+
   const handleLogout   = () => { authService.logout(); navigate("/login"); };
   const obrasFiltradas = filtro === "todas" ? obras : obras.filter(o => o.estado === filtro);
   const inicial        = (artista?.nombre_artistico || nombre).charAt(0).toUpperCase();
 
   const formatPrecio = (n: number) =>
     new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
-
   const formatFecha = (f: string) =>
     new Date(f).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
 
@@ -128,7 +131,12 @@ export default function ArtistaDashboard() {
       <div style={{ padding: "28px 24px 20px" }}>
         <img src={logoImg} alt="Nu-B Studio" style={{ height: 34, marginBottom: 28 }} />
         <div style={{ background: `linear-gradient(135deg, ${C.orange}18, ${C.pink}10)`, border: `1px solid ${C.orange}25`, borderRadius: 16, padding: "16px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white", boxShadow: `0 4px 16px ${C.orange}40` }}>{inicial}</div>
+          <div style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white", boxShadow: `0 4px 16px ${C.orange}40` }}>
+            {fotoPreview
+              ? <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : inicial
+            }
+          </div>
           <div style={{ overflow: "hidden" }}>
             <div style={{ fontSize: 13.5, fontWeight: 800, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{artista?.nombre_artistico || nombre}</div>
             <div style={{ fontSize: 11, color: C.muted, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
@@ -153,14 +161,14 @@ export default function ArtistaDashboard() {
         })}
         <div style={{ height: 1, background: C.border, margin: "16px 0 12px" }} />
         <button onClick={() => navigate("/artista/nueva-obra")}
-          style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 14px", borderRadius: 12, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, border: "none", color: "white", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: `0 6px 20px ${C.orange}35`, transition: "all .2s" }}>
+          style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 14px", borderRadius: 12, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, border: "none", color: "white", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: `0 6px 20px ${C.orange}35` }}>
           <Plus size={16} /> Subir nueva obra
         </button>
       </nav>
 
       <div style={{ padding: "16px", borderTop: `1px solid ${C.border}` }}>
         <button onClick={handleLogout}
-          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 10, background: "transparent", border: "1px solid transparent", color: C.muted, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all .15s" }}
+          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 10, background: "transparent", border: "1px solid transparent", color: C.muted, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.pink; el.style.background = `${C.pink}10`; }}
           onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.muted; el.style.background = "transparent"; }}>
           <LogOut size={15} /> Cerrar sesión
@@ -169,10 +177,9 @@ export default function ArtistaDashboard() {
     </aside>
   );
 
-  // ── SECCIÓN DASHBOARD (overview) ─────────────────────────────
+  // ── SECCIÓN DASHBOARD ─────────────────────────────────────────
   const SeccionDashboard = () => (
     <div style={{ animation: mounted ? "fadeUp .5s ease both" : "none" }}>
-      {/* Hero */}
       <div style={{ position: "relative", borderRadius: 24, overflow: "hidden", background: `linear-gradient(135deg, ${C.orange}18 0%, ${C.purple}15 50%, ${C.pink}12 100%)`, border: `1px solid ${C.orange}25`, marginBottom: 28, padding: "36px" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}20, transparent 70%)`, pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
@@ -196,29 +203,24 @@ export default function ArtistaDashboard() {
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 28 }}>
         {[
-          { label: "Total obras", value: stats.total,      icon: <Package size={22} />,    grad: `${C.orange}, ${C.pink}`,  shadow: C.orange },
-          { label: "Publicadas",  value: stats.publicadas, icon: <CheckCircle size={22} />, grad: `${C.green}, #00b894`,    shadow: C.green  },
-          { label: "En revisión", value: stats.pendientes, icon: <Clock size={22} />,       grad: `${C.gold}, #e07b00`,     shadow: C.gold   },
+          { label: "Total obras", value: stats.total,      icon: <Package size={22} />,     grad: `${C.orange}, ${C.pink}`,  shadow: C.orange },
+          { label: "Publicadas",  value: stats.publicadas, icon: <CheckCircle size={22} />, grad: `${C.green}, #00b894`,     shadow: C.green  },
+          { label: "En revisión", value: stats.pendientes, icon: <Clock size={22} />,       grad: `${C.gold}, #e07b00`,      shadow: C.gold   },
           { label: "Comisión %",  value: artista?.porcentaje_comision || 15, icon: <TrendingUp size={22} />, grad: `${C.purple}, ${C.pink}`, shadow: C.purple },
         ].map((s, i) => (
           <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: "22px", position: "relative", overflow: "hidden", animation: `fadeUp .5s ease ${i * 0.08}s both`, transition: "transform .2s, box-shadow .2s" }}
             onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-4px)"; el.style.boxShadow = `0 16px 40px ${s.shadow}20`; }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; }}
-          >
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${s.grad})` }} />
             <div style={{ width: 44, height: 44, borderRadius: 12, marginBottom: 16, background: `linear-gradient(135deg, ${s.grad})`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", boxShadow: `0 6px 16px ${s.shadow}35` }}>{s.icon}</div>
-            <div style={{ fontSize: 34, fontWeight: 900, color: C.text, fontFamily: "'Playfair Display', serif", marginBottom: 4 }}>
-              <Counter to={s.value} />
-            </div>
+            <div style={{ fontSize: 34, fontWeight: 900, color: C.text, fontFamily: "'Playfair Display', serif", marginBottom: 4 }}><Counter to={s.value} /></div>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Obras recientes + mini info */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }} className="dashboard-grid">
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, overflow: "hidden" }}>
           <div style={{ padding: "20px 24px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -239,12 +241,11 @@ export default function ArtistaDashboard() {
               </button>
             </div>
           ) : obras.slice(0, 6).map((obra, i) => {
-            const badge = getBadge(obra.estado, obra.activa);
+            const bdg = getBadge(obra.estado, obra.activa);
             return (
               <div key={obra.id_obra} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 24px", borderBottom: i < Math.min(obras.length, 6) - 1 ? `1px solid ${C.border}` : "none", transition: "background .15s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-              >
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                 <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.05)" }}>
                   {obra.imagen_principal
                     ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -253,16 +254,13 @@ export default function ArtistaDashboard() {
                 </div>
                 <div style={{ flex: 1, overflow: "hidden" }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>{obra.titulo}</div>
-                  <div style={{ fontSize: 12, color: C.orange, fontWeight: 700 }}>
-                    {obra.precio_base ? `$${Number(obra.precio_base).toLocaleString("es-MX")} MXN` : "Sin precio"}
-                  </div>
+                  <div style={{ fontSize: 12, color: C.orange, fontWeight: 700 }}>{obra.precio_base ? `$${Number(obra.precio_base).toLocaleString("es-MX")} MXN` : "Sin precio"}</div>
                 </div>
-                {/* Badge inline */}
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, color: badge.color, background: "rgba(8,6,18,0.82)", border: `1px solid ${badge.color}60`, textTransform: "uppercase", whiteSpace: "nowrap", backdropFilter: "blur(8px)" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, color: bdg.color, background: "rgba(8,6,18,0.82)", border: `1px solid ${bdg.color}60`, textTransform: "uppercase", whiteSpace: "nowrap", backdropFilter: "blur(8px)" }}>
                   {obra.estado === "publicada" && <CheckCircle size={10} />}
                   {obra.estado === "pendiente" && <Clock size={10} />}
                   {obra.estado === "rechazada" && <XCircle size={10} />}
-                  {badge.label}
+                  {bdg.label}
                 </span>
               </div>
             );
@@ -273,14 +271,16 @@ export default function ArtistaDashboard() {
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: "20px" }}>
             <p style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 14px" }}>Mi perfil</p>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white" }}>{inicial}</div>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white" }}>
+                {fotoPreview ? <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : inicial}
+              </div>
               <div>
                 <div style={{ fontSize: 13.5, fontWeight: 800, color: C.text }}>{artista?.nombre_artistico || nombre}</div>
                 <div style={{ fontSize: 11, color: C.muted }}>{artista?.categoria_nombre || "—"}</div>
               </div>
             </div>
             <button onClick={() => setSeccion("perfil")} style={{ width: "100%", padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-              Ver perfil completo
+              Editar perfil
             </button>
           </div>
 
@@ -311,10 +311,9 @@ export default function ArtistaDashboard() {
     </div>
   );
 
-  // ── SECCIÓN OBRAS ✅ — ahora igual a MisObras.tsx ─────────────
+  // ── SECCIÓN OBRAS ─────────────────────────────────────────────
   const SeccionObras = () => (
     <div style={{ animation: "fadeUp .5s ease both" }}>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
         <div>
           <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
@@ -327,7 +326,6 @@ export default function ArtistaDashboard() {
         </button>
       </div>
 
-      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
         {[
           { label: "TOTAL OBRAS",  value: stats.total,      color: C.orange },
@@ -343,7 +341,6 @@ export default function ArtistaDashboard() {
         ))}
       </div>
 
-      {/* Filtros */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         {[
           { id: "todas",     label: "Todas",       count: stats.total      },
@@ -352,14 +349,13 @@ export default function ArtistaDashboard() {
           { id: "rechazada", label: "Rechazadas",  count: stats.rechazadas },
         ].map(f => (
           <button key={f.id} onClick={() => setFiltro(f.id)}
-            style={{ padding: "8px 18px", borderRadius: 100, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 7, background: filtro === f.id ? `linear-gradient(135deg, ${C.orange}30, ${C.pink}20)` : "rgba(255,255,255,0.04)", border: filtro === f.id ? `1px solid ${C.orange}50` : `1px solid ${C.border}`, color: filtro === f.id ? C.orange : C.muted, transition: "all .15s" }}>
+            style={{ padding: "8px 18px", borderRadius: 100, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 7, background: filtro === f.id ? `linear-gradient(135deg, ${C.orange}30, ${C.pink}20)` : "rgba(255,255,255,0.04)", border: filtro === f.id ? `1px solid ${C.orange}50` : `1px solid ${C.border}`, color: filtro === f.id ? C.orange : C.muted }}>
             {f.label}
             <span style={{ background: filtro === f.id ? C.orange : "rgba(255,255,255,0.08)", borderRadius: 100, padding: "1px 8px", fontSize: 10.5, color: filtro === f.id ? "white" : C.muted, fontWeight: 800 }}>{f.count}</span>
           </button>
         ))}
       </div>
 
-      {/* Grid — mismo diseño que MisObras.tsx */}
       {obrasFiltradas.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0", background: C.card, borderRadius: 20, border: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
@@ -378,66 +374,51 @@ export default function ArtistaDashboard() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 18 }}>
           {obrasFiltradas.map((obra) => {
-            const badge = getBadge(obra.estado, obra.activa);
+            const bdg = getBadge(obra.estado, obra.activa);
             return (
               <div key={obra.id_obra}
                 style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s, box-shadow .22s, border-color .22s" }}
                 onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-5px)"; el.style.boxShadow = "0 20px 48px rgba(0,0,0,0.4)"; el.style.borderColor = `${C.orange}30`; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}
-              >
-                {/* Imagen */}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}>
                 <div style={{ height: 180, background: "rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
                   {obra.imagen_principal
                     ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🖼️</div>
                   }
-                  {/* ✅ Badge con position absolute + inline styles */}
-                  <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: badge.color, background: "rgba(8,6,18,0.85)", border: `1px solid ${badge.color}60`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", textTransform: "uppercase", whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
-                    {badge.label}
+                  <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, color: bdg.color, background: "rgba(8,6,18,0.85)", border: `1px solid ${bdg.color}60`, backdropFilter: "blur(8px)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                    {bdg.label}
                   </span>
                   {obra.destacada && (
                     <span style={{ position: "absolute", top: 10, right: 10, background: `${C.gold}20`, border: `1px solid ${C.gold}50`, color: C.gold, fontSize: 10.5, fontWeight: 800, padding: "3px 10px", borderRadius: 100 }}>⭐ Destacada</span>
                   )}
                 </div>
-
-                {/* Cuerpo */}
                 <div style={{ padding: "16px" }}>
                   <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
                     {obra.categoria && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
-                    {obra.tecnica   && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted,  background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
+                    {obra.tecnica   && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
                   </div>
-
-                  <h4 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {obra.titulo}
-                  </h4>
-
+                  <h4 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h4>
                   <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
                     {obra.precio_base ? formatPrecio(obra.precio_base) : "—"}
                   </p>
-
                   {obra.fecha_creacion && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.muted, marginBottom: 10 }}>
                       <span>👁 {obra.vistas || 0} vistas</span>
                       <span>📅 {formatFecha(obra.fecha_creacion)}</span>
                     </div>
                   )}
-
                   {obra.estado === "rechazada" && obra.motivo_rechazo && (
                     <div style={{ background: `${C.pink}10`, border: `1px solid ${C.pink}25`, borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
                       <strong style={{ color: C.pink }}>Motivo: </strong>{obra.motivo_rechazo}
                     </div>
                   )}
-
                   <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
                     {obra.permite_marco   && <span style={{ fontSize: 10.5, color: C.muted }}>🖼 Enmarcable</span>}
                     {obra.con_certificado && <span style={{ fontSize: 10.5, color: C.muted }}>📜 Certificado</span>}
                   </div>
-
-                  {/* Botones */}
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
-                      style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600, transition: "all .15s" }}
+                    <button onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
+                      style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600 }}
                       onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}40`; }}
                       onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.muted; el.style.borderColor = C.border; }}>
                       <Edit3 size={13} /> Editar
@@ -458,52 +439,6 @@ export default function ArtistaDashboard() {
     </div>
   );
 
-  // ── SECCIÓN PERFIL ────────────────────────────────────────────
-  const SeccionPerfil = () => (
-    <div style={{ animation: "fadeUp .5s ease both", maxWidth: 680 }}>
-      <h2 style={{ fontSize: 26, fontWeight: 900, color: C.text, margin: "0 0 24px", fontFamily: "'Playfair Display', serif" }}>Mi perfil</h2>
-      {!artista ? <p style={{ color: C.muted }}>Cargando...</p> : (
-        <>
-          <div style={{ background: `linear-gradient(135deg, ${C.orange}12, ${C.purple}10)`, border: `1px solid ${C.orange}20`, borderRadius: 20, padding: "28px", marginBottom: 16, display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-            <div style={{ width: 76, height: 76, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 900, color: "white", flexShrink: 0, boxShadow: `0 8px 28px ${C.orange}40` }}>{inicial}</div>
-            <div>
-              <h3 style={{ fontSize: 22, fontWeight: 900, color: C.text, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>{artista.nombre_artistico || artista.nombre_completo}</h3>
-              <p style={{ fontSize: 13, color: C.muted, margin: "0 0 10px" }}>{artista.correo}</p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ padding: "3px 12px", borderRadius: 100, fontSize: 11, fontWeight: 700, background: `${C.green}15`, color: C.green, border: `1px solid ${C.green}30` }}>✓ Artista activo</span>
-                {artista.categoria_nombre && <span style={{ padding: "3px 12px", borderRadius: 100, fontSize: 11, fontWeight: 700, background: `${C.orange}12`, color: C.orange, border: `1px solid ${C.orange}30` }}>{artista.categoria_nombre}</span>}
-              </div>
-            </div>
-          </div>
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: "28px" }}>
-            <p style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 20px" }}>Información</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 32px" }}>
-              {[
-                { label: "Nombre completo",  value: artista.nombre_completo },
-                { label: "Nombre artístico", value: artista.nombre_artistico || "—" },
-                { label: "Correo",           value: artista.correo           || "—" },
-                { label: "Teléfono",         value: artista.telefono         || "—" },
-                { label: "Comisión",         value: `${artista.porcentaje_comision}%` },
-                { label: "Matrícula",        value: artista.matricula        || "—" },
-              ].map((campo, i) => (
-                <div key={i}>
-                  <p style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1.2, margin: "0 0 5px" }}>{campo.label}</p>
-                  <p style={{ fontSize: 14, color: C.text, margin: 0, fontWeight: 600 }}>{campo.value}</p>
-                </div>
-              ))}
-            </div>
-            {artista.biografia && (
-              <div style={{ marginTop: 22, paddingTop: 22, borderTop: `1px solid ${C.border}` }}>
-                <p style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1.2, margin: "0 0 10px" }}>Biografía</p>
-                <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.8, margin: 0 }}>{artista.biografia}</p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-
   // ── ROOT RENDER ───────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'DM Sans', sans-serif", display: "flex" }}>
@@ -515,7 +450,6 @@ export default function ArtistaDashboard() {
       </>}
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Topbar mobile */}
         <div className="topbar-mobile" style={{ display: "none", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: `1px solid ${C.border}`, background: C.bg, position: "sticky", top: 0, zIndex: 40 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: C.text, cursor: "pointer" }}><Menu size={22} /></button>
           <img src={logoImg} alt="Nu-B Studio" style={{ height: 30 }} />
@@ -527,7 +461,7 @@ export default function ArtistaDashboard() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 20 }}>
               <div style={{ position: "relative", width: 56, height: 56 }}>
                 <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid ${C.orange}20` }} />
-                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid transparent", borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
               </div>
               <p style={{ color: C.muted, fontSize: 14 }}>Cargando tu estudio...</p>
             </div>
@@ -535,7 +469,13 @@ export default function ArtistaDashboard() {
             <>
               {seccion === "dashboard" && <SeccionDashboard />}
               {seccion === "obras"     && <SeccionObras />}
-              {seccion === "perfil"    && <SeccionPerfil />}
+              {seccion === "perfil"    && artista && (
+                <MiPerfil
+                  artista={artista}
+                  token={token}
+                  onActualizar={handlePerfilActualizado}
+                />
+              )}
             </>
           )}
         </main>
@@ -543,7 +483,7 @@ export default function ArtistaDashboard() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes spin    { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
+        @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
         .sidebar-desktop { display: block; }
         @media (max-width: 900px) {
