@@ -12,14 +12,13 @@ import EditarArtista from "../pages/private/admin/EditarArtista";
 import DetalleArtista from "../pages/private/admin/DetalleArtista";
 import PrivateRoute from "../components/PrivateRoute";
 import AdminRoute from "../components/AdminRoute";
-import ArtistaRoute from "../components/ArtistaRoute";   // ← AGREGA
-import ArtistaDashboard from "../pages/private/artista/ArtistaDashboard";  // ← AGREGA
+import ArtistaRoute from "../components/ArtistaRoute";
+import ArtistaDashboard from "../pages/private/artista/ArtistaDashboard";
 import RegistroArtista from "../pages/public/RegistroArtista";
 import NuevaObra from "../pages/private/artista/NuevaObra";
 import MisObras from "../pages/private/artista/MisObras";
-import EditarObraArtista from "../pages/private/artista/EditarObra"; 
-
-
+import EditarObraArtista from "../pages/private/artista/EditarObra";
+// ← NUEVO
 
 export default function AppRoutes() {
   return (
@@ -30,24 +29,22 @@ export default function AppRoutes() {
         <PrivateRoute><NuBDashboard /></PrivateRoute>
       } />
 
-      {/* ← AGREGA ESTAS DOS RUTAS */}
       <Route path="/artista/dashboard" element={
         <ArtistaRoute><ArtistaDashboard /></ArtistaRoute>
       } />
 
-<Route path="/artista/nueva-obra" element={
-  <ArtistaRoute><NuevaObra /></ArtistaRoute>
-} />
-<Route path="/artista/mis-obras" element={
-  <ArtistaRoute><MisObras /></ArtistaRoute>
-} />
-<Route path="/artista/editar-obra/:id" element={
-  <ArtistaRoute><EditarObraArtista /></ArtistaRoute>
-} />
-    
+      <Route path="/artista/nueva-obra" element={
+        <ArtistaRoute><NuevaObra /></ArtistaRoute>
+      } />
+      <Route path="/artista/mis-obras" element={
+        <ArtistaRoute><MisObras /></ArtistaRoute>
+      } />
+      <Route path="/artista/editar-obra/:id" element={
+        <ArtistaRoute><EditarObraArtista /></ArtistaRoute>
+      } />
 
       <Route path="/registro-artista" element={<RegistroArtista />} />
-      
+
       <Route path="/admin" element={
         <AdminRoute><AdminDashboard /></AdminRoute>
       } />
@@ -58,6 +55,7 @@ export default function AppRoutes() {
       <Route path="/admin/artistas/crear" element={<AdminRoute><CrearArtista /></AdminRoute>} />
       <Route path="/admin/artistas/editar/:id" element={<AdminRoute><EditarArtista /></AdminRoute>} />
       <Route path="/admin/artistas/:id" element={<AdminRoute><DetalleArtista /></AdminRoute>} />
+    
     </Routes>
   );
 }
