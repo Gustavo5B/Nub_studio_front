@@ -2,11 +2,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Upload, Image, X, Sparkles, Palette,
+  ArrowLeft, Image, X, Sparkles, Palette,
   Ruler, Tag, FileText, DollarSign, CheckCircle,
-  AlertCircle, Loader2, Save, UploadCloud, FileImage,
+  Loader2, Save, UploadCloud, FileImage,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
+import { useToast } from "../../../context/ToastContext";
+import { handleApiError, handleNetworkError } from "../../../utils/handleApiError";
 import "../../../styles/nueva-obra.css";
 
 interface Categoria { id_categoria: number; nombre: string; }
@@ -24,27 +26,26 @@ interface FormState {
   precio_base: string;
   permite_marco: boolean;
   con_certificado: boolean;
-  imagen_principal: string; // URL actual
+  imagen_principal: string;
   etiquetas: number[];
 }
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function EditarObra() {
-  const navigate  = useNavigate();
-  const { id }    = useParams<{ id: string }>();
-  const fileRef   = useRef<HTMLInputElement>(null);
+  const navigate       = useNavigate();
+  const { id }         = useParams<{ id: string }>();
+  const fileRef        = useRef<HTMLInputElement>(null);
+  const { showToast }  = useToast();
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [etiquetas,  setEtiquetas]  = useState<Etiqueta[]>([]);
 
-  // Estado imagen
   const [imgFile,    setImgFile]    = useState<File | null>(null);
   const [imgPreview, setImgPreview] = useState<string>("");
   const [imgMode,    setImgMode]    = useState<"upload" | "url">("upload");
   const [dragOver,   setDragOver]   = useState(false);
 
-  // Estado formulario
   const [form, setForm] = useState<FormState>({
     titulo: "", descripcion: "", id_categoria: "", tecnica: "",
     anio_creacion: new Date().getFullYear().toString(),
@@ -57,8 +58,8 @@ export default function EditarObra() {
   const [loading,    setLoading]    = useState(true);
   const [saving,     setSaving]     = useState(false);
   const [success,    setSuccess]    = useState(false);
-  const [error,      setError]      = useState<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDatos(); }, [id]);
 
   const cargarDatos = async () => {
@@ -73,27 +74,31 @@ export default function EditarObra() {
       ]);
 
       if (!obraRes.ok) {
-        const d = await obraRes.json();
-        throw new Error(d.message || "No se pudo cargar la obra");
+        const msg = await handleApiError(obraRes);
+        showToast(msg, "err");
+        setLoading(false);
+        return;
       }
 
       const obra = await obraRes.json();
       setObraEstado(obra.estado || "");
 
       setForm({
-        titulo:                 obra.titulo         || "",
-        descripcion:            obra.descripcion    || "",
-        id_categoria:           String(obra.id_categoria || ""),
-        tecnica:                obra.tecnica        || "",
-        anio_creacion:          String(obra.anio_creacion || new Date().getFullYear()),
-        dimensiones_alto:       String(obra.dimensiones?.alto       ?? obra.alto_cm       ?? ""),
-        dimensiones_ancho:      String(obra.dimensiones?.ancho      ?? obra.ancho_cm      ?? ""),
-        dimensiones_profundidad:String(obra.dimensiones?.profundidad?? obra.profundidad_cm?? ""),
-        precio_base:            String(obra.precio_base || ""),
-        permite_marco:          Boolean(obra.permite_marco),
-        con_certificado:        Boolean(obra.con_certificado),
-        imagen_principal:       obra.imagen_principal || "",
-        etiquetas:              (obra.etiquetas || []).map((e: any) => e.id_etiqueta ?? e),
+        titulo:                  obra.titulo         || "",
+        descripcion:             obra.descripcion    || "",
+        id_categoria:            String(obra.id_categoria || ""),
+        tecnica:                 obra.tecnica        || "",
+        anio_creacion:           String(obra.anio_creacion || new Date().getFullYear()),
+        dimensiones_alto:        String(obra.dimensiones?.alto        ?? obra.alto_cm        ?? ""),
+        dimensiones_ancho:       String(obra.dimensiones?.ancho       ?? obra.ancho_cm       ?? ""),
+        dimensiones_profundidad: String(obra.dimensiones?.profundidad ?? obra.profundidad_cm ?? ""),
+        precio_base:             String(obra.precio_base || ""),
+        permite_marco:           Boolean(obra.permite_marco),
+        con_certificado:         Boolean(obra.con_certificado),
+        imagen_principal:        obra.imagen_principal || "",
+        etiquetas:               (obra.etiquetas || []).map((e: { id_etiqueta?: number } | number) =>
+          typeof e === "number" ? e : e.id_etiqueta ?? 0
+        ),
       });
 
       if (catRes.ok) {
@@ -104,8 +109,8 @@ export default function EditarObra() {
         const d = await etqRes.json();
         setEtiquetas(Array.isArray(d) ? d : d.etiquetas || d.data || []);
       }
-    } catch (err: any) {
-      setError(err.message || "Error al cargar la obra");
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
     } finally {
       setLoading(false);
     }
@@ -129,12 +134,17 @@ export default function EditarObra() {
   };
 
   const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) { setError("Solo se permiten imágenes"); return; }
-    if (file.size > 10 * 1024 * 1024)    { setError("La imagen no puede superar 10 MB"); return; }
+    if (!file.type.startsWith("image/")) {
+      showToast("Solo se permiten imágenes", "warn");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("La imagen no puede superar 10 MB", "warn");
+      return;
+    }
     if (imgPreview) URL.revokeObjectURL(imgPreview);
     setImgFile(file);
     setImgPreview(URL.createObjectURL(file));
-    setError(null);
   };
 
   const clearFile = () => {
@@ -152,12 +162,16 @@ export default function EditarObra() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.titulo.trim())   { setError("El título es requerido");   return; }
-    if (!form.precio_base || parseFloat(form.precio_base) <= 0)
-      { setError("El precio es requerido"); return; }
+    if (!form.titulo.trim()) {
+      showToast("El título es requerido", "warn");
+      return;
+    }
+    if (!form.precio_base || parseFloat(form.precio_base) <= 0) {
+      showToast("El precio es requerido", "warn");
+      return;
+    }
 
     setSaving(true);
-    setError(null);
 
     try {
       const token = authService.getToken();
@@ -182,13 +196,17 @@ export default function EditarObra() {
         method: "PUT", headers, body,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al actualizar la obra");
+      if (!res.ok) {
+        const msg = await handleApiError(res);
+        showToast(msg, "err");
+        return;
+      }
 
       setSuccess(true);
+      showToast("¡Cambios guardados correctamente!", "ok");
       setTimeout(() => navigate("/artista/mis-obras"), 2200);
-    } catch (err: any) {
-      setError(err.message || "Error inesperado");
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
     } finally {
       setSaving(false);
     }
@@ -196,12 +214,18 @@ export default function EditarObra() {
 
   const previewSrc = imgPreview || form.imagen_principal;
 
+  const estadoBadgeColor: Record<string, string> = {
+    pendiente: "#FFC110", aprobada: "#3DDB85", rechazada: "#CC59AD",
+  };
+
   // ── LOADING ──────────────────────────────────────────────
   if (loading) {
     return (
       <div className="nueva-obra-page">
         <aside className="artista-sidebar">
-          <div className="sidebar-brand"><span className="brand-nu">NU</span><span className="brand-b">·B</span></div>
+          <div className="sidebar-brand">
+            <span className="brand-nu">NU</span><span className="brand-b">·B</span>
+          </div>
         </aside>
         <main className="nueva-obra-main" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ textAlign: "center" }}>
@@ -209,6 +233,7 @@ export default function EditarObra() {
             <p style={{ marginTop: 12, color: "rgba(245,240,255,0.45)", fontSize: 14 }}>Cargando obra...</p>
           </div>
         </main>
+        <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
       </div>
     );
   }
@@ -228,13 +253,10 @@ export default function EditarObra() {
   }
 
   // ── RENDER ───────────────────────────────────────────────
-  const estadoBadgeColor: Record<string, string> = {
-    pendiente: "#FFC110", aprobada: "#3DDB85", rechazada: "#CC59AD",
-  };
-
   return (
     <div className="nueva-obra-page">
-      {/* ── SIDEBAR ── */}
+
+      {/* SIDEBAR */}
       <aside className="artista-sidebar">
         <div className="sidebar-brand">
           <span className="brand-nu">NU</span><span className="brand-b">·B</span>
@@ -268,17 +290,14 @@ export default function EditarObra() {
         </button>
       </aside>
 
-      {/* ── MAIN ── */}
+      {/* MAIN */}
       <main className="nueva-obra-main">
-        {/* Header */}
         <div className="nueva-obra-header">
           <button className="back-btn" onClick={() => navigate("/artista/mis-obras")}>
             <ArrowLeft size={18} /> Mis obras
           </button>
           <div>
-            <h1 className="page-title">
-              <Sparkles size={22} /> Editar Obra
-            </h1>
+            <h1 className="page-title"><Sparkles size={22} /> Editar Obra</h1>
             <p className="page-subtitle" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {form.titulo || "Cargando..."}
               {obraEstado && (
@@ -299,16 +318,18 @@ export default function EditarObra() {
         <form onSubmit={handleSubmit} className="nueva-obra-form">
           <div className="form-step">
 
-            {/* ── IMAGEN ── */}
+            {/* IMAGEN */}
             <div className="form-section">
               <h3 className="section-title"><Image size={18} /> Imagen de la obra</h3>
 
-              {/* Tabs */}
               <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 12 }}>
                 {(["upload", "url"] as const).map(tab => (
                   <button key={tab} type="button" onClick={() => setImgMode(tab)}
                     style={{ flex: 1, padding: "9px", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, fontWeight: imgMode === tab ? 800 : 500, background: imgMode === tab ? "linear-gradient(135deg, rgba(204,89,173,0.25), rgba(141,76,205,0.15))" : "transparent", color: imgMode === tab ? "#f5f0ff" : "rgba(245,240,255,0.45)", borderRight: tab === "upload" ? "1px solid rgba(255,255,255,0.07)" : "none", transition: "all .15s" }}>
-                    {tab === "upload" ? <><UploadCloud size={12} style={{ marginRight: 5, verticalAlign: "middle" }} />Subir archivo</> : <><FileImage size={12} style={{ marginRight: 5, verticalAlign: "middle" }} />URL externa</>}
+                    {tab === "upload"
+                      ? <><UploadCloud size={12} style={{ marginRight: 5, verticalAlign: "middle" }} />Subir archivo</>
+                      : <><FileImage  size={12} style={{ marginRight: 5, verticalAlign: "middle" }} />URL externa</>
+                    }
                   </button>
                 ))}
               </div>
@@ -318,24 +339,30 @@ export default function EditarObra() {
 
               {imgMode === "upload" ? (
                 imgFile ? (
-                  /* Preview del archivo seleccionado */
                   <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid rgba(204,89,173,0.3)" }}>
                     <img src={imgPreview} alt="preview" style={{ width: "100%", height: 200, objectFit: "cover", display: "block" }} />
                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 14px", background: "linear-gradient(to top, rgba(8,6,18,0.9), transparent)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, color: "#f5f0ff", fontWeight: 600 }}>{imgFile.name} · {(imgFile.size / 1024 / 1024).toFixed(1)} MB</span>
-                      <button type="button" onClick={() => fileRef.current?.click()} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, color: "#f5f0ff", fontSize: 11, fontWeight: 700, padding: "4px 10px", cursor: "pointer" }}>Cambiar</button>
+                      <span style={{ fontSize: 12, color: "#f5f0ff", fontWeight: 600 }}>
+                        {imgFile.name} · {(imgFile.size / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                      <button type="button" onClick={() => fileRef.current?.click()}
+                        style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, color: "#f5f0ff", fontSize: 11, fontWeight: 700, padding: "4px 10px", cursor: "pointer" }}>
+                        Cambiar
+                      </button>
                     </div>
-                    <button type="button" onClick={clearFile} style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(10,7,20,0.8)", border: "1px solid rgba(204,89,173,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <button type="button" onClick={clearFile}
+                      style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(10,7,20,0.8)", border: "1px solid rgba(204,89,173,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                       <X size={14} color="#CC59AD" />
                     </button>
                   </div>
                 ) : (
-                  /* Imagen actual + Drop zone */
                   <div>
                     {form.imagen_principal && (
                       <div style={{ marginBottom: 10, borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", position: "relative" }}>
                         <img src={form.imagen_principal} alt="actual" style={{ width: "100%", height: 180, objectFit: "cover", display: "block", opacity: 0.7 }} />
-                        <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(8,6,18,0.8)", color: "rgba(245,240,255,0.55)", fontSize: 10.5, fontWeight: 700, padding: "3px 10px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)" }}>Imagen actual</span>
+                        <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(8,6,18,0.8)", color: "rgba(245,240,255,0.55)", fontSize: 10.5, fontWeight: 700, padding: "3px 10px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)" }}>
+                          Imagen actual
+                        </span>
                       </div>
                     )}
                     <div
@@ -353,16 +380,9 @@ export default function EditarObra() {
                   </div>
                 )
               ) : (
-                /* Modo URL */
                 <div>
-                  <input
-                    type="url"
-                    name="imagen_principal"
-                    value={form.imagen_principal}
-                    onChange={handleChange}
-                    placeholder="https://ejemplo.com/imagen.jpg"
-                    className="field-input"
-                  />
+                  <input type="url" name="imagen_principal" value={form.imagen_principal}
+                    onChange={handleChange} placeholder="https://ejemplo.com/imagen.jpg" className="field-input" />
                   {form.imagen_principal && (
                     <img src={form.imagen_principal} alt="preview url"
                       style={{ marginTop: 10, width: "100%", height: 170, objectFit: "cover", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}
@@ -372,22 +392,19 @@ export default function EditarObra() {
               )}
             </div>
 
-            {/* ── INFORMACIÓN BÁSICA ── */}
+            {/* INFORMACIÓN BÁSICA */}
             <div className="form-section">
               <h3 className="section-title"><FileText size={18} /> Información básica</h3>
-
               <div className="field-group">
                 <label>Título de la obra *</label>
                 <input type="text" name="titulo" value={form.titulo} onChange={handleChange}
                   placeholder="Ej: Atardecer en la Huasteca" className="field-input" />
               </div>
-
               <div className="field-group">
                 <label>Descripción</label>
                 <textarea name="descripcion" value={form.descripcion} onChange={handleChange}
                   placeholder="Cuéntanos sobre esta obra..." rows={4} className="field-input field-textarea" />
               </div>
-
               <div className="fields-row">
                 <div className="field-group">
                   <label>Categoría</label>
@@ -411,7 +428,7 @@ export default function EditarObra() {
               </div>
             </div>
 
-            {/* ── DIMENSIONES ── */}
+            {/* DIMENSIONES */}
             <div className="form-section">
               <h3 className="section-title"><Ruler size={18} /> Dimensiones (cm)</h3>
               <div className="fields-row">
@@ -422,14 +439,15 @@ export default function EditarObra() {
                 ].map(f => (
                   <div key={f.name} className="field-group">
                     <label>{f.label}</label>
-                    <input type="number" name={f.name} value={(form as any)[f.name]}
+                    <input type="number" name={f.name}
+                      value={form[f.name as keyof FormState] as string}
                       onChange={handleChange} placeholder="0" min={0} step="0.1" className="field-input" />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ── PRECIO ── */}
+            {/* PRECIO */}
             <div className="form-section">
               <h3 className="section-title"><DollarSign size={18} /> Precio</h3>
               <div className="price-field-wrap">
@@ -462,7 +480,7 @@ export default function EditarObra() {
               </div>
             </div>
 
-            {/* ── EXTRAS ── */}
+            {/* EXTRAS */}
             <div className="form-section">
               <h3 className="section-title"><Palette size={18} /> Extras</h3>
               <div className="checkbox-group">
@@ -477,7 +495,7 @@ export default function EditarObra() {
               </div>
             </div>
 
-            {/* ── ETIQUETAS ── */}
+            {/* ETIQUETAS */}
             {etiquetas.length > 0 && (
               <div className="form-section">
                 <h3 className="section-title"><Tag size={18} /> Etiquetas</h3>
@@ -493,7 +511,7 @@ export default function EditarObra() {
               </div>
             )}
 
-            {/* ── RESUMEN ── */}
+            {/* RESUMEN */}
             <div className="form-section obra-summary">
               <h3 className="section-title">✦ Resumen</h3>
               <div className="summary-grid">
@@ -507,7 +525,7 @@ export default function EditarObra() {
                   <p className="summary-cat">
                     {categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}
                   </p>
-                  {form.tecnica && <p className="summary-tech">{form.tecnica}</p>}
+                  {form.tecnica    && <p className="summary-tech">{form.tecnica}</p>}
                   {form.precio_base && (
                     <p className="summary-price">
                       ${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN
@@ -517,16 +535,9 @@ export default function EditarObra() {
               </div>
             </div>
 
-            {error && (
-              <div className="form-error">
-                <AlertCircle size={16} /> {error}
-              </div>
-            )}
-
-            {/* ── BOTONES ── */}
+            {/* BOTONES */}
             <div className="form-actions two-btns">
-              <button type="button" className="btn-back"
-                onClick={() => navigate("/artista/mis-obras")}>
+              <button type="button" className="btn-back" onClick={() => navigate("/artista/mis-obras")}>
                 ← Cancelar
               </button>
               <button type="submit" className="btn-submit" disabled={saving}>

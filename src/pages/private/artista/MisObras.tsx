@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../../services/authService";
+import { useToast } from "../../../context/ToastContext";
+import { handleNetworkError } from "../../../utils/handleApiError";
 
 interface Obra {
   id_obra: number;
@@ -28,7 +30,7 @@ interface Obra {
 interface Stats {
   total: number;
   publicadas: number;
-  pendientes: number;  // ✅ fix: era en_revision
+  pendientes: number;
   rechazadas: number;
 }
 
@@ -46,6 +48,8 @@ const FB = "'DM Sans', sans-serif";
 
 export default function MisObras() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
   const [obras,   setObras]   = useState<Obra[]>([]);
   const [stats,   setStats]   = useState<Stats>({ total: 0, publicadas: 0, pendientes: 0, rechazadas: 0 });
   const [loading, setLoading] = useState(true);
@@ -54,6 +58,7 @@ export default function MisObras() {
 
   const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDatos(); }, []);
 
   const cargarDatos = async () => {
@@ -66,10 +71,11 @@ export default function MisObras() {
         fetch(`${API}/api/artista-portal/mi-perfil`,  { headers }),
       ]);
 
-      if (obrasRes.ok) {
+      if (!obrasRes.ok) {
+        showToast("Error al cargar las obras, intenta de nuevo", "err");
+      } else {
         const data = await obrasRes.json();
         setObras(data.obras || []);
-        // ✅ fix: compatible con stats.pendientes y stats.en_revision
         const s = data.stats || {};
         setStats({
           total:      s.total      || 0,
@@ -84,7 +90,7 @@ export default function MisObras() {
         setArtista(p);
       }
     } catch (err) {
-      console.error("Error cargando obras:", err);
+      showToast(handleNetworkError(err), "err");
     } finally {
       setLoading(false);
     }
@@ -92,7 +98,6 @@ export default function MisObras() {
 
   const obrasFiltradas = filtro === "todas" ? obras : obras.filter(o => o.estado === filtro);
 
-  // ✅ fix: badge como función con color inline (sin depender de clases CSS)
   const getBadge = (estado: string, activa: boolean) => {
     if (estado === "aprobada"  && activa)  return { label: "Publicada",   color: C.green };
     if (estado === "aprobada"  && !activa) return { label: "Inactiva",    color: C.muted };
@@ -110,7 +115,6 @@ export default function MisObras() {
 
   const inicial = (artista.nombre_artistico || artista.nombre_completo || "A")[0].toUpperCase();
 
-  // ── LOADING ───────────────────────────────────────────────────
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, display: "flex" }}>
@@ -128,15 +132,13 @@ export default function MisObras() {
     );
   }
 
-  // ── RENDER ────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", fontFamily: FB }}>
 
-      {/* ── SIDEBAR ── */}
+      {/* SIDEBAR */}
       <aside style={sidebarStyle}>
         <div style={logoStyle} onClick={() => navigate("/artista/dashboard")}>NU·B</div>
 
-        {/* User card */}
         <div style={{ padding: "0 16px 20px", borderBottom: `1px solid ${C.border}` }}>
           <div style={{ background: `linear-gradient(135deg, ${C.orange}18, ${C.pink}10)`, border: `1px solid ${C.orange}25`, borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "white", flexShrink: 0 }}>{inicial}</div>
@@ -151,7 +153,6 @@ export default function MisObras() {
           </div>
         </div>
 
-        {/* Nav links */}
         <nav style={{ flex: 1, padding: "16px" }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Navegación</p>
           {[
@@ -166,7 +167,6 @@ export default function MisObras() {
           ))}
         </nav>
 
-        {/* Botones inferiores */}
         <div style={{ padding: "16px", borderTop: `1px solid ${C.border}` }}>
           <button onClick={() => navigate("/artista/nueva-obra")}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "11px", borderRadius: 10, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB, marginBottom: 8, boxShadow: `0 4px 14px ${C.orange}30` }}>
@@ -179,10 +179,9 @@ export default function MisObras() {
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
+      {/* MAIN */}
       <main style={{ flex: 1, padding: "36px 40px", overflowY: "auto" }}>
 
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
           <div>
             <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
@@ -195,12 +194,11 @@ export default function MisObras() {
           </button>
         </div>
 
-        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 28 }}>
           {[
             { label: "TOTAL OBRAS",  value: stats.total,      color: C.orange },
             { label: "PUBLICADAS",   value: stats.publicadas, color: C.green  },
-            { label: "EN REVISIÓN",  value: stats.pendientes, color: C.gold   },  // ✅ fix
+            { label: "EN REVISIÓN",  value: stats.pendientes, color: C.gold   },
             { label: "RECHAZADAS",   value: stats.rechazadas, color: C.pink   },
           ].map((s, i) => (
             <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden" }}>
@@ -211,7 +209,6 @@ export default function MisObras() {
           ))}
         </div>
 
-        {/* Filtros */}
         <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
           {([
             { id: "todas",     label: "Todas",       count: stats.total      },
@@ -227,7 +224,6 @@ export default function MisObras() {
           ))}
         </div>
 
-        {/* Grid obras */}
         {obrasFiltradas.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 0", background: C.card, borderRadius: 20, border: `1px solid ${C.border}` }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
@@ -252,57 +248,27 @@ export default function MisObras() {
                 <div key={obra.id_obra}
                   style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s, box-shadow .22s, border-color .22s" }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-5px)"; el.style.boxShadow = "0 20px 48px rgba(0,0,0,0.4)"; el.style.borderColor = `${C.orange}30`; }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}
-                >
-                  {/* Imagen */}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}>
                   <div style={{ height: 180, background: "rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
                     {obra.imagen_principal
                       ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🖼️</div>
                     }
-
-                    {/* ✅ fix badge: position absolute + estilos inline */}
-                    <span style={{
-                      position: "absolute", bottom: 10, left: 10,
-                      display: "inline-flex", alignItems: "center", gap: 5,
-                      padding: "4px 12px", borderRadius: 100,
-                      fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5,
-                      color: badge.color,
-                      background: "rgba(8,6,18,0.85)",
-                      border: `1px solid ${badge.color}60`,
-                      backdropFilter: "blur(8px)",
-                      WebkitBackdropFilter: "blur(8px)",
-                      textTransform: "uppercase", whiteSpace: "nowrap",
-                      boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-                    }}>
+                    <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: badge.color, background: "rgba(8,6,18,0.85)", border: `1px solid ${badge.color}60`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", textTransform: "uppercase", whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
                       {badge.label}
                     </span>
-
                     {obra.destacada && (
-                      <span style={{ position: "absolute", top: 10, right: 10, background: `${C.gold}20`, border: `1px solid ${C.gold}50`, color: C.gold, fontSize: 10.5, fontWeight: 800, padding: "3px 10px", borderRadius: 100 }}>
-                        ⭐ Destacada
-                      </span>
+                      <span style={{ position: "absolute", top: 10, right: 10, background: `${C.gold}20`, border: `1px solid ${C.gold}50`, color: C.gold, fontSize: 10.5, fontWeight: 800, padding: "3px 10px", borderRadius: 100 }}>⭐ Destacada</span>
                     )}
                   </div>
 
-                  {/* Cuerpo */}
                   <div style={{ padding: "16px" }}>
                     <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-                      {obra.categoria && (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>
-                          {obra.categoria}
-                        </span>
-                      )}
-                      {obra.tecnica && (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>
-                          {obra.tecnica}
-                        </span>
-                      )}
+                      {obra.categoria && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
+                      {obra.tecnica   && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
                     </div>
 
-                    <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {obra.titulo}
-                    </h3>
+                    <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
 
                     <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
                       {formatPrecio(obra.precio_base)}
@@ -324,10 +290,8 @@ export default function MisObras() {
                       {obra.con_certificado && <span style={{ fontSize: 10.5, color: C.muted }}>📜 Certificado</span>}
                     </div>
 
-                    {/* Botones */}
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
+                      <button onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
                         style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600, transition: "all .15s" }}
                         onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}40`; }}
                         onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.muted; el.style.borderColor = C.border; }}>
@@ -360,7 +324,6 @@ export default function MisObras() {
   );
 }
 
-// ── Estilos base del sidebar ──────────────────────────────────
 const sidebarStyle: React.CSSProperties = {
   width: 240, minHeight: "100vh",
   background: "#0d0b1a",

@@ -1,14 +1,13 @@
 // src/pages/private/artista/MiPerfil.tsx
 import { useState, useRef } from "react";
+import { useToast } from "../../../context/ToastContext";
+import { handleApiError, handleNetworkError } from "../../../utils/handleApiError";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
   orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#080612", panel: "#0d0b1a",
-  card: "rgba(255,255,255,0.028)", border: "rgba(255,255,255,0.07)",
-  text: "#f5f0ff", muted: "rgba(245,240,255,0.45)",
-  green: "#3DDB85",
+  gold: "#FFC110", text: "#f5f0ff", muted: "rgba(245,240,255,0.45)", green: "#3DDB85",
 };
 
 export interface ArtistaInfo {
@@ -17,107 +16,65 @@ export interface ArtistaInfo {
   correo?: string; telefono?: string; matricula?: string; categoria_nombre?: string;
   foto_perfil?: string; ciudad?: string; direccion_taller?: string; codigo_postal?: string;
   acepta_envios?: boolean; solo_entrega_personal?: boolean;
-  politica_envios?: string; politica_devoluciones?: string;
-  email_usuario?: string;
+  politica_envios?: string; politica_devoluciones?: string; email_usuario?: string;
 }
 
-interface Props {
-  artista: ArtistaInfo;
-  token: string;
-  onActualizar: (nuevaFoto?: string) => void;
-}
+interface Props { artista: ArtistaInfo; token: string; onActualizar: (nuevaFoto?: string) => void; }
 
-// ── Helpers UI ────────────────────────────────────────────────
-const Field = ({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) => (
-  <div style={{ marginBottom: 18 }}>
-    <label style={{ display: "block", fontSize: 11, color: C.muted, marginBottom: 5,
-      fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: 1 }}>
-      {label}
-    </label>
-    {children}
-    {hint && <p style={{ margin: "4px 0 0", fontSize: 11, color: C.muted }}>{hint}</p>}
+const css = `
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes spin   { to{transform:rotate(360deg)} }
+  .mp-input,.mp-textarea{width:100%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);border-radius:10px;padding:11px 14px;color:#f5f0ff;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;box-sizing:border-box;transition:all 0.2s ease;line-height:1.5}
+  .mp-input::placeholder,.mp-textarea::placeholder{color:rgba(245,240,255,0.2)}
+  .mp-input:focus,.mp-textarea:focus{border-color:rgba(255,132,14,0.55);background:rgba(255,132,14,0.05);box-shadow:0 0 0 3px rgba(255,132,14,0.08)}
+  .mp-input-ro{width:100%;background:rgba(255,255,255,0.02);border:1.5px solid rgba(255,255,255,0.05);border-radius:10px;padding:11px 14px;color:rgba(245,240,255,0.35);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;box-sizing:border-box;cursor:default}
+  .mp-textarea{resize:vertical}
+  .mp-section{background:rgba(255,255,255,0.025);border:1.5px solid rgba(255,255,255,0.08);border-radius:20px;padding:24px 28px 28px;margin-bottom:18px}
+  .mp-toggle-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.2s ease;user-select:none}
+  .mp-toggle-row:hover{border-color:rgba(255,132,14,0.25);background:rgba(255,132,14,0.04)}
+  .mp-toggle-row.active{border-color:rgba(255,132,14,0.3);background:rgba(255,132,14,0.07)}
+  .mp-save-btn{width:100%;padding:15px 0;border-radius:14px;border:none;background:linear-gradient(135deg,#FF840E 0%,#CC59AD 100%);color:#fff;font-size:15px;font-weight:700;letter-spacing:0.3px;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 8px 28px rgba(255,132,14,0.28);transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;justify-content:center;gap:8px}
+  .mp-save-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 36px rgba(255,132,14,0.4)}
+  .mp-save-btn:active:not(:disabled){transform:translateY(0)}
+  .mp-save-btn:disabled{background:rgba(255,255,255,0.06);color:rgba(245,240,255,0.3);box-shadow:none;cursor:not-allowed}
+  .mp-foto-wrap{width:100px;height:100px;border-radius:50%;overflow:hidden;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.25s ease;position:relative}
+  .mp-foto-wrap:hover{transform:scale(1.04)}
+  .mp-foto-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(0,0,0,0.5);border-radius:50%;opacity:0;transition:opacity 0.2s}
+  .mp-foto-wrap:hover .mp-foto-overlay{opacity:1}
+  .mp-btn-foto{background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 20px;color:#f5f0ff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;transition:all 0.2s}
+  .mp-btn-foto:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.18)}
+`;
+
+const SectionHeader = ({ icon, title }: { icon: string; title: string }) => (
+  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:22, paddingBottom:16, borderBottom:"1.5px solid rgba(255,255,255,0.07)" }}>
+    <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, background:"linear-gradient(135deg,rgba(255,132,14,0.18),rgba(204,89,173,0.18))", border:"1.5px solid rgba(255,132,14,0.22)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>{icon}</div>
+    <h3 style={{ margin:0, fontFamily:"'Playfair Display',serif", fontSize:15.5, fontWeight:700, color:C.text }}>{title}</h3>
   </div>
 );
 
-const Input = ({ value, onChange, placeholder, readOnly = false }: {
-  value: string; onChange?: (v: string) => void; placeholder?: string; readOnly?: boolean;
-}) => (
-  <input
-    value={value} readOnly={readOnly} placeholder={placeholder}
-    onChange={e => onChange?.(e.target.value)}
-    style={{
-      width: "100%",
-      background: readOnly ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.05)",
-      border: `1px solid ${readOnly ? "rgba(255,255,255,0.04)" : C.border}`,
-      borderRadius: 8, padding: "9px 13px",
-      color: readOnly ? C.muted : C.text,
-      fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, outline: "none",
-      boxSizing: "border-box" as const, cursor: readOnly ? "default" : "text",
-    }}
-  />
+const Field = ({ label, hint, children, full }: { label:string; hint?:string; children:React.ReactNode; full?:boolean }) => (
+  <div style={{ gridColumn: full ? "1 / -1" : undefined }}>
+    <div style={{ fontSize:10.5, fontWeight:700, color:C.muted, textTransform:"uppercase" as const, letterSpacing:1.3, marginBottom:7, fontFamily:"'DM Sans',sans-serif" }}>{label}</div>
+    {children}
+    {hint && <p style={{ margin:"6px 0 0", fontSize:11.5, color:"rgba(245,240,255,0.28)", fontFamily:"'DM Sans',sans-serif", lineHeight:1.5 }}>{hint}</p>}
+  </div>
 );
 
-const Textarea = ({ value, onChange, placeholder, rows = 3 }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; rows?: number;
-}) => (
-  <textarea
-    value={value} rows={rows} placeholder={placeholder}
-    onChange={e => onChange(e.target.value)}
-    style={{
-      width: "100%", background: "rgba(255,255,255,0.05)",
-      border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 13px",
-      color: C.text, fontFamily: "'DM Sans', sans-serif", fontSize: 13.5,
-      resize: "vertical", outline: "none", lineHeight: 1.6,
-      boxSizing: "border-box" as const,
-    }}
-  />
-);
-
-const Toggle = ({ value, onChange, label }: {
-  value: boolean; onChange: (v: boolean) => void; label: string;
-}) => (
-  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-    <div onClick={() => onChange(!value)} style={{
-      width: 42, height: 22, borderRadius: 11,
-      background: value ? C.orange : "rgba(255,255,255,0.1)",
-      position: "relative", transition: "background 0.2s", flexShrink: 0,
-    }}>
-      <div style={{
-        position: "absolute", top: 3, left: value ? 22 : 3,
-        width: 16, height: 16, borderRadius: "50%",
-        background: "#fff", transition: "left 0.2s",
-      }} />
+const Toggle = ({ value, onChange, label }: { value:boolean; onChange:(v:boolean)=>void; label:string }) => (
+  <div className={`mp-toggle-row${value?" active":""}`} onClick={() => onChange(!value)}>
+    <div style={{ width:46, height:26, borderRadius:13, flexShrink:0, position:"relative", background:value?"linear-gradient(135deg,#FF840E,#CC59AD)":"rgba(255,255,255,0.1)", boxShadow:value?"0 0 14px rgba(255,132,14,0.4)":"none", transition:"all 0.25s ease" }}>
+      <div style={{ position:"absolute", top:4, left:value?24:4, width:18, height:18, borderRadius:"50%", background:"#fff", boxShadow:"0 2px 6px rgba(0,0,0,0.3)", transition:"left 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} />
     </div>
-    <span style={{ fontSize: 13.5, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-  </label>
-);
-
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div style={{
-    background: C.card, border: `1px solid ${C.border}`,
-    borderRadius: 16, padding: "20px 24px", marginBottom: 18,
-  }}>
-    <h3 style={{
-      margin: "0 0 16px", fontFamily: "'Playfair Display', serif",
-      fontSize: 14, color: C.text,
-      borderBottom: `1px solid ${C.border}`, paddingBottom: 10,
-    }}>
-      {title}
-    </h3>
-    {children}
+    <span style={{ fontSize:14, fontFamily:"'DM Sans',sans-serif", color:value?C.text:C.muted, fontWeight:value?500:400, transition:"color 0.2s" }}>{label}</span>
   </div>
 );
 
-// ============================================================
-// COMPONENTE
-// ============================================================
 export default function MiPerfil({ artista, token, onActualizar }: Props) {
+  const { showToast } = useToast();
   const fotoRef = useRef<HTMLInputElement>(null);
-
   const [fotoFile, setFotoFile]       = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string>(artista.foto_perfil ?? "");
   const [saving, setSaving]           = useState(false);
-  const [msg, setMsg]                 = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const [form, setForm] = useState({
     nombre_artistico:      artista.nombre_artistico      ?? "",
@@ -131,18 +88,14 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
     politica_envios:       artista.politica_envios       ?? "",
     politica_devoluciones: artista.politica_devoluciones ?? "",
   });
-
-  const set = (key: string, val: any) => setForm(f => ({ ...f, [key]: val }));
+  const set = (key: string, val: string | boolean) => setForm(f => ({ ...f, [key]: val }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setMsg(null);
-
     try {
       let body: BodyInit;
       const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
-
       if (fotoFile) {
         const fd = new FormData();
         fd.append("foto", fotoFile);
@@ -153,176 +106,131 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
         body = JSON.stringify(form);
       }
 
-      const res  = await fetch(`${API}/api/artista-portal/mi-perfil`, { method: "PUT", headers, body });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? "Error al guardar");
+      const res = await fetch(`${API}/api/artista-portal/mi-perfil`, { method: "PUT", headers, body });
 
+      if (!res.ok) {
+        const message = await handleApiError(res);
+        showToast(message, "err");
+        if (res.status === 401) setTimeout(() => window.location.href = "/login", 2000);
+        return;
+      }
+
+      const data = await res.json();
       if (data.foto_perfil) setFotoPreview(data.foto_perfil);
       setFotoFile(null);
-      setMsg({ type: "ok", text: "✓ Perfil actualizado correctamente" });
+      showToast("Perfil actualizado correctamente", "ok");
       onActualizar(data.foto_perfil);
-    } catch (err: any) {
-      setMsg({ type: "err", text: err.message });
+
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
     } finally {
       setSaving(false);
     }
   };
 
-  const inicial = (artista.nombre_artistico || artista.nombre_completo).charAt(0).toUpperCase();
-
   return (
-    <div style={{ animation: "fadeUp .5s ease both", maxWidth: 700 }}>
+    <>
+      <style>{css}</style>
+      <div style={{ animation:"fadeUp .4s ease both", maxWidth:"100%", fontFamily:"'DM Sans',sans-serif" }}>
 
-      {/* Cabecera */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase",
-            letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
-          <h2 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: 0,
-            fontFamily: "'Playfair Display', serif" }}>Mi perfil</h2>
-        </div>
-        {artista.matricula && (
-          <span style={{ fontSize: 12, fontWeight: 800, color: C.gold,
-            background: `${C.gold}12`, border: `1px solid ${C.gold}30`,
-            borderRadius: 20, padding: "4px 14px", letterSpacing: 1 }}>
-            {artista.matricula}
-          </span>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit}>
-
-        {/* Foto */}
-        <Section title="📷 Foto de perfil">
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div onClick={() => fotoRef.current?.click()} style={{
-              width: 88, height: 88, borderRadius: "50%", overflow: "hidden",
-              background: fotoPreview ? "transparent" : "rgba(255,255,255,0.05)",
-              border: `2px dashed ${C.border}`, cursor: "pointer", flexShrink: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {fotoPreview
-                ? <img src={fotoPreview} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span style={{ fontSize: 28, opacity: 0.3 }}>👤</span>
-              }
-            </div>
+        <div style={{ marginBottom:34 }}>
+          <p style={{ margin:"0 0 10px", fontSize:10.5, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:2.5 }}>✦ Portal del Artista</p>
+          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:16, flexWrap:"wrap" }}>
             <div>
-              <button type="button" onClick={() => fotoRef.current?.click()} style={{
-                background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`,
-                borderRadius: 8, padding: "7px 16px", color: C.text, cursor: "pointer",
-                fontSize: 13, display: "block", marginBottom: 6, fontFamily: "'DM Sans', sans-serif",
-              }}>
-                {fotoPreview ? "Cambiar foto" : "Subir foto"}
-              </button>
-              {fotoFile && (
-                <p style={{ margin: 0, fontSize: 11.5, color: C.green }}>✓ {fotoFile.name}</p>
-              )}
-              <p style={{ margin: "4px 0 0", fontSize: 11, color: C.muted }}>JPG o PNG · máx. 10 MB</p>
+              <h2 style={{ margin:"0 0 5px", fontFamily:"'Playfair Display',serif", fontSize:36, fontWeight:900, color:C.text, letterSpacing:-0.8, lineHeight:1 }}>Mi perfil</h2>
+              <p style={{ margin:0, fontSize:13.5, color:C.muted }}>Edita tu información pública y configuración</p>
             </div>
-            <input ref={fotoRef} type="file" accept="image/*" style={{ display: "none" }}
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) { setFotoFile(f); setFotoPreview(URL.createObjectURL(f)); }
-              }}
-            />
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {artista.categoria_nombre && <span style={{ fontSize:11.5, color:C.purple, fontWeight:700, background:"rgba(141,76,205,0.15)", border:"1.5px solid rgba(141,76,205,0.28)", borderRadius:20, padding:"5px 15px" }}>{artista.categoria_nombre}</span>}
+              {artista.matricula && <span style={{ fontSize:11.5, fontWeight:800, color:C.gold, background:"rgba(255,193,16,0.1)", border:"1.5px solid rgba(255,193,16,0.3)", borderRadius:20, padding:"5px 15px", letterSpacing:1 }}>{artista.matricula}</span>}
+            </div>
           </div>
-        </Section>
+        </div>
 
-        {/* Información artística */}
-        <Section title="🎨 Información artística">
-          <Field label="Nombre artístico">
-            <Input value={form.nombre_artistico} onChange={v => set("nombre_artistico", v)}
-              placeholder="Como aparecerás en el catálogo" />
-          </Field>
-          <Field label="Biografía" hint="Aparece en tu perfil público">
-            <Textarea value={form.biografia} onChange={v => set("biografia", v)}
-              placeholder="Cuéntanos sobre ti, tu técnica y tu obra…" rows={4} />
-          </Field>
-        </Section>
+        <form onSubmit={handleSubmit}>
 
-        {/* Contacto */}
-        <Section title="📞 Datos de contacto">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <Field label="Teléfono">
-              <Input value={form.telefono} onChange={v => set("telefono", v)} placeholder="10 dígitos" />
-            </Field>
-            <Field label="Ciudad">
-              <Input value={form.ciudad} onChange={v => set("ciudad", v)} placeholder="Ciudad, Estado" />
-            </Field>
-            <Field label="Dirección del taller">
-              <Input value={form.direccion_taller} onChange={v => set("direccion_taller", v)} placeholder="Opcional" />
-            </Field>
-            <Field label="Código postal">
-              <Input value={form.codigo_postal} onChange={v => set("codigo_postal", v)} placeholder="CP" />
-            </Field>
+          {/* Foto */}
+          <div className="mp-section">
+            <SectionHeader icon="📷" title="Foto de perfil" />
+            <div style={{ display:"flex", alignItems:"center", gap:24 }}>
+              <div className="mp-foto-wrap" onClick={() => fotoRef.current?.click()} style={{ border:fotoPreview?"2.5px solid rgba(255,132,14,0.5)":"2px dashed rgba(255,255,255,0.15)", background:fotoPreview?"transparent":"rgba(255,255,255,0.03)", boxShadow:fotoPreview?"0 0 0 5px rgba(255,132,14,0.08)":"none" }}>
+                {fotoPreview ? <img src={fotoPreview} alt="Foto" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span style={{ fontSize:30, opacity:0.2 }}>👤</span>}
+                <div className="mp-foto-overlay">📷</div>
+              </div>
+              <div>
+                <button type="button" className="mp-btn-foto" onClick={() => fotoRef.current?.click()}>{fotoPreview?"Cambiar foto":"Subir foto"}</button>
+                {fotoFile && <p style={{ margin:"8px 0 0", fontSize:12, color:C.green, fontWeight:600 }}>✓ {fotoFile.name}</p>}
+                <p style={{ margin:"8px 0 0", fontSize:11.5, color:C.muted }}>JPG o PNG · máx. 10 MB</p>
+              </div>
+              <input ref={fotoRef} type="file" accept="image/*" style={{ display:"none" }}
+                onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  if (!["image/jpeg","image/png","image/webp"].includes(f.type)) { showToast("Solo se permiten imágenes JPG, PNG o WebP","warn"); return; }
+                  if (f.size > 10 * 1024 * 1024) { showToast("La imagen no puede superar los 10 MB","warn"); return; }
+                  setFotoFile(f); setFotoPreview(URL.createObjectURL(f));
+                }}
+              />
+            </div>
           </div>
-        </Section>
 
-        {/* Envíos */}
-        <Section title="📦 Política de envíos">
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18 }}>
-            <Toggle value={form.acepta_envios} onChange={v => set("acepta_envios", v)}
-              label="Acepto envíos a domicilio" />
-            <Toggle value={form.solo_entrega_personal} onChange={v => set("solo_entrega_personal", v)}
-              label="Solo entrega personal / en taller" />
+          {/* Info artística */}
+          <div className="mp-section">
+            <SectionHeader icon="🎨" title="Información artística" />
+            <div style={{ display:"grid", gap:18 }}>
+              <Field label="Nombre artístico"><input className="mp-input" value={form.nombre_artistico} onChange={e => set("nombre_artistico",e.target.value)} placeholder="Como aparecerás en el catálogo" /></Field>
+              <Field label="Biografía" hint="Aparece en tu perfil público"><textarea className="mp-textarea" rows={4} value={form.biografia} onChange={e => set("biografia",e.target.value)} placeholder="Cuéntanos sobre ti, tu técnica y tu obra…" /></Field>
+            </div>
           </div>
-          <Field label="Política de envíos" hint="Tiempos, costos, cobertura">
-            <Textarea value={form.politica_envios} onChange={v => set("politica_envios", v)}
-              placeholder="Ej: Envíos en 3–5 días hábiles…" />
-          </Field>
-          <Field label="Política de devoluciones">
-            <Textarea value={form.politica_devoluciones} onChange={v => set("politica_devoluciones", v)}
-              placeholder="Ej: No se aceptan devoluciones…" />
-          </Field>
-        </Section>
 
-        {/* Solo lectura */}
-        <Section title="🔒 Datos de cuenta (solo lectura)">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <Field label="Correo">
-              <Input value={artista.email_usuario ?? ""} readOnly />
-            </Field>
-            <Field label="Nombre completo">
-              <Input value={artista.nombre_completo ?? ""} readOnly />
-            </Field>
-            <Field label="Matrícula">
-              <Input value={artista.matricula ?? "—"} readOnly />
-            </Field>
-            <Field label="Comisión">
-              <Input value={artista.porcentaje_comision ? `${artista.porcentaje_comision}%` : "—"} readOnly />
-            </Field>
+          {/* Contacto */}
+          <div className="mp-section">
+            <SectionHeader icon="📞" title="Datos de contacto" />
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              <Field label="Teléfono"><input className="mp-input" value={form.telefono} onChange={e => set("telefono",e.target.value)} placeholder="10 dígitos" /></Field>
+              <Field label="Ciudad"><input className="mp-input" value={form.ciudad} onChange={e => set("ciudad",e.target.value)} placeholder="Ciudad, Estado" /></Field>
+              <Field label="Dirección del taller"><input className="mp-input" value={form.direccion_taller} onChange={e => set("direccion_taller",e.target.value)} placeholder="Opcional" /></Field>
+              <Field label="Código postal"><input className="mp-input" value={form.codigo_postal} onChange={e => set("codigo_postal",e.target.value)} placeholder="CP" /></Field>
+            </div>
           </div>
-          <p style={{ margin: "8px 0 0", fontSize: 11.5, color: C.muted }}>
-            Para cambiar correo, contraseña o matrícula contacta a Nu-B Studio.
-          </p>
-        </Section>
 
-        {/* Mensaje */}
-        {msg && (
-          <div style={{
-            padding: "11px 15px", borderRadius: 8, marginBottom: 14,
-            background: msg.type === "ok" ? `${C.green}15` : `${C.pink}15`,
-            border: `1px solid ${msg.type === "ok" ? C.green : C.pink}44`,
-            color: msg.type === "ok" ? C.green : C.pink, fontSize: 13.5,
-          }}>
-            {msg.text}
+          {/* Envíos */}
+          <div className="mp-section">
+            <SectionHeader icon="📦" title="Política de envíos" />
+            <div style={{ display:"grid", gap:10, marginBottom:22 }}>
+              <Toggle value={form.acepta_envios} onChange={v => set("acepta_envios",v)} label="Acepto envíos a domicilio" />
+              <Toggle value={form.solo_entrega_personal} onChange={v => set("solo_entrega_personal",v)} label="Solo entrega personal / en taller" />
+            </div>
+            <div style={{ display:"grid", gap:18 }}>
+              <Field label="Política de envíos" hint="Tiempos, costos, cobertura"><textarea className="mp-textarea" rows={3} value={form.politica_envios} onChange={e => set("politica_envios",e.target.value)} placeholder="Ej: Envíos en 3–5 días hábiles…" /></Field>
+              <Field label="Política de devoluciones"><textarea className="mp-textarea" rows={3} value={form.politica_devoluciones} onChange={e => set("politica_devoluciones",e.target.value)} placeholder="Ej: No se aceptan devoluciones…" /></Field>
+            </div>
           </div>
-        )}
 
-        {/* Botón guardar */}
-        <button type="submit" disabled={saving} style={{
-          width: "100%", padding: "13px 0", borderRadius: 10, border: "none",
-          background: saving ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
-          color: saving ? C.muted : "#fff", fontSize: 15, fontWeight: 700,
-          cursor: saving ? "not-allowed" : "pointer",
-          fontFamily: "'DM Sans', sans-serif",
-          boxShadow: saving ? "none" : `0 6px 20px ${C.orange}35`,
-        }}>
-          {saving ? "Guardando…" : "Guardar cambios"}
-        </button>
+          {/* Cuenta */}
+          <div className="mp-section">
+            <SectionHeader icon="🔒" title="Datos de cuenta" />
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+              <Field label="Correo"><input className="mp-input-ro" value={artista.email_usuario??""} readOnly /></Field>
+              <Field label="Nombre completo"><input className="mp-input-ro" value={artista.nombre_completo??""} readOnly /></Field>
+              <Field label="Matrícula"><input className="mp-input-ro" value={artista.matricula??"—"} readOnly /></Field>
+              <Field label="Comisión"><input className="mp-input-ro" value={artista.porcentaje_comision?`${artista.porcentaje_comision}%`:"—"} readOnly /></Field>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 15px", borderRadius:10, background:"rgba(255,255,255,0.02)", border:"1.5px solid rgba(255,255,255,0.06)" }}>
+              <span style={{ fontSize:14, flexShrink:0 }}>ℹ️</span>
+              <p style={{ margin:0, fontSize:12, color:C.muted, lineHeight:1.6 }}>Para cambiar correo, contraseña o matrícula contacta a Nu-B Studio.</p>
+            </div>
+          </div>
 
-      </form>
-    </div>
+          <button type="submit" disabled={saving} className="mp-save-btn">
+            {saving ? (
+              <><span style={{ width:17, height:17, border:"2.5px solid rgba(245,240,255,0.25)", borderTopColor:"rgba(245,240,255,0.7)", borderRadius:"50%", display:"inline-block", animation:"spin 0.7s linear infinite" }} />Guardando…</>
+            ) : "Guardar cambios"}
+          </button>
+
+        </form>
+        <div style={{ height:48 }} />
+      </div>
+    </>
   );
 }

@@ -41,6 +41,7 @@ function Counter({ to, duration = 1200 }: { to: number; duration?: number }) {
       if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [to]);
   return <>{val}</>;
 }
@@ -54,13 +55,21 @@ const getBadge = (estado: string, activa?: boolean) => {
   return { label: estado, color: C.muted };
 };
 
+type Seccion = "dashboard" | "obras" | "perfil";
+
+const navItems: { id: Seccion; label: string; icon: React.ElementType }[] = [
+  { id: "dashboard", label: "Overview",  icon: LayoutDashboard },
+  { id: "obras",     label: "Mis obras", icon: Image },
+  { id: "perfil",    label: "Mi perfil", icon: User },
+];
+
 export default function ArtistaDashboard() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const nombre    = localStorage.getItem("userName") || "Artista";
   const token     = authService.getToken() ?? "";
 
-  const [seccion, setSeccion]     = useState<"dashboard" | "obras" | "perfil">("dashboard");
+  const [seccion, setSeccion]     = useState<Seccion>("dashboard");
   const [obras,   setObras]       = useState<Obra[]>([]);
   const [artista, setArtista]     = useState<ArtistaInfo | null>(null);
   const [stats,   setStats]       = useState<Stats>({ total: 0, publicadas: 0, pendientes: 0, rechazadas: 0, borradores: 0 });
@@ -74,6 +83,7 @@ export default function ArtistaDashboard() {
     if (location.pathname === "/artista/perfil") setSeccion("perfil");
   }, [location.pathname]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDatos(); setTimeout(() => setMounted(true), 100); }, []);
 
   const cargarDatos = async () => {
@@ -104,7 +114,6 @@ export default function ArtistaDashboard() {
     finally { setLoading(false); }
   };
 
-  // Callback que recibe MiPerfil cuando guarda con éxito
   const handlePerfilActualizado = (nuevaFoto?: string) => {
     if (nuevaFoto) setFotoPreview(nuevaFoto);
     setArtista(prev => prev ? { ...prev, foto_perfil: nuevaFoto ?? prev.foto_perfil } : prev);
@@ -118,12 +127,6 @@ export default function ArtistaDashboard() {
     new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
   const formatFecha = (f: string) =>
     new Date(f).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
-
-  const navItems = [
-    { id: "dashboard", label: "Overview",  icon: LayoutDashboard },
-    { id: "obras",     label: "Mis obras", icon: Image },
-    { id: "perfil",    label: "Mi perfil", icon: User },
-  ];
 
   // ── SIDEBAR ──────────────────────────────────────────────────
   const Sidebar = () => (
@@ -151,7 +154,7 @@ export default function ArtistaDashboard() {
         {navItems.map(({ id, label, icon: Icon }) => {
           const active = seccion === id;
           return (
-            <button key={id} onClick={() => { setSeccion(id as any); setSidebarOpen(false); }}
+            <button key={id} onClick={() => { setSeccion(id); setSidebarOpen(false); }}
               style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 14px", borderRadius: 12, marginBottom: 4, background: active ? `linear-gradient(135deg, ${C.orange}22, ${C.pink}12)` : "transparent", border: active ? `1px solid ${C.orange}35` : "1px solid transparent", color: active ? C.orange : C.muted, fontSize: 13.5, fontWeight: active ? 700 : 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all .18s ease", textAlign: "left" }}>
               <Icon size={17} strokeWidth={active ? 2.5 : 1.8} />
               {label}

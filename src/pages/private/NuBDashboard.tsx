@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Image, Users, ShoppingBag,
   BarChart2, Settings, Clock, Award, Heart,
   Eye, TrendingUp, TrendingDown, Bell, Search,
-  LogOut, ChevronRight, Palette
+   ChevronRight, Palette
 } from "lucide-react";
 
 // Heroicons
@@ -18,7 +18,6 @@ import {
   CurrencyDollarIcon,
   PhotoIcon,
   UserGroupIcon,
-  CheckBadgeIcon,
   ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 
@@ -70,19 +69,21 @@ const techs = [
   { n:"Grabado",    p: 7, c:P.gold   },
 ];
 
-// ── tooltip ───────────────────────────────────────────────────────
-const Tip = ({ active, payload, label }: any) => {
+const Tip = ({ active, payload, label }: {
+  active?: boolean;
+  payload?: { color: string; name: string; value: string | number }[];
+  label?: string;
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background:"#fff", border:`1px solid ${P.border}`, borderRadius:10, padding:"8px 12px", fontSize:12, boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
       <div style={{ color:P.muted, marginBottom:4 }}>{label}</div>
-      {payload.map((p: any, i: number) => (
-        <div key={i} style={{ color:p.color, fontWeight:700 }}>{p.name}: {p.value}</div>
+      {payload.map((entry, i) => (
+        <div key={i} style={{ color:entry.color, fontWeight:700 }}>{entry.name}: {entry.value}</div>
       ))}
     </div>
   );
 };
-
 // ── nav items ─────────────────────────────────────────────────────
 const NAV = [
   { id:"overview", label:"Overview",  icon:LayoutDashboard, color:P.orange },

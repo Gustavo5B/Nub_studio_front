@@ -13,10 +13,11 @@ import {
   FileText,
   DollarSign,
   CheckCircle,
-  AlertCircle,
   Loader2,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
+import { useToast } from "../../../context/ToastContext";
+import { handleApiError, handleNetworkError } from "../../../utils/handleApiError";
 import "../../../styles/nueva-obra.css";
 
 interface Categoria {
@@ -47,16 +48,16 @@ interface FormData {
 export default function NuevaObra() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [etiquetas, setEtiquetas] = useState<Etiqueta[]>([]);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [step, setStep] = useState(1); // wizard 2 pasos
+  const [etiquetas, setEtiquetas]   = useState<Etiqueta[]>([]);
+  const [preview,   setPreview]     = useState<string | null>(null);
+  const [imageFile, setImageFile]   = useState<File | null>(null);
+  const [loading,   setLoading]     = useState(false);
+  const [success,   setSuccess]     = useState(false);
+  const [dragOver,  setDragOver]    = useState(false);
+  const [step,      setStep]        = useState(1);
 
   const [form, setForm] = useState<FormData>({
     titulo: "",
@@ -73,52 +74,48 @@ export default function NuevaObra() {
     etiquetas: [],
   });
 
-  useEffect(() => {
-    cargarCatalogos();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarCatalogos(); }, []);
 
- const cargarCatalogos = async () => {
-  try {
-    const token = authService.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
+  const cargarCatalogos = async () => {
+    try {
+      const token   = authService.getToken();
+      const headers = { Authorization: `Bearer ${token}` };
 
-    const [catRes, etqRes] = await Promise.all([
-      fetch(`${import.meta.env.VITE_API_URL}/api/categorias`, { headers }),
-      fetch(`${import.meta.env.VITE_API_URL}/api/etiquetas`, { headers }),
-    ]);
+      const [catRes, etqRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/api/categorias`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/etiquetas`,  { headers }),
+      ]);
 
-    if (catRes.ok) {
-      const catData = await catRes.json();
-      // Maneja tanto array directo como objeto con propiedad
-      setCategorias(Array.isArray(catData) ? catData : catData.categorias || catData.data || []);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        setCategorias(Array.isArray(catData) ? catData : catData.categorias || catData.data || []);
+      } else {
+        showToast("No se pudieron cargar las categorías", "warn");
+      }
+
+      if (etqRes.ok) {
+        const etqData = await etqRes.json();
+        setEtiquetas(Array.isArray(etqData) ? etqData : etqData.etiquetas || etqData.data || []);
+      }
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
     }
-    if (etqRes.ok) {
-      const etqData = await etqRes.json();
-      setEtiquetas(Array.isArray(etqData) ? etqData : etqData.etiquetas || etqData.data || []);
-    }
-  } catch (err) {
-    console.error("Error cargando catálogos:", err);
-  }
-};
+  };
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setForm((prev) => ({
+    setForm(prev => ({
       ...prev,
-      [name]:
-        type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
   };
 
   const toggleEtiqueta = (id: number) => {
-    setForm((prev) => ({
+    setForm(prev => ({
       ...prev,
       etiquetas: prev.etiquetas.includes(id)
-        ? prev.etiquetas.filter((e) => e !== id)
+        ? prev.etiquetas.filter(e => e !== id)
         : [...prev.etiquetas, id],
     }));
   };
@@ -127,9 +124,7 @@ export default function NuevaObra() {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      processImage(file);
-    }
+    if (file && file.type.startsWith("image/")) processImage(file);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,20 +146,19 @@ export default function NuevaObra() {
   };
 
   const validateStep1 = () => {
-    if (!form.titulo.trim()) return "El título es requerido";
+    if (!form.titulo.trim())      return "El título es requerido";
     if (!form.descripcion.trim()) return "La descripción es requerida";
-    if (!form.id_categoria) return "Selecciona una categoría";
-    if (!imageFile) return "Debes subir una imagen de la obra";
+    if (!form.id_categoria)       return "Selecciona una categoría";
+    if (!imageFile)               return "Debes subir una imagen de la obra";
     return null;
   };
 
   const handleNextStep = () => {
     const err = validateStep1();
     if (err) {
-      setError(err);
+      showToast(err, "warn");
       return;
     }
-    setError(null);
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -172,18 +166,16 @@ export default function NuevaObra() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.precio_base || parseFloat(form.precio_base) <= 0) {
-      setError("El precio base es requerido");
+      showToast("El precio base es requerido", "warn");
       return;
     }
 
     setLoading(true);
-    setError(null);
 
     try {
-      const token = authService.getToken();
+      const token    = authService.getToken();
       const formData = new FormData();
 
-      // Campos del formulario
       Object.entries(form).forEach(([key, value]) => {
         if (key === "etiquetas") {
           formData.append("etiquetas", JSON.stringify(value));
@@ -192,10 +184,7 @@ export default function NuevaObra() {
         }
       });
 
-      // Imagen
-      if (imageFile) {
-        formData.append("imagen", imageFile);
-      }
+      if (imageFile) formData.append("imagen", imageFile);
 
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/artista-portal/nueva-obra`,
@@ -206,14 +195,17 @@ export default function NuevaObra() {
         }
       );
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Error al crear la obra");
+      if (!res.ok) {
+        const msg = await handleApiError(res);
+        showToast(msg, "err");
+        return;
+      }
 
       setSuccess(true);
+      showToast("¡Obra enviada! Está en revisión.", "ok");
       setTimeout(() => navigate("/artista/mis-obras"), 2500);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error inesperado");
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
     } finally {
       setLoading(false);
     }
@@ -236,7 +228,7 @@ export default function NuevaObra() {
 
   return (
     <div className="nueva-obra-page">
-      {/* Sidebar igual al dashboard */}
+      {/* Sidebar */}
       <aside className="artista-sidebar">
         <div className="sidebar-brand">
           <span className="brand-nu">NU</span>
@@ -255,65 +247,38 @@ export default function NuevaObra() {
 
         <nav className="sidebar-nav-links">
           <p className="nav-label">NAVEGACIÓN</p>
-          <button
-            className="nav-link"
-            onClick={() => navigate("/artista/dashboard")}
-          >
+          <button className="nav-link" onClick={() => navigate("/artista/dashboard")}>
             <span className="nav-icon">⊞</span> Overview
           </button>
-          <button
-            className="nav-link active"
-            onClick={() => navigate("/artista/mis-obras")}
-          >
+          <button className="nav-link active" onClick={() => navigate("/artista/mis-obras")}>
             <span className="nav-icon">🖼</span> Mis obras
           </button>
-          <button
-            className="nav-link"
-            onClick={() => navigate("/artista/perfil")}
-          >
+          <button className="nav-link" onClick={() => navigate("/artista/perfil")}>
             <span className="nav-icon">👤</span> Mi perfil
           </button>
         </nav>
 
-        <button
-          className="sidebar-upload-btn"
-          onClick={() => navigate("/artista/nueva-obra")}
-        >
+        <button className="sidebar-upload-btn" onClick={() => navigate("/artista/nueva-obra")}>
           + Subir nueva obra
         </button>
 
-        <button
-          className="sidebar-logout"
-          onClick={() => {
-            authService.logout();
-            navigate("/login");
-          }}
-        >
+        <button className="sidebar-logout" onClick={() => { authService.logout(); navigate("/login"); }}>
           ↪ Cerrar sesión
         </button>
       </aside>
 
       {/* Main */}
       <main className="nueva-obra-main">
-        {/* Header */}
         <div className="nueva-obra-header">
-          <button
-            className="back-btn"
-            onClick={() => navigate("/artista/dashboard")}
-          >
+          <button className="back-btn" onClick={() => navigate("/artista/dashboard")}>
             <ArrowLeft size={18} /> Volver
           </button>
           <div>
-            <h1 className="page-title">
-              <Sparkles size={22} /> Nueva Obra
-            </h1>
-            <p className="page-subtitle">
-              Comparte tu arte con el mundo
-            </p>
+            <h1 className="page-title"><Sparkles size={22} /> Nueva Obra</h1>
+            <p className="page-subtitle">Comparte tu arte con el mundo</p>
           </div>
         </div>
 
-        {/* Steps indicator */}
         <div className="steps-indicator">
           <div className={`step-dot ${step >= 1 ? "active" : ""} ${step > 1 ? "done" : ""}`}>
             <span>1</span>
@@ -327,22 +292,16 @@ export default function NuevaObra() {
         </div>
 
         <form onSubmit={handleSubmit} className="nueva-obra-form">
+
           {/* ===== STEP 1 ===== */}
           {step === 1 && (
             <div className="form-step">
-              {/* Zona de imagen */}
               <div className="form-section">
-                <h3 className="section-title">
-                  <Image size={18} /> Imagen de la obra
-                </h3>
-
+                <h3 className="section-title"><Image size={18} /> Imagen de la obra</h3>
                 {!preview ? (
                   <div
                     className={`drop-zone ${dragOver ? "drag-over" : ""}`}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOver(true);
-                    }}
+                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleImageDrop}
                     onClick={() => fileInputRef.current?.click()}
@@ -350,120 +309,67 @@ export default function NuevaObra() {
                     <Upload size={40} />
                     <p>Arrastra tu imagen aquí o <span>haz clic para seleccionar</span></p>
                     <small>PNG, JPG, WEBP — Máx 10MB</small>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      hidden
-                    />
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} hidden />
                   </div>
                 ) : (
                   <div className="image-preview-wrap">
                     <img src={preview} alt="Preview" className="image-preview" />
-                    <button
-                      type="button"
-                      className="remove-image-btn"
-                      onClick={removeImage}
-                    >
+                    <button type="button" className="remove-image-btn" onClick={removeImage}>
                       <X size={18} />
                     </button>
-                    <div className="image-overlay">
-                      <span>✓ Imagen lista</span>
-                    </div>
+                    <div className="image-overlay"><span>✓ Imagen lista</span></div>
                   </div>
                 )}
               </div>
 
-              {/* Info básica */}
               <div className="form-section">
-                <h3 className="section-title">
-                  <FileText size={18} /> Información básica
-                </h3>
+                <h3 className="section-title"><FileText size={18} /> Información básica</h3>
 
                 <div className="field-group">
                   <label>Título de la obra *</label>
-                  <input
-                    type="text"
-                    name="titulo"
-                    value={form.titulo}
-                    onChange={handleChange}
-                    placeholder="Ej: Atardecer en la Huasteca"
-                    className="field-input"
-                  />
+                  <input type="text" name="titulo" value={form.titulo} onChange={handleChange}
+                    placeholder="Ej: Atardecer en la Huasteca" className="field-input" />
                 </div>
 
                 <div className="field-group">
                   <label>Descripción *</label>
-                  <textarea
-                    name="descripcion"
-                    value={form.descripcion}
-                    onChange={handleChange}
+                  <textarea name="descripcion" value={form.descripcion} onChange={handleChange}
                     placeholder="Cuéntanos sobre esta obra, su inspiración, el proceso creativo..."
-                    rows={4}
-                    className="field-input field-textarea"
-                  />
+                    rows={4} className="field-input field-textarea" />
                 </div>
 
                 <div className="fields-row">
                   <div className="field-group">
                     <label>Categoría *</label>
-                    <select
-                      name="id_categoria"
-                      value={form.id_categoria}
-                      onChange={handleChange}
-                      className="field-input field-select"
-                    >
+                    <select name="id_categoria" value={form.id_categoria} onChange={handleChange}
+                      className="field-input field-select">
                       <option value="">Seleccionar...</option>
-                      {categorias.map((c) => (
-                        <option key={c.id_categoria} value={c.id_categoria}>
-                          {c.nombre}
-                        </option>
+                      {categorias.map(c => (
+                        <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
                       ))}
                     </select>
                   </div>
-
                   <div className="field-group">
                     <label>Técnica</label>
-                    <input
-                      type="text"
-                      name="tecnica"
-                      value={form.tecnica}
-                      onChange={handleChange}
-                      placeholder="Ej: Óleo sobre lienzo"
-                      className="field-input"
-                    />
+                    <input type="text" name="tecnica" value={form.tecnica} onChange={handleChange}
+                      placeholder="Ej: Óleo sobre lienzo" className="field-input" />
                   </div>
-
                   <div className="field-group">
                     <label>Año de creación</label>
-                    <input
-                      type="number"
-                      name="anio_creacion"
-                      value={form.anio_creacion}
-                      onChange={handleChange}
-                      min={1900}
-                      max={new Date().getFullYear()}
-                      className="field-input"
-                    />
+                    <input type="number" name="anio_creacion" value={form.anio_creacion} onChange={handleChange}
+                      min={1900} max={new Date().getFullYear()} className="field-input" />
                   </div>
                 </div>
               </div>
 
-              {/* Etiquetas */}
               {etiquetas.length > 0 && (
                 <div className="form-section">
-                  <h3 className="section-title">
-                    <Tag size={18} /> Etiquetas
-                  </h3>
+                  <h3 className="section-title"><Tag size={18} /> Etiquetas</h3>
                   <div className="tags-grid">
-                    {etiquetas.map((e) => (
-                      <button
-                        key={e.id_etiqueta}
-                        type="button"
+                    {etiquetas.map(e => (
+                      <button key={e.id_etiqueta} type="button"
                         className={`tag-btn ${form.etiquetas.includes(e.id_etiqueta) ? "selected" : ""}`}
-                        onClick={() => toggleEtiqueta(e.id_etiqueta)}
-                      >
+                        onClick={() => toggleEtiqueta(e.id_etiqueta)}>
                         {e.nombre}
                       </button>
                     ))}
@@ -471,18 +377,8 @@ export default function NuevaObra() {
                 </div>
               )}
 
-              {error && (
-                <div className="form-error">
-                  <AlertCircle size={16} /> {error}
-                </div>
-              )}
-
               <div className="form-actions">
-                <button
-                  type="button"
-                  className="btn-next"
-                  onClick={handleNextStep}
-                >
+                <button type="button" className="btn-next" onClick={handleNextStep}>
                   Siguiente — Detalles y precio →
                 </button>
               </div>
@@ -492,78 +388,39 @@ export default function NuevaObra() {
           {/* ===== STEP 2 ===== */}
           {step === 2 && (
             <div className="form-step">
-              {/* Dimensiones */}
               <div className="form-section">
-                <h3 className="section-title">
-                  <Ruler size={18} /> Dimensiones (cm)
-                </h3>
+                <h3 className="section-title"><Ruler size={18} /> Dimensiones (cm)</h3>
                 <div className="fields-row">
                   <div className="field-group">
                     <label>Alto</label>
-                    <input
-                      type="number"
-                      name="dimensiones_alto"
-                      value={form.dimensiones_alto}
-                      onChange={handleChange}
-                      placeholder="0"
-                      min={0}
-                      step="0.1"
-                      className="field-input"
-                    />
+                    <input type="number" name="dimensiones_alto" value={form.dimensiones_alto}
+                      onChange={handleChange} placeholder="0" min={0} step="0.1" className="field-input" />
                   </div>
                   <div className="field-group">
                     <label>Ancho</label>
-                    <input
-                      type="number"
-                      name="dimensiones_ancho"
-                      value={form.dimensiones_ancho}
-                      onChange={handleChange}
-                      placeholder="0"
-                      min={0}
-                      step="0.1"
-                      className="field-input"
-                    />
+                    <input type="number" name="dimensiones_ancho" value={form.dimensiones_ancho}
+                      onChange={handleChange} placeholder="0" min={0} step="0.1" className="field-input" />
                   </div>
                   <div className="field-group">
                     <label>Profundidad</label>
-                    <input
-                      type="number"
-                      name="dimensiones_profundidad"
-                      value={form.dimensiones_profundidad}
-                      onChange={handleChange}
-                      placeholder="0"
-                      min={0}
-                      step="0.1"
-                      className="field-input"
-                    />
+                    <input type="number" name="dimensiones_profundidad" value={form.dimensiones_profundidad}
+                      onChange={handleChange} placeholder="0" min={0} step="0.1" className="field-input" />
                   </div>
                 </div>
               </div>
 
-              {/* Precio */}
               <div className="form-section">
-                <h3 className="section-title">
-                  <DollarSign size={18} /> Precio
-                </h3>
-
+                <h3 className="section-title"><DollarSign size={18} /> Precio</h3>
                 <div className="price-field-wrap">
                   <div className="field-group price-field">
                     <label>Precio base (MXN) *</label>
                     <div className="price-input-wrap">
                       <span className="price-symbol">$</span>
-                      <input
-                        type="number"
-                        name="precio_base"
-                        value={form.precio_base}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        min={0}
-                        step="0.01"
-                        className="field-input price-input"
-                      />
+                      <input type="number" name="precio_base" value={form.precio_base}
+                        onChange={handleChange} placeholder="0.00" min={0} step="0.01"
+                        className="field-input price-input" />
                     </div>
                   </div>
-
                   {form.precio_base && (
                     <div className="price-breakdown">
                       <div className="breakdown-row">
@@ -585,85 +442,46 @@ export default function NuevaObra() {
                 </div>
               </div>
 
-              {/* Extras */}
               <div className="form-section">
-                <h3 className="section-title">
-                  <Palette size={18} /> Extras
-                </h3>
+                <h3 className="section-title"><Palette size={18} /> Extras</h3>
                 <div className="checkbox-group">
                   <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="permite_marco"
-                      checked={form.permite_marco}
-                      onChange={handleChange}
-                    />
+                    <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
                     <span className="checkbox-custom" />
                     Permite enmarcar
                   </label>
                   <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="con_certificado"
-                      checked={form.con_certificado}
-                      onChange={handleChange}
-                    />
+                    <input type="checkbox" name="con_certificado" checked={form.con_certificado} onChange={handleChange} />
                     <span className="checkbox-custom" />
                     Incluye certificado de autenticidad
                   </label>
                 </div>
               </div>
 
-              {/* Resumen de la obra */}
               <div className="form-section obra-summary">
                 <h3 className="section-title">✦ Resumen</h3>
                 <div className="summary-grid">
-                  {preview && (
-                    <img src={preview} alt="Preview" className="summary-img" />
-                  )}
+                  {preview && <img src={preview} alt="Preview" className="summary-img" />}
                   <div className="summary-info">
                     <p className="summary-title">{form.titulo || "Sin título"}</p>
                     <p className="summary-cat">
-                      {categorias.find((c) => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}
+                      {categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}
                     </p>
-                    {form.tecnica && <p className="summary-tech">{form.tecnica}</p>}
-                    {form.precio_base && (
-                      <p className="summary-price">
-                        ${parseFloat(form.precio_base).toLocaleString()} MXN
-                      </p>
-                    )}
+                    {form.tecnica    && <p className="summary-tech">{form.tecnica}</p>}
+                    {form.precio_base && <p className="summary-price">${parseFloat(form.precio_base).toLocaleString()} MXN</p>}
                   </div>
                 </div>
               </div>
 
-              {error && (
-                <div className="form-error">
-                  <AlertCircle size={16} /> {error}
-                </div>
-              )}
-
               <div className="form-actions two-btns">
-                <button
-                  type="button"
-                  className="btn-back"
-                  onClick={() => { setStep(1); setError(null); }}
-                >
+                <button type="button" className="btn-back" onClick={() => setStep(1)}>
                   ← Regresar
                 </button>
-                <button
-                  type="submit"
-                  className="btn-submit"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 size={18} className="spin" /> Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={18} /> Publicar obra
-                    </>
-                  )}
+                <button type="submit" className="btn-submit" disabled={loading}>
+                  {loading
+                    ? <><Loader2 size={18} className="spin" /> Enviando...</>
+                    : <><Upload size={18} /> Publicar obra</>
+                  }
                 </button>
               </div>
             </div>

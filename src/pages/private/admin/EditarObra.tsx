@@ -1,39 +1,43 @@
 // src/pages/private/admin/EditarObra.tsx
 // Estado se maneja via PATCH /api/obras/:id/estado — endpoint dedicado, protegido por requireRole('admin')
-import { useState, useEffect, useRef, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, useRef } from "react";
+import type { FormEvent, ChangeEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Save, Image as ImageIcon, AlertCircle,
+  ArrowLeft, Save, Image as ImageIcon,
   CheckCircle2, Loader2, Users, Tag,
   Ruler, DollarSign, Frame, Award, Calendar,
   Link as LinkIcon, Type, FileText,
   LayoutDashboard, ShoppingBag, BarChart2, Settings, LogOut,
   Layers, Star, UploadCloud, X, FileImage,
-  CheckCircle, XCircle, Clock, Package, ShieldCheck, MessageSquare
+  CheckCircle, XCircle, Clock, Package, ShieldCheck, MessageSquare,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { obraService } from "../../../services/obraService";
+import { useToast } from "../../../context/ToastContext";
+import { handleApiError, handleNetworkError } from "../../../utils/handleApiError";
 
 const C = {
-  orange:"#FF840E",pink:"#CC59AD",magenta:"#CC4EA1",purple:"#8D4CCD",blue:"#79AAF5",
-  gold:"#FFC110",green:"#22C97A",cream:"#FFF8EE",creamSub:"#D8CABC",
-  creamMut:"rgba(255,232,200,0.38)",bg:"#0C0812",bgDeep:"#070510",panel:"#100D1C",
-  card:"rgba(20,15,34,0.90)",border:"rgba(255,200,150,0.09)",borderBr:"rgba(118,78,49,0.24)",
-  borderHi:"rgba(255,200,150,0.20)",input:"rgba(255,232,200,0.04)",
-  inputBorder:"rgba(255,200,150,0.14)",inputFocus:"rgba(255,132,14,0.08)",
+  orange:"#FF840E", pink:"#CC59AD", magenta:"#CC4EA1", purple:"#8D4CCD", blue:"#79AAF5",
+  gold:"#FFC110", green:"#22C97A", cream:"#FFF8EE", creamSub:"#D8CABC",
+  creamMut:"rgba(255,232,200,0.38)", bg:"#0C0812", bgDeep:"#070510", panel:"#100D1C",
+  card:"rgba(20,15,34,0.90)", border:"rgba(255,200,150,0.09)", borderBr:"rgba(118,78,49,0.24)",
+  borderHi:"rgba(255,200,150,0.20)", input:"rgba(255,232,200,0.04)",
+  inputBorder:"rgba(255,200,150,0.14)", inputFocus:"rgba(255,132,14,0.08)",
 };
-const FD="'Playfair Display', serif", FB="'DM Sans', sans-serif";
+const FD = "'Playfair Display', serif";
+const FB = "'DM Sans', sans-serif";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const NAV = [
-  { id:"dashboard",label:"Dashboard",icon:LayoutDashboard,color:C.orange,path:"/admin" },
-  { id:"obras",label:"Obras",icon:Layers,color:C.blue,path:"/admin/obras" },
-  { id:"artistas",label:"Artistas",icon:Users,color:C.pink,path:"/admin/artistas" },
-  { id:"ventas",label:"Ventas",icon:ShoppingBag,color:C.gold,path:"/admin" },
-  { id:"reportes",label:"Reportes",icon:BarChart2,color:C.purple,path:"/admin" },
+  { id:"dashboard", label:"Dashboard", icon:LayoutDashboard, color:C.orange, path:"/admin"          },
+  { id:"obras",     label:"Obras",     icon:Layers,          color:C.blue,   path:"/admin/obras"    },
+  { id:"artistas",  label:"Artistas",  icon:Users,           color:C.pink,   path:"/admin/artistas" },
+  { id:"ventas",    label:"Ventas",    icon:ShoppingBag,     color:C.gold,   path:"/admin"          },
+  { id:"reportes",  label:"Reportes",  icon:BarChart2,       color:C.purple, path:"/admin"          },
 ];
 
-const ESTADOS: Record<string, { label:string; color:string; icon:any; desc:string }> = {
+const ESTADOS: Record<string, { label:string; color:string; icon:React.ElementType; desc:string }> = {
   pendiente:{ label:"Pendiente", color:C.gold,    icon:Clock,       desc:"En revisión"           },
   publicada:{ label:"Publicada", color:C.green,   icon:CheckCircle, desc:"Visible en catálogo"   },
   rechazada:{ label:"Rechazada", color:C.pink,    icon:XCircle,     desc:"Requiere correcciones" },
@@ -41,14 +45,17 @@ const ESTADOS: Record<string, { label:string; color:string; icon:any; desc:strin
 };
 
 interface Categoria { id_categoria:number; nombre:string; }
-interface Tecnica    { id_tecnica:number;   nombre:string; }
-interface Artista    { id_artista:number;   nombre_completo:string; nombre_artistico?:string; }
+interface Tecnica   { id_tecnica:number;   nombre:string; }
+interface Artista   { id_artista:number;   nombre_completo:string; nombre_artistico?:string; }
 
+// ── Logo ──────────────────────────────────────────────────────
 function LogoMark({ size=38 }: { size?:number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
       <defs><linearGradient id="lgEO3" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor={C.orange}/><stop offset="55%" stopColor={C.magenta}/><stop offset="100%" stopColor={C.purple}/>
+        <stop offset="0%"   stopColor={C.orange}/>
+        <stop offset="55%"  stopColor={C.magenta}/>
+        <stop offset="100%" stopColor={C.purple}/>
       </linearGradient></defs>
       <circle cx="20" cy="20" r="19" stroke="url(#lgEO3)" strokeWidth="1.5" fill="none" opacity="0.6"/>
       <path d="M11 28V12L20 24V12M20 12V28" stroke="url(#lgEO3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -58,8 +65,9 @@ function LogoMark({ size=38 }: { size?:number }) {
   );
 }
 
-function Sidebar({ navigate }: { navigate:any }) {
-  const active = "obras";
+// ── Sidebar ───────────────────────────────────────────────────
+function Sidebar({ navigate }: { navigate:(p:string) => void }) {
+  const active   = "obras";
   const userName = authService.getUserName?.() || "Admin";
   return (
     <div style={{width:240,minHeight:"100vh",background:`linear-gradient(180deg,${C.panel} 0%,${C.bgDeep} 100%)`,borderRight:`1px solid ${C.borderBr}`,display:"flex",flexDirection:"column",position:"sticky",top:0,height:"100vh",flexShrink:0,zIndex:40}}>
@@ -115,13 +123,14 @@ function Sidebar({ navigate }: { navigate:any }) {
   );
 }
 
-function IS(focused:boolean,disabled:boolean): React.CSSProperties {
+// ── Helpers ───────────────────────────────────────────────────
+function IS(focused:boolean, disabled:boolean): React.CSSProperties {
   return {width:"100%",padding:"11px 14px",boxSizing:"border-box",background:focused?C.inputFocus:C.input,border:`1.5px solid ${focused?C.orange:C.inputBorder}`,borderRadius:10,fontSize:13.5,color:C.cream,outline:"none",transition:"border-color .15s, background .15s",fontFamily:FB,opacity:disabled?0.5:1};
 }
 function Lbl({children,req}:{children:React.ReactNode;req?:boolean}) {
   return <div style={{fontSize:11,fontWeight:700,color:C.creamMut,marginBottom:7,display:"flex",alignItems:"center",gap:5,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:FB}}>{children}{req&&<span style={{color:C.orange}}>*</span>}</div>;
 }
-function Card({accent,icon:Icon,title,children,delay=0}:any) {
+function Card({accent,icon:Icon,title,children,delay=0}:{accent:string;icon:React.ElementType;title:string;children:React.ReactNode;delay?:number}) {
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:18,overflow:"hidden",marginBottom:14,backdropFilter:"blur(20px)",position:"relative",animation:`fadeUp .5s ease ${delay}s both`}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,${accent},${accent}50,transparent)`}}/>
@@ -136,7 +145,11 @@ function Card({accent,icon:Icon,title,children,delay=0}:any) {
     </div>
   );
 }
-function Toggle({label,name,checked,onChange,disabled,icon:Icon,accent}:any) {
+function Toggle({label,name,checked,onChange,disabled,icon:Icon,accent}:{
+  label:string; name:string; checked:boolean;
+  onChange:(e:ChangeEvent<HTMLInputElement>)=>void;
+  disabled:boolean; icon:React.ElementType; accent:string;
+}) {
   return (
     <label style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",borderRadius:12,cursor:disabled?"not-allowed":"pointer",border:`1.5px solid ${checked?`${accent}55`:C.border}`,background:checked?`${accent}12`:"rgba(255,232,200,0.02)",transition:"all .15s",userSelect:"none" as const}}>
       <div style={{width:20,height:20,borderRadius:6,flexShrink:0,border:`2px solid ${checked?accent:C.creamMut}`,background:checked?accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",boxShadow:checked?`0 0 8px ${accent}40`:"none"}}>
@@ -149,24 +162,30 @@ function Toggle({label,name,checked,onChange,disabled,icon:Icon,accent}:any) {
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ── Tipo para acceso dinámico de dimensiones ──────────────────
+type FormState = {
+  titulo:string; descripcion:string; id_categoria:number; id_tecnica:number; id_artista:number;
+  precio_base:number; anio_creacion:number;
+  dimensiones_alto:string; dimensiones_ancho:string; dimensiones_profundidad:string;
+  permite_marco:boolean; con_certificado:boolean; imagen_principal:string;
+};
+
+// ─── MAIN ─────────────────────────────────────────────────────
 export default function EditarObra() {
-  const navigate = useNavigate();
-  const { id } = useParams<{ id:string }>();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const navigate      = useNavigate();
+  const { id }        = useParams<{ id:string }>();
+  const fileRef       = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const [loading,       setLoading]       = useState(false);
   const [loadingData,   setLoadingData]   = useState(true);
   const [loadingEstado, setLoadingEstado] = useState(false);
-  const [mensaje,       setMensaje]       = useState("");
-  const [isError,       setIsError]       = useState(false);
   const [focused,       setFocused]       = useState<string|null>(null);
   const [imgFile,       setImgFile]       = useState<File|null>(null);
   const [imgPreview,    setImgPreview]    = useState<string>("");
   const [imgMode,       setImgMode]       = useState<"upload"|"url">("upload");
   const [dragOver,      setDragOver]      = useState(false);
 
-  // Panel de revisión — independiente del form principal
   const [estadoActual,   setEstadoActual]   = useState("pendiente");
   const [estadoSelected, setEstadoSelected] = useState("pendiente");
   const [motivoRechazo,  setMotivoRechazo]  = useState("");
@@ -176,8 +195,7 @@ export default function EditarObra() {
   const [tecnicas,   setTecnicas]   = useState<Tecnica[]>([]);
   const [artistas,   setArtistas]   = useState<Artista[]>([]);
 
-  // ✅ estado NO está en este form — se gestiona por PATCH /estado
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     titulo:"", descripcion:"", id_categoria:0, id_tecnica:0, id_artista:0,
     precio_base:0, anio_creacion:new Date().getFullYear(),
     dimensiones_alto:"", dimensiones_ancho:"", dimensiones_profundidad:"",
@@ -194,7 +212,8 @@ export default function EditarObra() {
         setTecnicas(tR.tecnicas||[]);
         setArtistas(aR.artistas||[]);
 
-        const res  = await fetch(`${API_URL}/api/obras/${id}`,{headers:{Authorization:`Bearer ${authService.getToken()}`}});
+        const res = await fetch(`${API_URL}/api/obras/${id}`,{headers:{Authorization:`Bearer ${authService.getToken()}`}});
+        if (!res.ok) { showToast(await handleApiError(res),"warn"); return; }
         const json = await res.json();
         if (json.success && json.data) {
           const o = json.data;
@@ -211,40 +230,48 @@ export default function EditarObra() {
           setEstadoActual(o.estado||"pendiente");
           setEstadoSelected(o.estado||"pendiente");
           if (o.imagen_principal) setImgMode("url");
-        } else { flash("No se encontró la obra",true); }
-      } catch { flash("Error al cargar datos",true); }
-      finally { setLoadingData(false); }
+        } else {
+          showToast("No se encontró la obra","warn");
+        }
+      } catch(err) {
+        showToast(handleNetworkError(err),"err");
+      } finally { setLoadingData(false); }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[id]);
 
   const onChange = (e:ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>{
     const {name,value,type}=e.target;
     if (type==="checkbox") setForm(p=>({...p,[name]:(e.target as HTMLInputElement).checked}));
-    else if (type==="number") setForm(p=>({...p,[name]:value===""?"":(Number(value))} as any));
+    else if (type==="number") setForm(p=>({...p,[name]:value===""?0:Number(value)}));
     else setForm(p=>({...p,[name]:value}));
   };
 
-  const flash = (msg:string,err:boolean)=>{ setMensaje(msg); setIsError(err); setTimeout(()=>setMensaje(""),5000); };
-
   const handleFile = (file:File)=>{
-    if (!file.type.startsWith("image/")) return flash("Solo se permiten imágenes",true);
-    if (file.size>10*1024*1024) return flash("La imagen no puede superar 10 MB",true);
-    setImgFile(file); setImgPreview(URL.createObjectURL(file));
+    if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes","warn"); return; }
+    if (file.size>10*1024*1024) { showToast("La imagen no puede superar 10 MB","warn"); return; }
+    setImgFile(file);
+    setImgPreview(URL.createObjectURL(file));
     setForm(p=>({...p,imagen_principal:""}));
   };
+
   const clearFile = ()=>{
     if (imgPreview) URL.revokeObjectURL(imgPreview);
     setImgFile(null); setImgPreview("");
     if (fileRef.current) fileRef.current.value="";
   };
-  const onDrop = (e:React.DragEvent)=>{ e.preventDefault(); setDragOver(false); const f=e.dataTransfer.files[0]; if(f) handleFile(f); };
 
-  // ── PUT: solo datos de la obra, SIN estado ───────────────────────────────
+  const onDrop = (e:React.DragEvent)=>{
+    e.preventDefault(); setDragOver(false);
+    const f=e.dataTransfer.files[0]; if(f) handleFile(f);
+  };
+
+  // ── PUT: solo datos de la obra, SIN estado ───────────────────
   const onSubmit = async (e:FormEvent)=>{
     e.preventDefault();
-    if (!form.titulo||!form.descripcion) return flash("Completa título y descripción",true);
-    if (!form.id_categoria) return flash("Selecciona una categoría",true);
-    if (!form.id_artista)   return flash("Selecciona un artista",true);
+    if (!form.titulo||!form.descripcion) { showToast("Completa título y descripción","warn"); return; }
+    if (!form.id_categoria) { showToast("Selecciona una categoría","warn"); return; }
+    if (!form.id_artista)   { showToast("Selecciona un artista","warn"); return; }
     setLoading(true);
     try {
       let res:Response;
@@ -256,16 +283,18 @@ export default function EditarObra() {
       } else {
         res=await fetch(`${API_URL}/api/obras/${id}`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${authService.getToken()}`},body:JSON.stringify(form)});
       }
+      if (!res.ok) { showToast(await handleApiError(res),"err"); return; }
       const json=await res.json();
-      if (!res.ok||!json.success) throw new Error(json.message||"Error al actualizar");
-      flash("¡Obra actualizada correctamente!",false);
-    } catch(err:any){ flash(err.message||"Error al actualizar la obra",true); }
-    finally { setLoading(false); }
+      if (!json.success) { showToast(json.message||"Error al actualizar","err"); return; }
+      showToast("¡Obra actualizada correctamente!","ok");
+    } catch(err){
+      showToast(handleNetworkError(err),"err");
+    } finally { setLoading(false); }
   };
 
-  // ── PATCH /api/obras/:id/estado — endpoint dedicado, solo admin ──────────
+  // ── PATCH /api/obras/:id/estado ───────────────────────────────
   const handleCambiarEstado = async ()=>{
-    if (estadoSelected==="rechazada"&&!motivoRechazo.trim()){ setShowMotivo(true); return flash("Escribe el motivo del rechazo",true); }
+    if (estadoSelected==="rechazada"&&!motivoRechazo.trim()){ setShowMotivo(true); showToast("Escribe el motivo del rechazo","warn"); return; }
     setLoadingEstado(true);
     try {
       const res=await fetch(`${API_URL}/api/obras/${id}/estado`,{
@@ -273,21 +302,23 @@ export default function EditarObra() {
         headers:{"Content-Type":"application/json",Authorization:`Bearer ${authService.getToken()}`},
         body:JSON.stringify({estado:estadoSelected,motivo_rechazo:motivoRechazo||null}),
       });
+      if (!res.ok) { showToast(await handleApiError(res),"err"); return; }
       const json=await res.json();
-      if (!res.ok||!json.success) throw new Error(json.message||"Error al cambiar estado");
+      if (!json.success) { showToast(json.message||"Error al cambiar estado","err"); return; }
       setEstadoActual(estadoSelected);
       setShowMotivo(false);
-      flash(json.message||`Estado actualizado a "${estadoSelected}"`,false);
-    } catch(err:any){ flash(err.message||"Error al cambiar estado",true); }
-    finally { setLoadingEstado(false); }
+      showToast(json.message||`Estado actualizado a "${estadoSelected}"`,"ok");
+    } catch(err){
+      showToast(handleNetworkError(err),"err");
+    } finally { setLoadingEstado(false); }
   };
 
   const fi = (n:string)=>({onFocus:()=>setFocused(n),onBlur:()=>setFocused(null)});
-  const previewSrc   = imgPreview||form.imagen_principal||"";
-  const currentCat   = categorias.find(c=>c.id_categoria===Number(form.id_categoria));
-  const currentArt   = artistas.find(a=>a.id_artista===Number(form.id_artista));
-  const estadoInfo   = ESTADOS[estadoActual]||ESTADOS.pendiente;
-  const EIcon        = estadoInfo.icon;
+  const previewSrc = imgPreview||form.imagen_principal||"";
+  const currentCat = categorias.find(c=>c.id_categoria===Number(form.id_categoria));
+  const currentArt = artistas.find(a=>a.id_artista===Number(form.id_artista));
+  const estadoInfo = ESTADOS[estadoActual]||ESTADOS.pendiente;
+  const EIcon      = estadoInfo.icon;
 
   if (loadingData) return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:C.bg,fontFamily:FB,flexDirection:"column",gap:16}}>
@@ -353,17 +384,10 @@ export default function EditarObra() {
             </h1>
           </div>
 
-          {mensaje&&(
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 18px",borderRadius:13,marginBottom:22,background:isError?`${C.pink}12`:`${C.green}10`,border:`1px solid ${isError?`${C.pink}40`:`${C.green}35`}`,color:isError?C.pink:C.green,fontSize:13.5,fontWeight:600,fontFamily:FB,animation:"fadeUp .25s ease"}}>
-              {isError?<AlertCircle size={17} strokeWidth={2.5}/>:<CheckCircle2 size={17} strokeWidth={2.5}/>}
-              {mensaje}
-            </div>
-          )}
-
           <form id="editar-obra-form" onSubmit={onSubmit}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16,alignItems:"start"}}>
 
-              {/* ── IZQUIERDA ── */}
+              {/* IZQUIERDA */}
               <div>
                 <Card accent={C.orange} icon={Type} title="Información básica" delay={0.05}>
                   <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -407,10 +431,14 @@ export default function EditarObra() {
 
                 <Card accent={C.blue} icon={Ruler} title="Dimensiones (cm)" delay={0.1}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
-                    {[{name:"dimensiones_alto",label:"Alto",ph:"50"},{name:"dimensiones_ancho",label:"Ancho",ph:"70"},{name:"dimensiones_profundidad",label:"Profundidad",ph:"5"}].map(({name,label,ph})=>(
+                    {([
+                      {name:"dimensiones_alto",       label:"Alto",       ph:"50"},
+                      {name:"dimensiones_ancho",      label:"Ancho",      ph:"70"},
+                      {name:"dimensiones_profundidad",label:"Profundidad",ph:"5" },
+                    ] as const).map(({name,label,ph})=>(
                       <div key={name}>
                         <Lbl>{label}</Lbl>
-                        <input type="number" name={name} value={(form as any)[name]||""} onChange={onChange} placeholder={ph} step="0.01" min="0" disabled={loading} style={IS(focused===name,loading)} {...fi(name)}/>
+                        <input type="number" name={name} value={form[name]||""} onChange={onChange} placeholder={ph} step="0.01" min="0" disabled={loading} style={IS(focused===name,loading)} {...fi(name)}/>
                       </div>
                     ))}
                   </div>
@@ -418,15 +446,12 @@ export default function EditarObra() {
 
                 <Card accent={C.purple} icon={Award} title="Opciones adicionales" delay={0.15}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                    <Toggle label="Permite marco personalizado" name="permite_marco" checked={form.permite_marco} onChange={onChange} disabled={loading} icon={Frame} accent={C.purple}/>
+                    <Toggle label="Permite marco personalizado"         name="permite_marco"   checked={form.permite_marco}   onChange={onChange} disabled={loading} icon={Frame} accent={C.purple}/>
                     <Toggle label="Incluye certificado de autenticidad" name="con_certificado" checked={form.con_certificado} onChange={onChange} disabled={loading} icon={Award} accent={C.gold}/>
                   </div>
                 </Card>
 
-                {/* ══ PANEL DE REVISIÓN ══════════════════════════════════════════
-                    Llama PATCH /api/obras/:id/estado — separado del form principal
-                    Requiere requireRole('admin') en el backend
-                    ═══════════════════════════════════════════════════════════════ */}
+                {/* Panel de revisión */}
                 <div style={{background:C.card,border:`1px solid ${C.green}28`,borderRadius:18,overflow:"hidden",marginBottom:14,backdropFilter:"blur(20px)",position:"relative",animation:"fadeUp .5s ease .2s both"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,${C.green},${C.blue}50,transparent)`}}/>
                   <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
@@ -444,7 +469,6 @@ export default function EditarObra() {
                       <ShieldCheck size={13} color={C.green} strokeWidth={2}/>
                       El cambio de estado usa un endpoint dedicado y seguro, independiente de la edición.
                     </div>
-
                     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
                       {Object.entries(ESTADOS).map(([key,{label,color,icon:Icon,desc}])=>{
                         const on=estadoSelected===key;
@@ -462,7 +486,6 @@ export default function EditarObra() {
                         );
                       })}
                     </div>
-
                     {showMotivo&&(
                       <div style={{marginBottom:14,animation:"fadeUp .2s ease both"}}>
                         <Lbl><MessageSquare size={10}/> Motivo del rechazo</Lbl>
@@ -471,7 +494,6 @@ export default function EditarObra() {
                           rows={3} style={{...IS(focused==="motivo",false),resize:"vertical" as const,borderColor:`${C.pink}50`}} {...fi("motivo")}/>
                       </div>
                     )}
-
                     <button type="button" onClick={handleCambiarEstado} disabled={loadingEstado||estadoSelected===estadoActual}
                       style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",borderRadius:12,border:"none",
                         background:(loadingEstado||estadoSelected===estadoActual)?"rgba(255,232,200,0.06)":
@@ -495,7 +517,7 @@ export default function EditarObra() {
                 </div>
               </div>
 
-              {/* ── DERECHA ── */}
+              {/* DERECHA */}
               <div>
                 {/* Preview */}
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:20,overflow:"hidden",marginBottom:14,backdropFilter:"blur(20px)",position:"relative",animation:"fadeUp .5s ease .05s both"}}>
@@ -536,7 +558,7 @@ export default function EditarObra() {
                   )}
                 </Card>
 
-                {/* Imagen — dual upload */}
+                {/* Imagen */}
                 <Card accent={C.pink} icon={ImageIcon} title="Imagen principal" delay={0.15}>
                   <div style={{display:"flex",marginBottom:14,borderRadius:10,overflow:"hidden",border:`1px solid ${C.border}`,background:C.input}}>
                     {(["upload","url"] as const).map(tab=>(
@@ -545,9 +567,7 @@ export default function EditarObra() {
                       </button>
                     ))}
                   </div>
-
                   <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)handleFile(f);}}/>
-
                   {imgMode==="upload"?(
                     imgFile?(
                       <div style={{borderRadius:12,overflow:"hidden",position:"relative",border:`1.5px solid ${C.pink}50`}}>
@@ -597,7 +617,6 @@ export default function EditarObra() {
                     </>
                   )}
                 </Card>
-
               </div>
             </div>
           </form>
