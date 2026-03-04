@@ -15,7 +15,7 @@ export default function ArtistaRoute({ children }: ArtistaRouteProps) {
   }
 
   if (rol !== 'artista') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/unauthorized" replace />;  
   }
 
   return <>{children}</>;

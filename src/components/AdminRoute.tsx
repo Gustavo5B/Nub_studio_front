@@ -15,7 +15,7 @@ export default function AdminRoute({ children }: AdminRouteProps) {
   }
 
   if (rol !== 'admin') {
-    return <Navigate to="/" replace />;  // cliente autenticado → home
+    return <Navigate to="/unauthorized" replace />;  
   }
 
   return <>{children}</>;
