@@ -42,21 +42,10 @@ const C = {
   borderHi: "rgba(255,200,150,0.18)",
 };
 
-// Playfair Display → títulos y números grandes | DM Sans → todo lo demás
 const FD = "'Playfair Display', serif";
 const FB = "'DM Sans', sans-serif";
-
-// Formato de número profesional
 const fmt = (n: number) => new Intl.NumberFormat("es-MX").format(n);
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
-
-const chartData = [
-  { s:"Ene", v:28, o:9,  a:18 }, { s:"Feb", v:34, o:12, a:24 },
-  { s:"Mar", v:22, o:8,  a:15 }, { s:"Abr", v:46, o:18, a:31 },
-  { s:"May", v:38, o:14, a:26 }, { s:"Jun", v:61, o:24, a:44 },
-  { s:"Jul", v:54, o:20, a:38 }, { s:"Ago", v:78, o:30, a:55 },
-];
 
 const statusCfg: Record<string, { label: string; color: string }> = {
   publicada: { label: "Publicada", color: C.green },
@@ -73,7 +62,6 @@ const NAV = [
   { id:"reportes",  label:"Reportes",  icon:BarChart2,       path:"/admin"          },
 ];
 
-// ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ObraReciente {
   id_obra: number;
   titulo: string;
@@ -124,69 +112,45 @@ function Sidebar({ active, setActive, userName, onLogout, navigate }: {
       position:"sticky", top:0, height:"100vh",
       flexShrink:0, zIndex:40,
     }}>
-      {/* Línea de colores — patrón unificado */}
       <div style={{ height:2, background:`linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.pink}, ${C.purple}, ${C.blue})` }} />
 
-     {/* Logo + usuario */}
-<div style={{ padding:"20px 18px 16px", borderBottom:`1px solid ${C.borderBr}` }}>
-  <div onClick={() => navigate("/")} style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", marginBottom:16 }}>
-    
-    {/* 🔹 LOGO MÁS GRANDE CON OVERLAY */}
-    <div style={{ 
-      width: 56,
-      height: 56,
-      borderRadius: 12,
-      overflow: "hidden",
-      position: "relative",
-      flexShrink: 0,
-      background: C.bgDeep,
-      border: `1px solid ${C.orange}30`
-    }}>
-      {/* Imagen original */}
-      <img 
-        src={logoImg} 
-        alt="Galería Altar" 
-        style={{ 
-          width: "100%", 
-          height: "100%", 
-          objectFit: "contain",
-          opacity: 0.95
-        }} 
-      />
-      
-      {/* 🔹 OVERLAY PARA OCULTAR EL FONDO BLANCO */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: `linear-gradient(135deg, ${C.orange}40, ${C.purple}40)`,
-        mixBlendMode: "multiply",
-        pointerEvents: "none"
-      }} />
-    </div>
-    
-    <div>
-      {/* Playfair Display para el nombre */}
-      <div style={{ fontSize:18, fontWeight:900, color:C.cream, lineHeight:1.2, fontFamily:FD, letterSpacing:"-0.01em" }}>
-        Galería<span style={{ color: C.orange }}>Altar</span>
-      </div>
-      <div style={{ fontSize:10, color:C.orange, marginTop:2, letterSpacing:"0.16em", textTransform:"uppercase", fontFamily:FB, fontWeight:700 }}>
-        Panel Admin
-      </div>
-    </div>
-  </div>
+      {/* Logo + usuario */}
+      <div style={{ padding:"20px 18px 16px", borderBottom:`1px solid ${C.borderBr}` }}>
+        <div onClick={() => navigate("/")} style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", marginBottom:16 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 12, overflow: "hidden",
+            position: "relative", flexShrink: 0, background: C.bgDeep,
+            border: `1px solid ${C.orange}30`
+          }}>
+            <img src={logoImg} alt="Galería Altar" style={{ width:"100%", height:"100%", objectFit:"contain", opacity:0.95 }} />
+            <div style={{
+              position:"absolute", inset:0,
+              background:`linear-gradient(135deg, ${C.orange}40, ${C.purple}40)`,
+              mixBlendMode:"multiply", pointerEvents:"none"
+            }} />
+          </div>
+          <div>
+            <div style={{ fontSize:18, fontWeight:900, color:C.cream, lineHeight:1.2, fontFamily:FD, letterSpacing:"-0.01em" }}>
+              Galería<span style={{ color: C.orange }}>Altar</span>
+            </div>
+            <div style={{ fontSize:10, color:C.orange, marginTop:2, letterSpacing:"0.16em", textTransform:"uppercase", fontFamily:FB, fontWeight:700 }}>
+              Panel Admin
+            </div>
+          </div>
+        </div>
 
-  {/* Usuario */}
-  <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:12, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}` }}>
-    <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${C.pink}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"white", fontFamily:FB }}>
-      {userName?.[0]?.toUpperCase() || "A"}
-    </div>
-    <div style={{ flex:1, minWidth:0 }}>
-      <div style={{ fontSize:13, fontWeight:700, color:C.cream, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:FB }}>{userName}</div>
-      <div style={{ fontSize:10, color:C.orange, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:FB }}>Admin</div>
-    </div>
-    <div style={{ width:7, height:7, borderRadius:"50%", background:C.green, boxShadow:`0 0 6px ${C.green}`, flexShrink:0 }} />
-  </div>
-</div>
+        {/* Usuario */}
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:12, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}` }}>
+          <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${C.pink}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"white", fontFamily:FB }}>
+            {userName?.[0]?.toUpperCase() || "A"}
+          </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:C.cream, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:FB }}>{userName}</div>
+            <div style={{ fontSize:10, color:C.orange, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:FB }}>Admin</div>
+          </div>
+          <div style={{ width:7, height:7, borderRadius:"50%", background:C.green, boxShadow:`0 0 6px ${C.green}`, flexShrink:0 }} />
+        </div>
+      </div>
 
       {/* Nav links */}
       <div style={{ flex:1, padding:"12px 10px", display:"flex", flexDirection:"column", gap:2, overflowY:"auto" }}>
@@ -229,8 +193,13 @@ function Sidebar({ active, setActive, userName, onLogout, navigate }: {
 }
 
 // ── Topbar ─────────────────────────────────────────────────────────────────────
-// ── Topbar ─────────────────────────────────────────────────────────────────────
-function Topbar({ navigate, onRefresh, loading }: { navigate:(p:string) => void; onRefresh:() => void; loading:boolean }) {
+function Topbar({ navigate, onRefresh, loading, onBackup, backupLoading }: {
+  navigate:(p:string) => void;
+  onRefresh:() => void;
+  loading:boolean;
+  onBackup:() => void;
+  backupLoading:boolean;
+}) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -239,32 +208,28 @@ function Topbar({ navigate, onRefresh, loading }: { navigate:(p:string) => void;
         <span style={{ fontSize:13, color:C.creamSub, fontFamily:FB }}>Dashboard</span>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        
-        {/* 🔹 BUSCADOR MÁS ANCHO */}
-        <div style={{ 
-          display:"flex", 
-          alignItems:"center", 
-          gap:8, 
-          background:"rgba(255,232,200,0.03)", 
-          border:`1px solid ${C.border}`, 
-          borderRadius:9, 
-          padding:"7px 16px", 
-          width:240, // ← ANCHO FIJO DE 240px
-          cursor:"text", 
-          transition:"border-color .15s" 
+
+        {/* Buscador 240px */}
+        <div style={{
+          display:"flex", alignItems:"center", gap:8,
+          background:"rgba(255,232,200,0.03)", border:`1px solid ${C.border}`,
+          borderRadius:9, padding:"7px 16px", width:240,
+          cursor:"text", transition:"border-color .15s"
         }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.borderHi}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <Search size={14} color={C.creamMut} strokeWidth={1.8} />
           <span style={{ fontSize:13, color:C.creamMut, fontFamily:FB, userSelect:"none" }}>Buscar obras, artistas...</span>
         </div>
-        
+
+        {/* Refresh */}
         <button onClick={onRefresh} style={{ width:34, height:34, borderRadius:9, background:"transparent", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = `${C.orange}45`}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
         </button>
-        
+
+        {/* Bell */}
         <button style={{ position:"relative", width:34, height:34, borderRadius:9, background:"transparent", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.borderHi}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
@@ -272,43 +237,43 @@ function Topbar({ navigate, onRefresh, loading }: { navigate:(p:string) => void;
           <span style={{ position:"absolute", top:8, right:8, width:5, height:5, background:C.orange, borderRadius:"50%", border:`1.5px solid ${C.bgDeep}` }} />
         </button>
 
-        {/* Botón de respaldo */}
-        <button 
-          onClick={() => console.log("Respaldo manual")} 
-          style={{ 
-            display:"flex", 
-            alignItems:"center", 
-            gap:6, 
-            background:"rgba(141,76,205,0.12)", 
-            border:`1px solid ${C.purple}40`, 
-            color:C.cream, 
-            padding:"7px 14px", 
-            borderRadius:9, 
-            fontWeight:600, 
-            fontSize:13, 
-            cursor:"pointer", 
-            fontFamily:FB, 
-            transition:"all .15s" 
+        {/* Botón Respaldo — funcional */}
+        <button
+          onClick={onBackup}
+          disabled={backupLoading}
+          style={{
+            display:"flex", alignItems:"center", gap:6,
+            background: backupLoading ? "rgba(141,76,205,0.06)" : "rgba(141,76,205,0.12)",
+            border:`1px solid rgba(141,76,205,${backupLoading ? "0.20" : "0.35"})`,
+            color: backupLoading ? C.creamMut : C.cream,
+            padding:"7px 14px", borderRadius:9, fontWeight:600, fontSize:13,
+            cursor: backupLoading ? "wait" : "pointer",
+            fontFamily:FB, transition:"all .15s",
+            opacity: backupLoading ? 0.7 : 1,
           }}
-          onMouseEnter={e => { 
-            const el = e.currentTarget as HTMLElement; 
-            el.style.background = "rgba(141,76,205,0.2)"; 
-            el.style.borderColor = `${C.purple}70`;
+          onMouseEnter={e => {
+            if (backupLoading) return;
+            const el = e.currentTarget as HTMLElement;
+            el.style.background = "rgba(141,76,205,0.22)";
+            el.style.borderColor = "rgba(141,76,205,0.60)";
             el.style.color = "white";
           }}
-          onMouseLeave={e => { 
-            const el = e.currentTarget as HTMLElement; 
-            el.style.background = "rgba(141,76,205,0.12)"; 
-            el.style.borderColor = `${C.purple}40`;
+          onMouseLeave={e => {
+            if (backupLoading) return;
+            const el = e.currentTarget as HTMLElement;
+            el.style.background = "rgba(141,76,205,0.12)";
+            el.style.borderColor = "rgba(141,76,205,0.35)";
             el.style.color = C.cream;
           }}
         >
-          <Database size={14} strokeWidth={1.8} color={C.purple} />
-          Respaldo
+          <Database size={14} strokeWidth={1.8} color={backupLoading ? C.creamMut : C.purple}
+            style={{ animation: backupLoading ? "spin 1s linear infinite" : "none" }} />
+          {backupLoading ? "Generando..." : "Respaldo"}
         </button>
 
-        {/* btn-primary: acceso rápido a obras pendientes de revisión */}
-        <button onClick={() => navigate("/admin/obras?estado=pendiente")} style={{ display:"flex", alignItems:"center", gap:6, background:`linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border:"none", color:"white", padding:"7px 15px", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:FB, boxShadow:`0 4px 14px ${C.orange}30`, transition:"transform .15s, box-shadow .15s" }}
+        {/* btn-primary: revisar pendientes */}
+        <button onClick={() => navigate("/admin/obras?estado=pendiente")}
+          style={{ display:"flex", alignItems:"center", gap:6, background:`linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border:"none", color:"white", padding:"7px 15px", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:FB, boxShadow:`0 4px 14px ${C.orange}30`, transition:"transform .15s, box-shadow .15s" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform="translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow=`0 8px 22px ${C.orange}45`; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform="translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow=`0 4px 14px ${C.orange}30`; }}>
           <Clock size={14} strokeWidth={2.5} /> Revisar pendientes
@@ -329,23 +294,17 @@ function WelcomeBanner({ userName }: { userName:string }) {
 
   return (
     <div style={{ borderRadius:14, padding:"22px 26px", background:`linear-gradient(135deg, rgba(255,132,14,0.08), rgba(141,76,205,0.05))`, border:`1px solid rgba(255,132,14,0.14)`, marginBottom:18, display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", overflow:"hidden" }}>
-      {/* Orbe sutil */}
       <div style={{ position:"absolute", top:-50, right:-40, width:180, height:180, borderRadius:"50%", background:`radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents:"none" }} />
-
       <div style={{ position:"relative" }}>
-        {/* Badge fecha — borderRadius:100, patrón unificado */}
         <div style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:100, background:"rgba(255,248,238,0.05)", border:`1px solid ${C.borderBr}`, fontSize:11, color:C.creamMut, fontFamily:FB, marginBottom:10 }}>
           <Star size={9} color={C.gold} fill={C.gold} /> {dateStr}
         </div>
-        {/* Playfair Display para el saludo */}
         <h1 style={{ fontSize:22, fontWeight:900, margin:"0 0 4px", fontFamily:FD, color:C.cream }}>
           {greeting},{" "}
           <span style={{ background:`linear-gradient(90deg, ${C.orange}, ${C.gold})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>{userName}</span>
         </h1>
         <p style={{ fontSize:13, color:C.creamMut, margin:0, fontFamily:FB }}>Tu plataforma está activa y funcionando correctamente.</p>
       </div>
-
-      {/* Status badges */}
       <div style={{ display:"flex", gap:7, position:"relative" }}>
         {[
           { label:"Sistema", value:"Activo",  color:C.green },
@@ -363,8 +322,7 @@ function WelcomeBanner({ userName }: { userName:string }) {
   );
 }
 
-// ── KPI Cards REDISEÑADAS - MÁS COMPACTAS Y PROFESIONALES ──────────────────
-// ── KPI Cards REDISEÑADAS - MÁS COMPACTAS Y PROFESIONALES ──────────────────
+// ── KPI Cards ──────────────────────────────────────────────────────────────────
 function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loading:boolean }) {
   const cards = [
     { value: kpis?.total_obras      ?? 0, label:"Total Obras", sub:"en catálogo",   accent:C.orange, Icon:Layers,      trend:+12 },
@@ -373,113 +331,34 @@ function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loadin
     { value: kpis?.obras_rechazadas ?? 0, label:"Rechazadas",  sub:"este período",  accent:C.pink,   Icon:XCircle,     trend:-2  },
   ];
 
-  // Formato de número con separadores de miles
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("es-MX").format(num);
-  };
-
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:14 }}>
       {cards.map(({ value, label, sub, accent, Icon, trend }, i) => {
         const isTrendPositive = trend > 0;
         const trendColor = isTrendPositive ? C.green : C.pink;
         const TrendIcon = isTrendPositive ? TrendingUp : TrendingDown;
-        
         return (
           <div key={label}
-            style={{ 
-              background:C.card, 
-              border:`1px solid ${C.border}`, 
-              borderRadius:12, 
-              padding:"14px 16px",
-              position:"relative", 
-              overflow:"hidden", 
-              transition:"border-color .2s, transform .2s", 
-              cursor:"default", 
-              animation:`fadeUp .45s ease ${i*0.06}s both` 
-            }}
-            onMouseEnter={e => { 
-              const el=e.currentTarget as HTMLElement; 
-              el.style.borderColor=`${accent}32`; 
-              el.style.transform="translateY(-2px)"; 
-            }}
-            onMouseLeave={e => { 
-              const el=e.currentTarget as HTMLElement; 
-              el.style.borderColor=C.border; 
-              el.style.transform="translateY(0)"; 
-            }}
+            style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", position:"relative", overflow:"hidden", transition:"border-color .2s, transform .2s", cursor:"default", animation:`fadeUp .45s ease ${i*0.06}s both` }}
+            onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${accent}32`; el.style.transform="translateY(-2px)"; }}
+            onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=C.border; el.style.transform="translateY(0)"; }}
           >
-            {/* Línea superior delgada */}
             <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)` }} />
-
-            {/* Fila superior: Icono a la izquierda, Trend a la derecha */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-              <div style={{ 
-                width:32, 
-                height:32, 
-                borderRadius:8, 
-                background:`${accent}14`, 
-                border:`1px solid ${accent}28`, 
-                display:"flex", 
-                alignItems:"center", 
-                justifyContent:"center" 
-              }}>
+              <div style={{ width:32, height:32, borderRadius:8, background:`${accent}14`, border:`1px solid ${accent}28`, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <Icon size={14} color={accent} strokeWidth={2} />
               </div>
-              
-              {/* Badge de tendencia más compacto */}
-              <span style={{ 
-                fontSize:11, 
-                fontWeight:700, 
-                color: trendColor, 
-                fontFamily:FB, 
-                display:"flex", 
-                alignItems:"center", 
-                gap:2,
-                background:`${trendColor}10`,
-                padding:"3px 6px",
-                borderRadius:20,
-                border:`1px solid ${trendColor}20`
-              }}>
+              <span style={{ fontSize:11, fontWeight:700, color:trendColor, fontFamily:FB, display:"flex", alignItems:"center", gap:2, background:`${trendColor}10`, padding:"3px 6px", borderRadius:20, border:`1px solid ${trendColor}20` }}>
                 <TrendIcon size={10} strokeWidth={2.5} />
                 {isTrendPositive ? "+" : ""}{trend}%
               </span>
             </div>
-
-            {/* Número grande con COLOR DE ACENTO */}
-            <div style={{ 
-              fontSize:26, 
-              fontWeight:900, 
-              color: loading ? C.creamMut : `${accent}DD`, // 🔹 COLOR DE ACENTO RESTAURADO
-              letterSpacing:"-0.5px", 
-              lineHeight:1, 
-              marginBottom:4, 
-              fontFamily:FD, 
-              transition:"color .3s" 
-            }}>
-              {loading ? "—" : formatNumber(value)}
+            <div style={{ fontSize:26, fontWeight:900, color: loading ? C.creamMut : `${accent}DD`, letterSpacing:"-0.5px", lineHeight:1, marginBottom:4, fontFamily:FD, transition:"color .3s" }}>
+              {loading ? "—" : new Intl.NumberFormat("es-MX").format(value)}
             </div>
-
-            {/* Label y sublabel en una línea */}
-            <div style={{ 
-              display:"flex", 
-              alignItems:"baseline", 
-              gap:6, 
-              flexWrap:"wrap"
-            }}>
-              <span style={{ fontSize:13, fontWeight:600, color:C.creamSub, fontFamily:FB }}>
-                {label}
-              </span>
-              <span style={{ 
-                fontSize:11, 
-                color:C.creamMut, 
-                fontFamily:FB,
-                background:"rgba(255,255,255,0.03)",
-                padding:"2px 6px",
-                borderRadius:12
-              }}>
-                {sub}
-              </span>
+            <div style={{ display:"flex", alignItems:"baseline", gap:6, flexWrap:"wrap" }}>
+              <span style={{ fontSize:13, fontWeight:600, color:C.creamSub, fontFamily:FB }}>{label}</span>
+              <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB, background:"rgba(255,255,255,0.03)", padding:"2px 6px", borderRadius:12 }}>{sub}</span>
             </div>
           </div>
         );
@@ -487,8 +366,8 @@ function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loadin
     </div>
   );
 }
-// ── CHART SECTION MODIFICADA PARA SER MÁS COMPACTA ───────────────────────────
-// ── CHART SECTION - PROPORCIÓN CORREGIDA ───────────────────
+
+// ── ChartSection ───────────────────────────────────────────────────────────────
 function ChartSection() {
   const [chartType, setChartType] = useState<"area"|"bar"|"line">("area");
   const chartTypes = [
@@ -496,8 +375,6 @@ function ChartSection() {
     { id:"bar"  as const, Icon:BarChart  },
     { id:"line" as const, Icon:LineChart },
   ];
-
-  // Datos solo de los últimos 4 meses
   const chartData4 = [
     { s:"May", v:38, o:14, a:26 },
     { s:"Jun", v:61, o:24, a:44 },
@@ -507,14 +384,11 @@ function ChartSection() {
 
   return (
     <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden", height:"100%", display:"flex", flexDirection:"column" }}>
-      {/* Header compacto */}
       <div style={{ padding:"12px 14px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
           <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Actividad</div>
           <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:1 }}>4 meses</div>
         </div>
-        
-        {/* Selector tipo */}
         <div style={{ display:"flex", gap:2, background:"rgba(255,232,200,0.04)", border:`1px solid ${C.border}`, borderRadius:6, padding:2 }}>
           {chartTypes.map(({ id, Icon }) => (
             <button key={id} onClick={() => setChartType(id)}
@@ -524,22 +398,13 @@ function ChartSection() {
           ))}
         </div>
       </div>
-
-      {/* Leyenda con círculos */}
       <div style={{ display:"flex", gap:14, padding:"8px 14px 4px" }}>
-        {[
-          {c:C.orange, l:"Ventas"},
-          {c:C.blue,   l:"Obras"},
-          {c:C.purple, l:"Artistas"}
-        ].map(({c,l}) => (
+        {[{c:C.orange,l:"Ventas"},{c:C.blue,l:"Obras"},{c:C.purple,l:"Artistas"}].map(({c,l}) => (
           <span key={l} style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:C.creamMut, fontFamily:FB }}>
-            <span style={{ width:8, height:8, borderRadius:"50%", background:c, display:"inline-block" }} />
-            {l}
+            <span style={{ width:8, height:8, borderRadius:"50%", background:c, display:"inline-block" }} />{l}
           </span>
         ))}
       </div>
-
-      {/* Gráfica - altura ajustada para ocupar el espacio disponible */}
       <div style={{ flex:1, padding:"0 10px 8px", minHeight:120 }}>
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "area" ? (
@@ -584,7 +449,7 @@ function ChartSection() {
   );
 }
 
-// ── ObrasRecientes MODIFICADA PARA SER MÁS ANCHA ────────────────────────────
+// ── ObrasRecientes ─────────────────────────────────────────────────────────────
 function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; loading:boolean; navigate:(p:string) => void }) {
   return (
     <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px", display:"flex", flexDirection:"column", height:"100%" }}>
@@ -599,9 +464,7 @@ function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; lo
           Ver todas <ChevronRight size={11} />
         </button>
       </div>
-
       <div style={{ height:1, background:C.border, marginBottom:12 }} />
-
       <div style={{ display:"flex", flexDirection:"column", gap:2, flex:1 }}>
         {loading ? (
           Array.from({length:5}).map((_,i) => (
@@ -655,7 +518,6 @@ function StatStrip({ strip, loading }: { strip:Record<string,number> | null; loa
     { value: strip?.categorias       ?? 0, label:"Categorías",       sub:"tipos de arte",    accent:C.blue,   Icon:Package },
     { value: strip?.visitas_total    ?? 0, label:"Visitas totales",  sub:"a la galería",      accent:C.purple, Icon:Eye     },
   ];
-
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
       {items.map(({ value, label, sub, accent, Icon }, i) => (
@@ -669,7 +531,6 @@ function StatStrip({ strip, loading }: { strip:Record<string,number> | null; loa
             <Icon size={18} color={accent} strokeWidth={1.8} />
           </div>
           <div>
-            {/* Número formateado — Playfair Display */}
             <div style={{ fontSize:26, fontWeight:900, color: loading ? C.creamMut : C.cream, letterSpacing:"-0.5px", lineHeight:1, marginBottom:3, fontFamily:FD, transition:"color .3s" }}>
               {loading ? "—" : fmt(Number(value))}
             </div>
@@ -687,10 +548,11 @@ function StatStrip({ strip, loading }: { strip:Record<string,number> | null; loa
 export default function AdminDashboard() {
   const navigate      = useNavigate();
   const { showToast } = useToast();
-  const [userName, setUserName] = useState("");
-  const [active,   setActive]   = useState("dashboard");
-  const [loading,  setLoading]  = useState(true);
-  const [stats,    setStats]    = useState<StatsData | null>(null);
+  const [userName,      setUserName]      = useState("");
+  const [active,        setActive]        = useState("dashboard");
+  const [loading,       setLoading]       = useState(true);
+  const [stats,         setStats]         = useState<StatsData | null>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -715,36 +577,55 @@ export default function AdminDashboard() {
     fetchStats();
   }, [navigate, fetchStats]);
 
+  const handleBackupDownload = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/backup`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${authService.getToken()}` },
+      });
+      if (!res.ok) throw new Error("Error al generar el respaldo");
+      const blob  = await res.blob();
+      const url   = window.URL.createObjectURL(blob);
+      const a     = document.createElement("a");
+      a.href      = url;
+      const cd    = res.headers.get("Content-Disposition") || "";
+      const match = cd.match(/filename="?([^"]+)"?/);
+      a.download  = match?.[1] || `nub-backup-${new Date().toISOString().split("T")[0]}.sql`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showToast("Respaldo descargado correctamente", "success");
+    } catch (err) {
+      showToast("Error al generar el respaldo", "error");
+      console.error(err);
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
   const handleLogout = () => { authService.logout(); navigate("/login"); };
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:FB, color:C.cream }}>
       <Sidebar active={active} setActive={setActive} userName={userName} onLogout={handleLogout} navigate={navigate} />
-
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
-        <Topbar navigate={navigate} onRefresh={fetchStats} loading={loading} />
+        <Topbar navigate={navigate} onRefresh={fetchStats} loading={loading} onBackup={handleBackupDownload} backupLoading={backupLoading} />
         <main style={{ flex:1, padding:"22px 26px 28px", overflowY:"auto" }}>
           <WelcomeBanner userName={userName} />
           <KpiCards kpis={stats?.kpis ?? null} loading={loading} />
-
-          {/* 🔹 NUEVA ESTRUCTURA: OBRAS RECIENTES A LA IZQUIERDA, GRÁFICA A LA DERECHA */}
           <div style={{ display:"grid", gridTemplateColumns:"340px 1fr", gap:14, marginBottom:14 }}>
-            {/* Panel de obras recientes (izquierda) - ahora más ancho */}
             <div style={{ width:"100%" }}>
               <ObrasRecientes obras={stats?.obras_recientes || []} loading={loading} navigate={navigate} />
             </div>
-            
-            {/* Gráfica (derecha) - más compacta */}
             <div style={{ width:"100%" }}>
               <ChartSection />
             </div>
           </div>
-
-          {/* Métricas secundarias */}
           <StatStrip strip={stats?.strip ?? null} loading={loading} />
         </main>
       </div>
-
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
