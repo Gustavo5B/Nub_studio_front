@@ -8,7 +8,7 @@ import {
   TrendingDown, Package, ChevronRight, BarChart2,
   Image, RefreshCw, ArrowUpRight,
   BarChart, LineChart, AreaChart as AreaIcon,
-  Layers, Star,
+  Layers, Star, Database,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
@@ -127,31 +127,66 @@ function Sidebar({ active, setActive, userName, onLogout, navigate }: {
       {/* Línea de colores — patrón unificado */}
       <div style={{ height:2, background:`linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.pink}, ${C.purple}, ${C.blue})` }} />
 
-      {/* Logo + usuario */}
-      <div style={{ padding:"20px 18px 16px", borderBottom:`1px solid ${C.borderBr}` }}>
-        <div onClick={() => navigate("/")} style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", marginBottom:16 }}>
-          <div style={{ width:34, height:34, borderRadius:9, overflow:"hidden", border:`1px solid ${C.borderBr}`, flexShrink:0 }}>
-            <img src={logoImg} alt="Galería Altar" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-          </div>
-          <div>
-            {/* Playfair Display para el nombre */}
-            <div style={{ fontSize:14, fontWeight:900, color:C.cream, lineHeight:1.1, fontFamily:FD, letterSpacing:"-0.01em" }}>Galería</div>
-            <div style={{ fontSize:9, color:C.orange, marginTop:2, letterSpacing:"0.16em", textTransform:"uppercase", fontFamily:FB, fontWeight:700 }}>Panel Admin</div>
-          </div>
-        </div>
-
-        {/* Usuario */}
-        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:12, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}` }}>
-          <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${C.pink}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"white", fontFamily:FB }}>
-            {userName?.[0]?.toUpperCase() || "A"}
-          </div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.cream, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:FB }}>{userName}</div>
-            <div style={{ fontSize:10, color:C.orange, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:FB }}>Admin</div>
-          </div>
-          <div style={{ width:7, height:7, borderRadius:"50%", background:C.green, boxShadow:`0 0 6px ${C.green}`, flexShrink:0 }} />
-        </div>
+     {/* Logo + usuario */}
+<div style={{ padding:"20px 18px 16px", borderBottom:`1px solid ${C.borderBr}` }}>
+  <div onClick={() => navigate("/")} style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", marginBottom:16 }}>
+    
+    {/* 🔹 LOGO MÁS GRANDE CON OVERLAY */}
+    <div style={{ 
+      width: 56,
+      height: 56,
+      borderRadius: 12,
+      overflow: "hidden",
+      position: "relative",
+      flexShrink: 0,
+      background: C.bgDeep,
+      border: `1px solid ${C.orange}30`
+    }}>
+      {/* Imagen original */}
+      <img 
+        src={logoImg} 
+        alt="Galería Altar" 
+        style={{ 
+          width: "100%", 
+          height: "100%", 
+          objectFit: "contain",
+          opacity: 0.95
+        }} 
+      />
+      
+      {/* 🔹 OVERLAY PARA OCULTAR EL FONDO BLANCO */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: `linear-gradient(135deg, ${C.orange}40, ${C.purple}40)`,
+        mixBlendMode: "multiply",
+        pointerEvents: "none"
+      }} />
+    </div>
+    
+    <div>
+      {/* Playfair Display para el nombre */}
+      <div style={{ fontSize:18, fontWeight:900, color:C.cream, lineHeight:1.2, fontFamily:FD, letterSpacing:"-0.01em" }}>
+        Galería<span style={{ color: C.orange }}>Altar</span>
       </div>
+      <div style={{ fontSize:10, color:C.orange, marginTop:2, letterSpacing:"0.16em", textTransform:"uppercase", fontFamily:FB, fontWeight:700 }}>
+        Panel Admin
+      </div>
+    </div>
+  </div>
+
+  {/* Usuario */}
+  <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:12, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}` }}>
+    <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${C.pink}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"white", fontFamily:FB }}>
+      {userName?.[0]?.toUpperCase() || "A"}
+    </div>
+    <div style={{ flex:1, minWidth:0 }}>
+      <div style={{ fontSize:13, fontWeight:700, color:C.cream, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:FB }}>{userName}</div>
+      <div style={{ fontSize:10, color:C.orange, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:FB }}>Admin</div>
+    </div>
+    <div style={{ width:7, height:7, borderRadius:"50%", background:C.green, boxShadow:`0 0 6px ${C.green}`, flexShrink:0 }} />
+  </div>
+</div>
 
       {/* Nav links */}
       <div style={{ flex:1, padding:"12px 10px", display:"flex", flexDirection:"column", gap:2, overflowY:"auto" }}>
@@ -194,6 +229,7 @@ function Sidebar({ active, setActive, userName, onLogout, navigate }: {
 }
 
 // ── Topbar ─────────────────────────────────────────────────────────────────────
+// ── Topbar ─────────────────────────────────────────────────────────────────────
 function Topbar({ navigate, onRefresh, loading }: { navigate:(p:string) => void; onRefresh:() => void; loading:boolean }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
@@ -203,23 +239,74 @@ function Topbar({ navigate, onRefresh, loading }: { navigate:(p:string) => void;
         <span style={{ fontSize:13, color:C.creamSub, fontFamily:FB }}>Dashboard</span>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:7, background:"rgba(255,232,200,0.03)", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px", cursor:"text", transition:"border-color .15s" }}
+        
+        {/* 🔹 BUSCADOR MÁS ANCHO */}
+        <div style={{ 
+          display:"flex", 
+          alignItems:"center", 
+          gap:8, 
+          background:"rgba(255,232,200,0.03)", 
+          border:`1px solid ${C.border}`, 
+          borderRadius:9, 
+          padding:"7px 16px", 
+          width:240, // ← ANCHO FIJO DE 240px
+          cursor:"text", 
+          transition:"border-color .15s" 
+        }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.borderHi}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
-          <Search size={12} color={C.creamMut} strokeWidth={1.8} />
-          <span style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, userSelect:"none" }}>Buscar…</span>
+          <Search size={14} color={C.creamMut} strokeWidth={1.8} />
+          <span style={{ fontSize:13, color:C.creamMut, fontFamily:FB, userSelect:"none" }}>Buscar obras, artistas...</span>
         </div>
+        
         <button onClick={onRefresh} style={{ width:34, height:34, borderRadius:9, background:"transparent", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = `${C.orange}45`}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
         </button>
+        
         <button style={{ position:"relative", width:34, height:34, borderRadius:9, background:"transparent", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.borderHi}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <Bell size={13} color={C.creamMut} strokeWidth={1.8} />
           <span style={{ position:"absolute", top:8, right:8, width:5, height:5, background:C.orange, borderRadius:"50%", border:`1.5px solid ${C.bgDeep}` }} />
         </button>
+
+        {/* Botón de respaldo */}
+        <button 
+          onClick={() => console.log("Respaldo manual")} 
+          style={{ 
+            display:"flex", 
+            alignItems:"center", 
+            gap:6, 
+            background:"rgba(141,76,205,0.12)", 
+            border:`1px solid ${C.purple}40`, 
+            color:C.cream, 
+            padding:"7px 14px", 
+            borderRadius:9, 
+            fontWeight:600, 
+            fontSize:13, 
+            cursor:"pointer", 
+            fontFamily:FB, 
+            transition:"all .15s" 
+          }}
+          onMouseEnter={e => { 
+            const el = e.currentTarget as HTMLElement; 
+            el.style.background = "rgba(141,76,205,0.2)"; 
+            el.style.borderColor = `${C.purple}70`;
+            el.style.color = "white";
+          }}
+          onMouseLeave={e => { 
+            const el = e.currentTarget as HTMLElement; 
+            el.style.background = "rgba(141,76,205,0.12)"; 
+            el.style.borderColor = `${C.purple}40`;
+            el.style.color = C.cream;
+          }}
+        >
+          <Database size={14} strokeWidth={1.8} color={C.purple} />
+          Respaldo
+        </button>
+
         {/* btn-primary: acceso rápido a obras pendientes de revisión */}
         <button onClick={() => navigate("/admin/obras?estado=pendiente")} style={{ display:"flex", alignItems:"center", gap:6, background:`linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border:"none", color:"white", padding:"7px 15px", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:FB, boxShadow:`0 4px 14px ${C.orange}30`, transition:"transform .15s, box-shadow .15s" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform="translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow=`0 8px 22px ${C.orange}45`; }}
@@ -276,7 +363,8 @@ function WelcomeBanner({ userName }: { userName:string }) {
   );
 }
 
-// ── KPI Cards ──────────────────────────────────────────────────────────────────
+// ── KPI Cards REDISEÑADAS - MÁS COMPACTAS Y PROFESIONALES ──────────────────
+// ── KPI Cards REDISEÑADAS - MÁS COMPACTAS Y PROFESIONALES ──────────────────
 function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loading:boolean }) {
   const cards = [
     { value: kpis?.total_obras      ?? 0, label:"Total Obras", sub:"en catálogo",   accent:C.orange, Icon:Layers,      trend:+12 },
@@ -285,40 +373,122 @@ function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loadin
     { value: kpis?.obras_rechazadas ?? 0, label:"Rechazadas",  sub:"este período",  accent:C.pink,   Icon:XCircle,     trend:-2  },
   ];
 
+  // Formato de número con separadores de miles
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat("es-MX").format(num);
+  };
+
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:14 }}>
-      {cards.map(({ value, label, sub, accent, Icon, trend }, i) => (
-        <div key={label}
-          style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", position:"relative", overflow:"hidden", transition:"border-color .2s, transform .2s", cursor:"default", animation:`fadeUp .45s ease ${i*0.06}s both` }}
-          onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${accent}32`; el.style.transform="translateY(-2px)"; }}
-          onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=C.border; el.style.transform="translateY(0)"; }}
-        >
-          {/* Accent line — patrón unificado */}
-          <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)` }} />
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:14 }}>
+      {cards.map(({ value, label, sub, accent, Icon, trend }, i) => {
+        const isTrendPositive = trend > 0;
+        const trendColor = isTrendPositive ? C.green : C.pink;
+        const TrendIcon = isTrendPositive ? TrendingUp : TrendingDown;
+        
+        return (
+          <div key={label}
+            style={{ 
+              background:C.card, 
+              border:`1px solid ${C.border}`, 
+              borderRadius:12, 
+              padding:"14px 16px",
+              position:"relative", 
+              overflow:"hidden", 
+              transition:"border-color .2s, transform .2s", 
+              cursor:"default", 
+              animation:`fadeUp .45s ease ${i*0.06}s both` 
+            }}
+            onMouseEnter={e => { 
+              const el=e.currentTarget as HTMLElement; 
+              el.style.borderColor=`${accent}32`; 
+              el.style.transform="translateY(-2px)"; 
+            }}
+            onMouseLeave={e => { 
+              const el=e.currentTarget as HTMLElement; 
+              el.style.borderColor=C.border; 
+              el.style.transform="translateY(0)"; 
+            }}
+          >
+            {/* Línea superior delgada */}
+            <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)` }} />
 
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-            <div style={{ width:34, height:34, borderRadius:9, background:`${accent}14`, border:`1px solid ${accent}28`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <Icon size={15} color={accent} strokeWidth={2} />
+            {/* Fila superior: Icono a la izquierda, Trend a la derecha */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+              <div style={{ 
+                width:32, 
+                height:32, 
+                borderRadius:8, 
+                background:`${accent}14`, 
+                border:`1px solid ${accent}28`, 
+                display:"flex", 
+                alignItems:"center", 
+                justifyContent:"center" 
+              }}>
+                <Icon size={14} color={accent} strokeWidth={2} />
+              </div>
+              
+              {/* Badge de tendencia más compacto */}
+              <span style={{ 
+                fontSize:11, 
+                fontWeight:700, 
+                color: trendColor, 
+                fontFamily:FB, 
+                display:"flex", 
+                alignItems:"center", 
+                gap:2,
+                background:`${trendColor}10`,
+                padding:"3px 6px",
+                borderRadius:20,
+                border:`1px solid ${trendColor}20`
+              }}>
+                <TrendIcon size={10} strokeWidth={2.5} />
+                {isTrendPositive ? "+" : ""}{trend}%
+              </span>
             </div>
-            <span style={{ fontSize:11, fontWeight:700, color: trend > 0 ? C.green : "#f87171", fontFamily:FB, display:"flex", alignItems:"center", gap:3 }}>
-              {trend > 0 ? <TrendingUp size={11} strokeWidth={2.5} /> : <TrendingDown size={11} strokeWidth={2.5} />}
-              {trend > 0 ? "+" : ""}{trend}%
-            </span>
-          </div>
 
-          {/* Número — Playfair Display, formateado profesionalmente */}
-          <div style={{ fontSize:28, fontWeight:900, color: loading ? C.creamMut : C.cream, letterSpacing:"-0.5px", lineHeight:1, marginBottom:5, fontFamily:FD, transition:"color .3s" }}>
-            {loading ? "—" : fmt(Number(value))}
+            {/* Número grande con COLOR DE ACENTO */}
+            <div style={{ 
+              fontSize:26, 
+              fontWeight:900, 
+              color: loading ? C.creamMut : `${accent}DD`, // 🔹 COLOR DE ACENTO RESTAURADO
+              letterSpacing:"-0.5px", 
+              lineHeight:1, 
+              marginBottom:4, 
+              fontFamily:FD, 
+              transition:"color .3s" 
+            }}>
+              {loading ? "—" : formatNumber(value)}
+            </div>
+
+            {/* Label y sublabel en una línea */}
+            <div style={{ 
+              display:"flex", 
+              alignItems:"baseline", 
+              gap:6, 
+              flexWrap:"wrap"
+            }}>
+              <span style={{ fontSize:13, fontWeight:600, color:C.creamSub, fontFamily:FB }}>
+                {label}
+              </span>
+              <span style={{ 
+                fontSize:11, 
+                color:C.creamMut, 
+                fontFamily:FB,
+                background:"rgba(255,255,255,0.03)",
+                padding:"2px 6px",
+                borderRadius:12
+              }}>
+                {sub}
+              </span>
+            </div>
           </div>
-          <div style={{ fontSize:13, fontWeight:600, color:C.creamSub, marginBottom:2, fontFamily:FB }}>{label}</div>
-          <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{sub}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
-
-// ── ChartSection ───────────────────────────────────────────────────────────────
+// ── CHART SECTION MODIFICADA PARA SER MÁS COMPACTA ───────────────────────────
+// ── CHART SECTION - PROPORCIÓN CORREGIDA ───────────────────
 function ChartSection() {
   const [chartType, setChartType] = useState<"area"|"bar"|"line">("area");
   const chartTypes = [
@@ -327,72 +497,85 @@ function ChartSection() {
     { id:"line" as const, Icon:LineChart },
   ];
 
+  // Datos solo de los últimos 4 meses
+  const chartData4 = [
+    { s:"May", v:38, o:14, a:26 },
+    { s:"Jun", v:61, o:24, a:44 },
+    { s:"Jul", v:54, o:20, a:38 },
+    { s:"Ago", v:78, o:30, a:55 },
+  ];
+
   return (
-    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden" }}>
-      {/* Header */}
-      <div style={{ padding:"18px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden", height:"100%", display:"flex", flexDirection:"column" }}>
+      {/* Header compacto */}
+      <div style={{ padding:"12px 14px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
           <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Actividad</div>
-          <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>Últimas 8 semanas</div>
+          <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:1 }}>4 meses</div>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          {/* Leyenda compacta */}
-          <div style={{ display:"flex", gap:12 }}>
-            {[{c:C.orange,l:"Ventas"},{c:C.blue,l:"Obras"},{c:C.purple,l:"Artistas"}].map(({c,l}) => (
-              <span key={l} style={{ display:"flex", alignItems:"center", gap:4, fontSize:11.5, color:C.creamMut, fontFamily:FB }}>
-                <span style={{ width:14, height:2, background:c, display:"inline-block", borderRadius:2 }} />{l}
-              </span>
-            ))}
-          </div>
-          {/* Selector tipo */}
-          <div style={{ display:"flex", gap:2, background:"rgba(255,232,200,0.04)", border:`1px solid ${C.border}`, borderRadius:8, padding:2 }}>
-            {chartTypes.map(({ id, Icon }) => (
-              <button key={id} onClick={() => setChartType(id)}
-                style={{ width:26, height:26, borderRadius:6, border:"none", background: chartType===id ? "rgba(255,132,14,0.18)" : "transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .15s" }}>
-                <Icon size={12} color={chartType===id ? C.orange : C.creamMut} strokeWidth={1.8} />
-              </button>
-            ))}
-          </div>
+        
+        {/* Selector tipo */}
+        <div style={{ display:"flex", gap:2, background:"rgba(255,232,200,0.04)", border:`1px solid ${C.border}`, borderRadius:6, padding:2 }}>
+          {chartTypes.map(({ id, Icon }) => (
+            <button key={id} onClick={() => setChartType(id)}
+              style={{ width:24, height:24, borderRadius:4, border:"none", background: chartType===id ? "rgba(255,132,14,0.18)" : "transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Icon size={11} color={chartType===id ? C.orange : C.creamMut} strokeWidth={1.8} />
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Gráfica — padding consistente, bien contenida */}
-      <div style={{ padding:"10px 6px 6px" }}>
-        <ResponsiveContainer width="100%" height={195}>
+      {/* Leyenda con círculos */}
+      <div style={{ display:"flex", gap:14, padding:"8px 14px 4px" }}>
+        {[
+          {c:C.orange, l:"Ventas"},
+          {c:C.blue,   l:"Obras"},
+          {c:C.purple, l:"Artistas"}
+        ].map(({c,l}) => (
+          <span key={l} style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:C.creamMut, fontFamily:FB }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:c, display:"inline-block" }} />
+            {l}
+          </span>
+        ))}
+      </div>
+
+      {/* Gráfica - altura ajustada para ocupar el espacio disponible */}
+      <div style={{ flex:1, padding:"0 10px 8px", minHeight:120 }}>
+        <ResponsiveContainer width="100%" height="100%">
           {chartType === "area" ? (
-            <AreaChart data={chartData} margin={{ top:4, right:12, bottom:0, left:-18 }}>
+            <AreaChart data={chartData4} margin={{ top:5, right:5, bottom:5, left:-10 }}>
               <defs>
                 <linearGradient id="gO" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.orange} stopOpacity={0.20}/><stop offset="100%" stopColor={C.orange} stopOpacity={0}/></linearGradient>
                 <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.blue}   stopOpacity={0.14}/><stop offset="100%" stopColor={C.blue}   stopOpacity={0}/></linearGradient>
                 <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.purple} stopOpacity={0.11}/><stop offset="100%" stopColor={C.purple} stopOpacity={0}/></linearGradient>
               </defs>
-              <CartesianGrid stroke="rgba(255,232,200,0.04)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:11, fontFamily:FB }} />
-              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:11, fontFamily:FB }} />
+              <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
+              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={25} />
               <Tooltip content={<ChartTip />} />
-              <Area type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2}   fill="url(#gO)" dot={false} />
-              <Area type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2}   fill="url(#gB)" dot={false} />
+              <Area type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2} fill="url(#gO)" dot={false} />
+              <Area type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2} fill="url(#gB)" dot={false} />
               <Area type="monotone" dataKey="a" name="Artistas" stroke={C.purple} strokeWidth={1.5} fill="url(#gP)" dot={false} />
             </AreaChart>
           ) : chartType === "bar" ? (
-            <RBarChart data={chartData} margin={{ top:4, right:12, bottom:0, left:-18 }}>
-              <CartesianGrid stroke="rgba(255,232,200,0.04)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:11, fontFamily:FB }} />
-              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:11, fontFamily:FB }} />
+            <RBarChart data={chartData4} margin={{ top:5, right:5, bottom:5, left:-10 }}>
+              <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
+              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={25} />
               <Tooltip content={<ChartTip />} />
-              <Bar dataKey="v" name="Ventas"   fill={C.orange} radius={[4,4,0,0]} fillOpacity={0.75} />
-              <Bar dataKey="o" name="Obras"    fill={C.blue}   radius={[4,4,0,0]} fillOpacity={0.75} />
-              <Bar dataKey="a" name="Artistas" fill={C.purple} radius={[4,4,0,0]} fillOpacity={0.75} />
+              <Bar dataKey="v" name="Ventas"   fill={C.orange} radius={[4,4,0,0]} fillOpacity={0.8} barSize={12} />
+              <Bar dataKey="o" name="Obras"    fill={C.blue}   radius={[4,4,0,0]} fillOpacity={0.8} barSize={12} />
+              <Bar dataKey="a" name="Artistas" fill={C.purple} radius={[4,4,0,0]} fillOpacity={0.8} barSize={12} />
             </RBarChart>
           ) : (
-            <RLineChart data={chartData} margin={{ top:4, right:12, bottom:0, left:-18 }}>
-              <CartesianGrid stroke="rgba(255,232,200,0.04)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:11, fontFamily:FB }} />
-              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:11, fontFamily:FB }} />
+            <RLineChart data={chartData4} margin={{ top:5, right:5, bottom:5, left:-10 }}>
+              <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
+              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={25} />
               <Tooltip content={<ChartTip />} />
-              <Line type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2}   dot={{ r:3, fill:C.orange, strokeWidth:0 }} />
-              <Line type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2}   dot={{ r:3, fill:C.blue, strokeWidth:0 }} />
-              <Line type="monotone" dataKey="a" name="Artistas" stroke={C.purple} strokeWidth={1.5} dot={{ r:3, fill:C.purple, strokeWidth:0 }} />
+              <Line type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2.2} dot={{ r:3, fill:C.orange, strokeWidth:0 }} />
+              <Line type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2.2} dot={{ r:3, fill:C.blue, strokeWidth:0 }} />
+              <Line type="monotone" dataKey="a" name="Artistas" stroke={C.purple} strokeWidth={1.8} dot={{ r:3, fill:C.purple, strokeWidth:0 }} />
             </RLineChart>
           )}
         </ResponsiveContainer>
@@ -401,10 +584,10 @@ function ChartSection() {
   );
 }
 
-// ── ObrasRecientes ─────────────────────────────────────────────────────────────
+// ── ObrasRecientes MODIFICADA PARA SER MÁS ANCHA ────────────────────────────
 function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; loading:boolean; navigate:(p:string) => void }) {
   return (
-    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px", display:"flex", flexDirection:"column" }}>
+    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px", display:"flex", flexDirection:"column", height:"100%" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div>
           <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Obras recientes</div>
@@ -417,45 +600,44 @@ function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; lo
         </button>
       </div>
 
-      <div style={{ height:1, background:C.border, marginBottom:8 }} />
+      <div style={{ height:1, background:C.border, marginBottom:12 }} />
 
-      <div style={{ display:"flex", flexDirection:"column", gap:1, flex:1 }}>
+      <div style={{ display:"flex", flexDirection:"column", gap:2, flex:1 }}>
         {loading ? (
           Array.from({length:5}).map((_,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 6px" }}>
-              <div style={{ width:34, height:34, borderRadius:8, background:"rgba(255,232,200,0.05)", flexShrink:0 }} />
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 6px" }}>
+              <div style={{ width:40, height:40, borderRadius:8, background:"rgba(255,232,200,0.05)", flexShrink:0 }} />
               <div style={{ flex:1 }}>
-                <div style={{ height:10, background:"rgba(255,232,200,0.05)", borderRadius:3, marginBottom:5, width:"58%" }} />
-                <div style={{ height:8, background:"rgba(255,232,200,0.04)", borderRadius:3, width:"36%" }} />
+                <div style={{ height:10, background:"rgba(255,232,200,0.05)", borderRadius:3, marginBottom:5, width:"68%" }} />
+                <div style={{ height:8, background:"rgba(255,232,200,0.04)", borderRadius:3, width:"46%" }} />
               </div>
-              <div style={{ width:58, height:18, background:"rgba(255,232,200,0.05)", borderRadius:20 }} />
+              <div style={{ width:68, height:20, background:"rgba(255,232,200,0.05)", borderRadius:20 }} />
             </div>
           ))
         ) : obras.length === 0 ? (
-          <div style={{ textAlign:"center", padding:"36px 0", color:C.creamMut, fontSize:13, fontFamily:FB }}>
-            <Layers size={22} color={C.creamMut} style={{ marginBottom:8, opacity:.3 }} />
+          <div style={{ textAlign:"center", padding:"40px 0", color:C.creamMut, fontSize:13, fontFamily:FB }}>
+            <Layers size={24} color={C.creamMut} style={{ marginBottom:8, opacity:.3 }} />
             <div>Sin obras aún</div>
           </div>
         ) : obras.map((obra, i) => {
           const cfg = statusCfg[obra.estado] || statusCfg.pendiente;
           return (
             <div key={obra.id_obra}
-              style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 6px", borderRadius:9, cursor:"pointer", transition:"background .15s", borderBottom: i < obras.length-1 ? `1px solid rgba(255,232,200,0.04)` : "none" }}
+              style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 8px", borderRadius:9, cursor:"pointer", transition:"background .15s", borderBottom: i < obras.length-1 ? `1px solid rgba(255,232,200,0.04)` : "none" }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.04)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
               onClick={() => navigate(`/admin/obras/editar/${obra.id_obra}`)}>
-              <div style={{ width:34, height:34, borderRadius:8, flexShrink:0, background:`${cfg.color}10`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", border:`1px solid ${cfg.color}24` }}>
+              <div style={{ width:40, height:40, borderRadius:8, flexShrink:0, background:`${cfg.color}10`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", border:`1px solid ${cfg.color}24` }}>
                 {obra.imagen_principal
                   ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e => {(e.target as HTMLImageElement).style.display="none";}} />
-                  : <Image size={13} color={cfg.color} strokeWidth={1.8} />
+                  : <Image size={15} color={cfg.color} strokeWidth={1.8} />
                 }
               </div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12.5, fontWeight:600, color:C.cream, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontFamily:FB }}>{obra.titulo}</div>
-                <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{obra.artista_alias || obra.artista_nombre}</div>
+                <div style={{ fontSize:13, fontWeight:600, color:C.cream, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontFamily:FB }}>{obra.titulo}</div>
+                <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{obra.artista_alias || obra.artista_nombre}</div>
               </div>
-              {/* Badge estado — borderRadius:100, patrón unificado */}
-              <span style={{ fontSize:9.5, padding:"3px 8px", borderRadius:100, fontWeight:700, background:`${cfg.color}12`, color:cfg.color, flexShrink:0, border:`1px solid ${cfg.color}28`, textTransform:"uppercase", letterSpacing:"0.06em", fontFamily:FB }}>
+              <span style={{ fontSize:10, padding:"4px 10px", borderRadius:100, fontWeight:700, background:`${cfg.color}12`, color:cfg.color, flexShrink:0, border:`1px solid ${cfg.color}28`, textTransform:"uppercase", letterSpacing:"0.06em", fontFamily:FB }}>
                 {cfg.label}
               </span>
             </div>
@@ -545,10 +727,17 @@ export default function AdminDashboard() {
           <WelcomeBanner userName={userName} />
           <KpiCards kpis={stats?.kpis ?? null} loading={loading} />
 
-          {/* Fila principal */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 300px", gap:14, marginBottom:14 }}>
-            <ChartSection />
-            <ObrasRecientes obras={stats?.obras_recientes || []} loading={loading} navigate={navigate} />
+          {/* 🔹 NUEVA ESTRUCTURA: OBRAS RECIENTES A LA IZQUIERDA, GRÁFICA A LA DERECHA */}
+          <div style={{ display:"grid", gridTemplateColumns:"340px 1fr", gap:14, marginBottom:14 }}>
+            {/* Panel de obras recientes (izquierda) - ahora más ancho */}
+            <div style={{ width:"100%" }}>
+              <ObrasRecientes obras={stats?.obras_recientes || []} loading={loading} navigate={navigate} />
+            </div>
+            
+            {/* Gráfica (derecha) - más compacta */}
+            <div style={{ width:"100%" }}>
+              <ChartSection />
+            </div>
           </div>
 
           {/* Métricas secundarias */}

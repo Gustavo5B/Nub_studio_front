@@ -98,16 +98,64 @@ export default function Navbar() {
 
         <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 40px", height: "100%", display: "flex", alignItems: "center", gap: 0 }}>
 
-          {/* ── Logo ── */}
-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none", flexShrink: 0, marginRight: 40 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, overflow: "hidden", border: `1px solid ${C.borderBr}`, flexShrink: 0 }}>
-              <img src={logoImg} alt="Nu-B Studio" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: C.cream, lineHeight: 1.1, fontFamily: FD, letterSpacing: "-0.01em" }}>Galeria Altar</div>
-              <div style={{ fontSize: 9.5, color: C.orange, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: FB }}>Arte Huasteco</div>
-            </div>
-          </Link>
+        {/* ── Logo ── */}
+<Link to="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", flexShrink: 0, marginRight: 40 }}>
+  
+  {/* 🔹 LOGO MÁS GRANDE CON OVERLAY */}
+  <div style={{ 
+    width: 48,  // Antes 38
+    height: 48, // Antes 38
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+    flexShrink: 0,
+    background: C.bgDeep,
+    border: `1px solid ${C.orange}30`
+  }}>
+    <img 
+      src={logoImg} 
+      alt="Galeria Altar" 
+      style={{ 
+        width: "100%", 
+        height: "100%", 
+        objectFit: "contain",
+        opacity: 0.95
+      }} 
+    />
+    
+    {/* 🔹 OVERLAY PARA OCULTAR EL FONDO BLANCO */}
+    <div style={{
+      position: "absolute",
+      inset: 0,
+      background: `linear-gradient(135deg, ${C.orange}40, ${C.purple}40)`,
+      mixBlendMode: "multiply",
+      pointerEvents: "none"
+    }} />
+  </div>
+  
+  <div>
+    <div style={{ 
+      fontSize: 18,  // Antes 15
+      fontWeight: 900, 
+      color: C.cream, 
+      lineHeight: 1.2, 
+      fontFamily: FD, 
+      letterSpacing: "-0.01em" 
+    }}>
+      Galeria<span style={{ color: C.orange }}>Altar</span>
+    </div>
+    <div style={{ 
+      fontSize: 10.5,  // Antes 9.5
+      color: C.orange, 
+      fontWeight: 700, 
+      letterSpacing: "0.18em", 
+      textTransform: "uppercase", 
+      fontFamily: FB 
+    }}>
+      Arte Huasteco
+    </div>
+  </div>
+</Link>
 
           {/* ── Links ── */}
           <ul style={{ display: "flex", alignItems: "center", gap: 2, listStyle: "none", margin: 0, padding: 0, flex: 1 }}>
