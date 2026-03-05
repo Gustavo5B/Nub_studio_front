@@ -8,9 +8,9 @@ import {
   Frame, Gem, ShieldCheck, Users, Award, ChevronRight,
 } from "lucide-react";
 
-import heroMain from "../../assets/images/hero.jpg";
+import heroMain from "../../assets/images/trabajo.jpg";
 import obraImg1 from "../../assets/images/artesanas.webp";
-import obraImg2 from "../../assets/images/OLLA.png";
+import obraImg2 from "../../assets/images/cuadro.png";
 
 const C = {
   orange:   "#FF840E",
@@ -227,25 +227,120 @@ export default function Home() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {CATEGORIAS.map(({ icon: Icon, label, count, color, slug }, i) => (
-            <div key={slug} onClick={() => navigate(`/catalogo?categoria=${slug}`)}
-              style={{ padding: "36px 24px 28px", borderRadius: 20, cursor: "pointer", background: C.panel, border: `1px solid ${C.border}`, textAlign: "center", position: "relative", overflow: "hidden", opacity: catSection.inView ? 1 : 0, transform: catSection.inView ? "translateY(0)" : "translateY(36px)", transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s` }}
-              className="cat-card"
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${color}45`; el.style.boxShadow = `0 20px 50px ${color}18`; el.style.transform = "translateY(-6px)"; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.border; el.style.boxShadow = "none"; el.style.transform = "translateY(0)"; }}
-            >
-              <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)`, borderRadius: 2 }} />
-              <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 100, height: 100, borderRadius: "50%", background: `radial-gradient(circle, ${color}14, transparent 70%)`, pointerEvents: "none" }} />
-              <div style={{ width: 64, height: 64, borderRadius: 18, background: `${color}14`, border: `1px solid ${color}32`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", boxShadow: `0 6px 20px ${color}18`, position: "relative" }}>
-                <Icon size={26} color={color} strokeWidth={1.8} />
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: C.cream, marginBottom: 6, fontFamily: FB }}>{label}</div>
-              <div style={{ fontSize: 12.5, color: C.creamMut, marginBottom: 16, fontFamily: FB }}>{count}</div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color, fontFamily: FB }}>
-                Explorar <ChevronRight size={13} strokeWidth={2.5} />
-              </div>
-            </div>
-          ))}
+         
+
+{CATEGORIAS.map(({ icon: Icon, label, count, color, slug }, i) => {
+  // Imágenes de fondo según categoría
+  const bgImages = {
+    pintura: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=200&q=80",
+    fotografia: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=200&q=80",
+    escultura: "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?w=200&q=80",
+    artesania: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=200&q=80"
+  };
+  
+  return (
+    <div key={slug} onClick={() => navigate(`/catalogo?categoria=${slug}`)}
+      style={{
+        padding: "36px 24px 28px",
+        borderRadius: 20,
+        cursor: "pointer",
+        background: C.panel,
+        border: `5px solid ${C.border}`,
+        textAlign: "center",
+        position: "relative",
+        overflow: "hidden",
+        opacity: catSection.inView ? 1 : 0,
+        transform: catSection.inView ? "translateY(0)" : "translateY(36px)",
+        transition: `opacity 0.4s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`,
+        isolation: "isolate"
+      }}
+      className="cat-card"
+      onMouseEnter={e => { 
+        const el = e.currentTarget as HTMLElement; 
+        el.style.borderColor = `${color}45`; 
+        el.style.boxShadow = `0 20px 50px ${color}18`; 
+        el.style.transform = "translateY(-6px)"; 
+      }}
+      onMouseLeave={e => { 
+        const el = e.currentTarget as HTMLElement; 
+        el.style.borderColor = C.border; 
+        el.style.boxShadow = "none"; 
+        el.style.transform = "translateY(0)"; 
+      }}
+    >
+     {/* Imagen de fondo con overlay */}
+<div style={{
+  position: "absolute",
+  inset: 0,
+  backgroundImage: `url(${bgImages[slug as keyof typeof bgImages]})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  opacity: 0.35,
+  transition: "opacity 0.4s ease, transform 0.4s ease",
+  transform: "scale(1)",
+  filter: "blur(1px)",
+}} />
+
+{/* Overlay de color */}
+<div style={{
+  position: "absolute",
+  inset: 0,
+  background: `linear-gradient(180deg, ${C.panel}80 0%, ${color}30 50%, ${C.panel}90 100%)`,
+}} />
+      
+      {/* Línea superior */}
+      <div style={{ 
+        position: "absolute", 
+        top: 0, 
+        left: "20%", 
+        right: "20%", 
+        height: 2, 
+        background: `linear-gradient(90deg, transparent, ${color}, transparent)`, 
+        borderRadius: 2,
+        zIndex: 2
+      }} />
+      
+      {/* Glow */}
+      <div style={{ 
+        position: "absolute", 
+        top: -20, 
+        left: "50%", 
+        transform: "translateX(-50%)", 
+        width: 100, 
+        height: 100, 
+        borderRadius: "50%", 
+        background: `radial-gradient(circle, ${color}20, transparent 70%)`, 
+        pointerEvents: "none",
+        zIndex: 2
+      }} />
+      
+      {/* Contenido (con posición relativa para estar sobre el overlay) */}
+      <div style={{ position: "relative", zIndex: 3 }}>
+        <div style={{ 
+          width: 64, 
+          height: 64, 
+          borderRadius: 18, 
+          background: `${color}20`, 
+          border: `1px solid ${color}50`, 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          margin: "0 auto 18px", 
+          boxShadow: `0 6px 20px ${color}30`,
+          position: "relative",
+          backdropFilter: "blur(4px)"
+        }}>
+          <Icon size={26} color={color} strokeWidth={1.8} />
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: C.cream, marginBottom: 6, fontFamily: FB }}>{label}</div>
+        <div style={{ fontSize: 12.5, color: C.creamMut, marginBottom: 16, fontFamily: FB }}>{count}</div>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color, fontFamily: FB }}>
+          Explorar <ChevronRight size={13} strokeWidth={2.5} />
+        </div>
+      </div>
+    </div>
+  );
+})}
         </div>
       </section>
 

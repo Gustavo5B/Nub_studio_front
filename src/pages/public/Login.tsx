@@ -165,8 +165,16 @@ export default function Login() {
         Volver al inicio
       </button>
 
-      {/* ── Panel izquierdo ── */}
-      <div className="login-banner-panel" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 40px", position: "relative" }}>
+      {/* ── Panel izquierdo (50%) ── */}
+      <div className="login-banner-panel" style={{ 
+        flex: "0 0 50%",
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        padding: "60px 40px", 
+        position: "relative" 
+      }}>
         <div style={{ maxWidth: 400 }}>
           <img src={logoImg} alt="Nu-B Studio" style={{ height: 52, marginBottom: 28 }} />
           <h1 style={{ fontSize: 38, fontWeight: 900, color: C.text, lineHeight: 1.1, margin: "0 0 16px" }}>
@@ -197,57 +205,144 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ── Panel derecho ── */}
-      <div className="login-form-panel" style={{ width: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", position: "relative" }}>
-        <div style={{ width: "100%", maxWidth: 420 }}>
+      {/* ── Panel derecho (40%) ── */}
+      <div className="login-form-panel" style={{ 
+        flex: "0 0 40%",
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        padding: "40px 20px",
+        position: "relative" 
+      }}>
+        <div style={{ 
+          width: "100%", 
+          maxWidth: 380
+        }}>
 
           <div className="login-mobile-logo" style={{ display: "none", justifyContent: "center", marginBottom: 28 }}>
             <img src={logoImg} alt="Nu-B Studio" style={{ height: 44 }} />
           </div>
 
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "36px 32px", backdropFilter: "blur(20px)" }}>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>Iniciar sesión</h2>
-            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 28px" }}>Ingresa tus credenciales para continuar</p>
+          <div style={{ 
+            background: "rgba(255,255,255,0.03)", 
+            border: "1px solid rgba(255,255,255,0.08)", 
+            borderRadius: 20, 
+            padding: "28px 24px",
+            backdropFilter: "blur(20px)" 
+          }}>
+            <h2 style={{ 
+              fontSize: 24, 
+              fontWeight: 800, 
+              color: C.text, 
+              margin: "0 0 4px",
+              textAlign: "center"
+            }}>Iniciar sesión</h2>
+            <p style={{ 
+              fontSize: 13, 
+              color: C.muted, 
+              margin: "0 0 24px",
+              textAlign: "center"
+            }}>Ingresa tus credenciales para continuar</p>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 6 }}>
                   <Mail size={15} /> Correo electrónico
                 </label>
-                <input type="email" name="correo" value={formData.correo} onChange={handleChange}
-                  placeholder="tu@correo.com" disabled={isLoading} required style={inputStyle} />
+                <input 
+                  type="email" 
+                  name="correo" 
+                  value={formData.correo} 
+                  onChange={handleChange}
+                  placeholder="tu@correo.com" 
+                  disabled={isLoading} 
+                  required 
+                  style={inputStyle} 
+                />
               </div>
 
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 6 }}>
                   <Lock size={15} /> Contraseña
                 </label>
                 <div style={{ position: "relative" }}>
-                  <input type={mostrarContrasena ? "text" : "password"} name="contrasena"
-                    value={formData.contrasena} onChange={handleChange} placeholder="••••••••"
-                    disabled={isLoading} required style={{ ...inputStyle, paddingRight: 44 }} />
-                  <button type="button" onClick={() => setMostrarContrasena(p => !p)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex", alignItems: "center" }}>
-                    {mostrarContrasena ? <EyeOff size={17} /> : <Eye size={17} />}
+                  <input 
+                    type={mostrarContrasena ? "text" : "password"} 
+                    name="contrasena"
+                    value={formData.contrasena} 
+                    onChange={handleChange} 
+                    placeholder="••••••••"
+                    disabled={isLoading} 
+                    required 
+                    style={{ 
+                      ...inputStyle, 
+                      paddingRight: 44,
+                      border: mostrarContrasena ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)"
+                    }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setMostrarContrasena(p => !p)}
+                    style={{ 
+                      position: "absolute", 
+                      right: 12, 
+                      top: "50%", 
+                      transform: "translateY(-50%)", 
+                      background: "rgba(0,0,0,0.3)",
+                      border: "none", 
+                      borderRadius: 6,
+                      cursor: "pointer", 
+                      color: mostrarContrasena ? C.orange : C.muted,
+                      display: "flex", 
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 6,
+                      transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(255,132,14,0.2)";
+                      e.currentTarget.style.color = C.orange;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(0,0,0,0.3)";
+                      e.currentTarget.style.color = mostrarContrasena ? C.orange : C.muted;
+                    }}
+                  >
+                    {mostrarContrasena ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              <div style={{ textAlign: "right", marginTop: -8 }}>
+              <div style={{ 
+                textAlign: "center",
+                marginTop: -4
+              }}>
                 <Link to="/forgot-password" style={{ fontSize: 13, color: C.orange, textDecoration: "none", fontWeight: 500 }}>
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
 
               {mensaje && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", border: `1px solid ${isError ? C.pink : "#4ADE80"}`, fontSize: 13, color: isError ? C.pink : "#4ADE80" }}>
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  gap: 8, 
+                  padding: "10px 14px", 
+                  borderRadius: 10, 
+                  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", 
+                  border: `1px solid ${isError ? C.pink : "#4ADE80"}`, 
+                  fontSize: 13, 
+                  color: isError ? C.pink : "#4ADE80",
+                  textAlign: "center"
+                }}>
                   {isError ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
                   {mensaje}
                 </div>
               )}
 
               <button type="submit" disabled={isLoading}
-                style={{ ...btnPrimary, marginTop: 4, opacity: isLoading ? 0.8 : 1 }}>
+                style={{ ...btnPrimary, marginTop: 2, opacity: isLoading ? 0.8 : 1 }}>
                 {isLoading
                   ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Cargando...</>
                   : <><LogIn size={16} /> Iniciar sesión</>
@@ -255,13 +350,13 @@ export default function Login() {
               </button>
             </form>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px" }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
               <span style={{ fontSize: 12, color: C.muted }}>o</span>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
             </div>
 
-            <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 10px" }}>
+            <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
               ¿No tienes cuenta?{" "}
               <span onClick={() => navigate("/register")} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Crear una cuenta</span>
             </p>
@@ -271,14 +366,18 @@ export default function Login() {
             </p>
           </div>
 
-          <div style={{ textAlign: "center", marginTop: 20 }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>Al iniciar sesión aceptas nuestros</p>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "0 0 6px" }}>
+              Al iniciar sesión aceptas nuestros
+            </p>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.muted, cursor: "pointer" }}><FileText size={12} /> Términos y Condiciones</span>
               <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>•</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.muted, cursor: "pointer" }}><Shield size={12} /> Política de Privacidad</span>
             </div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 10 }}>© {currentYear} Altar Studio. Todos los derechos reservados.</p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 8 }}>
+              © {currentYear} Altar Studio. Todos los derechos reservados.
+            </p>
           </div>
         </div>
       </div>
@@ -298,13 +397,17 @@ export default function Login() {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", boxSizing: "border-box",
-  padding: "11px 14px", borderRadius: 10,
-  border: "1.5px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#ffffff", fontSize: 14,
+  width: "100%", 
+  boxSizing: "border-box",
+  padding: "11px 14px", 
+  borderRadius: 10,
+  border: "1.5px solid rgba(255,255,255,0.2)",
+  background: "rgba(0,0,0,0.3)",
+  color: "#ffffff", 
+  fontSize: 14,
   fontFamily: "'Outfit', sans-serif",
-  outline: "none", transition: "border .15s",
+  outline: "none", 
+  transition: "border .15s, background .15s",
 };
 
 const btnPrimary: React.CSSProperties = {

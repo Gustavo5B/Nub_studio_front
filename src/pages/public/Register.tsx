@@ -131,8 +131,15 @@ export default function Register() {
         Volver al inicio
       </button>
 
-      {/* ── Panel izquierdo ── */}
-      <div className="reg-banner" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 40px" }}>
+      {/* ── Panel izquierdo (50%) ── */}
+      <div className="reg-banner" style={{ 
+        flex: "0 0 50%",
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        padding: "60px 40px" 
+      }}>
         <div style={{ maxWidth: 400 }}>
           <img src={logoImg} alt="Nu-B Studio" style={{ height: 52, marginBottom: 28 }} />
           <h1 style={{ fontSize: 38, fontWeight: 900, color: C.text, lineHeight: 1.1, margin: "0 0 16px" }}>
@@ -160,9 +167,19 @@ export default function Register() {
         </div>
       </div>
 
-      {/* ── Panel derecho ── */}
-      <div className="reg-form-panel" style={{ width: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", overflowY: "auto" }}>
-        <div style={{ width: "100%", maxWidth: 440 }}>
+      {/* ── Panel derecho (45%) - MÁS ANCHO PARA REGISTER ── */}
+      <div className="reg-form-panel" style={{ 
+        flex: "0 0 45%",  // 🔹 AUMENTADO DE 40% A 45% PARA DAR MÁS ESPACIO
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        padding: "30px 20px",
+        overflowY: "auto" 
+      }}>
+        <div style={{ 
+          width: "100%", 
+          maxWidth: 420  // 🔹 AUMENTADO DE 380 A 420 PARA MÁS ESPACIO
+        }}>
 
           {/* Logo mobile */}
           <div className="reg-mobile-logo" style={{ display: "none", justifyContent: "center", marginBottom: 28 }}>
@@ -170,57 +187,125 @@ export default function Register() {
           </div>
 
           {/* Card */}
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "36px 32px", backdropFilter: "blur(20px)" }}>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>Crear cuenta</h2>
-            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 28px" }}>Únete a nuestra plataforma de arte</p>
+          <div style={{ 
+            background: "rgba(255,255,255,0.03)", 
+            border: "1px solid rgba(255,255,255,0.08)", 
+            borderRadius: 20, 
+            padding: "32px 28px",  // 🔹 AUMENTADO EL PADDING
+            backdropFilter: "blur(20px)" 
+          }}>
+            <h2 style={{ 
+              fontSize: 24, 
+              fontWeight: 800, 
+              color: C.text, 
+              margin: "0 0 4px",
+              textAlign: "center"
+            }}>Crear cuenta</h2>
+            <p style={{ 
+              fontSize: 13, 
+              color: C.muted, 
+              margin: "0 0 28px",  // 🔹 AUMENTADO EL MARGEN
+              textAlign: "center"
+            }}>Únete a nuestra plataforma de arte</p>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}> {/* 🔹 AUMENTADO GAP */}
 
               {/* Nombre */}
               <div>
                 <label style={labelStyle}><User size={14} /> Nombre completo</label>
-                <input name="nombre" value={formData.nombre} onChange={handleChange}
-                  placeholder="Ej: Juan Pérez" disabled={isLoading} required style={inputStyle} />
+                <input 
+                  name="nombre" 
+                  value={formData.nombre} 
+                  onChange={handleChange}
+                  placeholder="Ej: Juan Pérez" 
+                  disabled={isLoading} 
+                  required 
+                  style={inputStyle} 
+                />
               </div>
 
               {/* Correo */}
               <div>
                 <label style={labelStyle}><Mail size={14} /> Correo electrónico</label>
-                <input type="email" name="correo" value={formData.correo} onChange={handleChange}
-                  placeholder="tu@correo.com" disabled={isLoading} required style={inputStyle} />
+                <input 
+                  type="email" 
+                  name="correo" 
+                  value={formData.correo} 
+                  onChange={handleChange}
+                  placeholder="tu@correo.com" 
+                  disabled={isLoading} 
+                  required 
+                  style={inputStyle} 
+                />
               </div>
 
               {/* Contraseña */}
               <div>
                 <label style={labelStyle}><Lock size={14} /> Contraseña</label>
                 <div style={{ position: "relative" }}>
-                  <input type={mostrarPass ? "text" : "password"} name="contrasena"
-                    value={formData.contrasena} onChange={handleChange}
-                    placeholder="••••••••" disabled={isLoading} required
-                    style={{ ...inputStyle, paddingRight: 44 }} />
-                  <button type="button" onClick={() => setMostrarPass(p => !p)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>
-                    {mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <input 
+                    type={mostrarPass ? "text" : "password"} 
+                    name="contrasena"
+                    value={formData.contrasena} 
+                    onChange={handleChange}
+                    placeholder="••••••••" 
+                    disabled={isLoading} 
+                    required
+                    style={{ 
+                      ...inputStyle, 
+                      paddingRight: 44,
+                      border: mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)"
+                    }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setMostrarPass(p => !p)}
+                    style={{ 
+                      position: "absolute", 
+                      right: 12, 
+                      top: "50%", 
+                      transform: "translateY(-50%)", 
+                      background: "rgba(0,0,0,0.3)",
+                      border: "none", 
+                      borderRadius: 6,
+                      cursor: "pointer", 
+                      color: mostrarPass ? C.orange : C.muted,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 6,
+                      transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(255,132,14,0.2)";
+                      e.currentTarget.style.color = C.orange;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(0,0,0,0.3)";
+                      e.currentTarget.style.color = mostrarPass ? C.orange : C.muted;
+                    }}
+                  >
+                    {mostrarPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
 
                 {/* Barra de fortaleza */}
                 {formData.contrasena.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
                       {[1,2,3,4,5].map(i => (
-                        <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= metCount ? strengthColor : "rgba(255,255,255,0.08)", transition: "background .2s" }} />
+                        <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= metCount ? strengthColor : "rgba(255,255,255,0.08)", transition: "background .2s" }} />
                       ))}
                     </div>
-                    {strengthLabel && <span style={{ fontSize: 11, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</span>}
+                    {strengthLabel && <span style={{ fontSize: 12, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</span>}
                   </div>
                 )}
 
                 {/* Requisitos */}
                 {formData.contrasena.length > 0 && (
-                  <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                     {passReqs.map((req, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 4 ? 6 : 0, fontSize: 12, color: req.met ? "#4ADE80" : C.muted, transition: "color .2s" }}>
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 4 ? 8 : 0, fontSize: 12, color: req.met ? "#4ADE80" : C.muted, transition: "color .2s" }}>
                         {req.met
                           ? <CheckCircle2 size={13} color="#4ADE80" />
                           : <AlertCircle size={13} color="rgba(255,255,255,0.3)" />
@@ -233,10 +318,10 @@ export default function Register() {
               </div>
 
               {/* Términos */}
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", marginTop: 4 }}>
                 <div
                   onClick={() => setAceptoTerminos(p => !p)}
-                  style={{ width: 20, height: 20, borderRadius: 5, border: `1.5px solid ${aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)"}`, background: aceptoTerminos ? C.orange : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all .15s", cursor: "pointer" }}
+                  style={{ width: 20, height: 20, borderRadius: 5, border: `1.5px solid ${aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)"}`, background: aceptoTerminos ? C.orange : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2, transition: "all .15s", cursor: "pointer" }}
                 >
                   {aceptoTerminos && <Check size={12} color="white" strokeWidth={3} />}
                 </div>
@@ -250,7 +335,20 @@ export default function Register() {
 
               {/* Mensaje */}
               {mensaje && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, fontSize: 13, background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", border: `1px solid ${isError ? C.pink : "#4ADE80"}`, color: isError ? C.pink : "#4ADE80" }}>
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  gap: 8, 
+                  padding: "12px 16px", 
+                  borderRadius: 10, 
+                  fontSize: 13, 
+                  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", 
+                  border: `1px solid ${isError ? C.pink : "#4ADE80"}`, 
+                  color: isError ? C.pink : "#4ADE80",
+                  textAlign: "center",
+                  marginTop: 8
+                }}>
                   {isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
                   {mensaje}
                 </div>
@@ -260,7 +358,7 @@ export default function Register() {
               <button type="submit" disabled={isLoading || !aceptoTerminos}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  width: "100%", padding: "13px 20px", borderRadius: 12, marginTop: 4,
+                  width: "100%", padding: "14px 20px", borderRadius: 12, marginTop: 8,
                   background: aceptoTerminos ? "linear-gradient(135deg, #FF840E, #CC59AD)" : "rgba(255,255,255,0.06)",
                   border: "none", color: aceptoTerminos ? "white" : "rgba(255,255,255,0.3)",
                   fontSize: 15, fontWeight: 700, cursor: isLoading || !aceptoTerminos ? "not-allowed" : "pointer",
@@ -269,15 +367,15 @@ export default function Register() {
                   opacity: isLoading ? 0.8 : 1,
                   transition: "all .2s",
                 }}>
-                {isLoading
-                  ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Registrando...</>
-                  : <><UserPlus size={16} /> {aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar"}</>
-                }
+                  {isLoading
+                    ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Registrando...</>
+                    : <><UserPlus size={16} /> {aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar"}</>
+                  }
               </button>
             </form>
 
             {/* Divider */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0 18px" }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
               <span style={{ fontSize: 12, color: C.muted }}>o</span>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
@@ -319,11 +417,15 @@ const labelStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", boxSizing: "border-box",
-  padding: "11px 14px", borderRadius: 10,
-  border: "1.5px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#ffffff", fontSize: 14,
+  width: "100%", 
+  boxSizing: "border-box",
+  padding: "12px 16px", 
+  borderRadius: 10,
+  border: "1.5px solid rgba(255,255,255,0.2)",
+  background: "rgba(0,0,0,0.3)",
+  color: "#ffffff", 
+  fontSize: 14,
   fontFamily: "'Outfit', sans-serif",
-  outline: "none", transition: "border .15s",
+  outline: "none", 
+  transition: "border .15s, background .15s",
 };
