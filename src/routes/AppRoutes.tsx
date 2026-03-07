@@ -10,6 +10,7 @@ import ListaArtistas      from "../pages/private/admin/ListaArtistas";
 import CrearArtista       from "../pages/private/admin/CrearArtista";
 import EditarArtista      from "../pages/private/admin/EditarArtista";
 import DetalleArtista     from "../pages/private/admin/DetalleArtista";
+import Backups            from "../pages/private/admin/Backups";
 import PrivateRoute       from "../components/PrivateRoute";
 import AdminRoute         from "../components/AdminRoute";
 import ArtistaRoute       from "../components/ArtistaRoute";
@@ -73,6 +74,10 @@ export default function AppRoutes() {
       <Route path="/admin/artistas/:id" element={
         <AdminRoute><DetalleArtista /></AdminRoute>
       } />
+      <Route path="/admin/backups" element={      
+        <AdminRoute><Backups /></AdminRoute>
+      } />
+
 
       {/* ── Error pages (siempre al final) ── */}
       <Route path="/unauthorized" element={<Unauthorized />} />

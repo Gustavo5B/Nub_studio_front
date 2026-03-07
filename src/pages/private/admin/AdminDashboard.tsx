@@ -55,11 +55,12 @@ const statusCfg: Record<string, { label: string; color: string }> = {
 };
 
 const NAV = [
-  { id:"dashboard", label:"Dashboard", icon:LayoutDashboard, path:"/admin"          },
-  { id:"obras",     label:"Obras",     icon:Layers,          path:"/admin/obras"    },
-  { id:"artistas",  label:"Artistas",  icon:Users,           path:"/admin/artistas" },
-  { id:"ventas",    label:"Ventas",    icon:ShoppingBag,     path:"/admin"          },
-  { id:"reportes",  label:"Reportes",  icon:BarChart2,       path:"/admin"          },
+  { id:"dashboard", label:"Dashboard", icon:LayoutDashboard, path:"/admin"           },
+  { id:"obras",     label:"Obras",     icon:Layers,          path:"/admin/obras"     },
+  { id:"artistas",  label:"Artistas",  icon:Users,           path:"/admin/artistas"  },
+  { id:"ventas",    label:"Ventas",    icon:ShoppingBag,     path:"/admin"           },
+  { id:"reportes",  label:"Reportes",  icon:BarChart2,       path:"/admin"           },
+  { id:"backups",   label:"Backups",   icon:Database,        path:"/admin/backups"   },
 ];
 
 interface ObraReciente {
@@ -596,9 +597,9 @@ export default function AdminDashboard() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      showToast("Respaldo descargado correctamente", "success");
+     showToast("Respaldo descargado correctamente", "ok");
     } catch (err) {
-      showToast("Error al generar el respaldo", "error");
+       showToast("Error al generar el respaldo", "err");
       console.error(err);
     } finally {
       setBackupLoading(false);
