@@ -59,7 +59,7 @@ const NAV = [
   { id:"obras",     label:"Obras",     icon:Layers,          path:"/admin/obras"     },
   { id:"artistas",  label:"Artistas",  icon:Users,           path:"/admin/artistas"  },
   { id:"ventas",    label:"Ventas",    icon:ShoppingBag,     path:"/admin"           },
-  { id:"reportes",  label:"Reportes",  icon:BarChart2,       path:"/admin"           },
+  { id:"reportes",  label:"Reportes",  icon:BarChart2,       path:"/admin/reportes"           },
   { id:"backups",   label:"Backups",   icon:Database,        path:"/admin/backups"   },
 ];
 

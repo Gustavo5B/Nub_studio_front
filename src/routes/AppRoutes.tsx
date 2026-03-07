@@ -19,6 +19,8 @@ import RegistroArtista    from "../pages/public/RegistroArtista";
 import NuevaObra          from "../pages/private/artista/NuevaObra";
 import MisObras           from "../pages/private/artista/MisObras";
 import EditarObraArtista  from "../pages/private/artista/EditarObra";
+import AdminReportes from "../pages/private/admin/AdminReportes";
+
 
 // Páginas de error
 import NotFound     from "../pages/public/NotFound";
@@ -77,7 +79,9 @@ export default function AppRoutes() {
       <Route path="/admin/backups" element={      
         <AdminRoute><Backups /></AdminRoute>
       } />
-
+    <Route path="/admin/reportes" element={
+  <AdminRoute><AdminReportes /></AdminRoute>
+} />
 
       {/* ── Error pages (siempre al final) ── */}
       <Route path="/unauthorized" element={<Unauthorized />} />

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingBag, BarChart2,
-  Settings, Plus, Search, Edit2, Trash2,
+  Settings, Search, Edit2, Trash2,
   CheckCircle, Clock, XCircle, Eye,
   ChevronLeft, ChevronRight, AlertTriangle, X,
   RefreshCw, Image as ImageIcon, LogOut, Layers, Star,
@@ -330,12 +330,7 @@ export default function ListaObras() {
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
               <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
             </button>
-            {/* btn-primary: gradiente naranja-magenta */}
-            <button onClick={() => navigate("/admin/obras/crear")} style={{ display: "flex", alignItems: "center", gap: 6, background: `linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border: "none", color: "white", padding: "7px 15px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FB, boxShadow: `0 4px 14px ${C.orange}30`, transition: "transform .15s, box-shadow .15s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 22px ${C.orange}45`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 14px ${C.orange}30`; }}>
-              <Plus size={14} strokeWidth={2.5} /> Nueva Obra
-            </button>
+
           </div>
         </div>
 
@@ -407,9 +402,10 @@ export default function ListaObras() {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 220, color: C.creamMut, gap: 10 }}>
                 <ImageIcon size={36} strokeWidth={1} style={{ opacity: 0.2 }} />
                 <div style={{ fontSize: 14, fontFamily: FD, color: C.creamSub }}>No se encontraron obras</div>
-                <button onClick={() => navigate("/admin/obras/crear")} style={{ fontSize: 12.5, color: C.orange, background: `rgba(255,132,14,0.10)`, border: `1px solid rgba(255,132,14,0.30)`, borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontWeight: 700, fontFamily: FB }}>
-                  + Crear primera obra
-                </button>
+               
+<div style={{ fontSize: 13, color: C.creamMut, fontFamily: FB }}>
+  No hay obras registradas aún
+</div>
               </div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
