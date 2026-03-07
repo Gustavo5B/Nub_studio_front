@@ -2,13 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import {
-  LayoutDashboard, Users, ShoppingBag,
-  Settings, Eye, LogOut, Bell, Search,
+  Eye, Bell, Search,
   CheckCircle, Clock, XCircle, TrendingUp,
-  TrendingDown, Package, ChevronRight, BarChart2,
+  TrendingDown, Package, ChevronRight,
   Image, RefreshCw, ArrowUpRight,
   BarChart, LineChart, AreaChart as AreaIcon,
-  Layers, Star, Database,
+  Layers, Star, Database, Users,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
@@ -16,12 +15,10 @@ import {
   BarChart as RBarChart, Bar,
   LineChart as RLineChart, Line,
 } from "recharts";
-import logoImg from "../../../assets/images/logo.png";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
 import { handleApiError, handleNetworkError } from "../../../utils/handleApiError";
 
-// ── Paleta unificada ──────────────────────────────────────────────────────────
 const C = {
   orange:   "#FF840E",
   pink:     "#CC59AD",
@@ -33,9 +30,7 @@ const C = {
   cream:    "#FFF8EE",
   creamSub: "#D8CABC",
   creamMut: "rgba(255,232,200,0.35)",
-  bg:       "#0C0812",
   bgDeep:   "#070510",
-  panel:    "#100D1C",
   card:     "rgba(18,13,30,0.95)",
   border:   "rgba(255,200,150,0.08)",
   borderBr: "rgba(118,78,49,0.20)",
@@ -48,28 +43,15 @@ const fmt = (n: number) => new Intl.NumberFormat("es-MX").format(n);
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const statusCfg: Record<string, { label: string; color: string }> = {
-  publicada: { label: "Publicada", color: C.green },
-  pendiente: { label: "Pendiente", color: C.gold  },
-  rechazada: { label: "Rechazada", color: C.pink  },
+  publicada: { label: "Publicada", color: C.green    },
+  pendiente: { label: "Pendiente", color: C.gold     },
+  rechazada: { label: "Rechazada", color: C.pink     },
   agotada:   { label: "Agotada",   color: C.creamMut },
 };
 
-const NAV = [
-  { id:"dashboard", label:"Dashboard", icon:LayoutDashboard, path:"/admin"           },
-  { id:"obras",     label:"Obras",     icon:Layers,          path:"/admin/obras"     },
-  { id:"artistas",  label:"Artistas",  icon:Users,           path:"/admin/artistas"  },
-  { id:"ventas",    label:"Ventas",    icon:ShoppingBag,     path:"/admin"           },
-  { id:"reportes",  label:"Reportes",  icon:BarChart2,       path:"/admin/reportes"           },
-  { id:"backups",   label:"Backups",   icon:Database,        path:"/admin/backups"   },
-];
-
 interface ObraReciente {
-  id_obra: number;
-  titulo: string;
-  estado: string;
-  imagen_principal?: string;
-  artista_alias?: string;
-  artista_nombre?: string;
+  id_obra: number; titulo: string; estado: string;
+  imagen_principal?: string; artista_alias?: string; artista_nombre?: string;
 }
 interface StatsData {
   kpis: Record<string, number>;
@@ -82,7 +64,7 @@ interface TooltipProps {
   label?: string;
 }
 
-// ── Tooltip gráfica ────────────────────────────────────────────────────────────
+// ── Tooltip ───────────────────────────────────────────────────────────────────
 const ChartTip = ({ active, payload, label }: TooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
@@ -99,180 +81,43 @@ const ChartTip = ({ active, payload, label }: TooltipProps) => {
   );
 };
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
-function Sidebar({ active, setActive, userName, onLogout, navigate }: {
-  active: string; setActive: (v:string) => void;
-  userName: string; onLogout: () => void; navigate: (p:string) => void;
-}) {
-  return (
-    <div style={{
-      width: 220, minHeight:"100vh",
-      background: C.bgDeep,
-      borderRight:`1px solid ${C.borderBr}`,
-      display:"flex", flexDirection:"column",
-      position:"sticky", top:0, height:"100vh",
-      flexShrink:0, zIndex:40,
-    }}>
-      <div style={{ height:2, background:`linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.pink}, ${C.purple}, ${C.blue})` }} />
-
-      {/* Logo + usuario */}
-      <div style={{ padding:"20px 18px 16px", borderBottom:`1px solid ${C.borderBr}` }}>
-        <div onClick={() => navigate("/")} style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", marginBottom:16 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 12, overflow: "hidden",
-            position: "relative", flexShrink: 0, background: C.bgDeep,
-            border: `1px solid ${C.orange}30`
-          }}>
-            <img src={logoImg} alt="Galería Altar" style={{ width:"100%", height:"100%", objectFit:"contain", opacity:0.95 }} />
-            <div style={{
-              position:"absolute", inset:0,
-              background:`linear-gradient(135deg, ${C.orange}40, ${C.purple}40)`,
-              mixBlendMode:"multiply", pointerEvents:"none"
-            }} />
-          </div>
-          <div>
-            <div style={{ fontSize:18, fontWeight:900, color:C.cream, lineHeight:1.2, fontFamily:FD, letterSpacing:"-0.01em" }}>
-              Galería<span style={{ color: C.orange }}>Altar</span>
-            </div>
-            <div style={{ fontSize:10, color:C.orange, marginTop:2, letterSpacing:"0.16em", textTransform:"uppercase", fontFamily:FB, fontWeight:700 }}>
-              Panel Admin
-            </div>
-          </div>
-        </div>
-
-        {/* Usuario */}
-        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:12, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}` }}>
-          <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${C.pink}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"white", fontFamily:FB }}>
-            {userName?.[0]?.toUpperCase() || "A"}
-          </div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.cream, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:FB }}>{userName}</div>
-            <div style={{ fontSize:10, color:C.orange, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:FB }}>Admin</div>
-          </div>
-          <div style={{ width:7, height:7, borderRadius:"50%", background:C.green, boxShadow:`0 0 6px ${C.green}`, flexShrink:0 }} />
-        </div>
-      </div>
-
-      {/* Nav links */}
-      <div style={{ flex:1, padding:"12px 10px", display:"flex", flexDirection:"column", gap:2, overflowY:"auto" }}>
-        <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, letterSpacing:"0.16em", textTransform:"uppercase", padding:"0 8px 10px", fontFamily:FB }}>Navegación</div>
-        {NAV.map(({ id, label, icon:Icon, path }) => {
-          const on = active === id;
-          return (
-            <button key={id} onClick={() => { setActive(id); navigate(path); }}
-              style={{ width:"100%", cursor:"pointer", background: on ? "rgba(255,132,14,0.10)" : "transparent", border: on ? "1px solid rgba(255,132,14,0.22)" : "1px solid transparent", borderRadius:10, padding:"10px 12px", display:"flex", alignItems:"center", gap:10, transition:"all .15s", position:"relative", fontFamily:FB }}
-              onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.04)"; }}
-              onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-            >
-              {on && <div style={{ position:"absolute", left:0, top:"20%", bottom:"20%", width:2.5, borderRadius:"0 3px 3px 0", background:C.orange }} />}
-              <div style={{ width:32, height:32, borderRadius:9, flexShrink:0, background: on ? "rgba(255,132,14,0.15)" : "rgba(255,232,200,0.05)", display:"flex", alignItems:"center", justifyContent:"center", border: on ? "1px solid rgba(255,132,14,0.25)" : "1px solid transparent", transition:"all .15s" }}>
-                <Icon size={15} color={on ? C.orange : C.creamMut} strokeWidth={on ? 2.2 : 1.8} />
-              </div>
-              <span style={{ fontSize:13.5, fontWeight: on ? 700 : 400, color: on ? C.cream : C.creamSub, fontFamily:FB }}>{label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Footer sidebar */}
-      <div style={{ padding:"12px 10px 18px", borderTop:`1px solid ${C.borderBr}` }}>
-        <div style={{ display:"flex", gap:6 }}>
-          <button style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:5, padding:"9px", borderRadius:9, border:`1px solid ${C.border}`, background:"transparent", cursor:"pointer", fontSize:12, color:C.creamMut, fontWeight:600, fontFamily:FB, transition:"color .15s" }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.creamSub}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.creamMut}>
-            <Settings size={13} strokeWidth={1.8} /> Config
-          </button>
-          <button onClick={onLogout} style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:5, padding:"9px", borderRadius:9, border:`1px solid rgba(204,89,173,0.25)`, background:"rgba(204,89,173,0.06)", cursor:"pointer", fontSize:12, color:C.pink, fontWeight:600, fontFamily:FB, transition:"background .15s" }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(204,89,173,0.14)"}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(204,89,173,0.06)"}>
-            <LogOut size={13} strokeWidth={1.8} /> Salir
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Topbar ─────────────────────────────────────────────────────────────────────
+// ── Topbar ────────────────────────────────────────────────────────────────────
 function Topbar({ navigate, onRefresh, loading, onBackup, backupLoading }: {
-  navigate:(p:string) => void;
-  onRefresh:() => void;
-  loading:boolean;
-  onBackup:() => void;
-  backupLoading:boolean;
+  navigate:(p:string) => void; onRefresh:() => void; loading:boolean;
+  onBackup:() => void; backupLoading:boolean;
 }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <span style={{ fontSize:11.5, fontWeight:700, color:C.orange, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:FB }}>Admin</span>
+        <span style={{ fontSize:11.5, fontWeight:700, color:C.orange, letterSpacing:"0.08em", textTransform:"uppercase" }}>Admin</span>
         <ChevronRight size={12} color={C.creamMut} />
-        <span style={{ fontSize:13, color:C.creamSub, fontFamily:FB }}>Dashboard</span>
+        <span style={{ fontSize:13, color:C.creamSub }}>Dashboard</span>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-
-        {/* Buscador 240px */}
-        <div style={{
-          display:"flex", alignItems:"center", gap:8,
-          background:"rgba(255,232,200,0.03)", border:`1px solid ${C.border}`,
-          borderRadius:9, padding:"7px 16px", width:240,
-          cursor:"text", transition:"border-color .15s"
-        }}
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,232,200,0.03)", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 16px", width:240, cursor:"text", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.borderHi}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <Search size={14} color={C.creamMut} strokeWidth={1.8} />
-          <span style={{ fontSize:13, color:C.creamMut, fontFamily:FB, userSelect:"none" }}>Buscar obras, artistas...</span>
+          <span style={{ fontSize:13, color:C.creamMut, userSelect:"none" }}>Buscar obras, artistas...</span>
         </div>
-
-        {/* Refresh */}
         <button onClick={onRefresh} style={{ width:34, height:34, borderRadius:9, background:"transparent", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = `${C.orange}45`}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
         </button>
-
-        {/* Bell */}
         <button style={{ position:"relative", width:34, height:34, borderRadius:9, background:"transparent", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"border-color .15s" }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.borderHi}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
           <Bell size={13} color={C.creamMut} strokeWidth={1.8} />
           <span style={{ position:"absolute", top:8, right:8, width:5, height:5, background:C.orange, borderRadius:"50%", border:`1.5px solid ${C.bgDeep}` }} />
         </button>
-
-        {/* Botón Respaldo — funcional */}
-        <button
-          onClick={onBackup}
-          disabled={backupLoading}
-          style={{
-            display:"flex", alignItems:"center", gap:6,
-            background: backupLoading ? "rgba(141,76,205,0.06)" : "rgba(141,76,205,0.12)",
-            border:`1px solid rgba(141,76,205,${backupLoading ? "0.20" : "0.35"})`,
-            color: backupLoading ? C.creamMut : C.cream,
-            padding:"7px 14px", borderRadius:9, fontWeight:600, fontSize:13,
-            cursor: backupLoading ? "wait" : "pointer",
-            fontFamily:FB, transition:"all .15s",
-            opacity: backupLoading ? 0.7 : 1,
-          }}
-          onMouseEnter={e => {
-            if (backupLoading) return;
-            const el = e.currentTarget as HTMLElement;
-            el.style.background = "rgba(141,76,205,0.22)";
-            el.style.borderColor = "rgba(141,76,205,0.60)";
-            el.style.color = "white";
-          }}
-          onMouseLeave={e => {
-            if (backupLoading) return;
-            const el = e.currentTarget as HTMLElement;
-            el.style.background = "rgba(141,76,205,0.12)";
-            el.style.borderColor = "rgba(141,76,205,0.35)";
-            el.style.color = C.cream;
-          }}
-        >
-          <Database size={14} strokeWidth={1.8} color={backupLoading ? C.creamMut : C.purple}
-            style={{ animation: backupLoading ? "spin 1s linear infinite" : "none" }} />
+        <button onClick={onBackup} disabled={backupLoading}
+          style={{ display:"flex", alignItems:"center", gap:6, background: backupLoading ? "rgba(141,76,205,0.06)" : "rgba(141,76,205,0.12)", border:`1px solid rgba(141,76,205,${backupLoading ? "0.20" : "0.35"})`, color: backupLoading ? C.creamMut : C.cream, padding:"7px 14px", borderRadius:9, fontWeight:600, fontSize:13, cursor: backupLoading ? "wait" : "pointer", fontFamily:FB, transition:"all .15s", opacity: backupLoading ? 0.7 : 1 }}
+          onMouseEnter={e => { if (backupLoading) return; const el=e.currentTarget as HTMLElement; el.style.background="rgba(141,76,205,0.22)"; el.style.borderColor="rgba(141,76,205,0.60)"; el.style.color="white"; }}
+          onMouseLeave={e => { if (backupLoading) return; const el=e.currentTarget as HTMLElement; el.style.background="rgba(141,76,205,0.12)"; el.style.borderColor="rgba(141,76,205,0.35)"; el.style.color=C.cream; }}>
+          <Database size={14} strokeWidth={1.8} color={backupLoading ? C.creamMut : C.purple} style={{ animation: backupLoading ? "spin 1s linear infinite" : "none" }} />
           {backupLoading ? "Generando..." : "Respaldo"}
         </button>
-
-        {/* btn-primary: revisar pendientes */}
         <button onClick={() => navigate("/admin/obras?estado=pendiente")}
           style={{ display:"flex", alignItems:"center", gap:6, background:`linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border:"none", color:"white", padding:"7px 15px", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:FB, boxShadow:`0 4px 14px ${C.orange}30`, transition:"transform .15s, box-shadow .15s" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform="translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow=`0 8px 22px ${C.orange}45`; }}
@@ -284,7 +129,7 @@ function Topbar({ navigate, onRefresh, loading, onBackup, backupLoading }: {
   );
 }
 
-// ── WelcomeBanner ──────────────────────────────────────────────────────────────
+// ── WelcomeBanner ─────────────────────────────────────────────────────────────
 function WelcomeBanner({ userName }: { userName:string }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
@@ -292,7 +137,6 @@ function WelcomeBanner({ userName }: { userName:string }) {
   const days   = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
   const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
   const dateStr = `${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]}`;
-
   return (
     <div style={{ borderRadius:14, padding:"22px 26px", background:`linear-gradient(135deg, rgba(255,132,14,0.08), rgba(141,76,205,0.05))`, border:`1px solid rgba(255,132,14,0.14)`, marginBottom:18, display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", top:-50, right:-40, width:180, height:180, borderRadius:"50%", background:`radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents:"none" }} />
@@ -323,7 +167,7 @@ function WelcomeBanner({ userName }: { userName:string }) {
   );
 }
 
-// ── KPI Cards ──────────────────────────────────────────────────────────────────
+// ── KPI Cards ─────────────────────────────────────────────────────────────────
 function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loading:boolean }) {
   const cards = [
     { value: kpis?.total_obras      ?? 0, label:"Total Obras", sub:"en catálogo",   accent:C.orange, Icon:Layers,      trend:+12 },
@@ -331,31 +175,28 @@ function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loadin
     { value: kpis?.obras_pendientes ?? 0, label:"Pendientes",  sub:"por revisar",   accent:C.gold,   Icon:Clock,       trend:-3  },
     { value: kpis?.obras_rechazadas ?? 0, label:"Rechazadas",  sub:"este período",  accent:C.pink,   Icon:XCircle,     trend:-2  },
   ];
-
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:14 }}>
       {cards.map(({ value, label, sub, accent, Icon, trend }, i) => {
-        const isTrendPositive = trend > 0;
-        const trendColor = isTrendPositive ? C.green : C.pink;
-        const TrendIcon = isTrendPositive ? TrendingUp : TrendingDown;
+        const pos = trend > 0;
+        const tc = pos ? C.green : C.pink;
+        const TI = pos ? TrendingUp : TrendingDown;
         return (
           <div key={label}
             style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 16px", position:"relative", overflow:"hidden", transition:"border-color .2s, transform .2s", cursor:"default", animation:`fadeUp .45s ease ${i*0.06}s both` }}
             onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${accent}32`; el.style.transform="translateY(-2px)"; }}
-            onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=C.border; el.style.transform="translateY(0)"; }}
-          >
+            onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=C.border; el.style.transform="translateY(0)"; }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)` }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
               <div style={{ width:32, height:32, borderRadius:8, background:`${accent}14`, border:`1px solid ${accent}28`, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <Icon size={14} color={accent} strokeWidth={2} />
               </div>
-              <span style={{ fontSize:11, fontWeight:700, color:trendColor, fontFamily:FB, display:"flex", alignItems:"center", gap:2, background:`${trendColor}10`, padding:"3px 6px", borderRadius:20, border:`1px solid ${trendColor}20` }}>
-                <TrendIcon size={10} strokeWidth={2.5} />
-                {isTrendPositive ? "+" : ""}{trend}%
+              <span style={{ fontSize:11, fontWeight:700, color:tc, fontFamily:FB, display:"flex", alignItems:"center", gap:2, background:`${tc}10`, padding:"3px 6px", borderRadius:20, border:`1px solid ${tc}20` }}>
+                <TI size={10} strokeWidth={2.5} />{pos ? "+" : ""}{trend}%
               </span>
             </div>
             <div style={{ fontSize:26, fontWeight:900, color: loading ? C.creamMut : `${accent}DD`, letterSpacing:"-0.5px", lineHeight:1, marginBottom:4, fontFamily:FD, transition:"color .3s" }}>
-              {loading ? "—" : new Intl.NumberFormat("es-MX").format(value)}
+              {loading ? "—" : fmt(value)}
             </div>
             <div style={{ display:"flex", alignItems:"baseline", gap:6, flexWrap:"wrap" }}>
               <span style={{ fontSize:13, fontWeight:600, color:C.creamSub, fontFamily:FB }}>{label}</span>
@@ -368,21 +209,13 @@ function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loadin
   );
 }
 
-// ── ChartSection ───────────────────────────────────────────────────────────────
+// ── ChartSection ──────────────────────────────────────────────────────────────
 function ChartSection() {
   const [chartType, setChartType] = useState<"area"|"bar"|"line">("area");
-  const chartTypes = [
-    { id:"area" as const, Icon:AreaIcon  },
-    { id:"bar"  as const, Icon:BarChart  },
-    { id:"line" as const, Icon:LineChart },
-  ];
-  const chartData4 = [
-    { s:"May", v:38, o:14, a:26 },
-    { s:"Jun", v:61, o:24, a:44 },
-    { s:"Jul", v:54, o:20, a:38 },
-    { s:"Ago", v:78, o:30, a:55 },
-  ];
-
+  const chartTypes = [{ id:"area" as const, Icon:AreaIcon }, { id:"bar" as const, Icon:BarChart }, { id:"line" as const, Icon:LineChart }];
+  const data = [{ s:"May", v:38, o:14, a:26 }, { s:"Jun", v:61, o:24, a:44 }, { s:"Jul", v:54, o:20, a:38 }, { s:"Ago", v:78, o:30, a:55 }];
+  const axis = { stroke:"transparent", tick:{ fill:C.creamMut, fontSize:10, fontFamily:FB } };
+  const grid = <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />;
   return (
     <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden", height:"100%", display:"flex", flexDirection:"column" }}>
       <div style={{ padding:"12px 14px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -409,36 +242,27 @@ function ChartSection() {
       <div style={{ flex:1, padding:"0 10px 8px", minHeight:120 }}>
         <ResponsiveContainer width="100%" height="100%">
           {chartType === "area" ? (
-            <AreaChart data={chartData4} margin={{ top:5, right:5, bottom:5, left:-10 }}>
+            <AreaChart data={data} margin={{ top:5, right:5, bottom:5, left:-10 }}>
               <defs>
                 <linearGradient id="gO" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.orange} stopOpacity={0.20}/><stop offset="100%" stopColor={C.orange} stopOpacity={0}/></linearGradient>
-                <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.blue}   stopOpacity={0.14}/><stop offset="100%" stopColor={C.blue}   stopOpacity={0}/></linearGradient>
+                <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.blue} stopOpacity={0.14}/><stop offset="100%" stopColor={C.blue} stopOpacity={0}/></linearGradient>
                 <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.purple} stopOpacity={0.11}/><stop offset="100%" stopColor={C.purple} stopOpacity={0}/></linearGradient>
               </defs>
-              <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
-              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={25} />
-              <Tooltip content={<ChartTip />} />
-              <Area type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2} fill="url(#gO)" dot={false} />
-              <Area type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2} fill="url(#gB)" dot={false} />
+              {grid}<XAxis dataKey="s" {...axis} /><YAxis {...axis} width={25} /><Tooltip content={<ChartTip />} />
+              <Area type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2}   fill="url(#gO)" dot={false} />
+              <Area type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2}   fill="url(#gB)" dot={false} />
               <Area type="monotone" dataKey="a" name="Artistas" stroke={C.purple} strokeWidth={1.5} fill="url(#gP)" dot={false} />
             </AreaChart>
           ) : chartType === "bar" ? (
-            <RBarChart data={chartData4} margin={{ top:5, right:5, bottom:5, left:-10 }}>
-              <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
-              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={25} />
-              <Tooltip content={<ChartTip />} />
+            <RBarChart data={data} margin={{ top:5, right:5, bottom:5, left:-10 }}>
+              {grid}<XAxis dataKey="s" {...axis} /><YAxis {...axis} width={25} /><Tooltip content={<ChartTip />} />
               <Bar dataKey="v" name="Ventas"   fill={C.orange} radius={[4,4,0,0]} fillOpacity={0.8} barSize={12} />
               <Bar dataKey="o" name="Obras"    fill={C.blue}   radius={[4,4,0,0]} fillOpacity={0.8} barSize={12} />
               <Bar dataKey="a" name="Artistas" fill={C.purple} radius={[4,4,0,0]} fillOpacity={0.8} barSize={12} />
             </RBarChart>
           ) : (
-            <RLineChart data={chartData4} margin={{ top:5, right:5, bottom:5, left:-10 }}>
-              <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="s" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
-              <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={25} />
-              <Tooltip content={<ChartTip />} />
+            <RLineChart data={data} margin={{ top:5, right:5, bottom:5, left:-10 }}>
+              {grid}<XAxis dataKey="s" {...axis} /><YAxis {...axis} width={25} /><Tooltip content={<ChartTip />} />
               <Line type="monotone" dataKey="v" name="Ventas"   stroke={C.orange} strokeWidth={2.2} dot={{ r:3, fill:C.orange, strokeWidth:0 }} />
               <Line type="monotone" dataKey="o" name="Obras"    stroke={C.blue}   strokeWidth={2.2} dot={{ r:3, fill:C.blue, strokeWidth:0 }} />
               <Line type="monotone" dataKey="a" name="Artistas" stroke={C.purple} strokeWidth={1.8} dot={{ r:3, fill:C.purple, strokeWidth:0 }} />
@@ -450,7 +274,7 @@ function ChartSection() {
   );
 }
 
-// ── ObrasRecientes ─────────────────────────────────────────────────────────────
+// ── ObrasRecientes ────────────────────────────────────────────────────────────
 function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; loading:boolean; navigate:(p:string) => void }) {
   return (
     <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px", display:"flex", flexDirection:"column", height:"100%" }}>
@@ -494,8 +318,7 @@ function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; lo
               <div style={{ width:40, height:40, borderRadius:8, flexShrink:0, background:`${cfg.color}10`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", border:`1px solid ${cfg.color}24` }}>
                 {obra.imagen_principal
                   ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e => {(e.target as HTMLImageElement).style.display="none";}} />
-                  : <Image size={15} color={cfg.color} strokeWidth={1.8} />
-                }
+                  : <Image size={15} color={cfg.color} strokeWidth={1.8} />}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:600, color:C.cream, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontFamily:FB }}>{obra.titulo}</div>
@@ -512,12 +335,12 @@ function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; lo
   );
 }
 
-// ── StatStrip ──────────────────────────────────────────────────────────────────
+// ── StatStrip ─────────────────────────────────────────────────────────────────
 function StatStrip({ strip, loading }: { strip:Record<string,number> | null; loading:boolean }) {
   const items = [
     { value: strip?.artistas_activos ?? 0, label:"Artistas activos", sub:"en la plataforma", accent:C.pink,   Icon:Users   },
     { value: strip?.categorias       ?? 0, label:"Categorías",       sub:"tipos de arte",    accent:C.blue,   Icon:Package },
-    { value: strip?.visitas_total    ?? 0, label:"Visitas totales",  sub:"a la galería",      accent:C.purple, Icon:Eye     },
+    { value: strip?.visitas_total    ?? 0, label:"Visitas totales",  sub:"a la galería",     accent:C.purple, Icon:Eye     },
   ];
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
@@ -525,8 +348,7 @@ function StatStrip({ strip, loading }: { strip:Record<string,number> | null; loa
         <div key={label}
           style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", display:"flex", alignItems:"center", gap:14, transition:"border-color .2s, transform .2s", cursor:"default", position:"relative", overflow:"hidden", animation:`fadeUp .5s ease ${0.25+i*0.08}s both` }}
           onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${accent}28`; el.style.transform="translateY(-2px)"; }}
-          onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=C.border; el.style.transform="translateY(0)"; }}
-        >
+          onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=C.border; el.style.transform="translateY(0)"; }}>
           <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, ${accent}, transparent)` }} />
           <div style={{ width:40, height:40, borderRadius:10, flexShrink:0, background:`${accent}12`, border:`1px solid ${accent}22`, display:"flex", alignItems:"center", justifyContent:"center" }}>
             <Icon size={18} color={accent} strokeWidth={1.8} />
@@ -545,12 +367,11 @@ function StatStrip({ strip, loading }: { strip:Record<string,number> | null; loa
   );
 }
 
-// ── ROOT ───────────────────────────────────────────────────────────────────────
+// ── ROOT ──────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate      = useNavigate();
   const { showToast } = useToast();
   const [userName,      setUserName]      = useState("");
-  const [active,        setActive]        = useState("dashboard");
   const [loading,       setLoading]       = useState(true);
   const [stats,         setStats]         = useState<StatsData | null>(null);
   const [backupLoading, setBackupLoading] = useState(false);
@@ -566,17 +387,15 @@ export default function AdminDashboard() {
       if (json.success) setStats(json.data as StatsData);
     } catch (err) {
       showToast(handleNetworkError(err), "err");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) { navigate("/login"); return; }
+    // ✅ Auth manejada por AdminLayout — solo cargamos datos
     setUserName(authService.getUserName() || "Admin");
     fetchStats();
-  }, [navigate, fetchStats]);
+  }, [fetchStats]);
 
   const handleBackupDownload = async () => {
     setBackupLoading(true);
@@ -593,50 +412,34 @@ export default function AdminDashboard() {
       const cd    = res.headers.get("Content-Disposition") || "";
       const match = cd.match(/filename="?([^"]+)"?/);
       a.download  = match?.[1] || `nub-backup-${new Date().toISOString().split("T")[0]}.sql`;
-      document.body.appendChild(a);
-      a.click();
+      document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-     showToast("Respaldo descargado correctamente", "ok");
-    } catch (err) {
-       showToast("Error al generar el respaldo", "err");
-      console.error(err);
-    } finally {
-      setBackupLoading(false);
-    }
+      showToast("Respaldo descargado correctamente", "ok");
+    } catch {
+      showToast("Error al generar el respaldo", "err");
+    } finally { setBackupLoading(false); }
   };
 
-  const handleLogout = () => { authService.logout(); navigate("/login"); };
-
+  // ✅ Sin wrapper externo, sin <Sidebar />, sin <style> — todo lo maneja AdminLayout
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:FB, color:C.cream }}>
-      <Sidebar active={active} setActive={setActive} userName={userName} onLogout={handleLogout} navigate={navigate} />
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
-        <Topbar navigate={navigate} onRefresh={fetchStats} loading={loading} onBackup={handleBackupDownload} backupLoading={backupLoading} />
-        <main style={{ flex:1, padding:"22px 26px 28px", overflowY:"auto" }}>
-          <WelcomeBanner userName={userName} />
-          <KpiCards kpis={stats?.kpis ?? null} loading={loading} />
-          <div style={{ display:"grid", gridTemplateColumns:"340px 1fr", gap:14, marginBottom:14 }}>
-            <div style={{ width:"100%" }}>
-              <ObrasRecientes obras={stats?.obras_recientes || []} loading={loading} navigate={navigate} />
-            </div>
-            <div style={{ width:"100%" }}>
-              <ChartSection />
-            </div>
-          </div>
-          <StatStrip strip={stats?.strip ?? null} loading={loading} />
-        </main>
-      </div>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width:4px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(255,200,150,0.10); border-radius:8px; }
-        ::-webkit-scrollbar-thumb:hover { background:rgba(255,200,150,0.18); }
-      `}</style>
-    </div>
+    <>
+      <Topbar
+        navigate={navigate}
+        onRefresh={fetchStats}
+        loading={loading}
+        onBackup={handleBackupDownload}
+        backupLoading={backupLoading}
+      />
+      <main style={{ flex:1, padding:"22px 26px 28px", overflowY:"auto" }}>
+        <WelcomeBanner userName={userName} />
+        <KpiCards kpis={stats?.kpis ?? null} loading={loading} />
+        <div style={{ display:"grid", gridTemplateColumns:"340px 1fr", gap:14, marginBottom:14 }}>
+          <ObrasRecientes obras={stats?.obras_recientes || []} loading={loading} navigate={navigate} />
+          <ChartSection />
+        </div>
+        <StatStrip strip={stats?.strip ?? null} loading={loading} />
+      </main>
+    </>
   );
 }
