@@ -12,17 +12,19 @@ import DetalleArtista     from "../pages/private/admin/DetalleArtista";
 import Backups            from "../pages/private/admin/Backups";
 import AdminReportes      from "../pages/private/admin/AdminReportes";
 import AdminLayout        from "../layout/AdminLayout";
+import ArtistaLayout      from "../layout/ArtistaLayout";
 import PrivateRoute       from "../components/PrivateRoute";
 import AdminRoute         from "../components/AdminRoute";
 import ArtistaRoute       from "../components/ArtistaRoute";
 import ArtistaDashboard   from "../pages/private/artista/ArtistaDashboard";
-import RegistroArtista    from "../pages/public/RegistroArtista";
 import NuevaObra          from "../pages/private/artista/NuevaObra";
 import MisObras           from "../pages/private/artista/MisObras";
 import EditarObraArtista  from "../pages/private/artista/EditarObra";
+import MiPerfilPage        from "../pages/private/artista/MiPerfilPage";
+import RegistroArtista    from "../pages/public/RegistroArtista";
+import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
 import Unauthorized       from "../pages/public/Unauthorized";
-import VerificarEmail from "../pages/public/VerificarEmail";
 
 export default function AppRoutes() {
   return (
@@ -33,19 +35,16 @@ export default function AppRoutes() {
         <PrivateRoute><NuBDashboard /></PrivateRoute>
       } />
 
-      {/* ── Artista ── */}
-      <Route path="/artista/dashboard" element={
-        <ArtistaRoute><ArtistaDashboard /></ArtistaRoute>
-      } />
-      <Route path="/artista/nueva-obra" element={
-        <ArtistaRoute><NuevaObra /></ArtistaRoute>
-      } />
-      <Route path="/artista/mis-obras" element={
-        <ArtistaRoute><MisObras /></ArtistaRoute>
-      } />
-      <Route path="/artista/editar-obra/:id" element={
-        <ArtistaRoute><EditarObraArtista /></ArtistaRoute>
-      } />
+      {/* ── Artista — todas las páginas dentro del layout ── */}
+      <Route path="/artista" element={
+        <ArtistaRoute><ArtistaLayout /></ArtistaRoute>
+      }>
+        <Route path="dashboard"       element={<ArtistaDashboard />} />
+        <Route path="nueva-obra"      element={<NuevaObra />} />
+        <Route path="mis-obras"       element={<MisObras />} />
+        <Route path="editar-obra/:id" element={<EditarObraArtista />} />
+        <Route path="perfil"          element={<MiPerfilPage />} />
+      </Route>
 
       <Route path="/registro-artista" element={<RegistroArtista />} />
       <Route path="/verificar-email"  element={<VerificarEmail />} />
@@ -54,15 +53,15 @@ export default function AppRoutes() {
       <Route path="/admin" element={
         <AdminRoute><AdminLayout /></AdminRoute>
       }>
-        <Route index            element={<AdminDashboard />} />
-        <Route path="obras"     element={<ListaObras />} />
+        <Route index                   element={<AdminDashboard />} />
+        <Route path="obras"            element={<ListaObras />} />
         <Route path="obras/editar/:id" element={<EditarObra />} />
-        <Route path="artistas"  element={<ListaArtistas />} />
-        <Route path="artistas/crear"     element={<CrearArtista />} />
+        <Route path="artistas"         element={<ListaArtistas />} />
+        <Route path="artistas/crear"      element={<CrearArtista />} />
         <Route path="artistas/editar/:id" element={<EditarArtista />} />
         <Route path="artistas/:id"        element={<DetalleArtista />} />
-        <Route path="backups"   element={<Backups />} />
-        <Route path="reportes"  element={<AdminReportes />} />
+        <Route path="backups"          element={<Backups />} />
+        <Route path="reportes"         element={<AdminReportes />} />
       </Route>
 
       {/* ── Error pages ── */}

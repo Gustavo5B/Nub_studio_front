@@ -6,57 +6,34 @@ import { useToast } from "../../../context/ToastContext";
 import { handleNetworkError } from "../../../utils/handleApiError";
 
 interface Obra {
-  id_obra: number;
-  titulo: string;
-  slug: string;
-  descripcion: string;
-  imagen_principal: string;
-  precio_base: number;
+  id_obra: number; titulo: string; slug: string; descripcion: string;
+  imagen_principal: string; precio_base: number;
   estado: "pendiente" | "aprobada" | "rechazada" | "publicada";
-  activa: boolean;
-  visible: boolean;
-  destacada: boolean;
-  vistas: number;
-  fecha_creacion: string;
-  fecha_aprobacion: string | null;
-  motivo_rechazo: string | null;
-  anio_creacion: number | null;
-  tecnica: string | null;
-  permite_marco: boolean;
-  con_certificado: boolean;
+  activa: boolean; visible: boolean; destacada: boolean; vistas: number;
+  fecha_creacion: string; fecha_aprobacion: string | null;
+  motivo_rechazo: string | null; anio_creacion: number | null;
+  tecnica: string | null; permite_marco: boolean; con_certificado: boolean;
   categoria: string | null;
 }
-
-interface Stats {
-  total: number;
-  publicadas: number;
-  pendientes: number;
-  rechazadas: number;
-}
-
+interface Stats { total: number; publicadas: number; pendientes: number; rechazadas: number; }
 type Filtro = "todas" | "pendiente" | "aprobada" | "rechazada" | "publicada";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#080612", panel: "#0d0b1a",
+  orange: "#FF840E", pink: "#CC59AD", gold: "#FFC110",
   card: "rgba(255,255,255,0.028)", border: "rgba(255,255,255,0.07)",
-  text: "#f5f0ff", muted: "rgba(245,240,255,0.45)",
-  green: "#3DDB85",
+  text: "#f5f0ff", muted: "rgba(245,240,255,0.45)", green: "#3DDB85",
 };
-
 const FB = "'DM Sans', sans-serif";
+const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function MisObras() {
-  const navigate = useNavigate();
+  const navigate      = useNavigate();
   const { showToast } = useToast();
 
   const [obras,   setObras]   = useState<Obra[]>([]);
   const [stats,   setStats]   = useState<Stats>({ total: 0, publicadas: 0, pendientes: 0, rechazadas: 0 });
   const [loading, setLoading] = useState(true);
   const [filtro,  setFiltro]  = useState<Filtro>("todas");
-  const [artista, setArtista] = useState<{ nombre_completo?: string; nombre_artistico?: string }>({});
-
-  const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDatos(); }, []);
@@ -65,30 +42,17 @@ export default function MisObras() {
     try {
       const token   = authService.getToken();
       const headers = { Authorization: `Bearer ${token}` };
-
-      const [obrasRes, perfilRes] = await Promise.all([
-        fetch(`${API}/api/artista-portal/mis-obras`, { headers }),
-        fetch(`${API}/api/artista-portal/mi-perfil`,  { headers }),
-      ]);
-
-      if (!obrasRes.ok) {
-        showToast("Error al cargar las obras, intenta de nuevo", "err");
-      } else {
-        const data = await obrasRes.json();
-        setObras(data.obras || []);
-        const s = data.stats || {};
-        setStats({
-          total:      s.total      || 0,
-          publicadas: s.publicadas || 0,
-          pendientes: s.pendientes ?? s.en_revision ?? 0,
-          rechazadas: s.rechazadas || 0,
-        });
-      }
-
-      if (perfilRes.ok) {
-        const p = await perfilRes.json();
-        setArtista(p);
-      }
+      const res = await fetch(`${API}/api/artista-portal/mis-obras`, { headers });
+      if (!res.ok) { showToast("Error al cargar las obras, intenta de nuevo", "err"); return; }
+      const data = await res.json();
+      setObras(data.obras || []);
+      const s = data.stats || {};
+      setStats({
+        total:      s.total      || 0,
+        publicadas: s.publicadas || 0,
+        pendientes: s.pendientes ?? s.en_revision ?? 0,
+        rechazadas: s.rechazadas || 0,
+      });
     } catch (err) {
       showToast(handleNetworkError(err), "err");
     } finally {
@@ -109,232 +73,146 @@ export default function MisObras() {
 
   const formatPrecio = (n: number) =>
     new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
-
   const formatFecha = (f: string) =>
     new Date(f).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
 
-  const inicial = (artista.nombre_artistico || artista.nombre_completo || "A")[0].toUpperCase();
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: C.bg, display: "flex" }}>
-        <aside style={sidebarStyle}>
-          <div style={logoStyle}>NU·B</div>
-        </aside>
-        <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ width: 48, height: 48, margin: "0 auto 16px", borderRadius: "50%", border: `3px solid transparent`, borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
-            <p style={{ color: C.muted, fontSize: 14, fontFamily: FB }}>Cargando tus obras...</p>
-          </div>
-        </main>
-        <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh", flexDirection: "column", gap: 16 }}>
+      <div style={{ width: 48, height: 48, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
+      <p style={{ color: C.muted, fontSize: 14, fontFamily: FB }}>Cargando tus obras...</p>
+      <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+    </div>
+  );
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", fontFamily: FB }}>
+    <div style={{ padding: "36px 40px", fontFamily: FB }} className="artista-main-pad">
 
-      {/* SIDEBAR */}
-      <aside style={sidebarStyle}>
-        <div style={logoStyle} onClick={() => navigate("/artista/dashboard")}>NU·B</div>
-
-        <div style={{ padding: "0 16px 20px", borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ background: `linear-gradient(135deg, ${C.orange}18, ${C.pink}10)`, border: `1px solid ${C.orange}25`, borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "white", flexShrink: 0 }}>{inicial}</div>
-            <div style={{ overflow: "hidden" }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {artista.nombre_artistico || artista.nombre_completo}
-              </div>
-              <div style={{ fontSize: 11, color: C.muted, display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.green }} /> Artista activo
-              </div>
-            </div>
-          </div>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: C.text, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Mis Obras</h1>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{stats.total} obra{stats.total !== 1 ? "s" : ""} en total</p>
         </div>
+        <button onClick={() => navigate("/artista/nueva-obra")}
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 12, background: `linear-gradient(135deg,${C.orange},${C.pink})`, border: "none", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FB, boxShadow: `0 6px 20px ${C.orange}35` }}>
+          + Nueva obra
+        </button>
+      </div>
 
-        <nav style={{ flex: 1, padding: "16px" }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Navegación</p>
-          {[
-            { label: "Overview",  path: "/artista/dashboard", active: false },
-            { label: "Mis obras", path: "/artista/mis-obras",  active: true  },
-            { label: "Mi perfil", path: "/artista/perfil",     active: false },
-          ].map(item => (
-            <button key={item.path} onClick={() => navigate(item.path)}
-              style={{ display: "flex", alignItems: "center", width: "100%", padding: "11px 14px", borderRadius: 10, marginBottom: 3, background: item.active ? `linear-gradient(135deg, ${C.orange}22, ${C.pink}12)` : "transparent", border: item.active ? `1px solid ${C.orange}35` : "1px solid transparent", color: item.active ? C.orange : C.muted, fontSize: 13.5, fontWeight: item.active ? 700 : 500, cursor: "pointer", fontFamily: FB, textAlign: "left", transition: "all .15s" }}>
-              {item.label}
+      {/* KPIs */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 28 }}>
+        {[
+          { label: "TOTAL OBRAS",  value: stats.total,      color: C.orange },
+          { label: "PUBLICADAS",   value: stats.publicadas, color: C.green  },
+          { label: "EN REVISIÓN",  value: stats.pendientes, color: C.gold   },
+          { label: "RECHAZADAS",   value: stats.rechazadas, color: C.pink   },
+        ].map((s, i) => (
+          <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.color }} />
+            <div style={{ fontSize: 32, fontWeight: 900, color: C.text, fontFamily: "'Playfair Display',serif", marginBottom: 4 }}>{s.value}</div>
+            <div style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        {([
+          { id: "todas",     label: "Todas",       count: stats.total      },
+          { id: "aprobada",  label: "Publicadas",  count: stats.publicadas },
+          { id: "pendiente", label: "En revisión", count: stats.pendientes },
+          { id: "rechazada", label: "Rechazadas",  count: stats.rechazadas },
+        ] as { id: Filtro; label: string; count: number }[]).map(f => (
+          <button key={f.id} onClick={() => setFiltro(f.id)}
+            style={{ padding: "8px 18px", borderRadius: 100, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", gap: 7, background: filtro === f.id ? `linear-gradient(135deg,${C.orange}30,${C.pink}20)` : "rgba(255,255,255,0.04)", border: filtro === f.id ? `1px solid ${C.orange}50` : `1px solid ${C.border}`, color: filtro === f.id ? C.orange : C.muted, transition: "all .15s" }}>
+            {f.label}
+            <span style={{ background: filtro === f.id ? C.orange : "rgba(255,255,255,0.08)", borderRadius: 100, padding: "1px 8px", fontSize: 10.5, color: filtro === f.id ? "white" : C.muted, fontWeight: 800 }}>{f.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Grid */}
+      {obrasFiltradas.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "80px 0", background: C.card, borderRadius: 20, border: `1px solid ${C.border}` }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+          <h3 style={{ fontSize: 16, color: C.text, margin: "0 0 8px", fontFamily: "'Playfair Display',serif" }}>
+            {filtro === "todas" ? "Aún no tienes obras" : "No hay obras en esta categoría"}
+          </h3>
+          <p style={{ fontSize: 13, color: C.muted, margin: "0 0 20px" }}>
+            {filtro === "todas" ? "¡Sube tu primera obra y empieza a vender!" : "Cambia el filtro para ver otras obras"}
+          </p>
+          {filtro === "todas" && (
+            <button onClick={() => navigate("/artista/nueva-obra")}
+              style={{ padding: "10px 24px", borderRadius: 10, background: `linear-gradient(135deg,${C.orange},${C.pink})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB }}>
+              + Subir primera obra
             </button>
-          ))}
-        </nav>
-
-        <div style={{ padding: "16px", borderTop: `1px solid ${C.border}` }}>
-          <button onClick={() => navigate("/artista/nueva-obra")}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "11px", borderRadius: 10, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB, marginBottom: 8, boxShadow: `0 4px 14px ${C.orange}30` }}>
-            + Subir nueva obra
-          </button>
-          <button onClick={() => { authService.logout(); navigate("/login"); }}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "9px", borderRadius: 10, background: "transparent", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12.5, fontWeight: 500, cursor: "pointer", fontFamily: FB }}>
-            ↩ Cerrar sesión
-          </button>
+          )}
         </div>
-      </aside>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 18 }}>
+          {obrasFiltradas.map(obra => {
+            const badge = getBadge(obra.estado, obra.activa);
+            return (
+              <div key={obra.id_obra}
+                style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s,box-shadow .22s,border-color .22s" }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-5px)"; el.style.boxShadow = "0 20px 48px rgba(0,0,0,0.4)"; el.style.borderColor = `${C.orange}30`; }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}>
+                <div style={{ height: 180, background: "rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
+                  {obra.imagen_principal
+                    ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🖼️</div>
+                  }
+                  <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: badge.color, background: "rgba(8,6,18,0.85)", border: `1px solid ${badge.color}60`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", textTransform: "uppercase", whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
+                    {badge.label}
+                  </span>
+                  {obra.destacada && (
+                    <span style={{ position: "absolute", top: 10, right: 10, background: `${C.gold}20`, border: `1px solid ${C.gold}50`, color: C.gold, fontSize: 10.5, fontWeight: 800, padding: "3px 10px", borderRadius: 100 }}>⭐ Destacada</span>
+                  )}
+                </div>
 
-      {/* MAIN */}
-      <main style={{ flex: 1, padding: "36px 40px", overflowY: "auto" }}>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
-            <h1 style={{ fontSize: 32, fontWeight: 900, color: C.text, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Mis Obras</h1>
-            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{stats.total} obra{stats.total !== 1 ? "s" : ""} en total</p>
-          </div>
-          <button onClick={() => navigate("/artista/nueva-obra")}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 12, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, border: "none", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FB, boxShadow: `0 6px 20px ${C.orange}35` }}>
-            + Nueva obra
-          </button>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 28 }}>
-          {[
-            { label: "TOTAL OBRAS",  value: stats.total,      color: C.orange },
-            { label: "PUBLICADAS",   value: stats.publicadas, color: C.green  },
-            { label: "EN REVISIÓN",  value: stats.pendientes, color: C.gold   },
-            { label: "RECHAZADAS",   value: stats.rechazadas, color: C.pink   },
-          ].map((s, i) => (
-            <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.color }} />
-              <div style={{ fontSize: 32, fontWeight: 900, color: C.text, fontFamily: "'Playfair Display', serif", marginBottom: 4 }}>{s.value}</div>
-              <div style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-          {([
-            { id: "todas",     label: "Todas",       count: stats.total      },
-            { id: "aprobada",  label: "Publicadas",  count: stats.publicadas },
-            { id: "pendiente", label: "En revisión", count: stats.pendientes },
-            { id: "rechazada", label: "Rechazadas",  count: stats.rechazadas },
-          ] as { id: Filtro; label: string; count: number }[]).map(f => (
-            <button key={f.id} onClick={() => setFiltro(f.id)}
-              style={{ padding: "8px 18px", borderRadius: 100, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", gap: 7, background: filtro === f.id ? `linear-gradient(135deg, ${C.orange}30, ${C.pink}20)` : "rgba(255,255,255,0.04)", border: filtro === f.id ? `1px solid ${C.orange}50` : `1px solid ${C.border}`, color: filtro === f.id ? C.orange : C.muted, transition: "all .15s" }}>
-              {f.label}
-              <span style={{ background: filtro === f.id ? C.orange : "rgba(255,255,255,0.08)", borderRadius: 100, padding: "1px 8px", fontSize: 10.5, color: filtro === f.id ? "white" : C.muted, fontWeight: 800 }}>{f.count}</span>
-            </button>
-          ))}
-        </div>
-
-        {obrasFiltradas.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 0", background: C.card, borderRadius: 20, border: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
-            <h3 style={{ fontSize: 16, color: C.text, margin: "0 0 8px", fontFamily: "'Playfair Display', serif" }}>
-              {filtro === "todas" ? "Aún no tienes obras" : "No hay obras en esta categoría"}
-            </h3>
-            <p style={{ fontSize: 13, color: C.muted, margin: "0 0 20px" }}>
-              {filtro === "todas" ? "¡Sube tu primera obra y empieza a vender!" : "Cambia el filtro para ver otras obras"}
-            </p>
-            {filtro === "todas" && (
-              <button onClick={() => navigate("/artista/nueva-obra")}
-                style={{ padding: "10px 24px", borderRadius: 10, background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB }}>
-                + Subir primera obra
-              </button>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 18 }}>
-            {obrasFiltradas.map((obra) => {
-              const badge = getBadge(obra.estado, obra.activa);
-              return (
-                <div key={obra.id_obra}
-                  style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s, box-shadow .22s, border-color .22s" }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-5px)"; el.style.boxShadow = "0 20px 48px rgba(0,0,0,0.4)"; el.style.borderColor = `${C.orange}30`; }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}>
-                  <div style={{ height: 180, background: "rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
-                    {obra.imagen_principal
-                      ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🖼️</div>
-                    }
-                    <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: badge.color, background: "rgba(8,6,18,0.85)", border: `1px solid ${badge.color}60`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", textTransform: "uppercase", whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
-                      {badge.label}
-                    </span>
-                    {obra.destacada && (
-                      <span style={{ position: "absolute", top: 10, right: 10, background: `${C.gold}20`, border: `1px solid ${C.gold}50`, color: C.gold, fontSize: 10.5, fontWeight: 800, padding: "3px 10px", borderRadius: 100 }}>⭐ Destacada</span>
-                    )}
+                <div style={{ padding: "16px" }}>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                    {obra.categoria && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
+                    {obra.tecnica   && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
                   </div>
-
-                  <div style={{ padding: "16px" }}>
-                    <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-                      {obra.categoria && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
-                      {obra.tecnica   && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
+                  <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
+                  <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: "'Playfair Display',serif" }}>
+                    {formatPrecio(obra.precio_base)}
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.muted, marginBottom: 10 }}>
+                    <span>👁 {obra.vistas || 0} vistas</span>
+                    <span>📅 {formatFecha(obra.fecha_creacion)}</span>
+                  </div>
+                  {obra.estado === "rechazada" && obra.motivo_rechazo && (
+                    <div style={{ background: `${C.pink}10`, border: `1px solid ${C.pink}25`, borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
+                      <strong style={{ color: C.pink }}>Motivo: </strong>{obra.motivo_rechazo}
                     </div>
-
-                    <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display', serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
-
-                    <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
-                      {formatPrecio(obra.precio_base)}
-                    </p>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.muted, marginBottom: 10 }}>
-                      <span>👁 {obra.vistas || 0} vistas</span>
-                      <span>📅 {formatFecha(obra.fecha_creacion)}</span>
-                    </div>
-
-                    {obra.estado === "rechazada" && obra.motivo_rechazo && (
-                      <div style={{ background: `${C.pink}10`, border: `1px solid ${C.pink}25`, borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 11.5, color: C.muted, lineHeight: 1.5 }}>
-                        <strong style={{ color: C.pink }}>Motivo: </strong>{obra.motivo_rechazo}
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                      {obra.permite_marco   && <span style={{ fontSize: 10.5, color: C.muted }}>🖼 Enmarcable</span>}
-                      {obra.con_certificado && <span style={{ fontSize: 10.5, color: C.muted }}>📜 Certificado</span>}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
-                        style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600, transition: "all .15s" }}
-                        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}40`; }}
-                        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.muted; el.style.borderColor = C.border; }}>
-                        ✏ Editar
+                  )}
+                  <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                    {obra.permite_marco   && <span style={{ fontSize: 10.5, color: C.muted }}>🖼 Enmarcable</span>}
+                    {obra.con_certificado && <span style={{ fontSize: 10.5, color: C.muted }}>📜 Certificado</span>}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
+                      style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600, transition: "all .15s" }}
+                      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}40`; }}
+                      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.muted; el.style.borderColor = C.border; }}>
+                      ✏ Editar
+                    </button>
+                    {obra.slug && (
+                      <button onClick={() => navigate(`/obras/${obra.slug}`)}
+                        style={{ padding: "8px 12px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14 }}>
+                        👁
                       </button>
-                      {obra.slug && (
-                        <button onClick={() => navigate(`/obras/${obra.slug}`)}
-                          style={{ padding: "8px 12px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14 }}>
-                          👁
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @media (max-width: 768px) {
-          aside { display: none !important; }
-          main  { padding: 20px !important; }
-        }
-      `}</style>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
-
-const sidebarStyle: React.CSSProperties = {
-  width: 240, minHeight: "100vh",
-  background: "#0d0b1a",
-  borderRight: "1px solid rgba(255,255,255,0.07)",
-  display: "flex", flexDirection: "column", flexShrink: 0,
-  position: "sticky", top: 0, height: "100vh",
-};
-
-const logoStyle: React.CSSProperties = {
-  fontSize: 22, fontWeight: 900, color: "#FF840E",
-  fontFamily: "'DM Sans', sans-serif",
-  padding: "28px 24px 20px",
-  cursor: "pointer", letterSpacing: -0.5,
-};
