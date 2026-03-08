@@ -27,23 +27,21 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 interface BackupEntry {
   id: string; filename: string; fecha: Date; filas: number; tablas: number;
   duracion: string; checksum: string; tamaño: number; estado: "ok" | "error";
-  url_archivo: string | null; tablas_incluidas: string[] | null;
+  url_archivo: string | null;
 }
-interface TablaInfo {
-  nombre: string; filas: number; bytes: number; en_ultimo_backup: boolean; error?: boolean;
-}
+interface TablaInfo { nombre: string; filas: number; bytes: number; }
 interface CronConfig {
   id: number; activo: boolean; frecuencia: "diario" | "semanal" | "mensual";
-  hora: number; dia_semana: number; tablas: string[] | null;
+  hora: number; dia_semana: number;
   ultima_ejecucion: string | null; proxima_ejecucion: string | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function formatBytes(bytes: number) {
-  if (!bytes) return "0 B";
-  if (bytes < 1024)    return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(2)} MB`;
+function formatBytes(b: number) {
+  if (!b) return "0 B";
+  if (b < 1024) return `${b} B`;
+  if (b < 1048576) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1048576).toFixed(2)} MB`;
 }
 function formatFecha(d: Date) {
   return d.toLocaleString("es-MX", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
@@ -64,7 +62,6 @@ function mapEntry(e: any): BackupEntry {
     duracion: e.duracion_ms ? `${(e.duracion_ms / 1000).toFixed(2)}s` : "—",
     checksum: e.checksum_md5 ?? "—", estado: "ok",
     url_archivo: e.url_archivo ?? null,
-    tablas_incluidas: e.tablas_incluidas ?? null,
   };
 }
 const DIAS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
@@ -111,10 +108,9 @@ function MiniKpi({ label, value, icon:Icon, accent }: { label:string; value:stri
 // ── BackupRow ─────────────────────────────────────────────────────────────────
 function BackupRow({ entry, onDelete, deleting }: { entry:BackupEntry; onDelete:(id:string)=>void; deleting:boolean }) {
   const [hovered, setHovered] = useState(false);
-  const esSelectivo = entry.tablas_incluidas && entry.tablas_incluidas.length > 0;
+  const esSelectivo = entry.filename.includes("selectivo");
   return (
-    <div
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{ display:"grid", gridTemplateColumns:"1fr 90px 80px 70px 60px 80px", alignItems:"center", gap:12, padding:"13px 18px", borderRadius:10,
         background: hovered ? "rgba(141,76,205,0.06)" : "transparent",
         border:`1px solid ${hovered ? "rgba(141,76,205,0.20)" : "transparent"}`,
@@ -143,12 +139,14 @@ function BackupRow({ entry, onDelete, deleting }: { entry:BackupEntry; onDelete:
       <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, textAlign:"right" }}>{entry.tablas > 0 ? `${entry.tablas} tablas` : "—"}</div>
       <div style={{ fontSize:12, color:C.creamMut, fontFamily:FB, textAlign:"right" }}>{entry.duracion}</div>
       <div style={{ display:"flex", justifyContent:"flex-end", gap:6 }}>
-        <a href={entry.url_archivo!} download={entry.filename}
-          style={{ width:30, height:30, borderRadius:7, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.25)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", textDecoration:"none" }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.22)"}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.10)"}>
-          <Download size={13} color={C.blue} strokeWidth={2} />
-        </a>
+        {entry.url_archivo && (
+          <a href={entry.url_archivo} download={entry.filename}
+            style={{ width:30, height:30, borderRadius:7, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.25)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", textDecoration:"none" }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.22)"}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.10)"}>
+            <Download size={13} color={C.blue} strokeWidth={2} />
+          </a>
+        )}
         <button onClick={() => onDelete(entry.id)} disabled={deleting}
           style={{ width:30, height:30, borderRadius:7, background:"rgba(204,89,173,0.06)", border:"1px solid rgba(204,89,173,0.18)", display:"flex", alignItems:"center", justifyContent:"center", cursor: deleting ? "wait" : "pointer" }}
           onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLElement).style.background="rgba(204,89,173,0.18)"; }}
@@ -163,53 +161,59 @@ function BackupRow({ entry, onDelete, deleting }: { entry:BackupEntry; onDelete:
 }
 
 // ── SelectorTablas ────────────────────────────────────────────────────────────
+// Lógica de EXCLUSIÓN: seleccionas qué tablas QUITAR del backup.
+// vacío = backup completo (todas incluidas)
 function SelectorTablas({
-  tablas, seleccionadas, onChange, accent = C.orange, columns = 2,
-}: {
-  tablas: string[]; seleccionadas: string[]; onChange: (t: string[]) => void;
-  accent?: string; columns?: number;
-}) {
-  const todas = seleccionadas.length === tablas.length;
-  const toggle = (t: string) => {
-    onChange(seleccionadas.includes(t) ? seleccionadas.filter(x => x !== t) : [...seleccionadas, t]);
-  };
+  tablas, excluidas, onChange,
+}: { tablas: string[]; excluidas: string[]; onChange: (e: string[]) => void }) {
+  const toggle = (t: string) =>
+    onChange(excluidas.includes(t) ? excluidas.filter(x => x !== t) : [...excluidas, t]);
+  const incluidasCount = tablas.length - excluidas.length;
+
   return (
     <div>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-        <span style={{ fontSize:12, fontWeight:700, color:C.creamMut, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:FB }}>
-          Tablas a incluir
-        </span>
-        <button onClick={() => onChange(todas ? [] : [...tablas])}
-          style={{ fontSize:11, color:accent, background:"transparent", border:"none", cursor:"pointer", fontFamily:FB, fontWeight:700 }}>
-          {todas ? "Deseleccionar todas" : "Seleccionar todas"}
-        </button>
+      {/* Estado actual */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+        <div style={{ fontSize:11, fontFamily:FB }}>
+          {excluidas.length === 0
+            ? <span style={{ color:C.green }}>✓ Backup completo — {tablas.length} tablas incluidas</span>
+            : <span style={{ color:C.orange }}>{incluidasCount} de {tablas.length} tablas incluidas</span>}
+        </div>
+        {excluidas.length > 0 && (
+          <button onClick={() => onChange([])}
+            style={{ fontSize:11, color:C.green, background:"transparent", border:"none", cursor:"pointer", fontFamily:FB, fontWeight:700 }}>
+            Incluir todas
+          </button>
+        )}
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:`repeat(${columns},1fr)`, gap:5, maxHeight:200, overflowY:"auto", paddingRight:4 }}>
+
+      {/* Instrucción */}
+      <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginBottom:8, padding:"5px 9px", borderRadius:7, background:"rgba(255,255,255,0.02)", border:`1px solid rgba(255,255,255,0.05)` }}>
+        Haz clic en una tabla para <span style={{ color:C.pink, fontWeight:700 }}>excluirla</span> del backup
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:5, maxHeight:220, overflowY:"auto", paddingRight:4 }}>
         {tablas.map(t => {
-          const sel = seleccionadas.includes(t);
+          const excluida = excluidas.includes(t);
           return (
             <div key={t} onClick={() => toggle(t)}
-              style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer",
-                background: sel ? `${accent}10` : "rgba(255,255,255,0.02)",
-                border:`1px solid ${sel ? `${accent}30` : "rgba(255,255,255,0.06)"}`,
-                transition:"all .12s" }}>
-              <div style={{ width:14, height:14, borderRadius:4, border:`1.5px solid ${sel ? accent : "rgba(255,255,255,0.20)"}`,
-                background: sel ? accent : "transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                {sel && <CheckCircle size={9} color="#000" strokeWidth={3} />}
+              style={{
+                display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer",
+                background: excluida ? "rgba(204,89,173,0.06)" : "rgba(34,201,122,0.05)",
+                border:`1px solid ${excluida ? "rgba(204,89,173,0.25)" : "rgba(34,201,122,0.15)"}`,
+                transition:"all .12s", opacity: excluida ? 0.45 : 1,
+              }}>
+              <div style={{ width:13, height:13, borderRadius:4, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+                background: excluida ? "transparent" : C.green,
+                border:`1.5px solid ${excluida ? C.pink : C.green}` }}>
+                {!excluida && <CheckCircle size={8} color="#000" strokeWidth={3} />}
               </div>
-              <span style={{ fontSize:12, color: sel ? C.cream : C.creamMut, fontFamily:"monospace", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{t}</span>
+              <span style={{ fontSize:12, fontFamily:"monospace", color: excluida ? C.creamMut : C.cream,
+                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                textDecoration: excluida ? "line-through" : "none" }}>{t}</span>
             </div>
           );
         })}
-      </div>
-      <div style={{ marginTop:8, fontSize:11, color:C.creamMut, fontFamily:FB }}>
-        {seleccionadas.length === 0 ? (
-          <span style={{ color:C.red }}>⚠ Selecciona al menos una tabla (0 = backup completo)</span>
-        ) : seleccionadas.length === tablas.length ? (
-          <span style={{ color:C.green }}>✓ Backup completo — todas las tablas</span>
-        ) : (
-          <span>{seleccionadas.length} de {tablas.length} tablas seleccionadas</span>
-        )}
       </div>
     </div>
   );
@@ -220,7 +224,6 @@ function EstadoTablas({ tablas, loading, onRefresh }: { tablas: TablaInfo[]; loa
   const totalFilas = tablas.reduce((s, t) => s + t.filas, 0);
   const totalBytes = tablas.reduce((s, t) => s + t.bytes, 0);
   const maxFilas   = Math.max(...tablas.map(t => t.filas), 1);
-
   return (
     <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden" }}>
       <div style={{ padding:"16px 18px 14px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -243,21 +246,13 @@ function EstadoTablas({ tablas, loading, onRefresh }: { tablas: TablaInfo[]; loa
         {loading && tablas.length === 0 ? (
           <div style={{ padding:"32px", textAlign:"center", color:C.creamMut, fontSize:13, fontFamily:FB }}>Cargando...</div>
         ) : tablas.map((t, i) => {
-          const pct      = Math.round((t.filas / maxFilas) * 100);
-          const noBackup = !t.en_ultimo_backup;
+          const pct = Math.round((t.filas / maxFilas) * 100);
           return (
-            <div key={`${t.nombre}-${i}`} style={{ padding:"10px 10px", borderRadius:8, marginBottom:3,
-              background: noBackup ? "rgba(255,193,16,0.03)" : "transparent",
-              border:`1px solid ${noBackup ? "rgba(255,193,16,0.12)" : "transparent"}` }}>
+            <div key={`${t.nombre}-${i}`} style={{ padding:"10px 10px", borderRadius:8, marginBottom:3 }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                  <Table2 size={12} color={noBackup ? C.gold : C.creamMut} strokeWidth={2} />
+                  <Table2 size={12} color={C.creamMut} strokeWidth={2} />
                   <span style={{ fontSize:12.5, fontWeight:600, color:C.cream, fontFamily:"monospace" }}>{t.nombre}</span>
-                  {noBackup && (
-                    <span style={{ fontSize:10, padding:"1px 6px", borderRadius:100, background:"rgba(255,193,16,0.10)", border:"1px solid rgba(255,193,16,0.25)", color:C.gold }}>
-                      Sin backup
-                    </span>
-                  )}
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                   <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>{formatBytes(t.bytes)}</span>
@@ -278,15 +273,13 @@ function EstadoTablas({ tablas, loading, onRefresh }: { tablas: TablaInfo[]; loa
   );
 }
 
-// ── ConfigCron ────────────────────────────────────────────────────────────────
-function ConfigCron({ config, tablas, onSave, saving }:
-  { config: CronConfig | null; tablas: string[]; onSave: (c: Partial<CronConfig>) => void; saving: boolean }) {
+// ── ConfigCron — siempre backup completo ──────────────────────────────────────
+function ConfigCron({ config, onSave, saving }:
+  { config: CronConfig | null; onSave: (c: Partial<CronConfig>) => void; saving: boolean }) {
   const [activo,     setActivo]     = useState(config?.activo ?? false);
   const [frecuencia, setFrecuencia] = useState<"diario"|"semanal"|"mensual">(config?.frecuencia ?? "diario");
   const [hora,       setHora]       = useState(config?.hora ?? 2);
   const [diaSemana,  setDiaSemana]  = useState(config?.dia_semana ?? 1);
-  const [usarTablas, setUsarTablas] = useState(false);
-  const [tablasSelC, setTablasSelC] = useState<string[]>(config?.tablas ?? []);
   const [expanded,   setExpanded]   = useState(false);
 
   useEffect(() => {
@@ -295,19 +288,11 @@ function ConfigCron({ config, tablas, onSave, saving }:
     setFrecuencia(config.frecuencia);
     setHora(config.hora);
     setDiaSemana(config.dia_semana);
-    setUsarTablas(!!config.tablas && config.tablas.length > 0);
-    setTablasSelC(config.tablas ?? []);
-  }, [config]);
-
-  const handleSave = () => {
-    onSave({
-      activo, frecuencia, hora, dia_semana: diaSemana,
-      tablas: usarTablas && tablasSelC.length > 0 ? tablasSelC : null,
-    });
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.id]);
 
   const descProxima = () => {
-    if (!activo) return "Cron desactivado";
+    if (!activo) return "Backup automático desactivado";
     const h = hora.toString().padStart(2, "0");
     if (frecuencia === "diario")  return `Todos los días a las ${h}:00`;
     if (frecuencia === "semanal") return `Cada ${DIAS[diaSemana]} a las ${h}:00`;
@@ -327,22 +312,23 @@ function ConfigCron({ config, tablas, onSave, saving }:
             fontSize:11, color: activo ? C.green : C.creamMut, fontWeight:700 }}>
             {activo ? "Activo" : "Inactivo"}
           </span>
+          <span style={{ padding:"2px 7px", borderRadius:100, background:"rgba(121,170,245,0.08)", border:"1px solid rgba(121,170,245,0.15)", fontSize:10, color:C.blue }}>
+            Siempre completo
+          </span>
         </div>
         {expanded ? <ChevronUp size={14} color={C.creamMut} /> : <ChevronDown size={14} color={C.creamMut} />}
       </div>
 
       {expanded && (
         <div style={{ padding:"18px" }}>
-          {/* Toggle */}
+          {/* Toggle activar */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18, padding:"12px 14px", borderRadius:10, background:"rgba(255,255,255,0.02)", border:`1px solid rgba(255,255,255,0.06)` }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:C.cream, fontFamily:FB }}>Activar backup automático</div>
               <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{descProxima()}</div>
             </div>
             <button onClick={() => setActivo(a => !a)} style={{ background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
-              {activo
-                ? <ToggleRight size={32} color={C.green}    strokeWidth={1.8} />
-                : <ToggleLeft  size={32} color={C.creamMut} strokeWidth={1.8} />}
+              {activo ? <ToggleRight size={32} color={C.green} strokeWidth={1.8} /> : <ToggleLeft size={32} color={C.creamMut} strokeWidth={1.8} />}
             </button>
           </div>
 
@@ -385,35 +371,11 @@ function ConfigCron({ config, tablas, onSave, saving }:
             )}
           </div>
 
-          {/* Tablas específicas — 1 columna (panel angosto) */}
-          <div style={{ marginBottom:16 }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-              <label style={{ fontSize:11, fontWeight:700, color:C.creamMut, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:FB }}>Tablas específicas</label>
-              <button onClick={() => setUsarTablas(u => !u)} style={{ background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
-                {usarTablas
-                  ? <ToggleRight size={22} color={C.orange}  strokeWidth={1.8} />
-                  : <ToggleLeft  size={22} color={C.creamMut} strokeWidth={1.8} />}
-              </button>
-            </div>
-            {usarTablas && tablas.length > 0 && (
-              <SelectorTablas
-                tablas={tablas}
-                seleccionadas={tablasSelC}
-                onChange={setTablasSelC}
-                accent={C.purple}
-                columns={1}
-              />
-            )}
-            {!usarTablas && (
-              <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>El cron hará backup completo (todas las tablas)</div>
-            )}
-          </div>
-
           {/* Última / próxima */}
           {config && (
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
               {[
-                { label:"Última ejecución",  val: config.ultima_ejecucion  ? new Date(config.ultima_ejecucion).toLocaleString("es-MX")                        : "Nunca", color: C.creamMut },
+                { label:"Última ejecución",  val: config.ultima_ejecucion ? new Date(config.ultima_ejecucion).toLocaleString("es-MX") : "Nunca", color: C.creamMut },
                 { label:"Próxima ejecución", val: config.proxima_ejecucion && activo ? new Date(config.proxima_ejecucion).toLocaleString("es-MX") : "—", color: activo ? C.green : C.creamMut },
               ].map(({ label, val, color }) => (
                 <div key={label} style={{ padding:"10px 12px", borderRadius:8, background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)" }}>
@@ -424,7 +386,7 @@ function ConfigCron({ config, tablas, onSave, saving }:
             </div>
           )}
 
-          <button onClick={handleSave} disabled={saving}
+         <button onClick={() => onSave({ activo, frecuencia, hora, dia_semana: diaSemana })} disabled={saving}
             style={{ width:"100%", padding:"11px", borderRadius:10,
               background: saving ? "rgba(141,76,205,0.08)" : `linear-gradient(135deg,${C.purple},#6B35A8)`,
               border:`1px solid rgba(141,76,205,0.40)`,
@@ -460,60 +422,51 @@ export default function Backups() {
   const [historial,     setHistorial]     = useState<BackupEntry[]>([]);
   const [selected,      setSelected]      = useState<BackupEntry | null>(null);
   const [deletingId,    setDeletingId]    = useState<string | null>(null);
-
   const [tablasSalud,   setTablasSalud]   = useState<TablaInfo[]>([]);
   const [loadingTablas, setLoadingTablas] = useState(false);
+  const [cronConfig,    setCronConfig]    = useState<CronConfig | null>(null);
+  const [savingCron,    setSavingCron]    = useState(false);
 
-  const [cronConfig,  setCronConfig]  = useState<CronConfig | null>(null);
-  const [savingCron,  setSavingCron]  = useState(false);
-
-  const [showSelector, setShowSelector] = useState(false);
-  const [tablasNames,  setTablasNames]  = useState<string[]>([]);
-  const [tablasManual, setTablasManual] = useState<string[]>([]);
+  // Selector manual: lista de tablas EXCLUIDAS del backup
+  // vacío = backup completo (valor por defecto y más seguro)
+  const [showSelector,    setShowSelector]    = useState(false);
+  const [tablasNames,     setTablasNames]     = useState<string[]>([]);
+  const [tablasExcluidas, setTablasExcluidas] = useState<string[]>([]);
 
   const cargarHistorial = useCallback(async () => {
     try {
-      const res  = await fetch(`${API_URL}/api/admin/backups/historial`, {
-        headers: { Authorization: `Bearer ${authService.getToken()}` },
-      });
+      const res  = await fetch(`${API_URL}/api/admin/backups/historial`, { headers: { Authorization: `Bearer ${authService.getToken()}` } });
       const json = await res.json();
       if (json.success) setHistorial((json.data || []).map(mapEntry));
-    } catch { /* silencioso */ }
+    } catch { /**/ }
   }, []);
 
   const cargarTablasSalud = useCallback(async () => {
     setLoadingTablas(true);
     try {
-      const res  = await fetch(`${API_URL}/api/admin/backups/tablas`, {
-        headers: { Authorization: `Bearer ${authService.getToken()}` },
-      });
+      const res  = await fetch(`${API_URL}/api/admin/backups/tablas`, { headers: { Authorization: `Bearer ${authService.getToken()}` } });
       const json = await res.json();
       if (json.success) {
         const raw = json.data?.tablas || json.data || [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tablas: TablaInfo[] = (raw as any[]).map(t => ({
-          nombre:           t.tabla       ?? t.nombre      ?? t.table_name ?? t.relname ?? "—",
-          filas:            t.filas       ?? t.n_live_tup  ?? t.row_count  ?? t.rows    ?? 0,
-          bytes:            t.bytes       ?? t.total_bytes ?? t.size_bytes ?? 0,
-          en_ultimo_backup: t.en_ultimo_backup ?? false,
+          nombre: t.tabla ?? t.nombre ?? "—",
+          filas:  t.filas ?? 0,
+          bytes:  t.bytes ?? 0,
         }));
         setTablasSalud(tablas);
         setTablasNames(tablas.map(t => t.nombre));
-        if (tablasManual.length === 0)
-          setTablasManual(tablas.map(t => t.nombre));
       }
-    } catch { /* silencioso */ }
+    } catch { /**/ }
     finally { setLoadingTablas(false); }
-  }, [tablasManual.length]);
+  }, []);
 
   const cargarCron = useCallback(async () => {
     try {
-      const res  = await fetch(`${API_URL}/api/admin/backups/cron`, {
-        headers: { Authorization: `Bearer ${authService.getToken()}` },
-      });
+      const res  = await fetch(`${API_URL}/api/admin/backups/cron`, { headers: { Authorization: `Bearer ${authService.getToken()}` } });
       const json = await res.json();
       if (json.success) setCronConfig(json.data);
-    } catch { /* silencioso */ }
+    } catch { /**/ }
   }, []);
 
   useEffect(() => {
@@ -524,8 +477,9 @@ export default function Backups() {
 
   const handleGenerarBackup = useCallback(async () => {
     setLoading(true);
-    const tablasAEnviar = (tablasManual.length > 0 && tablasManual.length < tablasNames.length)
-      ? tablasManual : null;
+    // Enviar solo las tablas que SÍ se incluyen. null = completo
+    const tablasIncluidas = tablasNames.filter(t => !tablasExcluidas.includes(t));
+    const tablasAEnviar   = tablasExcluidas.length > 0 ? tablasIncluidas : null;
     try {
       const res = await fetch(`${API_URL}/api/admin/backup`, {
         method: "POST",
@@ -533,40 +487,34 @@ export default function Backups() {
         body: JSON.stringify({ tablas: tablasAEnviar }),
       });
       if (!res.ok) throw new Error("Error al generar el respaldo");
-      const blob     = await res.blob();
-      const filename = (() => {
-        const cd    = res.headers.get("Content-Disposition") || "";
-        const match = cd.match(/filename="?([^"]+)"?/);
-        return match?.[1] || `backup-${new Date().toISOString().slice(0,19).replace(/:/g,"-")}.sql`;
-      })();
-      const url = window.URL.createObjectURL(blob);
-      const a   = document.createElement("a");
-      a.href = url; a.download = filename;
+      const blob  = await res.blob();
+      const cd    = res.headers.get("Content-Disposition") || "";
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const fn    = match?.[1] || `backup-${Date.now()}.sql`;
+      const url   = window.URL.createObjectURL(blob);
+      const a     = document.createElement("a");
+      a.href = url; a.download = fn;
       document.body.appendChild(a); a.click();
       setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
       await cargarHistorial();
       await cargarTablasSalud();
-      showToast(tablasAEnviar ? `Respaldo selectivo generado (${tablasAEnviar.length} tablas) ✓` : "Respaldo completo generado ✓", "ok");
+      showToast(tablasAEnviar ? `Respaldo selectivo (${tablasAEnviar.length} tablas) ✓` : "Respaldo completo ✓", "ok");
     } catch (err) {
       console.error(err);
       showToast("Error al generar el respaldo", "err");
-    } finally {
-      setLoading(false);
-    }
-  }, [tablasManual, tablasNames.length, cargarHistorial, cargarTablasSalud, showToast]);
+    } finally { setLoading(false); }
+  }, [tablasNames, tablasExcluidas, cargarHistorial, cargarTablasSalud, showToast]);
 
   const handleEliminar = useCallback(async (id: string) => {
     setDeletingId(id);
     try {
-      const res  = await fetch(`${API_URL}/api/admin/backups/${id}`, {
-        method: "DELETE", headers: { Authorization: `Bearer ${authService.getToken()}` },
-      });
+      const res  = await fetch(`${API_URL}/api/admin/backups/${id}`, { method:"DELETE", headers: { Authorization: `Bearer ${authService.getToken()}` } });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       setHistorial(prev => prev.filter(e => e.id !== id));
       setSelected(prev => prev?.id === id ? null : prev);
       showToast("Backup eliminado ✓", "ok");
-    } catch { showToast("Error al eliminar el backup", "err"); }
+    } catch { showToast("Error al eliminar", "err"); }
     finally   { setDeletingId(null); }
   }, [showToast]);
 
@@ -574,7 +522,7 @@ export default function Backups() {
     setSavingCron(true);
     try {
       const res  = await fetch(`${API_URL}/api/admin/backups/cron`, {
-        method: "POST",
+        method:"POST",
         headers: { Authorization: `Bearer ${authService.getToken()}`, "Content-Type":"application/json" },
         body: JSON.stringify(data),
       });
@@ -586,13 +534,14 @@ export default function Backups() {
     finally   { setSavingCron(false); }
   }, [showToast]);
 
-  const ultimoBackup = historial[0];
-  const totalFilas   = historial.reduce((s, e) => s + e.filas, 0);
-  const esSelectivo  = tablasManual.length > 0 && tablasManual.length < tablasNames.length;
+  const ultimoBackup    = historial[0];
+  const totalFilas      = historial.reduce((s, e) => s + e.filas, 0);
+  const esSelectivo     = tablasExcluidas.length > 0;
+  const tablasIncluidas = tablasNames.filter(t => !tablasExcluidas.includes(t));
 
   return (
     <>
-      <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
+      <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
       <Topbar navigate={navigate} />
 
       <main style={{ flex:1, padding:"24px 28px 32px", overflowY:"auto" }}>
@@ -609,15 +558,19 @@ export default function Backups() {
               <span style={{ background:`linear-gradient(90deg,${C.purple},${C.blue})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>Respaldos</span>
             </h1>
             <p style={{ fontSize:13, color:C.creamMut, margin:0, fontFamily:FB }}>
-              Exporta un respaldo completo o selectivo · Supabase Storage · máx. 3 backups
+              Backup completo o selectivo · Supabase Storage · máx. 3 backups
             </p>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8, alignItems:"flex-end" }}>
             {tablasNames.length > 0 && (
               <button onClick={() => setShowSelector(s => !s)}
-                style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.22)`, color:C.orange, padding:"8px 14px", borderRadius:9, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:FB }}>
+                style={{ display:"flex", alignItems:"center", gap:6,
+                  background: esSelectivo ? "rgba(255,132,14,0.10)" : "rgba(255,255,255,0.04)",
+                  border:`1px solid ${esSelectivo ? "rgba(255,132,14,0.35)" : "rgba(255,255,255,0.10)"}`,
+                  color: esSelectivo ? C.orange : C.creamMut,
+                  padding:"8px 14px", borderRadius:9, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:FB }}>
                 <Table2 size={13} strokeWidth={2} />
-                {showSelector ? "Ocultar selección" : (esSelectivo ? `${tablasManual.length} tablas seleccionadas` : "Backup completo")}
+                {esSelectivo ? `Selectivo: ${tablasIncluidas.length} tablas` : "Completo — todas las tablas"}
                 {showSelector ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               </button>
             )}
@@ -631,15 +584,15 @@ export default function Backups() {
               onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.transform="translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow=`0 10px 28px rgba(141,76,205,0.45)`; } }}
               onMouseLeave={e => { if (!loading) { (e.currentTarget as HTMLElement).style.transform="translateY(0)";   (e.currentTarget as HTMLElement).style.boxShadow=`0 6px 20px rgba(141,76,205,0.30)`; } }}>
               <Database size={16} strokeWidth={2} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} color={loading ? C.creamMut : "white"} />
-              {loading ? "Generando..." : esSelectivo ? `Generar backup selectivo` : "Generar backup completo"}
+              {loading ? "Generando..." : esSelectivo ? `Generar backup selectivo (${tablasIncluidas.length})` : "Generar backup completo"}
             </button>
           </div>
         </div>
 
-        {/* Selector de tablas (área amplia → 2 columnas) */}
+        {/* Selector expandible */}
         {showSelector && tablasNames.length > 0 && (
           <div style={{ background:C.card, border:`1px solid rgba(255,132,14,0.18)`, borderRadius:12, padding:"18px 20px", marginBottom:18 }}>
-            <SelectorTablas tablas={tablasNames} seleccionadas={tablasManual} onChange={setTablasManual} accent={C.orange} columns={2} />
+            <SelectorTablas tablas={tablasNames} excluidas={tablasExcluidas} onChange={setTablasExcluidas} />
           </div>
         )}
 
@@ -654,7 +607,6 @@ export default function Backups() {
         {/* Layout principal */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:16 }}>
 
-          {/* Columna izquierda */}
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
             {/* Historial */}
@@ -698,7 +650,6 @@ export default function Backups() {
               </div>
             </div>
 
-            {/* Estado de salud */}
             <EstadoTablas tablas={tablasSalud} loading={loadingTablas} onRefresh={cargarTablasSalud} />
           </div>
 
@@ -726,33 +677,20 @@ export default function Backups() {
                       <div style={{ fontSize:12, color:C.creamSub, fontFamily: mono ? "monospace" : FB, wordBreak:"break-all", background: mono ? "rgba(255,255,255,0.03)" : "transparent", padding: mono ? "4px 8px" : "0", borderRadius: mono ? 6 : 0 }}>{value}</div>
                     </div>
                   ))}
-                  {selected.tablas_incluidas && (
-                    <div>
-                      <div style={{ fontSize:10, fontWeight:700, color:C.creamMut, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:FB, marginBottom:5 }}>Tablas incluidas</div>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                        {selected.tablas_incluidas.map(t => (
-                          <span key={t} style={{ fontSize:10, padding:"2px 7px", borderRadius:6, background:"rgba(255,193,16,0.10)", border:"1px solid rgba(255,193,16,0.22)", color:C.gold, fontFamily:"monospace" }}>{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {!selected.tablas_incluidas && (
-                    <div style={{ padding:"6px 10px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:"1px solid rgba(34,201,122,0.18)" }}>
-                      <span style={{ fontSize:11, color:C.green, fontFamily:FB }}>✓ Backup completo — todas las tablas</span>
-                    </div>
-                  )}
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:C.creamMut, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:FB, marginBottom:3, display:"flex", alignItems:"center", gap:4 }}>
                       <Shield size={9} color={C.creamMut} /> MD5
                     </div>
                     <div style={{ fontSize:10, color:C.creamMut, fontFamily:"monospace", wordBreak:"break-all", background:"rgba(255,255,255,0.03)", padding:"6px 8px", borderRadius:6, lineHeight:1.5 }}>{selected.checksum}</div>
                   </div>
-                  <a href={selected.url_archivo!} download={selected.filename}
-                    style={{ marginTop:6, display:"flex", alignItems:"center", justifyContent:"center", gap:6, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.28)", color:C.blue, padding:"9px", borderRadius:9, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:FB, textDecoration:"none" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.20)"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.10)"}>
-                    <Download size={14} strokeWidth={2} /> Descargar desde Storage
-                  </a>
+                  {selected.url_archivo && (
+                    <a href={selected.url_archivo} download={selected.filename}
+                      style={{ marginTop:6, display:"flex", alignItems:"center", justifyContent:"center", gap:6, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.28)", color:C.blue, padding:"9px", borderRadius:9, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:FB, textDecoration:"none" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.20)"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="rgba(121,170,245,0.10)"}>
+                      <Download size={14} strokeWidth={2} /> Descargar desde Storage
+                    </a>
+                  )}
                 </div>
               ) : (
                 <div style={{ padding:"24px 0", textAlign:"center" }}>
@@ -762,8 +700,7 @@ export default function Backups() {
               )}
             </div>
 
-            {/* Cron */}
-            <ConfigCron config={cronConfig} tablas={tablasNames} onSave={handleSaveCron} saving={savingCron} />
+            <ConfigCron config={cronConfig} onSave={handleSaveCron} saving={savingCron} />
 
             {/* Info */}
             <div style={{ background:"rgba(141,76,205,0.05)", border:"1px solid rgba(141,76,205,0.14)", borderRadius:14, padding:"16px 18px" }}>
@@ -771,16 +708,16 @@ export default function Backups() {
                 <Shield size={13} color={C.purple} strokeWidth={2} />
                 <span style={{ fontSize:12.5, fontWeight:700, color:C.cream, fontFamily:FD }}>¿Qué incluye el respaldo?</span>
               </div>
-              {[
+              {([
                 [C.green, "Esquema completo (CREATE TABLE, índices, FK)"],
                 [C.green, "Datos de todas las tablas (INSERT INTO)"],
                 [C.green, "Reset de secuencias automático"],
                 [C.green, "Verificación MD5 de integridad"],
                 [C.green, "Guardado en Supabase Storage (7 días)"],
                 [C.green, "Se conservan solo los últimos 3 automáticamente"],
-                [C.gold,  "Backup selectivo: elige qué tablas incluir"],
-                [C.gold,  "No incluye contraseñas en texto claro"],
-              ].map(([color, text], i) => (
+                [C.gold,  "Backup manual selectivo: excluye tablas que no necesites"],
+                [C.blue,  "Backup automático siempre completo (recomendado)"],
+              ] as [string, string][]).map(([color, text], i) => (
                 <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom:8 }}>
                   <CheckCircle size={12} color={color} strokeWidth={2} style={{ marginTop:1.5, flexShrink:0 }} />
                   <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, lineHeight:1.4 }}>{text}</span>
