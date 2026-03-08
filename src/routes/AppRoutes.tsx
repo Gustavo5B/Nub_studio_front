@@ -22,6 +22,7 @@ import MisObras           from "../pages/private/artista/MisObras";
 import EditarObraArtista  from "../pages/private/artista/EditarObra";
 import NotFound           from "../pages/public/NotFound";
 import Unauthorized       from "../pages/public/Unauthorized";
+import VerificarEmail from "../pages/public/VerificarEmail";
 
 export default function AppRoutes() {
   return (
@@ -47,6 +48,7 @@ export default function AppRoutes() {
       } />
 
       <Route path="/registro-artista" element={<RegistroArtista />} />
+      <Route path="/verificar-email"  element={<VerificarEmail />} />
 
       {/* ── Admin — todas las páginas dentro del layout ── */}
       <Route path="/admin" element={

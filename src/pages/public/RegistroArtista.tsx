@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   User, Mail, Lock, Phone, Palette, FileText,
   Eye, EyeOff, Loader2, AlertCircle, CheckCircle2,
-  Check, ChevronRight, ChevronLeft, Sparkles, Image as ImageIcon
+  Check, ChevronRight, ChevronLeft, Sparkles, Info
 } from "lucide-react";
 import logoImg from "../../assets/images/logo.png";
 
@@ -17,11 +17,14 @@ const C = {
   bg: "#0f0c1a", surface: "rgba(255,255,255,0.04)",
   border: "rgba(255,255,255,0.1)", text: "#ffffff",
   muted: "rgba(255,255,255,0.5)",
+  warning: "#FFC110",
+  warningBg: "rgba(255,193,16,0.08)",
+  warningBorder: "rgba(255,193,16,0.25)",
 };
 
 interface Categoria { id_categoria: number; nombre: string; }
 
-const PASOS = ["Cuenta", "Perfil", "Listo"];
+const PASOS = ["Cuenta", "Perfil"];
 
 export default function RegistroArtista() {
   const navigate = useNavigate();
@@ -32,6 +35,9 @@ export default function RegistroArtista() {
   const [mostrarPass, setMostrarPass] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [terminado, setTerminado] = useState(false);
+
+  // ── nuevo estado para nombre artístico ocupado ──────────
+  const [nombreArtisticoOcupado, setNombreArtisticoOcupado] = useState(false);
 
   const [form, setForm] = useState({
     nombre_completo: "",
@@ -53,6 +59,10 @@ export default function RegistroArtista() {
 
   const handle = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    // si el artista empieza a escribir un nombre nuevo, limpiamos el aviso
+    if (name === "nombre_artistico") {
+      setNombreArtisticoOcupado(false);
+    }
     setForm(f => ({
       ...f,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value
@@ -60,7 +70,6 @@ export default function RegistroArtista() {
     setMensaje("");
   };
 
-  // validaciones por paso
   const validarPaso0 = () => {
     if (!form.nombre_completo.trim()) return "El nombre completo es obligatorio";
     if (form.nombre_completo.length < 3) return "El nombre debe tener al menos 3 caracteres";
@@ -95,6 +104,8 @@ export default function RegistroArtista() {
 
     setLoading(true);
     setMensaje("");
+    setNombreArtisticoOcupado(false);
+
     try {
       const res = await fetch(`${API_URL}/api/auth/registro-artista`, {
         method: "POST",
@@ -109,8 +120,20 @@ export default function RegistroArtista() {
           id_categoria_principal: parseInt(form.id_categoria_principal),
         }),
       });
+
       const data = await res.json();
+
+      // ── nombre artístico ocupado (409) ──────────────────
+      if (res.status === 409 && data.nombreArtisticoOcupado) {
+        setNombreArtisticoOcupado(true);
+        setForm(f => ({ ...f, nombre_artistico: "" }));
+        setMensaje("");
+        setLoading(false);
+        return;
+      }
+
       if (!res.ok) throw new Error(data.message || "Error al registrar");
+
       setTerminado(true);
       setPaso(2);
     } catch (err: any) {
@@ -143,7 +166,6 @@ export default function RegistroArtista() {
             {mostrarPass ? <EyeOff size={17} /> : <Eye size={17} />}
           </button>
         </div>
-        {/* indicador fortaleza */}
         {form.contrasena && (
           <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
             {[
@@ -158,8 +180,13 @@ export default function RegistroArtista() {
         )}
       </Field>
 
-      <button type="button" onClick={siguiente}
-        style={{ ...btnPrimary, marginTop: 8 }}>
+      {mensaje && (
+        <div style={alertStyle(true)}>
+          <AlertCircle size={15} /> {mensaje}
+        </div>
+      )}
+
+      <button type="button" onClick={siguiente} style={{ ...btnPrimary, marginTop: 8 }}>
         Continuar <ChevronRight size={17} strokeWidth={2.5} />
       </button>
     </div>
@@ -168,14 +195,51 @@ export default function RegistroArtista() {
   // ── PASO 1: perfil artístico ────────────────────────────
   const renderPaso1 = () => (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+      {/* nombre artístico + aviso si está ocupado */}
       <Field label="Nombre artístico (opcional)" icon={<Sparkles size={15} />}>
-        <input name="nombre_artistico" value={form.nombre_artistico} onChange={handle}
-          placeholder="Ej: María Colores" style={inputStyle} />
+        <input
+          name="nombre_artistico"
+          value={form.nombre_artistico}
+          onChange={handle}
+          placeholder="Ej: María Colores"
+          style={{
+            ...inputStyle,
+            borderColor: nombreArtisticoOcupado ? C.warning : "rgba(255,255,255,0.1)",
+          }}
+        />
+
+        {/* aviso nombre ocupado */}
+        {nombreArtisticoOcupado && (
+          <div style={{
+            marginTop: 10,
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: C.warningBg,
+            border: `1px solid ${C.warningBorder}`,
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start",
+          }}>
+            <Info size={15} color={C.warning} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: C.warning }}>
+                Nombre artístico no disponible
+              </p>
+              <p style={{ margin: 0, fontSize: 12.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                Ese nombre ya está registrado en Nu-B Studio. Por ahora escribe un <strong style={{ color: "rgba(255,255,255,0.85)" }}>nombre provisional</strong> para completar tu solicitud.
+                Una vez dentro del portal podrás <strong style={{ color: C.orange }}>solicitar una aclaración al equipo</strong> si eres el artista original y consideras que hubo una suplantación.
+              </p>
+            </div>
+          </div>
+        )}
       </Field>
+
       <Field label="Teléfono (opcional)" icon={<Phone size={15} />}>
         <input name="telefono" value={form.telefono} onChange={handle}
           placeholder="Ej: 7711234567" style={inputStyle} />
       </Field>
+
       <Field label="Categoría principal" icon={<Palette size={15} />}>
         <select name="id_categoria_principal" value={form.id_categoria_principal} onChange={handle}
           style={{ ...inputStyle, cursor: "pointer" }}>
@@ -185,6 +249,7 @@ export default function RegistroArtista() {
           ))}
         </select>
       </Field>
+
       <Field label="Biografía" icon={<FileText size={15} />}>
         <textarea name="biografia" value={form.biografia} onChange={handle}
           placeholder="Cuéntanos sobre ti, tu obra y tu inspiración... (mínimo 30 caracteres)"
@@ -206,20 +271,21 @@ export default function RegistroArtista() {
       </label>
 
       {mensaje && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", border: `1px solid ${isError ? C.pink : "#4ADE80"}`, fontSize: 13, color: isError ? C.pink : "#4ADE80" }}>
+        <div style={alertStyle(isError)}>
           {isError ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
           {mensaje}
         </div>
       )}
 
       <div style={{ display: "flex", gap: 10 }}>
-        <button type="button" onClick={() => setPaso(0)}
-          style={{ ...btnSecondary, flex: 1 }}>
+        <button type="button" onClick={() => setPaso(0)} style={{ ...btnSecondary, flex: 1 }}>
           <ChevronLeft size={16} /> Atrás
         </button>
-        <button type="submit" disabled={loading}
-          style={{ ...btnPrimary, flex: 2 }}>
-          {loading ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Enviando...</> : <>Enviar solicitud <ChevronRight size={16} /></>}
+        <button type="submit" disabled={loading} style={{ ...btnPrimary, flex: 2 }}>
+          {loading
+            ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Enviando...</>
+            : <>Enviar solicitud <ChevronRight size={16} /></>
+          }
         </button>
       </div>
     </form>
@@ -274,11 +340,10 @@ export default function RegistroArtista() {
             Conectamos artistas de la Huasteca con coleccionistas de todo México. Comparte tu arte y genera ingresos con tu pasión.
           </p>
 
-          {/* beneficios */}
           {[
             { icon: <Palette size={18} color={C.orange} />, title: "Exposición nacional", desc: "Tu obra llega a coleccionistas de todo el país" },
-            { icon: <ImageIcon size={18} color={C.pink} />, title: "Certificado de autenticidad", desc: "Cada obra recibe su certificado oficial" },
-            { icon: <Sparkles size={18} color={C.gold} />, title: "Soporte completo", desc: "Te acompañamos en todo el proceso de venta" },
+            { icon: <Sparkles size={18} color={C.pink} />, title: "Certificado de autenticidad", desc: "Cada obra recibe su certificado oficial" },
+            { icon: <CheckCircle2 size={18} color={C.gold} />, title: "Soporte completo", desc: "Te acompañamos en todo el proceso de venta" },
           ].map(({ icon, title, desc }) => (
             <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20 }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.08)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -296,18 +361,19 @@ export default function RegistroArtista() {
       {/* panel derecho */}
       <div style={{ width: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", position: "relative" }} className="artista-form-panel">
         <div style={{ width: "100%", maxWidth: 420 }}>
+
           {/* stepper */}
           {!terminado && (
             <div style={{ display: "flex", alignItems: "center", marginBottom: 32, gap: 0 }}>
-              {PASOS.slice(0, 2).map((label, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 1 ? 1 : "initial" }}>
+              {PASOS.map((label, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", flex: i < PASOS.length - 1 ? 1 : "initial" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: i <= paso ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.08)", border: `2px solid ${i <= paso ? "transparent" : "rgba(255,255,255,0.15)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: i <= paso ? "white" : C.muted, transition: "all .3s" }}>
                       {i < paso ? <Check size={14} strokeWidth={3} /> : i + 1}
                     </div>
                     <span style={{ fontSize: 11, color: i <= paso ? C.orange : C.muted, fontWeight: i <= paso ? 600 : 400 }}>{label}</span>
                   </div>
-                  {i < 1 && (
+                  {i < PASOS.length - 1 && (
                     <div style={{ flex: 1, height: 2, background: paso > i ? `linear-gradient(90deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.1)", margin: "0 8px 16px", transition: "background .3s" }} />
                   )}
                 </div>
@@ -364,6 +430,14 @@ function Field({ label, icon, children }: { label: string; icon: React.ReactNode
     </div>
   );
 }
+
+const alertStyle = (isError: boolean): React.CSSProperties => ({
+  display: "flex", alignItems: "center", gap: 8,
+  padding: "10px 14px", borderRadius: 10,
+  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)",
+  border: `1px solid ${isError ? "#CC59AD" : "#4ADE80"}`,
+  fontSize: 13, color: isError ? "#CC59AD" : "#4ADE80",
+});
 
 const inputStyle: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
