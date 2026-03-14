@@ -156,42 +156,48 @@ function DropZone({ onFile, disabled, accent }: { onFile: (f: File) => void; dis
 function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
   file: File; tipo: TipoReg; onCancel: () => void; onConfirm: () => void; loading: boolean;
 }) {
-  const [preview,  setPreview]  = useState<ExcelPreview | null>(null);
-  const [parsing,  setParsing]  = useState(true);
-  const [parseErr, setParseErr] = useState(false);
-  const [showAll,  setShowAll]  = useState(false);
+  const [result, setResult] = useState<{
+  file: File | null;
+  preview: ExcelPreview | null;
+  parseErr: boolean;
+}>({ file: null, preview: null, parseErr: false });
 
-  useEffect(() => {
-    setParsing(true); setParseErr(false);
-    parseExcelPreview(file, tipo)
-      .then(p => { setPreview(p); setParsing(false); })
-      .catch(() => { setParseErr(true); setParsing(false); });
-  }, [file, tipo]);
+const parsing  = result.file !== file;
+const preview  = result.file === file ? result.preview  : null;
+const parseErr = result.file === file ? result.parseErr : false;
+const [showAll, setShowAll] = useState(false);
 
-  const colsObras    = ["ID Obra",    "Título",          "Artista",         "Categoría",  "Estado",  "Precio Base (MXN)"];
-  const colsArtistas = ["ID Artista", "Nombre Completo", "Nombre Artístico","Correo",     "Ciudad",  "Estado"];
+useEffect(() => {
+  let cancelled = false;
+  parseExcelPreview(file, tipo)
+    .then(p  => { if (!cancelled) setResult({ file, preview: p,    parseErr: false }); })
+    .catch(() => { if (!cancelled) setResult({ file, preview: null, parseErr: true  }); });
+  return () => { cancelled = true; };
+}, [file, tipo]);
+
+  const colsObras    = ["ID Obra",    "Título",          "Artista",        "Categoría",  "Estado",  "Precio Base (MXN)"];
+  const colsArtistas = ["ID Artista", "Nombre Completo", "Nombre Artístico","Correo",    "Ciudad",  "Estado"];
   const priorCols    = tipo === "obras" ? colsObras : colsArtistas;
-  // Normaliza headers quitando * y espacios para comparar
-const normalizedHeaders = preview
-  ? preview.headers.map(h => h.replace(/\s*\*+\s*/g, "").trim())
-  : [];
 
-const matchedCols = preview
-  ? priorCols.filter(c =>
-      preview.headers.includes(c) ||
-      normalizedHeaders.includes(c.replace(/\s*\*+\s*/g, "").trim())
-    )
-  : [];
+  const normalizedHeaders = preview
+    ? preview.headers.map(h => h.replace(/\s*\*+\s*/g, "").trim())
+    : [];
 
-// Para mostrar el header original del archivo (con o sin *)
-const visibleCols = preview
-  ? (matchedCols.length > 0
-      ? matchedCols.map(c => {
-          const idx = normalizedHeaders.indexOf(c.replace(/\s*\*+\s*/g, "").trim());
-          return idx >= 0 ? preview.headers[idx] : c;
-        }).slice(0, 6)
-      : preview.headers.slice(0, 6))
-  : [];
+  const matchedCols = preview
+    ? priorCols.filter(c =>
+        preview.headers.includes(c) ||
+        normalizedHeaders.includes(c.replace(/\s*\*+\s*/g, "").trim())
+      )
+    : [];
+
+  const visibleCols = preview
+    ? (matchedCols.length > 0
+        ? matchedCols.map(c => {
+            const idx = normalizedHeaders.indexOf(c.replace(/\s*\*+\s*/g, "").trim());
+            return idx >= 0 ? preview.headers[idx] : c;
+          }).slice(0, 6)
+        : preview.headers.slice(0, 6))
+    : [];
   return (
     <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid rgba(255,132,14,0.20)`, boxShadow: `0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,200,150,0.06)` }}>
 
