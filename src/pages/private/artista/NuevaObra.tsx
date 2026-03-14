@@ -20,7 +20,7 @@ const css = `
   @keyframes spin    { to{transform:rotate(360deg)} }
   @keyframes scaleIn { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
 
-  .no-main { padding: 40px 48px 60px; max-width: 820px; animation: fadeUp .4s ease both; }
+  .no-main { padding: 40px 48px 60px; max-width: 820px; margin: 0 auto; animation: fadeUp .4s ease both; }
 
   .no-header { display:flex; align-items:flex-start; gap:18px; margin-bottom:32px; }
   .no-back { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.09); color:rgba(245,240,255,0.55); padding:8px 14px; border-radius:10px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:.83rem; transition:all .2s; flex-shrink:0; margin-top:6px; }
