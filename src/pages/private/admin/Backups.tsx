@@ -36,6 +36,27 @@ interface CronConfig {
   ultima_ejecucion: string | null; proxima_ejecucion: string | null;
 }
 
+// Tipo para la respuesta raw del historial
+interface BackupRaw {
+  id: number | string;
+  nombre_archivo: string;
+  fecha: string;
+  tamanio_bytes?: number;
+  filas_total?: number;
+  tablas?: number;
+  duracion_ms?: number;
+  checksum_md5?: string;
+  url_archivo?: string | null;
+}
+
+// Tipo para la respuesta raw de tablas
+interface TablaRaw {
+  tabla?: string;
+  nombre?: string;
+  filas?: number;
+  bytes?: number;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatBytes(b: number) {
   if (!b) return "0 B";
@@ -54,16 +75,22 @@ function tiempoRelativo(d: Date) {
   if (hrs < 24) return `Hace ${hrs} h`;
   return `Hace ${Math.floor(hrs / 24)} d`;
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapEntry(e: any): BackupEntry {
+
+function mapEntry(e: BackupRaw): BackupEntry {
   return {
-    id: String(e.id), filename: e.nombre_archivo, fecha: new Date(e.fecha),
-    tamaño: e.tamanio_bytes ?? 0, filas: e.filas_total ?? 0, tablas: e.tablas ?? 0,
-    duracion: e.duracion_ms ? `${(e.duracion_ms / 1000).toFixed(2)}s` : "—",
-    checksum: e.checksum_md5 ?? "—", estado: "ok",
-    url_archivo: e.url_archivo ?? null,
+    id:          String(e.id),
+    filename:    e.nombre_archivo,
+    fecha:       new Date(e.fecha),
+    tamaño:      e.tamanio_bytes ?? 0,
+    filas:       e.filas_total   ?? 0,
+    tablas:      e.tablas        ?? 0,
+    duracion:    e.duracion_ms   ? `${(e.duracion_ms / 1000).toFixed(2)}s` : "—",
+    checksum:    e.checksum_md5  ?? "—",
+    estado:      "ok",
+    url_archivo: e.url_archivo   ?? null,
   };
 }
+
 const DIAS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 
 // ── Topbar ────────────────────────────────────────────────────────────────────
@@ -161,18 +188,12 @@ function BackupRow({ entry, onDelete, deleting }: { entry:BackupEntry; onDelete:
 }
 
 // ── SelectorTablas ────────────────────────────────────────────────────────────
-// Lógica de EXCLUSIÓN: seleccionas qué tablas QUITAR del backup.
-// vacío = backup completo (todas incluidas)
-function SelectorTablas({
-  tablas, excluidas, onChange,
-}: { tablas: string[]; excluidas: string[]; onChange: (e: string[]) => void }) {
+function SelectorTablas({ tablas, excluidas, onChange }: { tablas: string[]; excluidas: string[]; onChange: (e: string[]) => void }) {
   const toggle = (t: string) =>
     onChange(excluidas.includes(t) ? excluidas.filter(x => x !== t) : [...excluidas, t]);
   const incluidasCount = tablas.length - excluidas.length;
-
   return (
     <div>
-      {/* Estado actual */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
         <div style={{ fontSize:11, fontFamily:FB }}>
           {excluidas.length === 0
@@ -186,23 +207,18 @@ function SelectorTablas({
           </button>
         )}
       </div>
-
-      {/* Instrucción */}
       <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginBottom:8, padding:"5px 9px", borderRadius:7, background:"rgba(255,255,255,0.02)", border:`1px solid rgba(255,255,255,0.05)` }}>
         Haz clic en una tabla para <span style={{ color:C.pink, fontWeight:700 }}>excluirla</span> del backup
       </div>
-
       <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:5, maxHeight:220, overflowY:"auto", paddingRight:4 }}>
         {tablas.map(t => {
           const excluida = excluidas.includes(t);
           return (
             <div key={t} onClick={() => toggle(t)}
-              style={{
-                display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer",
+              style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer",
                 background: excluida ? "rgba(204,89,173,0.06)" : "rgba(34,201,122,0.05)",
                 border:`1px solid ${excluida ? "rgba(204,89,173,0.25)" : "rgba(34,201,122,0.15)"}`,
-                transition:"all .12s", opacity: excluida ? 0.45 : 1,
-              }}>
+                transition:"all .12s", opacity: excluida ? 0.45 : 1 }}>
               <div style={{ width:13, height:13, borderRadius:4, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
                 background: excluida ? "transparent" : C.green,
                 border:`1.5px solid ${excluida ? C.pink : C.green}` }}>
@@ -273,23 +289,24 @@ function EstadoTablas({ tablas, loading, onRefresh }: { tablas: TablaInfo[]; loa
   );
 }
 
-// ── ConfigCron — siempre backup completo ──────────────────────────────────────
+// ── ConfigCron ────────────────────────────────────────────────────────────────
 function ConfigCron({ config, onSave, saving }:
   { config: CronConfig | null; onSave: (c: Partial<CronConfig>) => void; saving: boolean }) {
-  const [activo,     setActivo]     = useState(config?.activo ?? false);
+  const [activo,     setActivo]     = useState(config?.activo     ?? false);
   const [frecuencia, setFrecuencia] = useState<"diario"|"semanal"|"mensual">(config?.frecuencia ?? "diario");
-  const [hora,       setHora]       = useState(config?.hora ?? 2);
+  const [hora,       setHora]       = useState(config?.hora       ?? 2);
   const [diaSemana,  setDiaSemana]  = useState(config?.dia_semana ?? 1);
   const [expanded,   setExpanded]   = useState(false);
 
   useEffect(() => {
     if (!config) return;
-    setActivo(config.activo);
-    setFrecuencia(config.frecuencia);
-    setHora(config.hora);
-    setDiaSemana(config.dia_semana);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.id]);
+    setTimeout(() => {
+      setActivo(config.activo);
+      setFrecuencia(config.frecuencia);
+      setHora(config.hora);
+      setDiaSemana(config.dia_semana);
+    }, 0);
+  }, [config?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const descProxima = () => {
     if (!activo) return "Backup automático desactivado";
@@ -321,7 +338,6 @@ function ConfigCron({ config, onSave, saving }:
 
       {expanded && (
         <div style={{ padding:"18px" }}>
-          {/* Toggle activar */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18, padding:"12px 14px", borderRadius:10, background:"rgba(255,255,255,0.02)", border:`1px solid rgba(255,255,255,0.06)` }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:C.cream, fontFamily:FB }}>Activar backup automático</div>
@@ -332,7 +348,6 @@ function ConfigCron({ config, onSave, saving }:
             </button>
           </div>
 
-          {/* Frecuencia */}
           <div style={{ marginBottom:14 }}>
             <label style={{ fontSize:11, fontWeight:700, color:C.creamMut, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:FB, display:"block", marginBottom:6 }}>Frecuencia</label>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:7 }}>
@@ -349,7 +364,6 @@ function ConfigCron({ config, onSave, saving }:
             </div>
           </div>
 
-          {/* Hora / Día semana */}
           <div style={{ marginBottom:14, display:"grid", gridTemplateColumns: frecuencia === "semanal" ? "1fr 1fr" : "1fr", gap:10 }}>
             <div>
               <label style={{ fontSize:11, fontWeight:700, color:C.creamMut, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:FB, display:"block", marginBottom:6 }}>Hora del día</label>
@@ -371,12 +385,11 @@ function ConfigCron({ config, onSave, saving }:
             )}
           </div>
 
-          {/* Última / próxima */}
           {config && (
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
               {[
-                { label:"Última ejecución",  val: config.ultima_ejecucion ? new Date(config.ultima_ejecucion).toLocaleString("es-MX") : "Nunca", color: C.creamMut },
-                { label:"Próxima ejecución", val: config.proxima_ejecucion && activo ? new Date(config.proxima_ejecucion).toLocaleString("es-MX") : "—", color: activo ? C.green : C.creamMut },
+                { label:"Última ejecución",  val: config.ultima_ejecucion  ? new Date(config.ultima_ejecucion).toLocaleString("es-MX")                   : "Nunca", color: C.creamMut },
+                { label:"Próxima ejecución", val: config.proxima_ejecucion && activo ? new Date(config.proxima_ejecucion).toLocaleString("es-MX") : "—",            color: activo ? C.green : C.creamMut },
               ].map(({ label, val, color }) => (
                 <div key={label} style={{ padding:"10px 12px", borderRadius:8, background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)" }}>
                   <div style={{ fontSize:10, fontWeight:700, color:C.creamMut, letterSpacing:"0.10em", textTransform:"uppercase", fontFamily:FB, marginBottom:3 }}>{label}</div>
@@ -386,7 +399,7 @@ function ConfigCron({ config, onSave, saving }:
             </div>
           )}
 
-         <button onClick={() => onSave({ activo, frecuencia, hora, dia_semana: diaSemana })} disabled={saving}
+          <button onClick={() => onSave({ activo, frecuencia, hora, dia_semana: diaSemana })} disabled={saving}
             style={{ width:"100%", padding:"11px", borderRadius:10,
               background: saving ? "rgba(141,76,205,0.08)" : `linear-gradient(135deg,${C.purple},#6B35A8)`,
               border:`1px solid rgba(141,76,205,0.40)`,
@@ -426,13 +439,11 @@ export default function Backups() {
   const [loadingTablas, setLoadingTablas] = useState(false);
   const [cronConfig,    setCronConfig]    = useState<CronConfig | null>(null);
   const [savingCron,    setSavingCron]    = useState(false);
-
-  // Selector manual: lista de tablas EXCLUIDAS del backup
-  // vacío = backup completo (valor por defecto y más seguro)
   const [showSelector,    setShowSelector]    = useState(false);
   const [tablasNames,     setTablasNames]     = useState<string[]>([]);
   const [tablasExcluidas, setTablasExcluidas] = useState<string[]>([]);
 
+  // ── Cargar datos ─────────────────────────────────────────────────────────────
   const cargarHistorial = useCallback(async () => {
     try {
       const res  = await fetch(`${API_URL}/api/admin/backups/historial`, { headers: { Authorization: `Bearer ${authService.getToken()}` } });
@@ -447,12 +458,11 @@ export default function Backups() {
       const res  = await fetch(`${API_URL}/api/admin/backups/tablas`, { headers: { Authorization: `Bearer ${authService.getToken()}` } });
       const json = await res.json();
       if (json.success) {
-        const raw = json.data?.tablas || json.data || [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tablas: TablaInfo[] = (raw as any[]).map(t => ({
+        const raw: TablaRaw[] = json.data?.tablas || json.data || [];
+        const tablas: TablaInfo[] = raw.map(t => ({
           nombre: t.tabla ?? t.nombre ?? "—",
-          filas:  t.filas ?? 0,
-          bytes:  t.bytes ?? 0,
+          filas:  t.filas  ?? 0,
+          bytes:  t.bytes  ?? 0,
         }));
         setTablasSalud(tablas);
         setTablasNames(tablas.map(t => t.nombre));
@@ -475,36 +485,29 @@ export default function Backups() {
     cargarCron();
   }, [cargarHistorial, cargarTablasSalud, cargarCron]);
 
+  // ── Generar backup → solo sube a Storage, sin descarga local ─────────────────
   const handleGenerarBackup = useCallback(async () => {
     setLoading(true);
-    // Enviar solo las tablas que SÍ se incluyen. null = completo
     const tablasIncluidas = tablasNames.filter(t => !tablasExcluidas.includes(t));
     const tablasAEnviar   = tablasExcluidas.length > 0 ? tablasIncluidas : null;
     try {
       const res = await fetch(`${API_URL}/api/admin/backup`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${authService.getToken()}`, "Content-Type":"application/json" },
-        body: JSON.stringify({ tablas: tablasAEnviar }),
+        method:  "POST",
+        headers: { Authorization: `Bearer ${authService.getToken()}`, "Content-Type": "application/json" },
+        body:    JSON.stringify({ tablas: tablasAEnviar }),
       });
-      if (!res.ok) throw new Error("Error al generar el respaldo");
-      const blob  = await res.blob();
-      const cd    = res.headers.get("Content-Disposition") || "";
-      const match = cd.match(/filename="?([^"]+)"?/);
-      const fn    = match?.[1] || `backup-${Date.now()}.sql`;
-      const url   = window.URL.createObjectURL(blob);
-      const a     = document.createElement("a");
-      a.href = url; a.download = fn;
-      document.body.appendChild(a); a.click();
-      setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+      const json = await res.json();
+      if (!json.success) { showToast(json.message || "Error al generar el respaldo", "err"); return; }
       await cargarHistorial();
       await cargarTablasSalud();
-      showToast(tablasAEnviar ? `Respaldo selectivo (${tablasAEnviar.length} tablas) ✓` : "Respaldo completo ✓", "ok");
+      showToast(json.message, "ok");
     } catch (err) {
       console.error(err);
-      showToast("Error al generar el respaldo", "err");
+      showToast("Error de conexión al generar el respaldo", "err");
     } finally { setLoading(false); }
   }, [tablasNames, tablasExcluidas, cargarHistorial, cargarTablasSalud, showToast]);
 
+  // ── Eliminar backup ───────────────────────────────────────────────────────────
   const handleEliminar = useCallback(async (id: string) => {
     setDeletingId(id);
     try {
@@ -518,6 +521,7 @@ export default function Backups() {
     finally   { setDeletingId(null); }
   }, [showToast]);
 
+  // ── Guardar config cron ───────────────────────────────────────────────────────
   const handleSaveCron = useCallback(async (data: Partial<CronConfig>) => {
     setSavingCron(true);
     try {
@@ -599,14 +603,13 @@ export default function Backups() {
         {/* KPIs */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:22 }}>
           <MiniKpi label="Respaldos en Storage"  value={historial.length}                                         icon={Database}    accent={C.purple} />
-          <MiniKpi label="Exitosos"               value={historial.length}                                         icon={CheckCircle} accent={C.green}  />
-          <MiniKpi label="Total filas exportadas" value={totalFilas.toLocaleString("es-MX")}                      icon={HardDrive}   accent={C.blue}   />
+          <MiniKpi label="Total filas exportadas" value={totalFilas.toLocaleString("es-MX")}                     icon={HardDrive}   accent={C.blue}   />
           <MiniKpi label="Último respaldo"        value={ultimoBackup ? tiempoRelativo(ultimoBackup.fecha) : "—"} icon={Clock}       accent={C.gold}   />
+          <MiniKpi label="Tablas monitoreadas"    value={tablasSalud.length}                                      icon={Activity}    accent={C.green}  />
         </div>
 
         {/* Layout principal */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:16 }}>
-
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
             {/* Historial */}
