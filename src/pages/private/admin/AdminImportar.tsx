@@ -5,7 +5,9 @@ import {
   Upload, FileSpreadsheet, X, CheckCircle, AlertCircle,
   RefreshCw, AlertTriangle, ArrowRight, Eye, EyeOff,
   ChevronRight, Download, Layers, Users, ChevronDown,
-  Sparkles, FileDown, CloudUpload, Zap,
+  Sparkles, FileDown, CloudUpload, Zap, TableProperties,
+  FilePlus2, FileCheck2, FolderOpen, MousePointerClick,
+  UploadCloud, ShieldCheck, FileWarning,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { authService } from "../../../services/authService";
@@ -54,27 +56,18 @@ function parseExcelPreview(file: File, tipo: TipoReg): Promise<ExcelPreview> {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const wb      = XLSX.read(e.target?.result, { type: "array" });
-        const shName  = tipo === "obras" ? "Obras" : "Artistas";
-        const ws      = wb.Sheets[shName] || wb.Sheets[wb.SheetNames[0]];
-      
-// Cámbiala por:
-const allRaw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-
-// Detectar si es plantilla vacía (tiene fila de hints) o con datos reales
-const firstRowValues = allRaw.length > 0
-  ? Object.values(allRaw[0]).map(v => String(v))
-  : [];
-const isHintRow = firstRowValues.some(v =>
-  v.includes("←") || v.includes("Ej:") || v.includes("Vacío=")
-);
-const all = isHintRow ? allRaw.slice(1) : allRaw;
-
-const idField = tipo === "obras" ? "ID Obra" : "ID Artista";
-const nuevas  = all.filter(r => !r[idField] || String(r[idField]).trim() === "").length;
-const updates = all.filter(r =>  r[idField] && String(r[idField]).trim() !== "").length;
-const headers = all.length > 0 ? Object.keys(all[0]) : [];
-resolve({ headers, rows: all.slice(0, 5), allRows: all, totalFilas: all.length, nuevas, actualizaciones: updates });
+        const wb     = XLSX.read(e.target?.result, { type: "array" });
+        const shName = tipo === "obras" ? "Obras" : "Artistas";
+        const ws     = wb.Sheets[shName] || wb.Sheets[wb.SheetNames[0]];
+        const allRaw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+        const firstRowValues = allRaw.length > 0 ? Object.values(allRaw[0]).map(v => String(v)) : [];
+        const isHintRow = firstRowValues.some(v => v.includes("←") || v.includes("Ej:") || v.includes("Vacío="));
+        const all     = isHintRow ? allRaw.slice(1) : allRaw;
+        const idField = tipo === "obras" ? "ID Obra" : "ID Artista";
+        const nuevas  = all.filter(r => !r[idField] || String(r[idField]).trim() === "").length;
+        const updates = all.filter(r =>  r[idField] && String(r[idField]).trim() !== "").length;
+        const headers = all.length > 0 ? Object.keys(all[0]) : [];
+        resolve({ headers, rows: all.slice(0, 5), allRows: all, totalFilas: all.length, nuevas, actualizaciones: updates });
       } catch (err) { reject(err); }
     };
     reader.onerror = reject;
@@ -118,27 +111,27 @@ function DropZone({ onFile, disabled, accent }: { onFile: (f: File) => void; dis
       onDrop={e => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files[0]); }}
       style={{
         position: "relative", overflow: "hidden",
-        border: `2px dashed ${drag ? accent : C.borderBr}`,
+        border: `2px dashed ${drag ? C.orange : C.borderBr}`,
         borderRadius: 16, padding: "52px 24px",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16,
         cursor: disabled ? "not-allowed" : "pointer",
-        background: drag ? `${accent}07` : "rgba(255,232,200,0.015)",
+        background: drag ? "rgba(255,132,14,0.06)" : "rgba(255,232,200,0.015)",
         transition: "all .25s", opacity: disabled ? 0.5 : 1,
       }}>
-      <div style={{ position: "absolute", inset: 0, background: drag ? `radial-gradient(ellipse at 50% 0%, ${accent}12 0%, transparent 65%)` : "none", transition: "all .3s", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: drag ? "radial-gradient(ellipse at 50% 0%, rgba(255,132,14,0.12) 0%, transparent 65%)" : "none", transition: "all .3s", pointerEvents: "none" }} />
       <div style={{ position: "relative" }}>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: drag ? `${accent}18` : "rgba(255,232,200,0.05)", border: `1.5px solid ${drag ? accent + "55" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .25s", transform: drag ? "scale(1.08) translateY(-3px)" : "scale(1)", boxShadow: drag ? `0 12px 32px ${accent}25` : "none" }}>
-          <CloudUpload size={28} color={drag ? accent : C.creamMut} strokeWidth={1.5} style={{ transition: "all .25s" }} />
+        <div style={{ width: 72, height: 72, borderRadius: 20, background: drag ? "rgba(255,132,14,0.15)" : "rgba(255,232,200,0.05)", border: `1.5px solid ${drag ? C.orange + "55" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .25s", transform: drag ? "scale(1.08) translateY(-3px)" : "scale(1)", boxShadow: drag ? `0 12px 32px rgba(255,132,14,0.25)` : "none" }}>
+          <CloudUpload size={28} color={drag ? C.orange : C.creamMut} strokeWidth={1.5} style={{ transition: "all .25s" }} />
         </div>
         {drag && (
-          <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", animation: "popIn .2s ease", boxShadow: `0 2px 8px ${accent}60` }}>
+          <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, borderRadius: "50%", background: C.orange, display: "flex", alignItems: "center", justifyContent: "center", animation: "popIn .2s ease", boxShadow: `0 2px 8px rgba(255,132,14,0.6)` }}>
             <Zap size={10} color="white" strokeWidth={2.5} />
           </div>
         )}
       </div>
       <div style={{ textAlign: "center", zIndex: 1 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: drag ? C.cream : C.creamSub, fontFamily: FB, marginBottom: 6, transition: "color .2s" }}>
-          {drag ? "¡Suelta el archivo!" : <>Arrastra tu <span style={{ color: accent, fontWeight: 800 }}>.xlsx</span> aquí</>}
+          {drag ? "¡Suelta el archivo!" : <>Arrastra tu <span style={{ color: C.orange, fontWeight: 800 }}>.xlsx</span> aquí</>}
         </div>
         <div style={{ fontSize: 12.5, color: C.creamMut, fontFamily: FB }}>o haz clic para seleccionar · máx. 10 MB</div>
       </div>
@@ -156,51 +149,33 @@ function DropZone({ onFile, disabled, accent }: { onFile: (f: File) => void; dis
 function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
   file: File; tipo: TipoReg; onCancel: () => void; onConfirm: () => void; loading: boolean;
 }) {
-  const [result, setResult] = useState<{
-  file: File | null;
-  preview: ExcelPreview | null;
-  parseErr: boolean;
-}>({ file: null, preview: null, parseErr: false });
+  const [result, setResult] = useState<{ file: File | null; preview: ExcelPreview | null; parseErr: boolean }>({ file: null, preview: null, parseErr: false });
+  const parsing  = result.file !== file;
+  const preview  = result.file === file ? result.preview  : null;
+  const parseErr = result.file === file ? result.parseErr : false;
+  const [showAll, setShowAll] = useState(false);
 
-const parsing  = result.file !== file;
-const preview  = result.file === file ? result.preview  : null;
-const parseErr = result.file === file ? result.parseErr : false;
-const [showAll, setShowAll] = useState(false);
-
-useEffect(() => {
-  let cancelled = false;
-  parseExcelPreview(file, tipo)
-    .then(p  => { if (!cancelled) setResult({ file, preview: p,    parseErr: false }); })
-    .catch(() => { if (!cancelled) setResult({ file, preview: null, parseErr: true  }); });
-  return () => { cancelled = true; };
-}, [file, tipo]);
+  useEffect(() => {
+    let cancelled = false;
+    parseExcelPreview(file, tipo)
+      .then(p  => { if (!cancelled) setResult({ file, preview: p,    parseErr: false }); })
+      .catch(() => { if (!cancelled) setResult({ file, preview: null, parseErr: true  }); });
+    return () => { cancelled = true; };
+  }, [file, tipo]);
 
   const colsObras    = ["ID Obra",    "Título",          "Artista",        "Categoría",  "Estado",  "Precio Base (MXN)"];
   const colsArtistas = ["ID Artista", "Nombre Completo", "Nombre Artístico","Correo",    "Ciudad",  "Estado"];
   const priorCols    = tipo === "obras" ? colsObras : colsArtistas;
-
-  const normalizedHeaders = preview
-    ? preview.headers.map(h => h.replace(/\s*\*+\s*/g, "").trim())
-    : [];
-
-  const matchedCols = preview
-    ? priorCols.filter(c =>
-        preview.headers.includes(c) ||
-        normalizedHeaders.includes(c.replace(/\s*\*+\s*/g, "").trim())
-      )
-    : [];
-
+  const normalizedHeaders = preview ? preview.headers.map(h => h.replace(/\s*\*+\s*/g, "").trim()) : [];
+  const matchedCols = preview ? priorCols.filter(c => preview.headers.includes(c) || normalizedHeaders.includes(c.replace(/\s*\*+\s*/g, "").trim())) : [];
   const visibleCols = preview
     ? (matchedCols.length > 0
-        ? matchedCols.map(c => {
-            const idx = normalizedHeaders.indexOf(c.replace(/\s*\*+\s*/g, "").trim());
-            return idx >= 0 ? preview.headers[idx] : c;
-          }).slice(0, 6)
+        ? matchedCols.map(c => { const idx = normalizedHeaders.indexOf(c.replace(/\s*\*+\s*/g, "").trim()); return idx >= 0 ? preview.headers[idx] : c; }).slice(0, 6)
         : preview.headers.slice(0, 6))
     : [];
+
   return (
     <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid rgba(255,132,14,0.20)`, boxShadow: `0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,200,150,0.06)` }}>
-
       {/* Header archivo */}
       <div style={{ padding: "18px 22px", background: `linear-gradient(135deg, rgba(255,132,14,0.08) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid rgba(255,132,14,0.12)`, display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0, background: "rgba(34,201,122,0.12)", border: `1px solid rgba(34,201,122,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 14px rgba(34,201,122,0.15)` }}>
@@ -224,7 +199,6 @@ useEffect(() => {
       </div>
 
       <div style={{ padding: "20px 22px" }}>
-
         {/* Stat cards */}
         {preview && !parsing && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
@@ -284,7 +258,7 @@ useEffect(() => {
                   <tr style={{ background: "rgba(7,5,16,0.98)" }}>
                     {visibleCols.map((col, i) => (
                       <th key={col} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10.5, fontWeight: 800, color: C.orange, whiteSpace: "nowrap", borderBottom: `1px solid ${C.border}`, letterSpacing: "0.06em", textTransform: "uppercase", borderRight: i < visibleCols.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                         {col.replace(/\s*\*+\s*/g, "").trim()}
+                        {col.replace(/\s*\*+\s*/g, "").trim()}
                       </th>
                     ))}
                   </tr>
@@ -357,33 +331,25 @@ function ResultadoPanel({ resumen, detalle, onReset }: { resumen: Resumen; detal
     { label: "Actualizadas", value: resumen.actualizadas, color: C.gold,  bg: "rgba(255,193,16,0.08)",   bd: "rgba(255,193,16,0.18)"  },
     { label: "Errores",      value: resumen.errores,      color: C.red,   bg: "rgba(240,78,107,0.08)",   bd: "rgba(240,78,107,0.18)"  },
   ];
-
   return (
     <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, boxShadow: `0 8px 40px rgba(0,0,0,0.4)` }}>
-      {/* Banner */}
       <div style={{ padding: "20px 24px", background: exitoso ? `linear-gradient(135deg, rgba(34,201,122,0.10) 0%, rgba(18,13,30,0) 60%)` : `linear-gradient(135deg, rgba(240,78,107,0.09) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid ${exitoso ? "rgba(34,201,122,0.12)" : "rgba(240,78,107,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 46, height: 46, borderRadius: 12, background: exitoso ? "rgba(34,201,122,0.14)" : "rgba(240,78,107,0.14)", border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 14px ${exitoso ? "rgba(34,201,122,0.2)" : "rgba(240,78,107,0.2)"}` }}>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: exitoso ? "rgba(34,201,122,0.14)" : "rgba(240,78,107,0.14)", border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {exitoso ? <CheckCircle size={20} color={C.green} strokeWidth={2} /> : <AlertCircle size={20} color={C.red} strokeWidth={2} />}
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 3 }}>
-              {exitoso ? "Importación completada" : "Importación con errores"}
-            </div>
-            <div style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>
-              {resumen.total} registros procesados · {resumen.insertadas} nuevos · {resumen.actualizadas} actualizados
-            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 3 }}>{exitoso ? "Importación completada" : "Importación con errores"}</div>
+            <div style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>{resumen.total} registros procesados · {resumen.insertadas} nuevos · {resumen.actualizadas} actualizados</div>
           </div>
         </div>
         <button onClick={onReset}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, background: "rgba(255,232,200,0.04)", border: `1px solid ${C.border}`, color: C.creamMut, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = C.orange; (e.currentTarget as HTMLElement).style.borderColor = `${C.orange}35`; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = C.creamMut; (e.currentTarget as HTMLElement).style.borderColor = C.border; }}>
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.25)`, color: C.orange, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.16)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.08)"; }}>
           <RefreshCw size={12} /> Nueva importación
         </button>
       </div>
-
-      {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, padding: "20px 22px" }}>
         {kpis.map(({ label, value, color, bg, bd }) => (
           <div key={label} style={{ padding: "18px 16px", borderRadius: 12, background: bg, border: `1px solid ${bd}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative", overflow: "hidden" }}>
@@ -393,8 +359,6 @@ function ResultadoPanel({ resumen, detalle, onReset }: { resumen: Resumen; detal
           </div>
         ))}
       </div>
-
-      {/* Detalle */}
       {detalle.length > 0 && (
         <div style={{ padding: "0 22px 20px" }}>
           <button onClick={() => setShow(v => !v)}
@@ -439,55 +403,80 @@ function ResultadoPanel({ resumen, detalle, onReset }: { resumen: Resumen; detal
 }
 
 // ── PasoCard ──────────────────────────────────────────────────────────────────
-function PasoCard({ n, title, desc, endpoint, endpointVacio, accent, onDownload, index }: {
+function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }: {
   n: string; title: string; desc: string;
   endpoint: string | null; endpointVacio: string | null;
   accent: string; onDownload: (e: string) => void; index: number;
 }) {
-  const icons = [FileDown, Sparkles, CloudUpload];
-  const Icon  = icons[index] || FileDown;
+  const steps = [
+    { MainIcon: TableProperties, SubIcon: FilePlus2,   from: "#FF840E", to: "#D06500", hint: null },
+    { MainIcon: FileCheck2,      SubIcon: FileWarning, from: "#22C97A", to: "#16A35E", hint: "Edita libremente el Excel" },
+    { MainIcon: UploadCloud,     SubIcon: ShieldCheck, from: "#8D4CCD", to: "#6B35A8", hint: "Arrastra el archivo abajo" },
+  ];
+  const { MainIcon, SubIcon, from, to, hint } = steps[index] || steps[0];
+
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "20px 20px", animation: `fadeUp .4s ease ${index * 0.08}s both`, position: "relative", overflow: "hidden", transition: "border-color .2s, transform .2s" }}
-      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${accent}30`; el.style.transform = "translateY(-2px)"; }}
-      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.border; el.style.transform = "translateY(0)"; }}>
-      <div style={{ position: "absolute", top: 0, right: 0, width: 90, height: 90, background: `radial-gradient(circle at top right, ${accent}0A, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ width: 28, height: 28, borderRadius: 8, background: accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "white", flexShrink: 0, boxShadow: `0 4px 12px ${accent}40` }}>{n}</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C.cream, fontFamily: FB }}>{title}</span>
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", animation: `fadeUp .4s ease ${index * 0.09}s both`, transition: "border-color .2s, transform .2s, box-shadow .2s" }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${from}40`; el.style.transform = "translateY(-3px)"; el.style.boxShadow = `0 16px 40px rgba(0,0,0,0.35), 0 0 0 1px ${from}18`; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.border; el.style.transform = "translateY(0)"; el.style.boxShadow = "none"; }}>
+
+      {/* Barra top degradada */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${from}, ${to}, transparent 80%)` }} />
+
+      {/* Hero */}
+      <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        {/* Ícono principal con número */}
+        <div style={{ position: "relative" }}>
+          <div style={{ width: 60, height: 60, borderRadius: 16, background: `linear-gradient(135deg, ${from}20, ${to}10)`, border: `1px solid ${from}28`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 18px ${from}18` }}>
+            <MainIcon size={28} color={from} strokeWidth={1.4} />
+          </div>
+          <div style={{ position: "absolute", top: -5, right: -5, width: 22, height: 22, borderRadius: "50%", background: `linear-gradient(135deg, ${from}, ${to})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "white", fontFamily: FB, boxShadow: `0 2px 10px ${from}55, 0 0 0 2px ${C.card}` }}>{n}</div>
         </div>
-        <div style={{ width: 32, height: 32, borderRadius: 9, background: `${accent}10`, border: `1px solid ${accent}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon size={14} color={accent} strokeWidth={1.8} />
+        {/* Ícono sub decorativo */}
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,232,200,0.04)", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <SubIcon size={15} color={C.creamMut} strokeWidth={1.5} />
         </div>
       </div>
-      <p style={{ fontSize: 12.5, color: C.creamMut, fontFamily: FB, margin: "0 0 14px", lineHeight: 1.7 }}>{desc}</p>
 
-      {/* Dos botones cuando hay plantilla */}
-      {(endpoint || endpointVacio) && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      {/* Texto */}
+      <div style={{ padding: "14px 20px 20px" }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: C.cream, fontFamily: FB, marginBottom: 8, lineHeight: 1.2 }}>{title}</div>
+        <p style={{ fontSize: 12.5, color: C.creamMut, fontFamily: FB, margin: "0 0 16px", lineHeight: 1.75 }}>{desc}</p>
 
-          {/* Plantilla vacía — CTA principal */}
-          {endpointVacio && (
-            <button onClick={() => onDownload(endpointVacio)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 9, border: "none", background: `linear-gradient(135deg, ${accent}, ${accent}CC)`, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s", boxShadow: `0 4px 14px ${accent}35` }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 6px 20px ${accent}55`; el.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 4px 14px ${accent}35`; el.style.transform = "translateY(0)"; }}>
-              <Download size={13} /> Plantilla vacía <span style={{ fontSize: 10, opacity: 0.85, fontWeight: 600, background: "rgba(255,255,255,0.2)", padding: "1px 7px", borderRadius: 20 }}>recomendada</span>
-            </button>
-          )}
+        {/* Botones de descarga */}
+        {(endpoint || endpointVacio) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {endpointVacio && (
+              <button onClick={() => onDownload(endpointVacio)}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${from}, ${to})`, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s", boxShadow: `0 4px 16px ${from}35` }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 8px 24px ${from}55`; el.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 4px 16px ${from}35`; el.style.transform = "translateY(0)"; }}>
+                <Download size={14} strokeWidth={2.5} />
+                Plantilla vacía
+                <span style={{ fontSize: 9.5, fontWeight: 700, background: "rgba(255,255,255,0.22)", padding: "2px 8px", borderRadius: 20 }}>recomendada</span>
+              </button>
+            )}
+            {endpoint && (
+              <button onClick={() => onDownload(endpoint)}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 10, border: `1px solid ${from}35`, background: `${from}08`, color: from, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s" }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${from}18`; el.style.borderColor = `${from}55`; }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${from}08`; el.style.borderColor = `${from}35`; }}>
+                <FolderOpen size={13} strokeWidth={2} />
+                Con datos actuales
+                <span style={{ fontSize: 10, color: C.creamMut, fontWeight: 400 }}>· para editar</span>
+              </button>
+            )}
+          </div>
+        )}
 
-          {/* Plantilla con datos existentes — secundaria */}
-          {endpoint && (
-            <button onClick={() => onDownload(endpoint)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 9, border: `1px solid ${accent}35`, background: `${accent}08`, color: accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s" }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${accent}14`; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${accent}08`; }}>
-              <ArrowRight size={12} /> Con datos actuales <span style={{ fontSize: 10, color: C.creamMut, fontWeight: 500 }}>para editar existentes</span>
-            </button>
-          )}
-
-        </div>
-      )}
+        {/* Indicador para pasos sin botón */}
+        {!endpoint && !endpointVacio && hint && (
+          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 12px", borderRadius: 9, background: `${from}08`, border: `1px solid ${from}20` }}>
+            <MousePointerClick size={13} color={from} strokeWidth={2} />
+            <span style={{ fontSize: 12, color: from, fontWeight: 600, fontFamily: FB }}>{hint}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -540,7 +529,7 @@ export default function AdminImportar() {
   const pasos = [
     {
       n: "1", title: "Descarga la plantilla",
-      desc: `Usa la plantilla vacía para registros nuevos. Usa "con datos actuales" si quieres editar registros existentes. Los catálogos (artistas, categorías, técnicas) siempre se generan frescos desde la BD.`,
+      desc: `Usa la plantilla vacía para registros nuevos. Usa "con datos actuales" si quieres editar registros existentes. Los catálogos siempre se generan frescos desde la BD.`,
       endpoint:      tipo === "obras" ? "obras-plantilla"       : "artistas-plantilla",
       endpointVacio: tipo === "obras" ? "obras-plantilla-vacia" : "artistas-plantilla-vacia",
     },
@@ -551,7 +540,7 @@ export default function AdminImportar() {
     },
     {
       n: "3", title: "Sube y confirma",
-      desc: "Arrastra el archivo. Verás un preview con columnas y conteo de filas antes de confirmar. ID vacío = nuevo registro · ID con valor = actualización.",
+      desc: "Arrastra el archivo. Verás un preview con columnas y conteo de filas antes de confirmar. ID vacío = nuevo · ID con valor = actualización.",
       endpoint: null, endpointVacio: null,
     },
   ];
@@ -565,12 +554,12 @@ export default function AdminImportar() {
       `}</style>
       <Topbar navigate={navigate} />
 
-      <main style={{ flex: 1, padding: "26px 28px 40px", overflowY: "auto", backgroundColor: C.bg, backgroundImage: `radial-gradient(ellipse at 75% 0%, rgba(121,170,245,0.09) 0%, transparent 40%), radial-gradient(ellipse at 10% 90%, rgba(204,89,173,0.07) 0%, transparent 35%), radial-gradient(ellipse at 50% 50%, rgba(141,76,205,0.03) 0%, transparent 60%)`, fontFamily: FB }}>
+      <main style={{ flex: 1, padding: "26px 28px 40px", overflowY: "auto", backgroundColor: C.bg, backgroundImage: `radial-gradient(ellipse at 75% 0%, rgba(255,132,14,0.08) 0%, transparent 40%), radial-gradient(ellipse at 10% 90%, rgba(204,89,173,0.06) 0%, transparent 35%)`, fontFamily: FB }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 100, background: "rgba(255,248,238,0.04)", border: `1px solid ${C.borderBr}`, fontSize: 11, color: C.creamMut, marginBottom: 12, fontWeight: 600, letterSpacing: "0.05em" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 100, background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.20)`, fontSize: 11, color: C.orange, marginBottom: 12, fontWeight: 700, letterSpacing: "0.05em" }}>
               <CloudUpload size={10} color={C.orange} /> IMPORTACIÓN MASIVA
             </div>
             <h1 style={{ fontSize: 28, fontWeight: 900, color: C.cream, fontFamily: FD, margin: "0 0 6px", lineHeight: 1.15 }}>
@@ -609,15 +598,21 @@ export default function AdminImportar() {
                 <PasoCard key={p.n} {...p} accent={accentTipo} onDownload={handleExportPlantilla} index={i} />
               ))}
             </div>
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px 24px", animation: `fadeUp .4s ease .28s both` }}>
+            <div style={{ background: C.card, border: `1px solid rgba(255,132,14,0.15)`, borderRadius: 16, padding: "22px 24px", animation: `fadeUp .4s ease .28s both`, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${C.orange}, ${C.magenta}, transparent 70%)` }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 3 }}>Subir archivo</div>
-                  <div style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>Solo archivos .xlsx · plantilla oficial</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(255,132,14,0.12)", border: `1px solid rgba(255,132,14,0.25)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <UploadCloud size={19} color={C.orange} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 2 }}>Subir archivo</div>
+                    <div style={{ fontSize: 11.5, color: C.creamMut, fontFamily: FB }}>Solo archivos .xlsx · plantilla oficial</div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: C.creamMut, fontFamily: FB }}>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: accentTipo, boxShadow: `0 0 6px ${accentTipo}` }} />
-                  {tipo === "obras" ? "Modo: Obras" : "Modo: Artistas"}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 100, background: `${accentTipo}10`, border: `1px solid ${accentTipo}30` }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: accentTipo, boxShadow: `0 0 6px ${accentTipo}` }} />
+                  <span style={{ fontSize: 11, color: accentTipo, fontWeight: 700, fontFamily: FB }}>{tipo === "obras" ? "Modo: Obras" : "Modo: Artistas"}</span>
                 </div>
               </div>
               <DropZone onFile={setFile} accent={accentTipo} />
