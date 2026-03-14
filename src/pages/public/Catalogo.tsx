@@ -92,7 +92,7 @@ function ObraCard({ obra, navigate }: { obra: Obra; navigate: ReturnType<typeof 
           <div style={{ display: "flex", gap: 10 }}>
             <button
               onClick={e => { e.stopPropagation(); navigate(`/obras/${obra.slug}`); }}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 10, background: "white", border: "none", color: "#111", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB }}
+              style={{ display: "flex", alignItems: "center", gap: 7, padding: "1px 18px", borderRadius: 10, background: "white", border: "none", color: "#111", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB }}
             >
               <Eye size={15} strokeWidth={2} /> Ver obra
             </button>

@@ -11,6 +11,7 @@ import EditarArtista      from "../pages/private/admin/EditarArtista";
 import DetalleArtista     from "../pages/private/admin/DetalleArtista";
 import Backups            from "../pages/private/admin/Backups";
 import AdminReportes      from "../pages/private/admin/AdminReportes";
+import AdminImportar      from "../pages/private/admin/AdminImportar";
 import AdminLayout        from "../layout/AdminLayout";
 import ArtistaLayout      from "../layout/ArtistaLayout";
 import PrivateRoute       from "../components/PrivateRoute";
@@ -53,15 +54,16 @@ export default function AppRoutes() {
       <Route path="/admin" element={
         <AdminRoute><AdminLayout /></AdminRoute>
       }>
-        <Route index                   element={<AdminDashboard />} />
-        <Route path="obras"            element={<ListaObras />} />
-        <Route path="obras/editar/:id" element={<EditarObra />} />
-        <Route path="artistas"         element={<ListaArtistas />} />
+        <Route index                      element={<AdminDashboard />} />
+        <Route path="obras"               element={<ListaObras />} />
+        <Route path="obras/editar/:id"    element={<EditarObra />} />
+        <Route path="artistas"            element={<ListaArtistas />} />
         <Route path="artistas/crear"      element={<CrearArtista />} />
         <Route path="artistas/editar/:id" element={<EditarArtista />} />
         <Route path="artistas/:id"        element={<DetalleArtista />} />
-        <Route path="backups"          element={<Backups />} />
-        <Route path="reportes"         element={<AdminReportes />} />
+        <Route path="backups"             element={<Backups />} />
+        <Route path="reportes"            element={<AdminReportes />} />
+        <Route path="importar"            element={<AdminImportar />} />
       </Route>
 
       {/* ── Error pages ── */}
