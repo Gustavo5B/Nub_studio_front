@@ -41,9 +41,29 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const fmt  = (n: number) => new Intl.NumberFormat("es-MX").format(n);
 const fmtM = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface KPIData {
   ingresos_totales: number; obras_vendidas: number; ticket_promedio: number;
   comisiones_pendientes: number; artistas_activos: number; obras_activas: number;
+}
+
+interface VentaMes {
+  mes: string; mes_num: number; cantidad: number; total: number;
+}
+
+interface IngresoComision {
+  mes: string; ingresos: number; comision_plataforma: number;
+  neto_artistas: number; monto_comision: number;
+}
+
+interface TooltipPayloadItem {
+  color: string; name: string; value: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
 }
 
 function authH() { return { Authorization: `Bearer ${authService.getToken()}` }; }
@@ -96,31 +116,36 @@ function KPIStrip({ kpis, loading }: { kpis: KPIData | null; loading: boolean })
   );
 }
 
+// ── CustomTooltip — fuera del componente para evitar recreación en cada render ─
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: "rgba(10,7,20,0.98)", border: `1px solid ${C.borderBr}`, borderRadius: 10, padding: "10px 14px", fontFamily: FB }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: C.creamMut, marginBottom: 8 }}>{label}</div>
+      {payload.map((p, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: C.creamSub, marginBottom: 3 }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: p.color, display: "inline-block" }} />
+          <span style={{ color: C.creamMut }}>{p.name}:</span>
+          <strong style={{ color: C.cream }}>{fmtM(p.value)}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Charts ────────────────────────────────────────────────────────────────────
-function Charts({ ventasMes, ingresosComisiones }: { ventasMes: any[]; ingresosComisiones: any[] }) {
-  const axis = { stroke: "transparent", tick: { fill: C.creamMut, fontSize: 10, fontFamily: FB } };
+function Charts({ ventasMes, ingresosComisiones }: { ventasMes: VentaMes[]; ingresosComisiones: IngresoComision[] }) {
+
   const grid = <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />;
-  const tip  = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div style={{ background: "rgba(10,7,20,0.98)", border: `1px solid ${C.borderBr}`, borderRadius: 10, padding: "10px 14px", fontFamily: FB }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.creamMut, marginBottom: 8 }}>{label}</div>
-        {payload.map((p: any, i: number) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: C.creamSub, marginBottom: 3 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: p.color, display: "inline-block" }} />
-            <span style={{ color: C.creamMut }}>{p.name}:</span>
-            <strong style={{ color: C.cream }}>{fmtM(p.value)}</strong>
-          </div>
-        ))}
-      </div>
-    );
-  };
+  const axisProps = { stroke: "transparent" as const, tick: { fill: C.creamMut, fontSize: 10, fontFamily: FB } };
+
   const empty = (
     <div style={{ height: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, opacity: 0.4 }}>
       <Activity size={22} color={C.creamMut} />
       <span style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>Sin datos aún</span>
     </div>
   );
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 18px 12px" }}>
@@ -129,7 +154,10 @@ function Charts({ ventasMes, ingresosComisiones }: { ventasMes: any[]; ingresosC
         {ventasMes.length === 0 ? empty : (
           <ResponsiveContainer width="100%" height={160}>
             <RBarChart data={ventasMes} margin={{ top: 5, right: 5, bottom: 5, left: -10 }}>
-              {grid}<XAxis dataKey="mes" {...axis} /><YAxis {...axis} width={30} /><Tooltip content={tip} />
+              {grid}
+              <XAxis dataKey="mes" {...axisProps} />
+              <YAxis {...axisProps} width={30} />
+              <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="total" name="Total" fill={C.orange} radius={[4, 4, 0, 0]} fillOpacity={0.85} />
             </RBarChart>
           </ResponsiveContainer>
@@ -145,7 +173,10 @@ function Charts({ ventasMes, ingresosComisiones }: { ventasMes: any[]; ingresosC
                 <linearGradient id="gO2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.orange} stopOpacity={0.22} /><stop offset="100%" stopColor={C.orange} stopOpacity={0} /></linearGradient>
                 <linearGradient id="gP2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.purple} stopOpacity={0.14} /><stop offset="100%" stopColor={C.purple} stopOpacity={0} /></linearGradient>
               </defs>
-              {grid}<XAxis dataKey="mes" {...axis} /><YAxis {...axis} width={30} /><Tooltip content={tip} />
+              {grid}
+              <XAxis dataKey="mes" {...axisProps} />
+              <YAxis {...axisProps} width={30} />
+              <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="ingresos"      name="Ingresos"      stroke={C.orange} strokeWidth={2}   fill="url(#gO2)" dot={false} />
               <Area type="monotone" dataKey="neto_artistas" name="Neto artistas" stroke={C.purple} strokeWidth={1.8} fill="url(#gP2)" dot={false} />
             </AreaChart>
@@ -206,8 +237,8 @@ export default function AdminReportes() {
   const { showToast } = useToast();
 
   const [kpis,               setKpis]              = useState<KPIData | null>(null);
-  const [ventasMes,          setVentasMes]          = useState<any[]>([]);
-  const [ingresosComisiones, setIngresosComisiones] = useState<any[]>([]);
+  const [ventasMes,          setVentasMes]          = useState<VentaMes[]>([]);
+  const [ingresosComisiones, setIngresosComisiones] = useState<IngresoComision[]>([]);
   const [loadingKpis,        setLoadingKpis]        = useState(true);
   const [exporting,          setExporting]          = useState<string | null>(null);
 
@@ -221,9 +252,9 @@ export default function AdminReportes() {
           fetch(`${API}/api/reportes/ingresos-vs-comisiones`, { headers: authH() }),
         ]);
         const [kJ, vJ, iJ] = await Promise.all([kR.json(), vR.json(), iR.json()]);
-        if (kJ.success) setKpis(kJ.data);
-        if (vJ.success) setVentasMes(vJ.data);
-        if (iJ.success) setIngresosComisiones(iJ.data);
+        if (kJ.success) setKpis(kJ.data as KPIData);
+        if (vJ.success) setVentasMes(vJ.data as VentaMes[]);
+        if (iJ.success) setIngresosComisiones(iJ.data as IngresoComision[]);
       } catch { /* silencioso */ }
       finally { setLoadingKpis(false); }
     };
@@ -233,14 +264,16 @@ export default function AdminReportes() {
   const handleExport = async (tipo: string) => {
     setExporting(tipo);
     try {
-      const url = tipo === "catalogo" ? `${API}/api/reportes/exportar/catalogo-obras` : `${API}/api/reportes/exportar/${tipo}`;
+      const url = tipo === "catalogo"
+        ? `${API}/api/reportes/exportar/catalogo-obras`
+        : `${API}/api/reportes/exportar/${tipo}`;
       const res = await fetch(url, { headers: authH() });
       if (!res.ok) throw new Error();
       const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      const cd = res.headers.get("Content-Disposition") || "";
-      const m  = cd.match(/filename="?([^"]+)"?/);
+      const a    = document.createElement("a");
+      a.href     = URL.createObjectURL(blob);
+      const cd   = res.headers.get("Content-Disposition") || "";
+      const m    = cd.match(/filename="?([^"]+)"?/);
       a.download = m?.[1] || `reporte-${tipo}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
