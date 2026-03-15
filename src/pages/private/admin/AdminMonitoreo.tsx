@@ -64,9 +64,7 @@ interface Bloqueo {
   pid_bloqueante:number; usuario_bloqueante:string; query_bloqueante:string;
   wait_event_type:string; wait_event:string;
 }
-interface ParamPG {
-  name:string; setting:string; unit:string; category:string; short_desc:string;
-}
+interface ParamPG { name:string; setting:string; unit:string; category:string; short_desc:string; }
 interface HistorialEntry {
   id:number; tipo:string; tabla:string|null; alcance:string;
   duracion_ms:number; exitoso:boolean; error_msg:string|null;
@@ -190,8 +188,10 @@ function VacuumModal({ resultados, duracion, onClose }:{ resultados:VacuumResult
 }
 
 // ── Topbar ────────────────────────────────────────────────────────────────────
-function Topbar({ navigate, onRefresh, loading, onVacuumAll, vacuumingAll }:{
-  navigate:(p:string)=>void; onRefresh:()=>void; loading:boolean; onVacuumAll:()=>void; vacuumingAll:boolean;
+function Topbar({ navigate, onRefresh, loading, onVacuumAll, vacuumingAll, autoRefresh, onToggleAuto, countdown }:{
+  navigate:(p:string)=>void; onRefresh:()=>void; loading:boolean;
+  onVacuumAll:()=>void; vacuumingAll:boolean;
+  autoRefresh:boolean; onToggleAuto:()=>void; countdown:number;
 }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
@@ -202,9 +202,20 @@ function Topbar({ navigate, onRefresh, loading, onVacuumAll, vacuumingAll }:{
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <div style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:100, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.18)` }}>
-          <div style={{ width:5, height:5, borderRadius:"50%", background:C.green, boxShadow:`0 0 5px ${C.green}` }} />
+          <div style={{ width:5, height:5, borderRadius:"50%", background:C.green, boxShadow:`0 0 5px ${C.green}`, animation:autoRefresh?"pulse 2s infinite":"none" }} />
           <span style={{ fontSize:11, color:C.green, fontWeight:700 }}>PostgreSQL activo</span>
         </div>
+        {/* Toggle auto-refresh */}
+        <button onClick={onToggleAuto}
+          style={{ display:"flex", alignItems:"center", gap:6,
+            background:autoRefresh?"rgba(121,170,245,0.12)":"rgba(255,232,200,0.04)",
+            border:`1px solid ${autoRefresh?"rgba(121,170,245,0.35)":C.border}`,
+            borderRadius:9, padding:"7px 12px",
+            color:autoRefresh?C.blue:C.creamMut,
+            fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .2s" }}>
+          <Activity size={12} strokeWidth={2} style={{ animation:autoRefresh?"spin 3s linear infinite":"none" }} />
+          {autoRefresh ? `Auto: ${countdown}s` : "Auto-refresh"}
+        </button>
         <button onClick={onVacuumAll} disabled={vacuumingAll||loading}
           style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,132,14,0.10)", border:`1px solid rgba(255,132,14,0.30)`, borderRadius:9, padding:"7px 14px", color:vacuumingAll?C.creamMut:C.orange, fontSize:12.5, fontWeight:600, cursor:vacuumingAll?"wait":"pointer", fontFamily:FB }}>
           {vacuumingAll?<RefreshCw size={13} style={{ animation:"spin 1s linear infinite" }}/>:<PlayCircle size={13} strokeWidth={2}/>}
@@ -220,7 +231,6 @@ function Topbar({ navigate, onRefresh, loading, onVacuumAll, vacuumingAll }:{
   );
 }
 
-// ── Modal Análisis IA ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 // ROOT
 // ══════════════════════════════════════════════════════════════════════════════
@@ -242,6 +252,7 @@ export default function AdminMonitoreo() {
   const [historial,   setHistorial]   = useState<HistorialEntry[]>([]);
   const [busqueda,    setBusqueda]    = useState("");
   const [expandedHerr,setExpandedHerr]= useState<string|null>(null);
+  const [expandedIdx,  setExpandedIdx] = useState<string|null>(null);
 
   const [vacuumingTabla, setVacuumingTabla] = useState<string|null>(null);
   const [vacuumingAll,   setVacuumingAll]   = useState(false);
@@ -249,6 +260,8 @@ export default function AdminMonitoreo() {
   const [reindexing,     setReindexing]     = useState<string|null>(null);
   const [killingPid,     setKillingPid]     = useState<number|null>(null);
   const [deletingIdx,    setDeletingIdx]    = useState<string|null>(null);
+  const [autoRefresh,    setAutoRefresh]    = useState(false);
+  const [countdown,      setCountdown]      = useState(30);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -281,6 +294,18 @@ export default function AdminMonitoreo() {
   }, [showToast]);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  // ── Auto-refresh cada 30s ──
+  useEffect(() => {
+    if (!autoRefresh) { setCountdown(30); return; }
+    const tick = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { cargar(); return 30; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [autoRefresh, cargar]);
 
   const handleVacuumTabla = async (tabla:string) => {
     setVacuumingTabla(tabla);
@@ -323,7 +348,7 @@ export default function AdminMonitoreo() {
   };
 
   const handleKillPid = async (pid:number) => {
-    if (!confirm(`¿Terminar la conexión PID ${pid}?\n\nLa query en ejecución se cancelará.`)) return;
+    if (!confirm(`¿Terminar la conexión PID ${pid}?\n\nLa consulta en ejecución se cancelará.`)) return;
     setKillingPid(pid);
     try {
       const res  = await fetch(`${API}/api/admin/monitoreo/kill-pid/${pid}`, { method:"POST", headers:authH() });
@@ -354,12 +379,12 @@ export default function AdminMonitoreo() {
 
   const TABS:{id:Tab;label:string;icon:React.ElementType;badge?:number;badgeColor?:string}[] = [
     { id:"resumen",       label:"Resumen",       icon:BarChart2    },
-    { id:"alertas",       label:"Alertas",       icon:AlertTriangle, badge:alertasCriticas>0?alertasCriticas:undefined, badgeColor:C.red    },
+    { id:"alertas",       label:"Alertas",       icon:AlertTriangle, badge:alertasCriticas>0?alertasCriticas:undefined, badgeColor:C.red },
     { id:"tablas",        label:"Tablas",        icon:Table2       },
     { id:"queries",       label:"Queries",       icon:Search       },
     { id:"indices",       label:"Índices",       icon:Zap          },
     { id:"conexiones",    label:"Conexiones",    icon:Users        },
-    { id:"bloqueos",      label:"Bloqueos",      icon:Lock, badge:bloqueosActivos>0?bloqueosActivos:undefined, badgeColor:C.red    },
+    { id:"bloqueos",      label:"Bloqueos",      icon:Lock, badge:bloqueosActivos>0?bloqueosActivos:undefined, badgeColor:C.red },
     { id:"configuracion", label:"Configuración", icon:Settings     },
     { id:"herramientas",  label:"Herramientas",  icon:Wrench       },
     { id:"historial",     label:"Historial",     icon:History      },
@@ -370,12 +395,16 @@ export default function AdminMonitoreo() {
       <style>{`
         @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.4} }
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:rgba(255,200,150,0.15);border-radius:99px}
       `}</style>
 
-      <Topbar navigate={navigate} onRefresh={cargar} loading={loading} onVacuumAll={handleVacuumAll} vacuumingAll={vacuumingAll} />
+      <Topbar navigate={navigate} onRefresh={cargar} loading={loading}
+        onVacuumAll={handleVacuumAll} vacuumingAll={vacuumingAll}
+        autoRefresh={autoRefresh} countdown={countdown}
+        onToggleAuto={()=>{ setAutoRefresh(v=>!v); setCountdown(30); }} />
       {vacuumModal && <VacuumModal resultados={vacuumModal.resultados} duracion={vacuumModal.duracion} onClose={()=>setVacuumModal(null)} />}
 
       <main style={{ flex:1, padding:"20px 24px 36px", overflowY:"auto", backgroundColor:C.bg, backgroundImage:`radial-gradient(ellipse at 80% 0%,rgba(34,201,122,0.06) 0%,transparent 40%),radial-gradient(ellipse at 5% 90%,rgba(141,76,205,0.06) 0%,transparent 35%)`, fontFamily:FB }}>
@@ -389,17 +418,17 @@ export default function AdminMonitoreo() {
             Rendimiento del <span style={{ color:C.green, fontStyle:"italic" }}>Sistema</span>
           </h1>
           <p style={{ fontSize:12.5, color:C.creamMut, margin:0 }}>
-            PostgreSQL · Supabase · Node.js {resumen?.servidor.node_version ?? ""}
+            PostgreSQL · Neon · Node.js {resumen?.servidor.node_version ?? ""}
           </p>
         </div>
 
-        {/* Tabs — scrollable */}
+        {/* Tabs */}
         <div style={{ display:"flex", gap:3, marginBottom:18, overflowX:"auto", paddingBottom:4 }}>
           {TABS.map(({ id, label, icon:Icon, badge, badgeColor })=>{
             const on=tab===id;
             return (
               <button key={id} onClick={()=>setTab(id)}
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"7px 13px", borderRadius:9, flexShrink:0, position:"relative",
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"7px 13px", borderRadius:9, flexShrink:0,
                   border:on?`1px solid ${C.orange}45`:"1px solid rgba(255,200,150,0.08)",
                   background:on?"rgba(255,132,14,0.10)":"rgba(255,232,200,0.02)",
                   color:on?C.orange:C.creamMut, fontSize:12, fontWeight:on?700:400,
@@ -418,31 +447,43 @@ export default function AdminMonitoreo() {
         {tab==="resumen" && resumen && (
           <div style={{ animation:"fadeUp .3s ease" }}>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:12 }}>
-              <KpiCard label="Tamaño BD"        value={resumen.bd.size}       accent={C.blue}   icon={Database} />
-              <KpiCard label="Cache Hit Ratio"   value={`${resumen.rendimiento.cache_hit_ratio}%`}
+              <KpiCard label="Tamaño de la BD" value={resumen.bd.size} accent={C.blue} icon={Database}
+                sub="Espacio total ocupado en disco" />
+              <KpiCard label="Eficiencia de caché"
+                value={`${resumen.rendimiento.cache_hit_ratio}%`}
+                sub={resumen.rendimiento.cache_hit_ratio>=99
+                  ? "✓ Óptimo — datos en RAM"
+                  : resumen.rendimiento.cache_hit_ratio>=95
+                  ? `⚠ ${(100-resumen.rendimiento.cache_hit_ratio).toFixed(1)}% lecturas de disco`
+                  : `❌ ${(100-resumen.rendimiento.cache_hit_ratio).toFixed(1)}% lecturas de disco — RAM insuficiente`}
                 accent={resumen.rendimiento.cache_hit_ratio>=99?C.green:resumen.rendimiento.cache_hit_ratio>=95?C.gold:C.red}
                 icon={TrendingUp} gauge={resumen.rendimiento.cache_hit_ratio} />
-              <KpiCard label="Memoria servidor"  value={`${resumen.servidor.mem_usada_mb} MB`}
+              <KpiCard label="RAM del servidor" value={`${resumen.servidor.mem_usada_mb} MB`}
                 accent={resumen.servidor.mem_pct>85?C.red:resumen.servidor.mem_pct>70?C.gold:C.green}
-                icon={Cpu} gauge={resumen.servidor.mem_pct} sub={`de ${resumen.servidor.mem_total_mb} MB`} />
-              <KpiCard label="Uptime servidor"   value={resumen.servidor.uptime} accent={C.purple} icon={Clock} />
+                icon={Cpu} gauge={resumen.servidor.mem_pct}
+                sub={`${resumen.servidor.mem_pct>85?"⚠ Crítica":resumen.servidor.mem_pct>70?"Elevada":"Normal"} · ${resumen.servidor.mem_total_mb} MB total`} />
+              <KpiCard label="Tiempo en línea" value={resumen.servidor.uptime}
+                accent={C.purple} icon={Clock} sub="Desde el último reinicio" />
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
-              <KpiCard label="Total tablas"       value={resumen.bd.tablas}     accent={C.orange} icon={Table2}    />
-              <KpiCard label="Total filas"         value={fmt(resumen.bd.filas)} accent={C.blue}   icon={HardDrive} />
-              <KpiCard label="Conexiones activas"  value={resumen.rendimiento.conexiones_activas}
+              <KpiCard label="Total de tablas"    value={resumen.bd.tablas}     accent={C.orange} icon={Table2}
+                sub="En schema público" />
+              <KpiCard label="Total de filas"     value={fmt(resumen.bd.filas)} accent={C.blue}   icon={HardDrive}
+                sub="Filas activas en todas las tablas" />
+              <KpiCard label="Conexiones activas" value={resumen.rendimiento.conexiones_activas}
                 accent={resumen.rendimiento.conexiones_activas>20?C.gold:C.green}
-                icon={Users} sub={`${resumen.rendimiento.conexiones_total} total`} />
-              <KpiCard label="Índices sin uso"     value={resumen.indices.sin_uso}
-                accent={resumen.indices.sin_uso>5?C.gold:C.green} icon={Zap} />
+                icon={Users} sub={`${resumen.rendimiento.conexiones_total} total · ${resumen.rendimiento.conexiones_activas>20?"⚠ Alta demanda":"Normal"}`} />
+              <KpiCard label="Índices inactivos"  value={resumen.indices.sin_uso}
+                accent={resumen.indices.sin_uso>5?C.gold:C.green} icon={Zap}
+                sub={resumen.indices.sin_uso>0?"Sin uso — candidatos a eliminar":"Sin índices innecesarios"} />
             </div>
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"16px 20px" }}>
               <div style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:12 }}>Estadísticas de transacciones</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
                 {[
-                  { label:"Total transacciones",  value:fmt(resumen.rendimiento.tx_total),    color:C.blue  },
-                  { label:"Commits exitosos",      value:fmt(resumen.rendimiento.tx_commits),  color:C.green },
-                  { label:"Rollbacks",             value:fmt(resumen.rendimiento.tx_rollbacks),color:resumen.rendimiento.tx_rollbacks>100?C.red:C.gold },
+                  { label:"Total de transacciones", value:fmt(resumen.rendimiento.tx_total),    color:C.blue  },
+                  { label:"Commits exitosos",        value:fmt(resumen.rendimiento.tx_commits),  color:C.green },
+                  { label:"Rollbacks (errores)",     value:fmt(resumen.rendimiento.tx_rollbacks),color:resumen.rendimiento.tx_rollbacks>100?C.red:C.gold },
                 ].map(({ label,value,color })=>(
                   <div key={label} style={{ padding:"13px 16px", borderRadius:10, background:`${color}08`, border:`1px solid ${color}22`, textAlign:"center", position:"relative", overflow:"hidden" }}>
                     <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${color},transparent)` }} />
@@ -484,7 +525,7 @@ export default function AdminMonitoreo() {
                 <table style={{ width:"100%", borderCollapse:"collapse" }}>
                   <thead>
                     <tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                      {["Tabla","Filas vivas","Filas muertas","Tamaño","Índices","Seq/Idx scans","Ins/Upd/Del","Análisis","VACUUM","REINDEX"].map((h,i)=>(
+                      {["Tabla","Filas vivas","Filas obsoletas","Tamaño","Índices","Escaneos (Comp./Índice)","Operaciones (I/U/E)","Últ. Análisis","VACUUM","REINDEX"].map((h,i)=>(
                         <th key={i} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                       ))}
                     </tr>
@@ -511,7 +552,7 @@ export default function AdminMonitoreo() {
                           <td style={{ padding:"8px 12px", fontSize:11.5, color:C.purple, fontFamily:FM }}>{t.size_indices}</td>
                           <td style={{ padding:"8px 12px", fontSize:11, color:C.creamMut, fontFamily:FM }}>
                             <span style={{ color:t.scans_secuenciales>1000?C.gold:C.creamMut }}>{fmt(t.scans_secuenciales)}</span>
-                            <span style={{ color:C.creamMut }}>/</span>
+                            <span>/</span>
                             <span style={{ color:C.green }}>{fmt(t.scans_por_indice)}</span>
                           </td>
                           <td style={{ padding:"8px 12px", fontSize:11, fontFamily:FM }}>
@@ -546,7 +587,7 @@ export default function AdminMonitoreo() {
               </div>
             </div>
             <div style={{ display:"flex", gap:14, marginTop:8, padding:"8px 12px", borderRadius:9, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
-              <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.orange }}>●</span> Naranja = tabla necesita VACUUM (filas muertas {'>'} 5%)</span>
+              <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.orange }}>●</span> Naranja = tabla necesita VACUUM (filas obsoletas &gt; 5%)</span>
               <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.red }}>Nunca</span> = sin estadísticas — ANALYZE mejora el planificador</span>
               <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.purple }}>REINDEX</span> = reconstruye índices inflados o corruptos</span>
             </div>
@@ -559,28 +600,56 @@ export default function AdminMonitoreo() {
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
               <div style={{ padding:"13px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
                 <Search size={13} color={C.orange} />
-                <span style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Queries más lentas</span>
-                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Top 10 por tiempo promedio</span>
+                <span style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Consultas más lentas</span>
+                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Top 10 por tiempo promedio de ejecución</span>
               </div>
               <div style={{ padding:"8px 10px" }}>
-                {queries.length===0
-                 ? <div style={{ padding:"28px", textAlign:"center", color:C.creamMut, fontSize:13, fontFamily:FB }}>No hay queries activas en este momento — los datos aparecen cuando hay tráfico en la BD</div>
-                  : queries.map((q,i)=>(
-                    <div key={i} style={{ padding:"11px 13px", borderRadius:9, marginBottom:6, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                          <span style={{ width:20, height:20, borderRadius:5, background:`${C.orange}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:C.orange }}>{i+1}</span>
-                          {q.calls!==undefined&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FM }}>{fmt(q.calls)} llamadas</span>}
-                          {q.state&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.10)", color:C.green, fontFamily:FB }}>{q.state}</span>}
-                        </div>
-                        <div style={{ display:"flex", gap:10 }}>
-                          {q.tiempo_promedio_ms!==undefined&&<span style={{ fontSize:12, color:q.tiempo_promedio_ms>1000?C.red:q.tiempo_promedio_ms>100?C.gold:C.green, fontFamily:FM, fontWeight:700 }}>ø {q.tiempo_promedio_ms}ms</span>}
-                          {q.duracion_seg!==undefined&&<span style={{ fontSize:12, color:q.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{q.duracion_seg}s activa</span>}
+                {queries.length===0 ? (
+                  <div style={{ padding:"20px" }}>
+                    <div style={{ padding:"14px 16px", borderRadius:10, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:14, display:"flex", alignItems:"flex-start", gap:10 }}>
+                      <Info size={14} color={C.blue} style={{ flexShrink:0, marginTop:1 }} />
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FB, marginBottom:2 }}>pg_stat_statements no disponible</div>
+                        <div style={{ fontSize:12, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
+                          Requiere activación por el proveedor. Mostrando consultas activas en tiempo real desde <span style={{ color:C.blue, fontFamily:FM }}>pg_stat_activity</span>.
                         </div>
                       </div>
-                      <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{q.query}</div>
                     </div>
-                  ))}
+                    {conexiones && (conexiones.conexiones as { pid:number; usuario:string; state:string; query:string; duracion_seg:number }[]).filter(c=>c.query&&c.state==="active").length > 0 ? (
+                      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                        {(conexiones.conexiones as { pid:number; usuario:string; state:string; query:string; duracion_seg:number }[]).filter(c=>c.query&&c.state==="active").map((c)=>(
+                          <div key={c.pid} style={{ padding:"10px 13px", borderRadius:9, background:"rgba(34,201,122,0.04)", border:`1px solid rgba(34,201,122,0.14)` }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                                <span style={{ fontSize:10, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.12)", color:C.green, fontFamily:FM, fontWeight:700 }}>PID {c.pid}</span>
+                                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>{c.usuario}</span>
+                              </div>
+                              <span style={{ fontSize:12, color:c.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{c.duracion_seg}s</span>
+                            </div>
+                            <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{c.query}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign:"center", padding:"20px", color:C.creamMut, fontSize:13, fontFamily:FB }}>No hay consultas activas en este momento</div>
+                    )}
+                  </div>
+                ) : queries.map((q,i)=>(
+                  <div key={i} style={{ padding:"11px 13px", borderRadius:9, marginBottom:6, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ width:20, height:20, borderRadius:5, background:`${C.orange}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:C.orange }}>{i+1}</span>
+                        {q.calls!==undefined&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FM }}>{fmt(q.calls)} ejecuciones</span>}
+                        {q.state&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.10)", color:C.green, fontFamily:FB }}>{q.state}</span>}
+                      </div>
+                      <div style={{ display:"flex", gap:10 }}>
+                        {q.tiempo_promedio_ms!==undefined&&<span style={{ fontSize:12, color:q.tiempo_promedio_ms>1000?C.red:q.tiempo_promedio_ms>100?C.gold:C.green, fontFamily:FM, fontWeight:700 }}>Prom. {q.tiempo_promedio_ms}ms</span>}
+                        {q.duracion_seg!==undefined&&<span style={{ fontSize:12, color:q.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{q.duracion_seg}s activa</span>}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{q.query}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -593,27 +662,63 @@ export default function AdminMonitoreo() {
               <div style={{ background:C.card, border:`1px solid rgba(255,193,16,0.22)`, borderRadius:13, overflow:"hidden" }}>
                 <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(255,193,16,0.05)" }}>
                   <AlertTriangle size={13} color={C.gold} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices sin uso</span>
+                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices inactivos</span>
                   <span style={{ fontSize:10.5, padding:"1px 7px", borderRadius:20, background:"rgba(255,193,16,0.12)", border:"1px solid rgba(255,193,16,0.25)", color:C.gold, fontWeight:700 }}>{indices.sin_uso.length}</span>
                   <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Candidatos a eliminar — liberan espacio sin afectar rendimiento</span>
                 </div>
                 <div style={{ padding:"8px 10px" }}>
-                  {indices.sin_uso.map((idx,i)=>(
-                    <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", borderRadius:7, marginBottom:4, background:"rgba(255,193,16,0.04)", border:`1px solid rgba(255,193,16,0.12)` }}>
-                      <div>
-                        <div style={{ fontSize:12.5, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
-                        <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>tabla: {idx.tabla}</div>
+                  {indices.sin_uso.map((idx,i)=>{
+                    const expKey = `sinuso-${idx.indice}`;
+                    const exp = expandedIdx === expKey;
+                    return (
+                      <div key={i} style={{ borderRadius:9, marginBottom:6, overflow:"hidden", border:`1px solid ${exp?"rgba(255,193,16,0.30)":"rgba(255,193,16,0.12)"}`, transition:"border-color .2s" }}>
+                        {/* Fila principal */}
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", background:"rgba(255,193,16,0.04)", cursor:"pointer" }}
+                          onClick={()=>setExpandedIdx(exp?null:expKey)}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                            {exp?<ChevronUp size={12} color={C.gold}/>:<ChevronDown size={12} color={C.gold}/>}
+                            <div>
+                              <div style={{ fontSize:12.5, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
+                              <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>tabla: {idx.tabla}</div>
+                            </div>
+                          </div>
+                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                            <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:600 }}>{idx.tamanio}</span>
+                            <button onClick={e=>{ e.stopPropagation(); handleEliminarIndice(idx.indice, idx.tabla); }} disabled={deletingIdx===idx.indice}
+                              style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:7, border:`1px solid rgba(240,78,107,0.35)`, background:"rgba(240,78,107,0.08)", color:deletingIdx===idx.indice?C.creamMut:C.red, fontSize:11, fontWeight:700, cursor:deletingIdx===idx.indice?"wait":"pointer", fontFamily:FB }}>
+                              {deletingIdx===idx.indice?<RefreshCw size={10} style={{ animation:"spin 1s linear infinite" }}/>:<Trash2 size={10}/>}
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                        {/* Detalle expandido */}
+                        {exp && (
+                          <div style={{ padding:"12px 16px", borderTop:`1px solid rgba(255,193,16,0.15)`, background:"rgba(0,0,0,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
+                            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,193,16,0.06)", border:`1px solid rgba(255,193,16,0.15)` }}>
+                                <div style={{ fontSize:9.5, fontWeight:800, color:C.gold, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Usos desde último reset</div>
+                                <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>0</div>
+                                <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>idx_scan = 0 — nunca usado</div>
+                              </div>
+                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(121,170,245,0.06)", border:`1px solid rgba(121,170,245,0.15)` }}>
+                                <div style={{ fontSize:9.5, fontWeight:800, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Espacio que libera</div>
+                                <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{idx.tamanio}</div>
+                                <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>si se elimina</div>
+                              </div>
+                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.15)` }}>
+                                <div style={{ fontSize:9.5, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Impacto al eliminar</div>
+                                <div style={{ fontSize:13, fontWeight:700, color:C.green, fontFamily:FB, marginTop:4 }}>✓ Ninguno</div>
+                                <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>las queries no lo usan</div>
+                              </div>
+                            </div>
+                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.15)`, fontSize:11.5, color:C.creamSub, fontFamily:FB, lineHeight:1.6 }}>
+                              💡 <strong style={{ color:C.orange }}>¿Por qué existe?</strong> Este índice fue creado pero PostgreSQL nunca lo ha usado para acelerar ninguna consulta. Eliminarlo libera {idx.tamanio} sin afectar el rendimiento, ya que las queries no lo aprovechan.
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                        <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:600 }}>{idx.tamanio}</span>
-                        <button onClick={()=>handleEliminarIndice(idx.indice, idx.tabla)} disabled={deletingIdx===idx.indice}
-                          style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:7, border:`1px solid rgba(240,78,107,0.35)`, background:"rgba(240,78,107,0.08)", color:deletingIdx===idx.indice?C.creamMut:C.red, fontSize:11, fontWeight:700, cursor:deletingIdx===idx.indice?"wait":"pointer", fontFamily:FB }}>
-                          {deletingIdx===idx.indice?<RefreshCw size={10} style={{ animation:"spin 1s linear infinite" }}/>:<Trash2 size={10}/>}
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -623,14 +728,54 @@ export default function AdminMonitoreo() {
                 <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices más utilizados</span>
               </div>
               <div style={{ padding:"8px 10px" }}>
-                {indices.usados.map((idx,i)=>(
-                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 90px 90px 80px", alignItems:"center", gap:10, padding:"8px 12px", borderRadius:7, marginBottom:3, background:i%2===0?"rgba(255,232,200,0.01)":"transparent" }}>
-                    <div><div style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div><div style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>{idx.tabla}</div></div>
-                    <div style={{ textAlign:"right" }}><div style={{ fontSize:11.5, color:C.green, fontFamily:FM, fontWeight:700 }}>{fmt(idx.usos??0)}</div><div style={{ fontSize:9, color:C.creamMut }}>usos</div></div>
-                    <div style={{ textAlign:"right", fontSize:11.5, color:C.blue, fontFamily:FM }}>{idx.tamanio}</div>
-                    <div><div style={{ height:4, background:`${C.green}18`, borderRadius:99, overflow:"hidden" }}><div style={{ height:"100%", width:`${Math.min((idx.usos??0)/((indices.usados[0]?.usos??1))*100,100)}%`, background:C.green, borderRadius:99 }}/></div></div>
-                  </div>
-                ))}
+                {indices.usados.map((idx,i)=>{
+                  const expKey = `usado-${idx.indice}`;
+                  const exp = expandedIdx === expKey;
+                  const maxUsos = indices.usados[0]?.usos ?? 1;
+                  const pct = Math.min(((idx.usos??0)/(maxUsos||1))*100, 100);
+                  return (
+                    <div key={i} style={{ borderRadius:9, marginBottom:4, overflow:"hidden", border:`1px solid ${exp?"rgba(34,201,122,0.25)":C.border}`, transition:"border-color .2s" }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 90px 90px 80px 24px", alignItems:"center", gap:10, padding:"9px 12px", background:i%2===0?"rgba(255,232,200,0.01)":"transparent", cursor:"pointer" }}
+                        onClick={()=>setExpandedIdx(exp?null:expKey)}>
+                        <div>
+                          <div style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
+                          <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>{idx.tabla}</div>
+                        </div>
+                        <div style={{ textAlign:"right" }}>
+                          <div style={{ fontSize:11.5, color:C.green, fontFamily:FM, fontWeight:700 }}>{fmt(idx.usos??0)}</div>
+                          <div style={{ fontSize:9, color:C.creamMut }}>usos</div>
+                        </div>
+                        <div style={{ textAlign:"right", fontSize:11.5, color:C.blue, fontFamily:FM }}>{idx.tamanio}</div>
+                        <div><div style={{ height:4, background:`${C.green}18`, borderRadius:99, overflow:"hidden" }}><div style={{ height:"100%", width:`${pct}%`, background:C.green, borderRadius:99 }}/></div></div>
+                        {exp?<ChevronUp size={12} color={C.creamMut}/>:<ChevronDown size={12} color={C.creamMut}/>}
+                      </div>
+                      {exp && (
+                        <div style={{ padding:"12px 16px", borderTop:`1px solid ${C.borderBr}`, background:"rgba(0,0,0,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
+                          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.15)` }}>
+                              <div style={{ fontSize:9.5, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Total de usos</div>
+                              <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{fmt(idx.usos??0)}</div>
+                              <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>escaneos por índice</div>
+                            </div>
+                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(121,170,245,0.06)", border:`1px solid rgba(121,170,245,0.15)` }}>
+                              <div style={{ fontSize:9.5, fontWeight:800, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Tamaño en disco</div>
+                              <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{idx.tamanio}</div>
+                              <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>espacio usado</div>
+                            </div>
+                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.15)` }}>
+                              <div style={{ fontSize:9.5, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Posición por uso</div>
+                              <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>#{i+1}</div>
+                              <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>de {indices.usados.length} índices activos</div>
+                            </div>
+                          </div>
+                          <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.05)", border:`1px solid rgba(34,201,122,0.15)`, fontSize:11.5, color:C.creamSub, fontFamily:FB, lineHeight:1.6 }}>
+                            ✅ <strong style={{ color:C.green }}>Índice saludable</strong> — PostgreSQL lo usa activamente para acelerar consultas en la tabla <span style={{ color:C.cream, fontFamily:FM }}>{idx.tabla}</span>. Mantenerlo mejora el rendimiento de las búsquedas.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             {indices.posibles_faltantes.length>0&&(
@@ -638,7 +783,7 @@ export default function AdminMonitoreo() {
                 <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(240,78,107,0.05)" }}>
                   <AlertCircle size={13} color={C.red} />
                   <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Posibles índices faltantes</span>
-                  <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Tablas con scans secuenciales altos</span>
+                  <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Tablas con búsquedas completas frecuentes (más lentas)</span>
                 </div>
                 <div style={{ padding:"8px 10px" }}>
                   {indices.posibles_faltantes.map((t:TablaInfo,i)=>(
@@ -646,8 +791,8 @@ export default function AdminMonitoreo() {
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                         <span style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{t.nombre}</span>
                         <div style={{ display:"flex", gap:12 }}>
-                          <span style={{ fontSize:11, color:C.red, fontFamily:FM }}>Seq: {fmt(t.scans_secuenciales)}</span>
-                          <span style={{ fontSize:11, color:C.green, fontFamily:FM }}>Idx: {fmt(t.scans_por_indice)}</span>
+                          <span style={{ fontSize:11, color:C.red, fontFamily:FM }}>Completas: {fmt(t.scans_secuenciales)}</span>
+                          <span style={{ fontSize:11, color:C.green, fontFamily:FM }}>Por índice: {fmt(t.scans_por_indice)}</span>
                         </div>
                       </div>
                     </div>
@@ -679,12 +824,12 @@ export default function AdminMonitoreo() {
                   <Users size={13} color={C.blue} />
                   <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Conexiones activas</span>
                 </div>
-                <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Máximo: {conexiones.max_conexiones}</span>
+                <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Máximo permitido: {conexiones.max_conexiones}</span>
               </div>
               <div style={{ overflowX:"auto" }}>
                 <table style={{ width:"100%", borderCollapse:"collapse" }}>
                   <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                    {["PID","Usuario","App","Estado","Duración","Query"].map((h,i)=>(
+                    {["PID","Usuario","Aplicación","Estado","Duración","Consulta en curso","Acción"].map((h,i)=>(
                       <th key={i} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                     ))}
                   </tr></thead>
@@ -698,7 +843,15 @@ export default function AdminMonitoreo() {
                           <span style={{ fontSize:10, padding:"2px 7px", borderRadius:20, fontWeight:700, fontFamily:FM, background:c.state==="active"?"rgba(34,201,122,0.12)":"rgba(121,170,245,0.10)", color:c.state==="active"?C.green:C.blue }}>{c.state}</span>
                         </td>
                         <td style={{ padding:"7px 12px", fontSize:11.5, color:c.duracion_seg>30?C.red:C.creamMut, fontFamily:FM }}>{c.duracion_seg!=null?`${c.duracion_seg}s`:"—"}</td>
-                        <td style={{ padding:"7px 12px", fontSize:10.5, color:C.creamSub, fontFamily:FM, maxWidth:220, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.query||"—"}</td>
+                        <td style={{ padding:"7px 12px", fontSize:10.5, color:C.creamSub, fontFamily:FM, maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.query||"—"}</td>
+                        <td style={{ padding:"7px 12px" }}>
+                          <button onClick={()=>handleKillPid(c.pid)} disabled={killingPid===c.pid}
+                            title="Terminar esta conexión"
+                            style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 9px", borderRadius:7, border:`1px solid rgba(240,78,107,0.35)`, background:"rgba(240,78,107,0.08)", color:killingPid===c.pid?C.creamMut:C.red, fontSize:10.5, fontWeight:700, cursor:killingPid===c.pid?"wait":"pointer", fontFamily:FB, whiteSpace:"nowrap" }}>
+                            {killingPid===c.pid?<RefreshCw size={9} style={{ animation:"spin 1s linear infinite" }}/>:<XCircle size={9}/>}
+                            Kill
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -711,7 +864,6 @@ export default function AdminMonitoreo() {
         {/* ── BLOQUEOS ── */}
         {tab==="bloqueos" && bloqueos && (
           <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
-            {/* Banner estado */}
             <div style={{ padding:"12px 16px", borderRadius:11, display:"flex", alignItems:"center", gap:12,
               background:bloqueosActivos>0?"rgba(240,78,107,0.08)":"rgba(34,201,122,0.07)",
               border:`1px solid ${bloqueosActivos>0?"rgba(240,78,107,0.25)":"rgba(34,201,122,0.20)"}` }}>
@@ -725,8 +877,6 @@ export default function AdminMonitoreo() {
                 </div>
               </div>
             </div>
-
-            {/* Bloqueos activos */}
             {bloqueosActivos>0 && (
               <div style={{ background:C.card, border:`1px solid rgba(240,78,107,0.22)`, borderRadius:13, overflow:"hidden" }}>
                 <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(240,78,107,0.06)" }}>
@@ -749,16 +899,15 @@ export default function AdminMonitoreo() {
                           <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FM, marginTop:3, wordBreak:"break-all" }}>{b.query_bloqueante}</div>
                         </div>
                       </div>
-                      {/* Botones de acción */}
                       <div style={{ display:"flex", gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid rgba(240,78,107,0.15)` }}>
                         <button onClick={()=>handleKillPid(b.pid_bloqueante)} disabled={killingPid===b.pid_bloqueante}
                           style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, border:`1px solid rgba(240,78,107,0.40)`, background:"rgba(240,78,107,0.12)", color:killingPid===b.pid_bloqueante?C.creamMut:C.red, fontSize:12, fontWeight:700, cursor:killingPid===b.pid_bloqueante?"wait":"pointer", fontFamily:FB }}>
                           {killingPid===b.pid_bloqueante?<RefreshCw size={11} style={{ animation:"spin 1s linear infinite" }}/>:<XCircle size={11}/>}
-                          Kill bloqueante (PID {b.pid_bloqueante})
+                          Terminar bloqueante (PID {b.pid_bloqueante})
                         </button>
                         <button onClick={()=>handleKillPid(b.pid_bloqueado)} disabled={killingPid===b.pid_bloqueado}
                           style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, border:`1px solid rgba(255,200,150,0.20)`, background:"rgba(255,200,150,0.05)", color:C.creamMut, fontSize:12, fontWeight:600, cursor:killingPid===b.pid_bloqueado?"wait":"pointer", fontFamily:FB }}>
-                          Kill bloqueado (PID {b.pid_bloqueado})
+                          Terminar bloqueado (PID {b.pid_bloqueado})
                         </button>
                       </div>
                     </div>
@@ -766,13 +915,11 @@ export default function AdminMonitoreo() {
                 </div>
               </div>
             )}
-
-            {/* Eventos de espera */}
             {(bloqueos.eventos_espera as { wait_event_type:string; wait_event:string; total:number }[]).length>0&&(
               <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
                 <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
                   <Clock size={13} color={C.gold} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Eventos de espera activos</span>
+                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Procesos en espera</span>
                 </div>
                 <div style={{ padding:"8px 10px" }}>
                   {(bloqueos.eventos_espera as { wait_event_type:string; wait_event:string; total:number }[]).map((e,i)=>(
@@ -793,9 +940,8 @@ export default function AdminMonitoreo() {
         {/* ── CONFIGURACIÓN ── */}
         {tab==="configuracion" && config && (
           <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
-            {/* Versión y extensiones */}
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"14px 18px" }}>
-              <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginBottom:6 }}>Versión del motor</div>
+              <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginBottom:6 }}>Versión del motor de base de datos</div>
               <div style={{ fontSize:13, color:C.green, fontFamily:FM, fontWeight:600 }}>{config.version}</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
                 {(config.extensiones as { name:string; installed_version:string }[]).map(e=>(
@@ -805,8 +951,6 @@ export default function AdminMonitoreo() {
                 ))}
               </div>
             </div>
-
-            {/* Parámetros */}
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
               <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
                 <Settings size={13} color={C.orange} />
@@ -843,18 +987,15 @@ export default function AdminMonitoreo() {
         {/* ── HERRAMIENTAS ── */}
         {tab==="herramientas" && (
           <div style={{ animation:"fadeUp .3s ease" }}>
-            {/* Banner educativo */}
             <div style={{ padding:"14px 18px", borderRadius:12, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:16, display:"flex", alignItems:"flex-start", gap:12 }}>
               <BookOpen size={18} color={C.blue} style={{ flexShrink:0, marginTop:2 }} />
               <div>
                 <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:4 }}>Herramientas de Monitoreo del SGBD</div>
                 <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
-                  PostgreSQL incluye un conjunto de <strong style={{ color:C.blue }}>vistas del sistema, extensiones y comandos</strong> que permiten supervisar el rendimiento en tiempo real. Cada herramienta expone métricas específicas que el administrador usa para detectar cuellos de botella, optimizar queries e identificar problemas antes de que afecten a los usuarios.
+                  PostgreSQL incluye un conjunto de <strong style={{ color:C.blue }}>vistas del sistema, extensiones y comandos</strong> que permiten supervisar el rendimiento en tiempo real. Cada herramienta expone métricas específicas que el administrador usa para detectar cuellos de botella, optimizar consultas e identificar problemas antes de que afecten a los usuarios.
                 </div>
               </div>
             </div>
-
-            {/* Categorías */}
             {Object.entries(
               herramientas.reduce((acc, h) => {
                 if (!acc[h.categoria]) acc[h.categoria] = [];
@@ -868,8 +1009,7 @@ export default function AdminMonitoreo() {
                   {items.map(h=>{
                     const exp=expandedHerr===h.nombre;
                     return (
-                      <div key={h.nombre} style={{ background:C.card, border:`1px solid ${h.disponible?C.border:"rgba(240,78,107,0.15)"}`, borderRadius:12, overflow:"hidden", transition:"border-color .2s" }}>
-                        {/* Header clickeable */}
+                      <div key={h.nombre} style={{ background:C.card, border:`1px solid ${h.disponible?C.border:"rgba(240,78,107,0.15)"}`, borderRadius:12, overflow:"hidden" }}>
                         <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", background:h.disponible?"transparent":"rgba(240,78,107,0.04)" }}
                           onClick={()=>setExpandedHerr(exp?null:h.nombre)}>
                           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -881,10 +1021,7 @@ export default function AdminMonitoreo() {
                             <div>
                               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                                 <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FM }}>{h.nombre}</span>
-                                <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, fontFamily:FB, fontWeight:700,
-                                  background:h.disponible?"rgba(34,201,122,0.12)":"rgba(240,78,107,0.12)",
-                                  color:h.disponible?C.green:C.red,
-                                  border:`1px solid ${h.disponible?"rgba(34,201,122,0.25)":"rgba(240,78,107,0.25)"}` }}>
+                                <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, fontFamily:FB, fontWeight:700, background:h.disponible?"rgba(34,201,122,0.12)":"rgba(240,78,107,0.12)", color:h.disponible?C.green:C.red, border:`1px solid ${h.disponible?"rgba(34,201,122,0.25)":"rgba(240,78,107,0.25)"}` }}>
                                   {h.disponible?"✓ Disponible":"✗ No disponible"}
                                 </span>
                                 <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FB }}>{h.tipo}</span>
@@ -894,37 +1031,25 @@ export default function AdminMonitoreo() {
                           </div>
                           {exp?<ChevronUp size={14} color={C.creamMut}/>:<ChevronDown size={14} color={C.creamMut}/>}
                         </div>
-
-                        {/* Detalle expandido */}
                         {exp&&(
                           <div style={{ padding:"0 16px 16px", borderTop:`1px solid ${C.borderBr}` }}>
                             <div style={{ paddingTop:14, display:"flex", flexDirection:"column", gap:12 }}>
                               <div style={{ fontSize:13, color:C.creamSub, fontFamily:FB, lineHeight:1.7 }}>{h.descripcion}</div>
-
-                              {/* Métricas */}
                               <div>
                                 <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Métricas que expone</div>
                                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                                  {h.metricas.map((m,i)=>(
-                                    <span key={i} style={{ fontSize:11.5, padding:"3px 10px", borderRadius:20, background:"rgba(255,200,150,0.05)", border:`1px solid ${C.border}`, color:C.creamSub, fontFamily:FB }}>
-                                      {m}
-                                    </span>
+                                  {h.metricas.map((m,mi)=>(
+                                    <span key={mi} style={{ fontSize:11.5, padding:"3px 10px", borderRadius:20, background:"rgba(255,200,150,0.05)", border:`1px solid ${C.border}`, color:C.creamSub, fontFamily:FB }}>{m}</span>
                                   ))}
                                 </div>
                               </div>
-
-                              {/* Dónde se usa */}
                               <div style={{ padding:"8px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.18)` }}>
                                 <span style={{ fontSize:11, fontWeight:700, color:C.orange, fontFamily:FB }}>📍 En este panel: </span>
                                 <span style={{ fontSize:11.5, color:C.creamSub, fontFamily:FB }}>{h.uso_en_panel}</span>
                               </div>
-
-                              {/* SQL ejemplo */}
                               <div>
-                                <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Query de ejemplo</div>
-                                <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${C.borderBr}`, borderRadius:9, padding:"10px 14px", fontFamily:FM, fontSize:12, color:C.cream, lineHeight:1.6, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>
-                                  {h.sql_ejemplo}
-                                </div>
+                                <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Consulta de ejemplo</div>
+                                <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${C.borderBr}`, borderRadius:9, padding:"10px 14px", fontFamily:FM, fontSize:12, color:C.cream, lineHeight:1.6, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>{h.sql_ejemplo}</div>
                               </div>
                             </div>
                           </div>
@@ -945,7 +1070,7 @@ export default function AdminMonitoreo() {
               <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
                 <History size={13} color={C.purple} />
                 <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Historial de mantenimiento</span>
-                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Últimas 100 operaciones</span>
+                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Últimas 100 operaciones ejecutadas</span>
               </div>
               {historial.length===0
                 ? <div style={{ padding:"32px", textAlign:"center", color:C.creamMut, fontSize:13, fontFamily:FB }}>Sin operaciones registradas aún. Ejecuta un VACUUM o REINDEX para comenzar.</div>
@@ -953,7 +1078,7 @@ export default function AdminMonitoreo() {
                   <div style={{ overflowX:"auto" }}>
                     <table style={{ width:"100%", borderCollapse:"collapse" }}>
                       <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                        {["Tipo","Tabla","Alcance","Duración","Estado","Admin","Fecha"].map((h,i)=>(
+                        {["Operación","Tabla afectada","Alcance","Duración","Resultado","Admin","Fecha y hora"].map((h,i)=>(
                           <th key={i} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                         ))}
                       </tr></thead>
@@ -969,12 +1094,12 @@ export default function AdminMonitoreo() {
                                 {h.tipo}
                               </span>
                             </td>
-                            <td style={{ padding:"8px 12px", fontSize:12, color:C.cream, fontFamily:FM }}>{h.tabla ?? <span style={{ color:C.creamMut }}>todas</span>}</td>
+                            <td style={{ padding:"8px 12px", fontSize:12, color:C.cream, fontFamily:FM }}>{h.tabla ?? <span style={{ color:C.creamMut }}>todas las tablas</span>}</td>
                             <td style={{ padding:"8px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{h.alcance}</td>
                             <td style={{ padding:"8px 12px", fontSize:11.5, color:C.blue, fontFamily:FM }}>{h.duracion_ms}ms</td>
                             <td style={{ padding:"8px 12px" }}>
                               {h.exitoso
-                                ?<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.green }}><CheckCircle size={11}/>OK</span>
+                                ?<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.green }}><CheckCircle size={11}/>Exitoso</span>
                                 :<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.red }}><AlertCircle size={11}/>{h.error_msg?.substring(0,40)}</span>}
                             </td>
                             <td style={{ padding:"8px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{h.admin_nombre??"—"}</td>
@@ -992,7 +1117,7 @@ export default function AdminMonitoreo() {
         )}
 
         {loading && (
-          <div style={{ position:"fixed", bottom:20, right:20, display:"flex", alignItems:"center", gap:7, padding:"9px 14px", borderRadius:9, background:C.card, border:`1px solid rgba(255,132,14,0.25)`, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" }}>
+          <div style={{ position:"fixed", bottom:20, right:20, display:"flex", alignItems:"center", gap:7, padding:"9px 14px", borderRadius:9, background:C.card, border:`1px solid rgba(255,132,14,0.25)`, boxShadow:"0 4px 20px rgba(0,0,0,0.3)", zIndex:50 }}>
             <RefreshCw size={12} color={C.orange} style={{ animation:"spin 1s linear infinite" }} />
             <span style={{ fontSize:12, color:C.orange, fontFamily:FB, fontWeight:600 }}>Cargando métricas...</span>
           </div>

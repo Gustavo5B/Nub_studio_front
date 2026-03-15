@@ -26,6 +26,7 @@ import RegistroArtista    from "../pages/public/RegistroArtista";
 import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
 import Unauthorized       from "../pages/public/Unauthorized";
+import AdminEstadisticas from "../pages/private/admin/AdminEstadisticas";
 
 export default function AppRoutes() {
   return (
@@ -54,6 +55,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={
         <AdminRoute><AdminLayout /></AdminRoute>
       }>
+        <Route path="estadisticas" element={<AdminEstadisticas />} />
         <Route index                      element={<AdminDashboard />} />
         <Route path="obras"               element={<ListaObras />} />
         <Route path="obras/editar/:id"    element={<EditarObra />} />

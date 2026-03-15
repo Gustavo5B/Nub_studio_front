@@ -34,6 +34,7 @@ const NAV = [
   { id: "importar",   label: "Importar",   icon: Upload,          path: "/admin/importar"    },
   { id: "monitoreo",  label: "Monitoreo",  icon: Activity,        path: "/admin/monitoreo"   },
   { id: "backups",    label: "Backups",    icon: Database,        path: "/admin/backups"     },
+  { id:"estadisticas", label:"Estadísticas", icon:BarChart2, path:"/admin/estadisticas" }
 ];
 
 export default function AdminSidebar() {
