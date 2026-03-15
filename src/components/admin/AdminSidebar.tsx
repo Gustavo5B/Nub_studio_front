@@ -2,7 +2,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingBag, BarChart2,
-  Settings, LogOut, Layers, Database, Upload,
+  Settings, LogOut, Layers, Database, Upload, Activity,
 } from "lucide-react";
 import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
@@ -26,13 +26,14 @@ const FD = "'Playfair Display', serif";
 const FB = "'DM Sans', sans-serif";
 
 const NAV = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/admin"            },
-  { id: "obras",     label: "Obras",     icon: Layers,          path: "/admin/obras"      },
-  { id: "artistas",  label: "Artistas",  icon: Users,           path: "/admin/artistas"   },
-  { id: "ventas",    label: "Ventas",    icon: ShoppingBag,     path: "/admin/ventas"     },
-  { id: "reportes",  label: "Reportes",  icon: BarChart2,       path: "/admin/reportes"   },
-  { id: "importar",  label: "Importar",  icon: Upload,          path: "/admin/importar"   },
-  { id: "backups",   label: "Backups",   icon: Database,        path: "/admin/backups"    },
+  { id: "dashboard",  label: "Dashboard",  icon: LayoutDashboard, path: "/admin"             },
+  { id: "obras",      label: "Obras",      icon: Layers,          path: "/admin/obras"       },
+  { id: "artistas",   label: "Artistas",   icon: Users,           path: "/admin/artistas"    },
+  { id: "ventas",     label: "Ventas",     icon: ShoppingBag,     path: "/admin/ventas"      },
+  { id: "reportes",   label: "Reportes",   icon: BarChart2,       path: "/admin/reportes"    },
+  { id: "importar",   label: "Importar",   icon: Upload,          path: "/admin/importar"    },
+  { id: "monitoreo",  label: "Monitoreo",  icon: Activity,        path: "/admin/monitoreo"   },
+  { id: "backups",    label: "Backups",    icon: Database,        path: "/admin/backups"     },
 ];
 
 export default function AdminSidebar() {
@@ -110,8 +111,6 @@ export default function AdminSidebar() {
         </div>
         {NAV.map(({ id, label, icon: Icon, path }) => {
           const on = active === id;
-
-          // Separador visual antes de "importar" para agrupar visualmente
           const showDivider = id === "importar";
 
           return (
@@ -138,6 +137,7 @@ export default function AdminSidebar() {
       <div style={{ padding: "12px 10px 18px", borderTop: `1px solid ${C.borderBr}` }}>
         <div style={{ display: "flex", gap: 6 }}>
           <button
+            onClick={() => navigate("/admin/config")}
             style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "9px", borderRadius: 9, border: `1px solid ${C.border}`, background: "transparent", cursor: "pointer", fontSize: 12, color: C.creamMut, fontWeight: 600, fontFamily: FB, transition: "color .15s" }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.creamSub}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.creamMut}>

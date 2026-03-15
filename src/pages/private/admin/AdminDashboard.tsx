@@ -431,17 +431,7 @@ export default function AdminDashboard() {
         onBackup={handleBackupDownload}
         backupLoading={backupLoading}
       />
-     <main style={{
-  flex: 1,
-  padding: "22px 26px 28px",
-  overflowY: "auto",
-  backgroundColor: "#0C0812",
-  backgroundImage: `
-    radial-gradient(circle at 80% 5%, rgba(141,76,205,0.10) 0%, transparent 35%),
-    radial-gradient(circle at 5% 90%, rgba(255,132,14,0.07) 0%, transparent 30%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34L28 66zm0-6l22-12.7V22.7L28 10 6 22.7v24.6L28 60z' fill='none' stroke='rgba(141,76,205,0.07)' stroke-width='1'/%3E%3C/svg%3E")
-  `,
-}}>
+      <main style={{ flex:1, padding:"22px 26px 28px", overflowY:"auto" }}>
         <WelcomeBanner userName={userName} />
         <KpiCards kpis={stats?.kpis ?? null} loading={loading} />
         <div style={{ display:"grid", gridTemplateColumns:"340px 1fr", gap:14, marginBottom:14 }}>

@@ -3,9 +3,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Upload, FileSpreadsheet, X, CheckCircle, AlertCircle,
-  RefreshCw, AlertTriangle, ArrowRight, Eye, EyeOff,
+  RefreshCw, AlertTriangle, Eye, EyeOff,
   ChevronRight, Download, Layers, Users, ChevronDown,
-  Sparkles, FileDown, CloudUpload, Zap, TableProperties,
+ CloudUpload, Zap, TableProperties,
   FilePlus2, FileCheck2, FolderOpen, MousePointerClick,
   UploadCloud, ShieldCheck, FileWarning,
 } from "lucide-react";
@@ -95,7 +95,7 @@ function Topbar({ navigate }: { navigate: (p: string) => void }) {
 }
 
 // ── DropZone ──────────────────────────────────────────────────────────────────
-function DropZone({ onFile, disabled, accent }: { onFile: (f: File) => void; disabled?: boolean; accent: string }) {
+function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: boolean; accent: string }) {
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   const handle = useCallback((f: File | null | undefined) => {
