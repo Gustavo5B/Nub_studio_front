@@ -2,7 +2,7 @@
 import {
   Mail, Phone, MapPin, Clock, Send, Star, Users,
   User, MessageSquare, CheckCircle, Palette, ArrowLeft,
-  Instagram, Facebook, Twitter, Sparkles
+  Instagram, Facebook, Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
@@ -87,6 +87,12 @@ export default function Contact() {
       position: "relative",
       overflowX: "hidden",
     }}>
+
+      {/* ── Rainbow line top ── */}
+      <div style={{ position:"fixed", top:0, left:0, right:0, height:3, background:"linear-gradient(90deg,#FF840E,#CC59AD,#8D4CCD,#FFC110)", zIndex:200, pointerEvents:"none" }} />
+
+      {/* ── Grid texture overlay ── */}
+      <div style={{ position:"fixed", inset:0, backgroundImage:"url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.4'%3E%3Cpath d='M0 0h40v40H0z'/%3E%3C/g%3E%3C/svg%3E\")", opacity:0.04, pointerEvents:"none", zIndex:0 }} />
 
       {/* ── Orbs de fondo ── */}
       <div style={{ position: "fixed", top: -150, left: -150, width: 500, height: 500, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}18, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
@@ -187,7 +193,7 @@ export default function Contact() {
         </div>
 
         {/* ── Main grid ── */}
-        <div style={{
+        <div className="contact-grid" style={{
           display: "grid",
           gridTemplateColumns: "1fr 1.4fr",
           gap: 28,
@@ -583,6 +589,74 @@ export default function Contact() {
         </div>
       </div>
 
+      {/* ── FAQ Section (estática) ── */}
+      <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 24px 80px", position:"relative", zIndex:1 }}>
+        <div style={{ height:1, background:"linear-gradient(90deg,transparent,rgba(255,200,150,0.18),transparent)", marginBottom:64 }} />
+        <div style={{ textAlign:"center", marginBottom:48 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:12, fontFamily:"'Outfit',sans-serif" }}>Preguntas frecuentes</div>
+          <h2 style={{ fontSize:"clamp(24px,3vw,38px)", fontWeight:900, color:C.text, margin:0, fontFamily:"'Outfit',sans-serif" }}>
+            ¿Tienes dudas?{" "}
+            <span style={{ background:`linear-gradient(135deg,${C.orange},${C.pink})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+              Aquí las resolvemos
+            </span>
+          </h2>
+        </div>
+        <div className="faq-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
+          {[
+            {
+              q:"¿Cómo compro una obra?",
+              a:"Explora nuestro catálogo, selecciona la obra que te guste y contáctanos. Te asesoramos en todo el proceso de compra y envío a tu domicilio.",
+              color:C.orange,
+            },
+            {
+              q:"¿Cómo me registro como artista?",
+              a:"Completa el formulario de registro de artista, sube tu portafolio y el equipo de NU★B Studio revisará tu solicitud en 3-5 días hábiles.",
+              color:C.pink,
+            },
+            {
+              q:"¿Las obras tienen garantía de autenticidad?",
+              a:"Sí. Cada obra vendida en NU★B Studio incluye un certificado de autenticidad firmado por el artista y avalado por nuestra galería.",
+              color:C.purple,
+            },
+            {
+              q:"¿Puedo devolver una obra?",
+              a:"Aceptamos devoluciones dentro de los 15 días posteriores a la entrega si la obra llega dañada o no coincide con la descripción.",
+              color:C.gold,
+            },
+            {
+              q:"¿Hacen envíos fuera de Hidalgo?",
+              a:"Sí, enviamos a todo México. El costo de envío se calcula según el destino y el tamaño de la obra al momento de la compra.",
+              color:C.orange,
+            },
+            {
+              q:"¿Puedo solicitar una obra personalizada?",
+              a:"Muchos de nuestros artistas aceptan encargos personalizados. Contáctanos y te ponemos en contacto directo con el artista ideal.",
+              color:C.pink,
+            },
+          ].map(({ q, a, color }, i) => (
+            <div key={i} style={{
+              background:"rgba(255,255,255,0.025)",
+              border:`1px solid rgba(255,255,255,0.07)`,
+              borderRadius:18,
+              padding:"24px 22px",
+              backdropFilter:"blur(20px)",
+              transition:"border-color .2s, transform .2s",
+              cursor:"default",
+            }}
+              onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${color}40`; el.style.transform="translateY(-3px)"; }}
+              onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor="rgba(255,255,255,0.07)"; el.style.transform="translateY(0)"; }}
+            >
+              <div style={{ width:8, height:8, borderRadius:"50%", background:color, marginBottom:14, boxShadow:`0 0 12px ${color}60` }} />
+              <div style={{ fontSize:15, fontWeight:800, color:C.text, marginBottom:10, lineHeight:1.35, fontFamily:"'Outfit',sans-serif" }}>{q}</div>
+              <div style={{ fontSize:13.5, color:C.muted, lineHeight:1.75, fontFamily:"'Outfit',sans-serif" }}>{a}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize:11.5, color:"rgba(255,255,255,0.2)", fontStyle:"italic", textAlign:"center", marginTop:28, fontFamily:"'Outfit',sans-serif" }}>
+          (FAQ estático — hacer dinámico desde /api/faq)
+        </div>
+      </div>
+
       {/* ── Footer note ── */}
       <div style={{
         textAlign: "center",
@@ -602,6 +676,10 @@ export default function Contact() {
         select option { background: #1a1030; color: #ffffff; }
         @media (max-width: 860px) {
           .contact-grid { grid-template-columns: 1fr !important; }
+          .faq-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 620px) {
+          .faq-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

@@ -127,7 +127,7 @@ export default function DetalleObra() {
           <div>
             {/* Imagen principal */}
             <div onClick={() => setZoomed(true)} style={{ position:"relative", borderRadius:24, overflow:"hidden", background:C.panel, border:`1px solid ${C.borderBr}`, marginBottom:12, boxShadow:"0 40px 100px rgba(0,0,0,0.55)", cursor:"zoom-in" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:340, overflow:"hidden" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:500, overflow:"hidden" }}>
                 {(imgActiva || obra.imagen_principal) && !imgError ? (
                   <img src={imgActiva || obra.imagen_principal} alt={obra.titulo}
                     style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }}
@@ -215,6 +215,48 @@ export default function DetalleObra() {
                 </div>
               )}
             </InfoPanel>
+          </div>
+
+          {/* ══ Certificado de Autenticidad (estático decorativo) ══ */}
+          <div style={{ marginTop:14 }}>
+            <div style={{
+              background:"linear-gradient(135deg, rgba(255,193,16,0.06), rgba(255,132,14,0.04))",
+              borderRadius:20,
+              border:`1px solid ${C.gold}28`,
+              overflow:"hidden",
+            }}>
+              <div style={{ height:2, background:`linear-gradient(90deg,${C.gold},${C.orange},transparent)` }} />
+              <div style={{ padding:"24px 28px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:18 }}>
+                  <div style={{ width:42, height:42, borderRadius:12, background:`${C.gold}14`, border:`1px solid ${C.gold}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <Award size={20} color={C.gold} strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:800, color:C.gold, textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:FB }}>Certificado de Autenticidad</div>
+                    <div style={{ fontSize:13, color:C.creamSub, fontFamily:FB, marginTop:2 }}>Emitido por NU★B Studio</div>
+                  </div>
+                  <div style={{ marginLeft:"auto", padding:"4px 14px", borderRadius:100, background:`${C.gold}15`, border:`1px solid ${C.gold}35`, fontSize:11.5, fontWeight:800, color:C.gold, fontFamily:FB }}>
+                    Verificado ✓
+                  </div>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  {[
+                    { label:"Número de registro", value:`NUB-${obra.id_obra?.toString().padStart(5,"0") || "00001"}` },
+                    { label:"Artista certificado", value:obra.artista_alias || obra.artista_nombre || "—" },
+                    { label:"Técnica verificada", value:obra.tecnica_nombre || "Arte original" },
+                    { label:"Galería emisora", value:"NU★B Studio — Huasteca" },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background:"rgba(255,193,16,0.04)", borderRadius:10, padding:"10px 14px", border:`1px solid ${C.gold}14` }}>
+                      <div style={{ fontSize:10, color:C.creamMut, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4, fontFamily:FB }}>{label}</div>
+                      <div style={{ fontSize:13, color:C.cream, fontWeight:600, fontFamily:FB }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop:14, fontSize:11.5, color:C.creamMut, fontStyle:"italic", fontFamily:FB, textAlign:"center", opacity:0.6 }}>
+                  (Estático — hacer dinámico desde /api/obras/:id/certificado)
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ══ DERECHA — Panel compra ══ */}
@@ -351,6 +393,46 @@ export default function DetalleObra() {
             )}
           </div>
         </div>
+
+        {/* ── Placeholder estático cuando no hay relacionadas ── */}
+        {(!obra.obras_relacionadas || obra.obras_relacionadas.length === 0) && (
+          <div style={{ marginTop:80 }}>
+            <div style={{ height:1, background:`linear-gradient(90deg,transparent,${C.borderBr},transparent)`, marginBottom:52 }} />
+            <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:32 }}>
+              <div>
+                <div style={{ fontSize:11, fontWeight:800, color:C.gold, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:10, fontFamily:FB }}>Puede interesarte</div>
+                <h2 style={{ fontSize:"clamp(22px,2.5vw,34px)", fontWeight:900, color:C.cream, margin:0, fontFamily:FD, letterSpacing:"-0.02em" }}>
+                  Obras <span style={{ background:`linear-gradient(135deg,${C.gold},${C.orange})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>relacionadas</span>
+                </h2>
+              </div>
+              <button onClick={() => navigate("/catalogo")} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", borderRadius:10, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderHi}`, color:C.creamMut, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FB }}>
+                Ver catálogo <ChevronRight size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+            {/* Skeleton estático de 4 obras */}
+            <div className="relacionadas-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18 }}>
+              {["Artesanía Huasteca","Pintura Rupestre","Escultura Totonaca","Fotografía Regional"].map((titulo, i) => (
+                <div key={i} onClick={() => navigate("/catalogo")}
+                  style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, overflow:"hidden", cursor:"pointer", transition:"all .22s", backdropFilter:"blur(12px)" }}
+                  onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.transform="translateY(-5px)"; el.style.borderColor=C.borderHi; }}
+                  onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.transform="none"; el.style.borderColor=C.border; }}
+                >
+                  <div style={{ height:160, background:`linear-gradient(135deg, rgba(${["255,132,14","204,89,173","141,76,205","255,193,16"][i]},0.12), rgba(16,13,28,0.9))`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <Sparkles size={28} color={[C.orange,C.pink,C.purple,C.gold][i]} strokeWidth={1.2} style={{ opacity:.5 }} />
+                  </div>
+                  <div style={{ padding:"14px 18px 18px" }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:C.cream, fontFamily:FB, marginBottom:4 }}>{titulo}</div>
+                    <div style={{ fontSize:12, color:C.creamMut, fontFamily:FB, marginBottom:10 }}>Artista local</div>
+                    <div style={{ fontSize:13, fontWeight:600, color:C.creamSub, fontFamily:FB }}>Desde $1,200</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:11.5, color:C.creamMut, fontStyle:"italic", textAlign:"center", marginTop:18, opacity:0.5, fontFamily:FB }}>
+              (Estático — hacer dinámico desde /api/obras/:id/relacionadas)
+            </div>
+          </div>
+        )}
 
         {/* ── Relacionadas ── */}
         {obra.obras_relacionadas?.length > 0 && (

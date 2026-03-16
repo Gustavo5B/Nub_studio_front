@@ -8,6 +8,8 @@ import {
   Check, ChevronRight, ChevronLeft, Sparkles, Info
 } from "lucide-react";
 import logoImg from "../../assets/images/logo.png";
+import obraImg1 from "../../assets/images/Artesania.webp";
+import obraImg2 from "../../assets/images/OLLA.png";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -136,8 +138,8 @@ export default function RegistroArtista() {
 
       setTerminado(true);
       setPaso(2);
-    } catch (err: any) {
-      setMensaje(err.message || "Error al registrar. Intenta de nuevo.");
+    } catch (err: unknown) {
+      setMensaje((err instanceof Error ? err.message : null) || "Error al registrar. Intenta de nuevo.");
       setIsError(true);
     } finally {
       setLoading(false);
@@ -322,73 +324,228 @@ export default function RegistroArtista() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Outfit',sans-serif", display: "flex", position: "relative", overflow: "hidden" }}>
-      {/* orbs de fondo */}
-      <div style={{ position: "fixed", top: -100, left: -100, width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}20, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: -100, right: -100, width: 500, height: 500, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}18, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", top: "40%", left: "30%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents: "none" }} />
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'DM Sans','Outfit',sans-serif", display: "flex", position: "relative", overflow: "hidden" }}>
 
-      {/* panel izquierdo */}
-      <div className="artista-banner" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 40px", position: "relative" }}>
-        <div style={{ maxWidth: 400 }}>
-          <img src={logoImg} alt="Nu-B Studio" style={{ height: 52, marginBottom: 32 }} />
-          <h1 style={{ fontSize: 38, fontWeight: 900, color: C.text, lineHeight: 1.1, margin: "0 0 16px" }}>
+      {/* ── orbs de fondo ── */}
+      <div style={{ position: "fixed", top: -100, left: -100, width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}20, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", bottom: -100, right: -100, width: 500, height: 500, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}18, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "40%", left: "30%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
+
+      {/* ════════════════════════════════════════════════════
+          PANEL IZQUIERDO
+      ════════════════════════════════════════════════════ */}
+      <div
+        className="artista-banner"
+        style={{
+          flex: 1,
+          position: "relative",
+          overflow: "hidden",
+          background: "#0C0812",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        {/* Imagen de fondo — artesanía */}
+        <img src={obraImg1} alt="" style={{
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          objectFit: "cover", objectPosition: "center",
+          opacity: 0.18,
+          zIndex: 0,
+        }} />
+
+        {/* Gradiente sobre imagen */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(160deg, #0C0812 30%, rgba(12,8,18,0.7) 65%, rgba(12,8,18,0.95) 100%)",
+          zIndex: 1,
+        }} />
+
+        {/* Línea arcoíris */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#FF840E,#CC59AD,#8D4CCD,#FFC110)", zIndex: 10 }} />
+
+        {/* Contenido principal */}
+        <div style={{ position: "relative", zIndex: 3, padding: "60px 52px" }}>
+
+          {/* Logo */}
+          <img src={logoImg} alt="Nu-B Studio" style={{ height: 44, marginBottom: 40, display: "block" }} />
+
+          {/* Título */}
+          <h1 style={{ fontSize: "clamp(28px,2.8vw,40px)", fontWeight: 900, color: C.text, lineHeight: 1.15, margin: "0 0 14px", fontFamily: "'Playfair Display','Georgia',serif" }}>
             Forma parte de<br />
-            <span style={{ background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>nuestra galería</span>
+            <span style={{ background: `linear-gradient(135deg,${C.orange},${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              nuestra galería
+            </span>
           </h1>
-          <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, margin: "0 0 40px" }}>
-            Conectamos artistas de la Huasteca con coleccionistas de todo México. Comparte tu arte y genera ingresos con tu pasión.
+
+          <p style={{ fontSize: 14.5, color: C.muted, lineHeight: 1.75, margin: "0 0 36px", fontFamily: "'DM Sans',sans-serif", maxWidth: 400 }}>
+            Conectamos artistas de la <strong style={{ color: "rgba(255,255,255,0.75)" }}>Huasteca Hidalguense</strong> con coleccionistas de todo México.
           </p>
 
+          {/* Feature items */}
           {[
-            { icon: <Palette size={18} color={C.orange} />, title: "Exposición nacional", desc: "Tu obra llega a coleccionistas de todo el país" },
-            { icon: <Sparkles size={18} color={C.pink} />, title: "Certificado de autenticidad", desc: "Cada obra recibe su certificado oficial" },
-            { icon: <CheckCircle2 size={18} color={C.gold} />, title: "Soporte completo", desc: "Te acompañamos en todo el proceso de venta" },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.08)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {icon}
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>{title}</div>
-                <div style={{ fontSize: 12.5, color: C.muted }}>{desc}</div>
-              </div>
+            { color: C.orange, title: "Exposición nacional",         desc: "Tu obra llega a coleccionistas de todo el país" },
+            { color: C.pink,   title: "Certificado de autenticidad", desc: "Cada obra recibe su certificado oficial" },
+            { color: C.gold,   title: "Soporte completo",            desc: "Te acompañamos en todo el proceso de venta" },
+          ].map(({ color, title, desc }) => (
+            <div key={title} style={{ borderLeft: `3px solid ${color}`, padding: "10px 16px", marginBottom: 12, background: "rgba(255,255,255,0.04)", borderRadius: "0 10px 10px 0" }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, marginBottom: 2, fontFamily: "'DM Sans',sans-serif" }}>{title}</div>
+              <div style={{ fontSize: 12.5, color: C.muted, fontFamily: "'DM Sans',sans-serif" }}>{desc}</div>
             </div>
           ))}
+
+          {/* Beneficios exclusivos */}
+          <div style={{ marginTop: 28, background: "rgba(141,76,205,0.10)", border: "1px solid rgba(141,76,205,0.25)", borderRadius: 14, padding: "18px 20px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.purple, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, fontFamily: "'DM Sans',sans-serif" }}>
+              Beneficios exclusivos para artistas certificados
+            </div>
+            {[
+              { dot: C.orange, text: "Comisión del 80% por cada venta" },
+              { dot: C.pink,   text: "Perfil artístico verificado" },
+              { dot: C.purple, text: "Exposición en eventos locales" },
+              { dot: C.gold,   text: "Asesoría en precios y packaging" },
+            ].map(({ dot, text }) => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: dot, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", fontFamily: "'DM Sans',sans-serif" }}>{text}</span>
+              </div>
+            ))}
+            <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)", marginTop: 10, fontStyle: "italic", fontFamily: "'DM Sans',sans-serif" }}>
+              (Estático — /api/artista/beneficios)
+            </div>
+          </div>
+
+          {/* Mini galería de obras */}
+          <div style={{ marginTop: 28, display: "flex", gap: 10, alignItems: "flex-end" }}>
+            <div style={{ animation: "floatA 7s ease-in-out infinite" }}>
+              <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,132,14,0.25)", boxShadow: "0 12px 32px rgba(0,0,0,0.5)", width: 100 }}>
+                <img src={obraImg1} alt="Artesanía" style={{ width: "100%", height: 80, objectFit: "cover", display: "block" }} />
+                <div style={{ padding: "6px 10px", background: "rgba(14,11,26,0.9)" }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: "'DM Sans',sans-serif" }}>Artesanía</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ animation: "floatB 9s ease-in-out infinite" }}>
+              <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(204,89,173,0.25)", boxShadow: "0 12px 32px rgba(0,0,0,0.5)", width: 88 }}>
+                <img src={obraImg2} alt="Cerámica" style={{ width: "100%", height: 70, objectFit: "cover", display: "block" }} />
+                <div style={{ padding: "6px 10px", background: "rgba(14,11,26,0.9)" }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: "'DM Sans',sans-serif" }}>Cerámica</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, fontFamily: "'DM Sans',sans-serif", paddingBottom: 8, paddingLeft: 4 }}>
+              +500 obras<br />en galería
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* panel derecho */}
-      <div style={{ width: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", position: "relative" }} className="artista-form-panel">
-        <div style={{ width: "100%", maxWidth: 420 }}>
+      {/* ════════════════════════════════════════════════════
+          PANEL DERECHO — rediseñado
+      ════════════════════════════════════════════════════ */}
+      <div
+        style={{
+          width: 500,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 32px",
+          position: "relative",
+          zIndex: 2,
+        }}
+        className="artista-form-panel"
+      >
+        <div style={{ width: "100%", maxWidth: 440 }}>
 
-          {/* stepper */}
+          {/* ── Stepper mejorado ── */}
           {!terminado && (
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 32, gap: 0 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 36, gap: 0 }}>
               {PASOS.map((label, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", flex: i < PASOS.length - 1 ? 1 : "initial" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: i <= paso ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.08)", border: `2px solid ${i <= paso ? "transparent" : "rgba(255,255,255,0.15)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: i <= paso ? "white" : C.muted, transition: "all .3s" }}>
-                      {i < paso ? <Check size={14} strokeWidth={3} /> : i + 1}
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", flex: i < PASOS.length - 1 ? 1 : "initial" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                    {/* Círculo del paso */}
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: i <= paso
+                        ? `linear-gradient(135deg, ${C.orange}, ${C.pink})`
+                        : "rgba(255,255,255,0.06)",
+                      border: `2px solid ${i <= paso ? "transparent" : "rgba(255,255,255,0.12)"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 14,
+                      fontWeight: 800,
+                      color: i <= paso ? "white" : C.muted,
+                      transition: "all .3s",
+                      boxShadow: i === paso ? `0 0 14px ${C.orange}55` : "none",
+                      fontFamily: "'Outfit',sans-serif",
+                    }}>
+                      {i < paso ? <Check size={16} strokeWidth={3} /> : i + 1}
                     </div>
-                    <span style={{ fontSize: 11, color: i <= paso ? C.orange : C.muted, fontWeight: i <= paso ? 600 : 400 }}>{label}</span>
+                    {/* Etiqueta del paso */}
+                    <span style={{
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      color: i <= paso ? C.orange : C.muted,
+                      fontFamily: "'DM Sans',sans-serif",
+                      letterSpacing: "0.03em",
+                    }}>
+                      {label}
+                    </span>
                   </div>
+
+                  {/* Línea conectora */}
                   {i < PASOS.length - 1 && (
-                    <div style={{ flex: 1, height: 2, background: paso > i ? `linear-gradient(90deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.1)", margin: "0 8px 16px", transition: "background .3s" }} />
+                    <div style={{
+                      flex: 1,
+                      height: 3,
+                      borderRadius: 2,
+                      background: paso > i
+                        ? `linear-gradient(90deg, ${C.orange}, ${C.pink})`
+                        : "rgba(255,255,255,0.08)",
+                      margin: "16px 10px 0",
+                      transition: "background .4s",
+                    }} />
                   )}
                 </div>
               ))}
             </div>
           )}
 
-          {/* card */}
-          <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
+          {/* ── Card del formulario ── */}
+          <div style={{
+            background: "rgba(14,11,26,0.88)",
+            border: "1px solid rgba(255,200,150,0.12)",
+            borderRadius: 24,
+            padding: "36px 32px",
+            backdropFilter: "blur(24px)",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            {/* Línea arcoíris en la cima de la card */}
+            <div style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0,
+              height: 2,
+              background: "linear-gradient(90deg, #FF840E, #CC59AD, #8D4CCD, #FFC110)",
+              borderRadius: "24px 24px 0 0",
+            }} />
+
             {!terminado && (
               <>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 4px", fontFamily: "'Outfit',sans-serif" }}>
+                <h2 style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: C.text,
+                  margin: "0 0 4px",
+                  fontFamily: "'Playfair Display','Georgia',serif",
+                }}>
                   {paso === 0 ? "Crea tu cuenta" : "Tu perfil artístico"}
                 </h2>
-                <p style={{ fontSize: 13, color: C.muted, margin: "0 0 24px" }}>
+                <p style={{ fontSize: 13, color: C.muted, margin: "0 0 24px", fontFamily: "'DM Sans',sans-serif" }}>
                   {paso === 0 ? "Datos de acceso a tu cuenta" : "Cuéntanos sobre tu arte"}
                 </p>
               </>
@@ -399,18 +556,24 @@ export default function RegistroArtista() {
             {terminado && renderExito()}
           </div>
 
-          <p style={{ fontSize: 13, color: C.muted, textAlign: "center", marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: C.muted, textAlign: "center", marginTop: 20, fontFamily: "'DM Sans',sans-serif" }}>
             ¿Ya tienes cuenta?{" "}
-            <span onClick={() => navigate("/login")} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>
+            <span onClick={() => navigate("/login")} style={{ color: C.orange, cursor: "pointer", fontWeight: 700 }}>
               Inicia sesión
             </span>
           </p>
         </div>
       </div>
 
+      {/* ── Estilos globales + keyframes ── */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap');
+
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @media (max-width: 768px) {
+        @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-6deg)} 50%{transform:translateY(-12px) rotate(-4deg)} }
+        @keyframes floatB { 0%,100%{transform:translateY(0) rotate(5deg)} 50%{transform:translateY(-8px) rotate(7deg)} }
+
+        @media (max-width: 900px) {
           .artista-banner { display: none !important; }
           .artista-form-panel { width: 100% !important; padding: 32px 20px !important; }
         }
@@ -423,7 +586,7 @@ export default function RegistroArtista() {
 function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8 }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8, fontFamily: "'DM Sans',sans-serif" }}>
         {icon} {label}
       </label>
       {children}
@@ -445,7 +608,7 @@ const inputStyle: React.CSSProperties = {
   border: "1.5px solid rgba(255,255,255,0.1)",
   background: "rgba(255,255,255,0.05)",
   color: "#ffffff", fontSize: 14,
-  fontFamily: "'Outfit',sans-serif",
+  fontFamily: "'DM Sans','Outfit',sans-serif",
   outline: "none", transition: "border .15s",
 };
 
@@ -454,7 +617,7 @@ const btnPrimary: React.CSSProperties = {
   width: "100%", padding: "13px 20px", borderRadius: 12,
   background: `linear-gradient(135deg, #FF840E, #CC59AD)`,
   border: "none", color: "white", fontSize: 15, fontWeight: 700,
-  cursor: "pointer", fontFamily: "'Outfit',sans-serif",
+  cursor: "pointer", fontFamily: "'DM Sans','Outfit',sans-serif",
   boxShadow: "0 8px 24px rgba(255,132,14,0.3)",
 };
 
@@ -464,5 +627,5 @@ const btnSecondary: React.CSSProperties = {
   background: "rgba(255,255,255,0.06)",
   border: "1.5px solid rgba(255,255,255,0.1)",
   color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600,
-  cursor: "pointer", fontFamily: "'Outfit',sans-serif",
+  cursor: "pointer", fontFamily: "'DM Sans','Outfit',sans-serif",
 };
