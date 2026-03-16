@@ -1,4 +1,13 @@
 // src/pages/public/Register.tsx
+//
+// STATIC ADDITIONS (can be replaced with live API data later):
+//  - Two floating artwork mini-cards (obraImg1 = artesanas.webp, obraImg2 = cuadro.png)
+//    → currently static imports; replace src with API artwork thumbnails when available.
+//  - Stats row (500+ Obras, 50+ Artistas, 98% Satisfacción)
+//    → static numbers; fetch from a /stats endpoint to make them dynamic.
+//  - Step journey indicator (① Crea tu cuenta → ② Verifica tu correo → ③ Explora el arte)
+//    → static visual, always shows step 1 as active since this is the Register page.
+
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +18,8 @@ import {
 } from "lucide-react";
 import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
+import obraImg1 from "../../assets/images/artesanas.webp";
+import obraImg2 from "../../assets/images/cuadro.png";
 
 // ── Paleta idéntica al sistema ────────────────────────────
 const C = {
@@ -61,53 +72,60 @@ export default function Register() {
     setMensaje("");
   };
 
- const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setMensaje("");
-  if (!aceptoTerminos) { setMensaje("Debes aceptar los Términos y Condiciones"); setIsError(true); return; }
-  if (!formData.nombre || !formData.correo || !formData.contrasena) { setMensaje("Todos los campos son obligatorios"); setIsError(true); return; }
-  if (formData.nombre.length < 2) { setMensaje("El nombre debe tener al menos 2 caracteres"); setIsError(true); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) { setMensaje("El formato del correo no es válido"); setIsError(true); return; }
-  if (!isPasswordValid) { setMensaje("La contraseña no cumple todos los requisitos"); setIsError(true); return; }
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setMensaje("");
+    if (!aceptoTerminos) { setMensaje("Debes aceptar los Términos y Condiciones"); setIsError(true); return; }
+    if (!formData.nombre || !formData.correo || !formData.contrasena) { setMensaje("Todos los campos son obligatorios"); setIsError(true); return; }
+    if (formData.nombre.length < 2) { setMensaje("El nombre debe tener al menos 2 caracteres"); setIsError(true); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) { setMensaje("El formato del correo no es válido"); setIsError(true); return; }
+    if (!isPasswordValid) { setMensaje("La contraseña no cumple todos los requisitos"); setIsError(true); return; }
 
-  setIsLoading(true);
-  try {
-    const response = await authService.register(formData.nombre, formData.correo, formData.contrasena, true);
+    setIsLoading(true);
+    try {
+      const response = await authService.register(formData.nombre, formData.correo, formData.contrasena, true);
 
-    if (response.requiresVerification) {
-      localStorage.setItem('temp_correo_verificacion', formData.correo);
-      setMensaje("¡Cuenta creada! Revisa tu correo para verificarla 📧");
-      setIsError(false);
-      setTimeout(() => navigate("/verify-email-code", {
-        state: { correo: formData.correo }
-      }), 2000);
-    } else {
-      setMensaje("¡Cuenta creada! Redirigiendo al inicio de sesión...");
-      setIsError(false);
-      setTimeout(() => navigate("/login"), 2000);
+      if (response.requiresVerification) {
+        localStorage.setItem('temp_correo_verificacion', formData.correo);
+        setMensaje("¡Cuenta creada! Revisa tu correo para verificarla 📧");
+        setIsError(false);
+        setTimeout(() => navigate("/verify-email-code", {
+          state: { correo: formData.correo }
+        }), 2000);
+      } else {
+        setMensaje("¡Cuenta creada! Redirigiendo al inicio de sesión...");
+        setIsError(false);
+        setTimeout(() => navigate("/login"), 2000);
+      }
+    } catch (err) {
+      const error = err as RegisterError;
+      if (error.status === 400) {
+        setMensaje(error.error?.errors?.join(", ") || error.error?.message || "El correo ya está registrado");
+      } else if (error.status === 0) {
+        setMensaje("No se pudo conectar con el servidor");
+      } else {
+        setMensaje(error.error?.message || "Error al registrar");
+      }
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    const error = err as RegisterError;
-    if (error.status === 400) {
-      setMensaje(error.error?.errors?.join(", ") || error.error?.message || "El correo ya está registrado");
-    } else if (error.status === 0) {
-      setMensaje("No se pudo conectar con el servidor");
-    } else {
-      setMensaje(error.error?.message || "Error al registrar");
-    }
-    setIsError(true);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Outfit', sans-serif", display: "flex", position: "relative", overflow: "hidden" }}>
+    <div style={{
+      minHeight: "100vh",
+      background: C.bg,
+      fontFamily: "'DM Sans', 'Outfit', sans-serif",
+      display: "flex",
+      position: "relative",
+      overflow: "hidden",
+    }}>
 
-      {/* Orbs */}
-      <div style={{ position: "fixed", top: -120, left: -120, width: 450, height: 450, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}20, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: -120, right: -120, width: 550, height: 550, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}18, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", top: "40%", left: "30%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents: "none" }} />
+      {/* ── Background orbs ── */}
+      <div style={{ position: "fixed", top: -120, left: -120, width: 450, height: 450, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}20, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", bottom: -120, right: -120, width: 550, height: 550, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}18, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "40%", left: "30%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
 
       {/* ── Botón flotante volver ── */}
       <button
@@ -120,122 +138,319 @@ export default function Register() {
           backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
           border: "1px solid rgba(255,255,255,0.12)",
           color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600,
-          cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+          cursor: "pointer", fontFamily: "'DM Sans', 'Outfit', sans-serif",
           boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
           transition: "all .22s ease",
         }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,132,14,0.15)"; el.style.borderColor = `${C.orange}50`; el.style.color = C.orange; el.style.transform = "translateX(-2px)"; }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(15,12,26,0.85)"; el.style.borderColor = "rgba(255,255,255,0.12)"; el.style.color = "rgba(255,255,255,0.7)"; el.style.transform = "translateX(0)"; }}
+        onMouseEnter={e => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.background = "rgba(255,132,14,0.15)";
+          el.style.borderColor = `${C.orange}50`;
+          el.style.color = C.orange;
+          el.style.transform = "translateX(-2px)";
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.background = "rgba(15,12,26,0.85)";
+          el.style.borderColor = "rgba(255,255,255,0.12)";
+          el.style.color = "rgba(255,255,255,0.7)";
+          el.style.transform = "translateX(0)";
+        }}
       >
         <ArrowLeft size={14} strokeWidth={2.5} />
         Volver al inicio
       </button>
 
-      {/* ── Panel izquierdo (50%) ── */}
-      <div className="reg-banner" style={{ 
-        flex: "0 0 50%",
-        display: "flex", 
-        flexDirection: "column", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        padding: "60px 40px" 
-      }}>
-        <div style={{ maxWidth: 400 }}>
+      {/* ════════════════════════════════════════════
+          LEFT PANEL
+      ════════════════════════════════════════════ */}
+      <div
+        className="reg-banner"
+        style={{
+          flex: "0 0 50%",
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "80px 48px 60px",
+          background: "#0a0714",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 0 L40 40 M40 0 L0 40' stroke='rgba(255,255,255,0.03)' stroke-width='0.5'/%3E%3C/svg%3E")`,
+        }}
+      >
+        {/* Rainbow top line */}
+        <div style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0,
+          height: 3,
+          background: `linear-gradient(90deg, ${C.orange}, ${C.pink}, ${C.purple}, ${C.gold})`,
+        }} />
+
+        {/* Floating card 1 — top-right (artesanas) */}
+        {/* STATIC: replace obraImg1 with a live API thumbnail when available */}
+        <div style={{
+          position: "absolute",
+          top: 60,
+          right: 32,
+          width: 160,
+          borderRadius: 16,
+          overflow: "hidden",
+          background: "rgba(255,255,255,0.07)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+          animation: "floatA 6s ease-in-out infinite",
+          zIndex: 2,
+        }}>
+          <img
+            src={obraImg1}
+            alt="Artesanía Huasteca"
+            style={{ width: "100%", height: 110, objectFit: "cover", display: "block" }}
+          />
+          <div style={{ padding: "8px 10px" }}>
+            <span style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 11,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: 0.3,
+            }}>
+              Artesanía Huasteca
+            </span>
+          </div>
+        </div>
+
+        {/* Floating card 2 — bottom-left (cuadro) */}
+        {/* STATIC: replace obraImg2 with a live API thumbnail when available */}
+        <div style={{
+          position: "absolute",
+          bottom: 130,
+          left: 24,
+          width: 152,
+          borderRadius: 16,
+          overflow: "hidden",
+          background: "rgba(255,255,255,0.07)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+          animation: "floatB 8s ease-in-out infinite",
+          zIndex: 2,
+        }}>
+          <img
+            src={obraImg2}
+            alt="Pintura Original"
+            style={{ width: "100%", height: 105, objectFit: "cover", display: "block" }}
+          />
+          <div style={{ padding: "8px 10px" }}>
+            <span style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 11,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: 0.3,
+            }}>
+              Pintura Original
+            </span>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div style={{ maxWidth: 380, position: "relative", zIndex: 3 }}>
           <img src={logoImg} alt="Nu-B Studio" style={{ height: 52, marginBottom: 28 }} />
-          <h1 style={{ fontSize: 38, fontWeight: 900, color: C.text, lineHeight: 1.1, margin: "0 0 16px" }}>
-            Únete a nuestra<br />
-            <span style={{ background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+
+          <h1 style={{
+            fontSize: 38,
+            fontWeight: 900,
+            color: C.text,
+            lineHeight: 1.15,
+            margin: "0 0 16px",
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            Únete a nuestra{" "}
+            <span style={{
+              fontFamily: "'Playfair Display', serif",
+              fontStyle: "italic",
+              background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>
               galería
             </span>
           </h1>
-          <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, margin: "0 0 40px" }}>
+
+          <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, margin: "0 0 36px" }}>
             Comienza a explorar y coleccionar arte auténtico de la Huasteca. Tu viaje artístico empieza aquí.
           </p>
+
+          {/* Feature items */}
           {[
-            { icon: <Palette size={18} color={C.orange} />, title: "Acceso a artistas exclusivos",  desc: "Descubre talentos únicos de la región"       },
-            { icon: <Camera  size={18} color={C.pink}   />, title: "Compra obras auténticas",       desc: "Cada pieza con certificado de autenticidad"  },
-            { icon: <Frame   size={18} color={C.gold}   />, title: "Personaliza tus favoritos",     desc: "Elige tamaño, marco y acabado a tu gusto"    },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+            { icon: <Palette size={18} color={C.orange} />, title: "Acceso a artistas exclusivos",  desc: "Descubre talentos únicos de la región",       accent: C.orange },
+            { icon: <Camera  size={18} color={C.pink}   />, title: "Compra obras auténticas",       desc: "Cada pieza con certificado de autenticidad",  accent: C.pink   },
+            { icon: <Frame   size={18} color={C.gold}   />, title: "Personaliza tus favoritos",     desc: "Elige tamaño, marco y acabado a tu gusto",    accent: C.gold   },
+          ].map(({ icon, title, desc, accent }) => (
+            <div
+              key={title}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 14,
+                marginBottom: 14,
+                padding: "10px 14px",
+                borderRadius: 12,
+                borderLeft: `3px solid ${accent}`,
+                background: "rgba(255,255,255,0.03)",
+              }}
+            >
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                {icon}
+              </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>{title}</div>
                 <div style={{ fontSize: 12.5, color: C.muted }}>{desc}</div>
               </div>
             </div>
           ))}
+
+          {/* Stats row */}
+          {/* STATIC: numbers below are placeholders — fetch from a /stats API endpoint to make dynamic */}
+          <div style={{
+            display: "flex",
+            gap: 10,
+            marginTop: 32,
+            flexWrap: "wrap",
+          }}>
+            {[
+              { value: "500+", label: "Obras" },
+              { value: "50+",  label: "Artistas" },
+              { value: "98%",  label: "Satisfacción" },
+            ].map(({ value, label }) => (
+              <div
+                key={label}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: "8px 16px",
+                  borderRadius: 100,
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                <span style={{
+                  fontSize: 15,
+                  fontWeight: 800,
+                  background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {value}
+                </span>
+                <span style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── Panel derecho (45%) - MÁS ANCHO PARA REGISTER ── */}
-      <div className="reg-form-panel" style={{ 
-        flex: "0 0 45%",  // 🔹 AUMENTADO DE 40% A 45% PARA DAR MÁS ESPACIO
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        padding: "30px 20px",
-        overflowY: "auto" 
-      }}>
-        <div style={{ 
-          width: "100%", 
-          maxWidth: 420  // 🔹 AUMENTADO DE 380 A 420 PARA MÁS ESPACIO
-        }}>
+      {/* ════════════════════════════════════════════
+          RIGHT PANEL
+      ════════════════════════════════════════════ */}
+      <div
+        className="reg-form-panel"
+        style={{
+          flex: "0 0 50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "30px 20px",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 440 }}>
 
           {/* Logo mobile */}
           <div className="reg-mobile-logo" style={{ display: "none", justifyContent: "center", marginBottom: 28 }}>
             <img src={logoImg} alt="Nu-B Studio" style={{ height: 44 }} />
           </div>
 
-          {/* Card */}
-          <div style={{ 
-            background: "rgba(255,255,255,0.03)", 
-            border: "1px solid rgba(255,255,255,0.08)", 
-            borderRadius: 20, 
-            padding: "32px 28px",  // 🔹 AUMENTADO EL PADDING
-            backdropFilter: "blur(20px)" 
+          {/* ── Form Card ── */}
+          <div style={{
+            background: "rgba(14,11,26,0.88)",
+            border: "1px solid rgba(255,200,150,0.12)",
+            borderRadius: 24,
+            padding: "36px 32px",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            position: "relative",
+            overflow: "hidden",
           }}>
-            <h2 style={{ 
-              fontSize: 24, 
-              fontWeight: 800, 
-              color: C.text, 
-              margin: "0 0 4px",
-              textAlign: "center"
-            }}>Crear cuenta</h2>
-            <p style={{ 
-              fontSize: 13, 
-              color: C.muted, 
-              margin: "0 0 28px",  // 🔹 AUMENTADO EL MARGEN
-              textAlign: "center"
-            }}>Únete a nuestra plataforma de arte</p>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}> {/* 🔹 AUMENTADO GAP */}
+            {/* Rainbow top line on card */}
+            <div style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0,
+              height: 2,
+              background: `linear-gradient(90deg, ${C.orange}, ${C.pink}, ${C.purple}, ${C.gold})`,
+              borderRadius: "24px 24px 0 0",
+            }} />
+
+            <h2 style={{
+              fontSize: 26,
+              fontWeight: 800,
+              color: C.text,
+              margin: "8px 0 4px",
+              textAlign: "center",
+              fontFamily: "'Playfair Display', serif",
+            }}>
+              Crear cuenta
+            </h2>
+            <p style={{
+              fontSize: 13,
+              color: C.muted,
+              margin: "0 0 28px",
+              textAlign: "center",
+            }}>
+              Únete a nuestra plataforma de arte
+            </p>
+
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
               {/* Nombre */}
               <div>
                 <label style={labelStyle}><User size={14} /> Nombre completo</label>
-                <input 
-                  name="nombre" 
-                  value={formData.nombre} 
+                <input
+                  name="nombre"
+                  value={formData.nombre}
                   onChange={handleChange}
-                  placeholder="Ej: Juan Pérez" 
-                  disabled={isLoading} 
-                  required 
-                  style={inputStyle} 
+                  placeholder="Ej: Juan Pérez"
+                  disabled={isLoading}
+                  required
+                  style={inputStyle}
                 />
               </div>
 
               {/* Correo */}
               <div>
                 <label style={labelStyle}><Mail size={14} /> Correo electrónico</label>
-                <input 
-                  type="email" 
-                  name="correo" 
-                  value={formData.correo} 
+                <input
+                  type="email"
+                  name="correo"
+                  value={formData.correo}
                   onChange={handleChange}
-                  placeholder="tu@correo.com" 
-                  disabled={isLoading} 
-                  required 
-                  style={inputStyle} 
+                  placeholder="tu@correo.com"
+                  disabled={isLoading}
+                  required
+                  style={inputStyle}
                 />
               </div>
 
@@ -243,38 +458,38 @@ export default function Register() {
               <div>
                 <label style={labelStyle}><Lock size={14} /> Contraseña</label>
                 <div style={{ position: "relative" }}>
-                  <input 
-                    type={mostrarPass ? "text" : "password"} 
+                  <input
+                    type={mostrarPass ? "text" : "password"}
                     name="contrasena"
-                    value={formData.contrasena} 
+                    value={formData.contrasena}
                     onChange={handleChange}
-                    placeholder="••••••••" 
-                    disabled={isLoading} 
+                    placeholder="••••••••"
+                    disabled={isLoading}
                     required
-                    style={{ 
-                      ...inputStyle, 
+                    style={{
+                      ...inputStyle,
                       paddingRight: 44,
-                      border: mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)"
-                    }} 
+                      border: mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)",
+                    }}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setMostrarPass(p => !p)}
-                    style={{ 
-                      position: "absolute", 
-                      right: 12, 
-                      top: "50%", 
-                      transform: "translateY(-50%)", 
+                    style={{
+                      position: "absolute",
+                      right: 12,
+                      top: "50%",
+                      transform: "translateY(-50%)",
                       background: "rgba(0,0,0,0.3)",
-                      border: "none", 
+                      border: "none",
                       borderRadius: 6,
-                      cursor: "pointer", 
+                      cursor: "pointer",
                       color: mostrarPass ? C.orange : C.muted,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       padding: 6,
-                      transition: "all 0.2s ease"
+                      transition: "all 0.2s ease",
                     }}
                     onMouseEnter={e => {
                       e.currentTarget.style.background = "rgba(255,132,14,0.2)";
@@ -293,22 +508,48 @@ export default function Register() {
                 {formData.contrasena.length > 0 && (
                   <div style={{ marginTop: 10 }}>
                     <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                      {[1,2,3,4,5].map(i => (
-                        <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= metCount ? strengthColor : "rgba(255,255,255,0.08)", transition: "background .2s" }} />
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div
+                          key={i}
+                          style={{
+                            flex: 1, height: 4, borderRadius: 2,
+                            background: i <= metCount ? strengthColor : "rgba(255,255,255,0.08)",
+                            transition: "background .2s",
+                          }}
+                        />
                       ))}
                     </div>
-                    {strengthLabel && <span style={{ fontSize: 12, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</span>}
+                    {strengthLabel && (
+                      <span style={{ fontSize: 12, color: strengthColor, fontWeight: 600 }}>
+                        {strengthLabel}
+                      </span>
+                    )}
                   </div>
                 )}
 
                 {/* Requisitos */}
                 {formData.contrasena.length > 0 && (
-                  <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{
+                    marginTop: 12,
+                    padding: "14px 16px",
+                    borderRadius: 10,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}>
                     {passReqs.map((req, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 4 ? 8 : 0, fontSize: 12, color: req.met ? "#4ADE80" : C.muted, transition: "color .2s" }}>
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          marginBottom: i < 4 ? 8 : 0,
+                          fontSize: 12,
+                          color: req.met ? "#4ADE80" : C.muted,
+                          transition: "color .2s",
+                        }}
+                      >
                         {req.met
                           ? <CheckCircle2 size={13} color="#4ADE80" />
-                          : <AlertCircle size={13} color="rgba(255,255,255,0.3)" />
+                          : <AlertCircle  size={13} color="rgba(255,255,255,0.3)" />
                         }
                         {req.text}
                       </div>
@@ -321,7 +562,14 @@ export default function Register() {
               <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", marginTop: 4 }}>
                 <div
                   onClick={() => setAceptoTerminos(p => !p)}
-                  style={{ width: 20, height: 20, borderRadius: 5, border: `1.5px solid ${aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)"}`, background: aceptoTerminos ? C.orange : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2, transition: "all .15s", cursor: "pointer" }}
+                  style={{
+                    width: 20, height: 20, borderRadius: 5,
+                    border: `1.5px solid ${aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)"}`,
+                    background: aceptoTerminos ? C.orange : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, marginTop: 2,
+                    transition: "all .15s", cursor: "pointer",
+                  }}
                 >
                   {aceptoTerminos && <Check size={12} color="white" strokeWidth={3} />}
                 </div>
@@ -335,42 +583,49 @@ export default function Register() {
 
               {/* Mensaje */}
               {mensaje && (
-                <div style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
                   justifyContent: "center",
-                  gap: 8, 
-                  padding: "12px 16px", 
-                  borderRadius: 10, 
-                  fontSize: 13, 
-                  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", 
-                  border: `1px solid ${isError ? C.pink : "#4ADE80"}`, 
+                  gap: 8,
+                  padding: "12px 16px",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)",
+                  border: `1px solid ${isError ? C.pink : "#4ADE80"}`,
                   color: isError ? C.pink : "#4ADE80",
                   textAlign: "center",
-                  marginTop: 8
+                  marginTop: 8,
                 }}>
                   {isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
                   {mensaje}
                 </div>
               )}
 
-              {/* Botón */}
-              <button type="submit" disabled={isLoading || !aceptoTerminos}
+              {/* Botón submit */}
+              <button
+                type="submit"
+                disabled={isLoading || !aceptoTerminos}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   width: "100%", padding: "14px 20px", borderRadius: 12, marginTop: 8,
-                  background: aceptoTerminos ? "linear-gradient(135deg, #FF840E, #CC59AD)" : "rgba(255,255,255,0.06)",
-                  border: "none", color: aceptoTerminos ? "white" : "rgba(255,255,255,0.3)",
-                  fontSize: 15, fontWeight: 700, cursor: isLoading || !aceptoTerminos ? "not-allowed" : "pointer",
-                  fontFamily: "'Outfit', sans-serif",
+                  background: aceptoTerminos
+                    ? `linear-gradient(135deg, ${C.orange}, ${C.pink})`
+                    : "rgba(255,255,255,0.06)",
+                  border: "none",
+                  color: aceptoTerminos ? "white" : "rgba(255,255,255,0.3)",
+                  fontSize: 15, fontWeight: 700,
+                  cursor: isLoading || !aceptoTerminos ? "not-allowed" : "pointer",
+                  fontFamily: "'DM Sans', 'Outfit', sans-serif",
                   boxShadow: aceptoTerminos ? "0 8px 24px rgba(255,132,14,0.3)" : "none",
                   opacity: isLoading ? 0.8 : 1,
                   transition: "all .2s",
-                }}>
-                  {isLoading
-                    ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Registrando...</>
-                    : <><UserPlus size={16} /> {aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar"}</>
-                  }
+                }}
+              >
+                {isLoading
+                  ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Registrando...</>
+                  : <><UserPlus size={16} /> {aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar"}</>
+                }
               </button>
             </form>
 
@@ -383,27 +638,105 @@ export default function Register() {
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
               ¿Ya tienes cuenta?{" "}
-              <span onClick={() => navigate("/login")} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Iniciar sesión</span>
+              <span
+                onClick={() => navigate("/login")}
+                style={{ color: C.orange, cursor: "pointer", fontWeight: 700 }}
+              >
+                Iniciar sesión
+              </span>
             </p>
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
               ¿Eres artista?{" "}
-              <span onClick={() => navigate("/registro-artista")} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Regístrate aquí</span>
+              <span
+                onClick={() => navigate("/registro-artista")}
+                style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}
+              >
+                Regístrate aquí
+              </span>
             </p>
+          </div>
+
+          {/* ── Step journey indicator ──
+              STATIC: always shows paso 1 active since this is the Register page.
+              Connect to routing state if you want to highlight different steps on /verify-email-code, etc.
+          */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 0,
+            marginTop: 28,
+          }}>
+            {[
+              { num: "①", label: "Crea tu cuenta",     active: true  },
+              { num: "②", label: "Verifica tu correo", active: false },
+              { num: "③", label: "Explora el arte",    active: false },
+            ].map(({ num, label, active }, idx) => (
+              <div key={label} style={{ display: "flex", alignItems: "center" }}>
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                }}>
+                  <span style={{
+                    fontSize: 18,
+                    color: active ? C.orange : "rgba(255,255,255,0.2)",
+                    fontWeight: active ? 800 : 400,
+                    transition: "color .2s",
+                  }}>
+                    {num}
+                  </span>
+                  <span style={{
+                    fontSize: 11,
+                    color: active ? C.orange : "rgba(255,255,255,0.25)",
+                    fontWeight: active ? 700 : 400,
+                    whiteSpace: "nowrap",
+                  }}>
+                    {label}
+                  </span>
+                </div>
+                {idx < 2 && (
+                  <div style={{
+                    width: 36,
+                    height: 1,
+                    background: "rgba(255,255,255,0.12)",
+                    margin: "0 8px",
+                    marginBottom: 18,
+                  }} />
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Footer */}
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 16 }}>
-            © {currentYear} Altar Studio. Todos los derechos reservados.
+            © {currentYear} Nu-B Studio. Todos los derechos reservados.
           </p>
         </div>
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
-        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+
+        @keyframes floatA {
+          0%,100% { transform: translateY(0)    rotate(-5deg); }
+          50%     { transform: translateY(-14px) rotate(-3deg); }
+        }
+
+        @keyframes floatB {
+          0%,100% { transform: translateY(0)    rotate(4deg); }
+          50%     { transform: translateY(-10px) rotate(6deg); }
+        }
+
         @media (max-width: 768px) {
-          .reg-banner { display: none !important; }
-          .reg-form-panel { width: 100% !important; padding: 32px 20px !important; }
+          .reg-banner     { display: none !important; }
+          .reg-form-panel { flex: unset !important; width: 100% !important; padding: 32px 20px !important; }
           .reg-mobile-logo { display: flex !important; }
         }
       `}</style>
@@ -413,19 +746,21 @@ export default function Register() {
 
 const labelStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 6,
-  fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8,
+  fontSize: 13, fontWeight: 600,
+  color: "rgba(255,255,255,0.75)",
+  marginBottom: 8,
 };
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", 
+  width: "100%",
   boxSizing: "border-box",
-  padding: "12px 16px", 
+  padding: "12px 16px",
   borderRadius: 10,
   border: "1.5px solid rgba(255,255,255,0.2)",
   background: "rgba(0,0,0,0.3)",
-  color: "#ffffff", 
+  color: "#ffffff",
   fontSize: 14,
-  fontFamily: "'Outfit', sans-serif",
-  outline: "none", 
+  fontFamily: "'DM Sans', 'Outfit', sans-serif",
+  outline: "none",
   transition: "border .15s, background .15s",
 };
