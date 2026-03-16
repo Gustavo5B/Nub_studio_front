@@ -1,7 +1,7 @@
 // src/pages/public/Artistas.tsx
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search,  ImageIcon, Palette, Sparkles, X, ChevronRight, Users } from "lucide-react";
+import { Search, RefreshCw, ImageIcon, Palette, Sparkles, X, ChevronRight, Users } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 

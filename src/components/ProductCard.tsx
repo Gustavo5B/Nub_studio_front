@@ -1,5 +1,5 @@
-// src/components/ProductCard.tsx - VERSIÓN PREMIUM
-import { Eye, ShoppingCart, Heart, Star } from "lucide-react";
+// src/components/ProductCard.tsx
+import { Eye, Heart, Star } from "lucide-react";
 import "../styles/products.css";
 
 interface ProductCardProps {
@@ -9,88 +9,59 @@ interface ProductCardProps {
   price: number;
   image: string;
   available: boolean;
+  artistName?: string;
   onView?: (id: string) => void;
   onBuy?: (id: string) => void;
 }
 
 export default function ProductCard({
-  id,
-  category,
-  title,
-  price,
-  image,
-  available,
-  onView,
-  onBuy
+  id, category, title, price, image, available, artistName, onView, onBuy
 }: ProductCardProps) {
-  const formatPrice = (price: number): string => {
-    return `$${price.toLocaleString('es-MX')}`;
-  };
+  const fmt = (p: number) => `$${p.toLocaleString('es-MX')}`;
 
   return (
-    <article className="product-card-premium">
-      {/* Badge de disponibilidad */}
-      <div className="card-badge-wrapper">
-        <span className={`card-badge ${available ? 'available' : 'unavailable'}`}>
-          {available ? 'Disponible' : 'Agotado'}
-        </span>
-        <button className="card-wishlist">
-          <Heart size={18} />
+    <article className="mp-card" onClick={() => onView?.(id)}>
+      {/* Imagen */}
+      <div className="mp-img-wrap">
+        <img
+          src={image}
+          alt={title}
+          className="mp-img"
+          onError={e => { e.currentTarget.src = 'https://via.placeholder.com/300x300/1a1a2e/ff8a5b?text=Sin+imagen'; }}
+        />
+        <button className="mp-wish" onClick={e => e.stopPropagation()}>
+          <Heart size={16} />
         </button>
+        {!available && <div className="mp-sold">Agotado</div>}
+        <div className="mp-quick" onClick={e => { e.stopPropagation(); onView?.(id); }}>
+          <Eye size={14} /> Vista rápida
+        </div>
       </div>
 
-      {/* Imagen del producto */}
-      <div className="card-image-container">
-        <div className="card-glow"></div>
-        <img 
-          src={image} 
-          alt={title} 
-          className="card-image"
-          onError={(e) => {
-            e.currentTarget.src = 'https://via.placeholder.com/400x300/e6e2dc/ff6a00?text=Imagen+no+disponible';
-          }}
-        />
-        
-        {/* Overlay con acciones */}
-        <div className="card-overlay">
-          <button 
-            className="card-action-btn"
-            onClick={() => onView?.(id)}
-            aria-label="Ver detalles"
-          >
-            <Eye size={20} />
-            <span>Vista Rápida</span>
-          </button>
-        </div>
+      {/* Info */}
+      <div className="mp-body">
+        <span className="mp-cat">{category}</span>
+        <h3 className="mp-title">{title}</h3>
+        {artistName && <p className="mp-artist">por {artistName}</p>}
 
-        {/* Rating flotante */}
-        <div className="card-rating">
-          <Star size={14} fill="#ffd60a" color="#ffd60a" />
+        <div className="mp-rating">
+          <Star size={12} fill="#ffd60a" color="#ffd60a" />
+          <Star size={12} fill="#ffd60a" color="#ffd60a" />
+          <Star size={12} fill="#ffd60a" color="#ffd60a" />
+          <Star size={12} fill="#ffd60a" color="#ffd60a" />
+          <Star size={12} fill="#ffd60a" color="#ffd60a" />
           <span>4.8</span>
         </div>
-      </div>
 
-      {/* Información del producto */}
-      <div className="card-content">
-        <span className="card-category">{category}</span>
-        
-        <h3 className="card-title">{title}</h3>
-        
-        <div className="card-footer-premium">
-          <div className="card-price-section">
-            <span className="card-price">{formatPrice(price)}</span>
-            <span className="card-price-label">MXN</span>
-          </div>
-          
-          <button 
-            className="card-buy-btn"
-            onClick={() => onBuy?.(id)}
-            disabled={!available}
-          >
-            <ShoppingCart size={18} />
-            <span>Agregar</span>
-          </button>
-        </div>
+        <div className="mp-price">{fmt(price)} <span>MXN</span></div>
+
+        <button
+          className="mp-btn"
+          disabled={!available}
+          onClick={e => { e.stopPropagation(); onBuy?.(id); }}
+        >
+          {available ? 'Ver obra' : 'No disponible'}
+        </button>
       </div>
     </article>
   );

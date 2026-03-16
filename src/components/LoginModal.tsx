@@ -133,10 +133,10 @@ function ModalContent({ isOpen, onClose }: LoginModalProps) {
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "20px",
-        background: visible ? "rgba(8, 5, 18, 0)" : "rgba(8, 5, 18, 0)",
-        backdropFilter: visible ? "blur(0px)" : "blur(0px)",
+        background: visible ? "rgba(8, 5, 18, 0.85)" : "rgba(8, 5, 18, 0)",  // 🔹 Fondo oscuro visible
+        backdropFilter: visible ? "blur(6px)" : "blur(0px)",  // 🔹 Desenfoque añadido
         opacity: visible ? 1 : 0,
-        transition: "opacity 0.3s ease",
+        transition: "background 0.3s ease, backdrop-filter 0.3s ease, opacity 0.3s ease",
       }}
     >
       {/* Card: fade + zoom desde el centro */}

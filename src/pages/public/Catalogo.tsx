@@ -242,7 +242,7 @@ function FeaturedCard({ obra, navigate }: { obra: Obra; navigate: ReturnType<typ
   const color  = catColorByName(obra.categoria_nombre);
 
   return (
-    <div
+    <article
       onClick={() => navigate(`/obras/${obra.slug}`)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -348,7 +348,7 @@ function FeaturedCard({ obra, navigate }: { obra: Obra; navigate: ReturnType<typ
           <Eye size={12} strokeWidth={1.8} /> {obra.vistas || 0} visualizaciones
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -357,11 +357,12 @@ export default function Catalogo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [obras,      setObras]      = useState<Obra[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [total,      setTotal]      = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [obras,       setObras]       = useState<Obra[]>([]);
+  const [categorias,  setCategorias]  = useState<Categoria[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [total,       setTotal]       = useState(0);
+  const [totalPages,  setTotalPages]  = useState(1);
+  const [showFiltros, setShowFiltros] = useState(false);
 
   const [search,    setSearch]    = useState(searchParams.get("q") || "");
   const [catActiva, setCatActiva] = useState<number | null>(

@@ -1,4 +1,4 @@
-// src/components/FeaturedWorks.tsx - CONECTADO A API
+// src/components/FeaturedWorks.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
@@ -41,7 +41,7 @@ export default function FeaturedWorks() {
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ limit: "6", ordenar: "recientes" });
+    const params = new URLSearchParams({ limit: "8", ordenar: "recientes" });
     if (catActiva) params.set("categoria", String(catActiva));
 
     fetch(`${API_URL}/api/obras?${params}`)
@@ -56,19 +56,15 @@ export default function FeaturedWorks() {
     if (obra?.slug) navigate(`/obras/${obra.slug}`);
   };
 
-  const handleBuy = (id: string) => {
-    const obra = obras.find(o => String(o.id_obra) === id);
-    if (obra?.slug) navigate(`/obras/${obra.slug}`);
-  };
-
   return (
     <section className="featured-section-premium">
       <div className="section-background">
-        <div className="bg-gradient bg-gradient-1"></div>
-        <div className="bg-gradient bg-gradient-2"></div>
+        <div className="bg-gradient bg-gradient-1" />
+        <div className="bg-gradient bg-gradient-2" />
       </div>
 
       <div className="container-premium">
+        {/* Header */}
         <div className="section-header-premium">
           <div className="header-top">
             <div className="header-badge">
@@ -109,17 +105,16 @@ export default function FeaturedWorks() {
           </div>
         </div>
 
+        {/* Grid */}
         {loading ? (
-          <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0", gap:12, color:"#9CA3AF" }}>
-            <RefreshCw size={20} style={{ animation:"spin 1s linear infinite" }} />
-            <span style={{ fontSize:15 }}>Cargando obras…</span>
+          <div className="mp-loading">
+            <RefreshCw size={20} className="mp-spin" />
+            <span>Cargando obras…</span>
           </div>
         ) : obras.length === 0 ? (
-          <div style={{ textAlign:"center", padding:"60px 0", color:"#9CA3AF" }}>
-            <p style={{ fontSize:15 }}>No hay obras en esta categoría aún.</p>
-          </div>
+          <div className="mp-empty">No hay obras en esta categoría aún.</div>
         ) : (
-          <div className="products-grid-premium">
+          <div className="mp-grid">
             {obras.map(obra => (
               <ProductCard
                 key={obra.id_obra}
@@ -129,13 +124,15 @@ export default function FeaturedWorks() {
                 price={Number(obra.precio_minimo || obra.precio_base) || 0}
                 image={obra.imagen_principal || ""}
                 available={obra.estado === "publicada"}
+                artistName={obra.artista_alias || obra.artista_nombre}
                 onView={handleView}
-                onBuy={handleBuy}
+                onBuy={handleView}
               />
             ))}
           </div>
         )}
 
+        {/* CTA */}
         <div className="section-cta">
           <TrendingUp size={24} />
           <h3>¿Buscas algo específico?</h3>
@@ -145,8 +142,6 @@ export default function FeaturedWorks() {
           </button>
         </div>
       </div>
-
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </section>
   );
 }
