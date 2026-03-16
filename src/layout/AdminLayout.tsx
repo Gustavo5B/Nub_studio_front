@@ -18,7 +18,7 @@ export default function AdminLayout() {
       display: "flex",
       minHeight: "100vh",
       background: "#0C0812",
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Outfit', sans-serif",
       color: "#FFF8EE",
     }}>
       <AdminSidebar />
@@ -26,7 +26,6 @@ export default function AdminLayout() {
         <Outlet />
       </div>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes modalIn { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }

@@ -1,0 +1,121 @@
+<h2>¿Cómo quieres organizar el AdminDashboard?</h2>
+<p class="subtitle">Las 3 opciones mantienen todo lo funcional actual. Solo cambia la estructura visual.</p>
+
+<div class="cards">
+
+  <!-- OPCION A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#0a071a;">
+      <div style="font-family:monospace;font-size:10px;color:#aaa;line-height:1.9;">
+        <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FF840E;font-weight:bold;">📊 Topbar — búsqueda · refresh · bell · Revisar pendientes</div>
+        <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FFF8EE;">👋 WelcomeBanner — saludo + fecha</div>
+        <div style="background:#1a1030;border:1px dashed #FFC11040;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FFC110;">⚠️ Alerta pendientes (si hay obras por revisar)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px;">
+          <div style="background:#0d1a10;border:1px solid #22C97A30;border-radius:4px;padding:5px;text-align:center;color:#22C97A;font-size:9px;">Total<br/>Obras</div>
+          <div style="background:#0d1a10;border:1px solid #22C97A30;border-radius:4px;padding:5px;text-align:center;color:#22C97A;font-size:9px;">Publi-<br/>cadas</div>
+          <div style="background:#1a1500;border:1px solid #FFC11030;border-radius:4px;padding:5px;text-align:center;color:#FFC110;font-size:9px;">Pen-<br/>dientes</div>
+          <div style="background:#1a0010;border:1px solid #CC59AD30;border-radius:4px;padding:5px;text-align:center;color:#CC59AD;font-size:9px;">Recha-<br/>zadas</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:4px;">
+          <div style="background:#1a0d00;border:1px solid #FF840E25;border-radius:4px;padding:5px;text-align:center;color:#FF840E;font-size:8px;">➕ Nueva<br/>Obra</div>
+          <div style="background:#1a1500;border:1px solid #FFC11025;border-radius:4px;padding:5px;text-align:center;color:#FFC110;font-size:8px;">⏱ Pen-<br/>dientes</div>
+          <div style="background:#1a001a;border:1px solid #CC59AD25;border-radius:4px;padding:5px;text-align:center;color:#CC59AD;font-size:8px;">👥 Artis-<br/>tas</div>
+          <div style="background:#00101a;border:1px solid #79AAF525;border-radius:4px;padding:5px;text-align:center;color:#79AAF5;font-size:8px;">📊 Re-<br/>portes</div>
+          <div style="background:#10001a;border:1px solid #8D4CCD25;border-radius:4px;padding:5px;text-align:center;color:#8D4CCD;font-size:8px;">📤 Im-<br/>portar</div>
+          <div style="background:#001a0d;border:1px solid #22C97A25;border-radius:4px;padding:5px;text-align:center;color:#22C97A;font-size:8px;">📈 Esta-<br/>dísticas</div>
+        </div>
+        <div style="display:grid;grid-template-columns:45% 55%;gap:4px;margin-bottom:4px;">
+          <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:4px;padding:6px;color:#D8CABC;font-size:9px;text-align:center;">📋 Obras<br/>Recientes<br/><span style="color:#aaa;font-size:8px;">(datos reales de API)</span></div>
+          <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:4px;padding:6px;color:#D8CABC;font-size:9px;text-align:center;">📈 Gráfica<br/>Actividad<br/><span style="color:#aaa;font-size:8px;">(datos estáticos demo)</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
+          <div style="background:#1a001a;border:1px solid #CC59AD25;border-radius:4px;padding:5px;text-align:center;color:#CC59AD;font-size:9px;">Artistas</div>
+          <div style="background:#00101a;border:1px solid #79AAF525;border-radius:4px;padding:5px;text-align:center;color:#79AAF5;font-size:9px;">Categorías</div>
+          <div style="background:#10001a;border:1px solid #8D4CCD25;border-radius:4px;padding:5px;text-align:center;color:#8D4CCD;font-size:9px;">Visitas</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Opción A — Métricas arriba, acciones en medio</h3>
+      <p>Las 4 KPIs de obras aparecen primero (lo más importante). Luego las acciones rápidas. Abajo la gráfica + obras recientes. Los stats de plataforma al final.</p>
+    </div>
+  </div>
+
+  <!-- OPCION B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#0a071a;">
+      <div style="font-family:monospace;font-size:10px;color:#aaa;line-height:1.9;">
+        <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FF840E;font-weight:bold;">📊 Topbar</div>
+        <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FFF8EE;">👋 WelcomeBanner</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:4px;">
+          <div style="background:#1a0d00;border:1px solid #FF840E30;border-radius:4px;padding:6px;text-align:center;color:#FF840E;font-size:8px;">➕ Nueva<br/>Obra</div>
+          <div style="background:#1a1500;border:1px solid #FFC11030;border-radius:4px;padding:6px;text-align:center;color:#FFC110;font-size:8px;">⏱ Pen-<br/>dientes</div>
+          <div style="background:#1a001a;border:1px solid #CC59AD30;border-radius:4px;padding:6px;text-align:center;color:#CC59AD;font-size:8px;">👥 Artis-<br/>tas</div>
+          <div style="background:#00101a;border:1px solid #79AAF530;border-radius:4px;padding:6px;text-align:center;color:#79AAF5;font-size:8px;">📊 Re-<br/>portes</div>
+          <div style="background:#10001a;border:1px solid #8D4CCD30;border-radius:4px;padding:6px;text-align:center;color:#8D4CCD;font-size:8px;">📤 Im-<br/>portar</div>
+          <div style="background:#001a0d;border:1px solid #22C97A30;border-radius:4px;padding:6px;text-align:center;color:#22C97A;font-size:8px;">📈 Esta-<br/>dísticas</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px;">
+          <div style="background:#0d1a10;border:1px solid #22C97A30;border-radius:4px;padding:5px;text-align:center;color:#22C97A;font-size:9px;">Total Obras</div>
+          <div style="background:#0d1a10;border:1px solid #22C97A30;border-radius:4px;padding:5px;text-align:center;color:#22C97A;font-size:9px;">Publicadas</div>
+          <div style="background:#1a1500;border:1px solid #FFC11030;border-radius:4px;padding:5px;text-align:center;color:#FFC110;font-size:9px;">⚠️ Pendientes</div>
+          <div style="background:#1a0010;border:1px solid #CC59AD30;border-radius:4px;padding:5px;text-align:center;color:#CC59AD;font-size:9px;">Rechazadas</div>
+        </div>
+        <div style="display:grid;grid-template-columns:55% 45%;gap:4px;margin-bottom:4px;">
+          <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:4px;padding:6px;color:#D8CABC;font-size:9px;text-align:center;">📈 Gráfica (más espacio)</div>
+          <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:4px;padding:6px;color:#D8CABC;font-size:9px;text-align:center;">📋 Obras Recientes</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
+          <div style="background:#1a001a;border:1px solid #CC59AD25;border-radius:4px;padding:5px;text-align:center;color:#CC59AD;font-size:9px;">Artistas</div>
+          <div style="background:#00101a;border:1px solid #79AAF525;border-radius:4px;padding:5px;text-align:center;color:#79AAF5;font-size:9px;">Categorías</div>
+          <div style="background:#10001a;border:1px solid #8D4CCD25;border-radius:4px;padding:5px;text-align:center;color:#8D4CCD;font-size:9px;">Visitas</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Opción B — Acciones arriba, métricas después</h3>
+      <p>Las acciones rápidas son lo primero después del saludo — el admin entra y de inmediato ve qué puede hacer. Las métricas son secundarias. La gráfica tiene más espacio (55%).</p>
+    </div>
+  </div>
+
+  <!-- OPCION C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#0a071a;">
+      <div style="font-family:monospace;font-size:10px;color:#aaa;line-height:1.9;">
+        <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FF840E;font-weight:bold;">📊 Topbar</div>
+        <div style="display:grid;grid-template-columns:60% 40%;gap:6px;">
+          <div>
+            <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:6px;padding:6px 10px;margin-bottom:4px;color:#FFF8EE;font-size:9px;">👋 WelcomeBanner</div>
+            <div style="background:#1a1030;border:1px dashed #FFC11040;border-radius:6px;padding:5px 8px;margin-bottom:4px;color:#FFC110;font-size:9px;">⚠️ Alerta pendientes</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:4px;">
+              <div style="background:#0d1a10;border:1px solid #FF840E25;border-radius:4px;padding:5px;color:#FF840E;font-size:8px;">Total Obras</div>
+              <div style="background:#0d1a10;border:1px solid #22C97A25;border-radius:4px;padding:5px;color:#22C97A;font-size:8px;">Publicadas</div>
+              <div style="background:#1a1500;border:1px solid #FFC11025;border-radius:4px;padding:5px;color:#FFC110;font-size:8px;">Pendientes</div>
+              <div style="background:#1a0010;border:1px solid #CC59AD25;border-radius:4px;padding:5px;color:#CC59AD;font-size:8px;">Rechazadas</div>
+            </div>
+            <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:4px;padding:6px;color:#D8CABC;font-size:9px;text-align:center;height:60px;display:flex;align-items:center;justify-content:center;">📈 Gráfica Actividad</div>
+          </div>
+          <div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:4px;">
+              <div style="background:#1a0d00;border:1px solid #FF840E25;border-radius:4px;padding:5px;text-align:center;color:#FF840E;font-size:8px;">➕<br/>Nueva</div>
+              <div style="background:#1a1500;border:1px solid #FFC11025;border-radius:4px;padding:5px;text-align:center;color:#FFC110;font-size:8px;">⏱<br/>Revisar</div>
+              <div style="background:#1a001a;border:1px solid #CC59AD25;border-radius:4px;padding:5px;text-align:center;color:#CC59AD;font-size:8px;">👥<br/>Artistas</div>
+              <div style="background:#00101a;border:1px solid #79AAF525;border-radius:4px;padding:5px;text-align:center;color:#79AAF5;font-size:8px;">📊<br/>Reportes</div>
+            </div>
+            <div style="background:#1a1030;border:1px solid #2a1a3a;border-radius:4px;padding:6px;color:#D8CABC;font-size:9px;text-align:center;flex:1;height:80px;display:flex;align-items:center;justify-content:center;">📋 Obras Recientes<br/><span style="font-size:8px;color:#aaa;">(scrolleable)</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-top:4px;">
+              <div style="background:#1a001a;border:1px solid #CC59AD25;border-radius:4px;padding:4px;text-align:center;color:#CC59AD;font-size:8px;">Artistas</div>
+              <div style="background:#00101a;border:1px solid #79AAF525;border-radius:4px;padding:4px;text-align:center;color:#79AAF5;font-size:8px;">Categ.</div>
+              <div style="background:#10001a;border:1px solid #8D4CCD25;border-radius:4px;padding:4px;text-align:center;color:#8D4CCD;font-size:8px;">Visitas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Opción C — Layout dos columnas completo</h3>
+      <p>Todo en dos columnas desde el inicio. Izquierda: saludo + métricas + gráfica. Derecha: acciones rápidas + obras recientes + stats plataforma. Más compacto, aprovecha el espacio horizontal.</p>
+    </div>
+  </div>
+
+</div>

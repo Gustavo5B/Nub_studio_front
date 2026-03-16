@@ -6,7 +6,8 @@ import {
   Search, RefreshCw, X, Eye, Edit2, Trash2,
   CheckCircle, Clock, XCircle, UserPlus, Phone, Mail,
   ChevronLeft, ChevronRight, AlertTriangle, Image as ImageIcon,
-  Star, Check, Ban, Bell, ShieldOff, UserCheck,
+  Star, Check, Ban, Bell, ShieldOff, UserCheck, Users,
+  Sparkles,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 
@@ -22,84 +23,95 @@ const C = {
   creamSub: "#D8CABC",
   creamMut: "rgba(255,232,200,0.35)",
   bgDeep:   "#070510",
+  bg:       "#0C0812",
   card:     "rgba(18,13,30,0.95)",
+  cardHov:  "rgba(22,16,36,0.98)",
   border:   "rgba(255,200,150,0.08)",
   borderBr: "rgba(118,78,49,0.20)",
   borderHi: "rgba(255,200,150,0.18)",
-  rowHover: "rgba(255,232,200,0.03)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Cormorant Garamond', serif";
+const FB = "'Outfit', sans-serif";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ArtistaItem {
-  id_artista:          number;
-  nombre_completo:     string;
-  nombre_artistico?:   string;
-  foto_perfil?:        string;
-  correo?:             string;
-  telefono?:           string;
-  matricula?:          string;
-  estado:              string;
-  categoria_nombre?:   string;
+  id_artista:           number;
+  nombre_completo:      string;
+  nombre_artistico?:    string;
+  foto_perfil?:         string;
+  correo?:              string;
+  telefono?:            string;
+  matricula?:           string;
+  estado:               string;
+  categoria_nombre?:    string;
   porcentaje_comision?: number;
-  total_obras?:        number;
+  total_obras?:         number;
 }
 
-interface EstadoConfig {
-  label: string;
-  color: string;
-  icon:  LucideIcon;
-}
-
-interface OpcionEstado {
-  estado: string;
-  label:  string;
-  color:  string;
-  icon:   LucideIcon;
-  fill?:  boolean;
-}
+interface EstadoConfig { label: string; color: string; icon: LucideIcon }
+interface OpcionEstado { estado: string; label: string; color: string; icon: LucideIcon; fill?: boolean }
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const ESTADOS: Record<string, EstadoConfig> = {
-  activo:     { label: "Activo",     color: C.green,   icon: CheckCircle },
-  pendiente:  { label: "Pendiente",  color: C.gold,    icon: Clock       },
-  inactivo:   { label: "Inactivo",   color: "#7B8FA1", icon: XCircle     },
-  rechazado:  { label: "Rechazado",  color: C.pink,    icon: Ban         },
-  suspendido: { label: "Suspendido", color: C.magenta, icon: XCircle     },
+  activo:     { label: "Activo",     color: C.green,    icon: CheckCircle },
+  pendiente:  { label: "Pendiente",  color: C.gold,     icon: Clock       },
+  inactivo:   { label: "Inactivo",   color: "#7B8FA1",  icon: XCircle     },
+  rechazado:  { label: "Rechazado",  color: C.pink,     icon: Ban         },
+  suspendido: { label: "Suspendido", color: C.magenta,  icon: XCircle     },
 };
 
 const OPCIONES_POR_ESTADO: Record<string, OpcionEstado[]> = {
   pendiente:  [
-    { estado: "activo",     label: "Aprobar",              color: C.green,   icon: Check,     fill: true },
-    { estado: "rechazado",  label: "Rechazar",             color: C.pink,    icon: Ban                   },
+    { estado: "activo",    label: "Aprobar",              color: C.green,   icon: Check,     fill: true },
+    { estado: "rechazado", label: "Rechazar",             color: C.pink,    icon: Ban                   },
   ],
-  activo:     [
+  activo: [
     { estado: "inactivo",   label: "Desactivar",           color: "#7B8FA1", icon: XCircle               },
     { estado: "suspendido", label: "Suspender",            color: C.magenta, icon: ShieldOff             },
     { estado: "rechazado",  label: "Rechazar",             color: C.pink,    icon: Ban                   },
   ],
-  inactivo:   [
-    { estado: "activo",     label: "Reactivar",            color: C.green,   icon: UserCheck, fill: true },
-    { estado: "rechazado",  label: "Rechazar",             color: C.pink,    icon: Ban                   },
+  inactivo: [
+    { estado: "activo",    label: "Reactivar",            color: C.green,   icon: UserCheck, fill: true },
+    { estado: "rechazado", label: "Rechazar",             color: C.pink,    icon: Ban                   },
   ],
-  rechazado:  [
-    { estado: "pendiente",  label: "Volver a revisar",     color: C.gold,    icon: Clock                 },
-    { estado: "activo",     label: "Aprobar directamente", color: C.green,   icon: Check,     fill: true },
+  rechazado: [
+    { estado: "pendiente", label: "Volver a revisar",     color: C.gold,    icon: Clock                 },
+    { estado: "activo",    label: "Aprobar directamente", color: C.green,   icon: Check,     fill: true },
   ],
   suspendido: [
-    { estado: "activo",     label: "Reactivar",            color: C.green,   icon: UserCheck, fill: true },
-    { estado: "inactivo",   label: "Desactivar",           color: "#7B8FA1", icon: XCircle               },
+    { estado: "activo",   label: "Reactivar",             color: C.green,   icon: UserCheck, fill: true },
+    { estado: "inactivo", label: "Desactivar",            color: "#7B8FA1", icon: XCircle               },
   ],
 };
 
+// ── Skeleton Card ─────────────────────────────────────────────────────────────
+function CardSkeleton() {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
+      <div style={{ height: 72, background: "rgba(255,232,200,0.04)", position: "relative" }}>
+        <div style={{ position: "absolute", bottom: -24, left: "50%", transform: "translateX(-50%)", width: 48, height: 48, borderRadius: "50%", background: "rgba(255,232,200,0.06)", border: `2px solid rgba(255,232,200,0.06)` }} />
+      </div>
+      <div style={{ padding: "36px 18px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <div style={{ width: "55%", height: 16, borderRadius: 6, background: "rgba(255,232,200,0.06)", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,transparent,rgba(255,200,150,0.08),transparent)", animation: "shimmer 1.5s infinite" }} />
+        </div>
+        <div style={{ width: "35%", height: 12, borderRadius: 6, background: "rgba(255,232,200,0.04)" }} />
+        <div style={{ width: "45%", height: 22, borderRadius: 100, background: "rgba(255,232,200,0.04)", marginTop: 4 }} />
+        <div style={{ height: 1, width: "100%", background: C.border, margin: "8px 0" }} />
+        <div style={{ display: "flex", gap: 8, width: "100%", justifyContent: "center" }}>
+          <div style={{ width: 80, height: 28, borderRadius: 8, background: "rgba(255,232,200,0.04)" }} />
+          <div style={{ width: 80, height: 28, borderRadius: 8, background: "rgba(255,232,200,0.04)" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Modal Eliminar ────────────────────────────────────────────────────────────
 function ModalEliminar({ artista, onConfirm, onCancel }: {
-  artista:   ArtistaItem;
-  onConfirm: () => void;
-  onCancel:  () => void;
+  artista: ArtistaItem; onConfirm: () => void; onCancel: () => void;
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(7,5,16,0.85)", backdropFilter: "blur(10px)" }}>
@@ -134,12 +146,10 @@ function ModalEliminar({ artista, onConfirm, onCancel }: {
 
 // ── Modal Estado ──────────────────────────────────────────────────────────────
 function ModalEstado({ artista, onConfirm, onCancel }: {
-  artista:   ArtistaItem;
-  onConfirm: (estado: string, motivo?: string) => void;
-  onCancel:  () => void;
+  artista: ArtistaItem; onConfirm: (estado: string, motivo?: string) => void; onCancel: () => void;
 }) {
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
-  const [motivo,       setMotivo]       = useState("");
+  const [motivo, setMotivo] = useState("");
 
   const estadoActual     = ESTADOS[artista.estado] || ESTADOS.pendiente;
   const EstadoActualIcon = estadoActual.icon;
@@ -255,12 +265,139 @@ function ModalEstado({ artista, onConfirm, onCancel }: {
   );
 }
 
+// ── Artista Card ──────────────────────────────────────────────────────────────
+function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar, onCambiarEstado }: {
+  artista: ArtistaItem;
+  avatarColor: string;
+  onVerDetalle: () => void;
+  onEditar: () => void;
+  onEliminar: () => void;
+  onCambiarEstado: () => void;
+}) {
+  const estado     = ESTADOS[artista.estado] || ESTADOS.pendiente;
+  const EstadoIcon = estado.icon;
+  const esPend     = artista.estado === "pendiente";
+  const initials   = artista.nombre_completo?.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase() || "?";
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${esPend ? "rgba(255,193,16,0.25)" : C.border}`, borderRadius: 16, overflow: "hidden", transition: "all .2s", cursor: "default", display: "flex", flexDirection: "column", position: "relative" }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = esPend ? "rgba(255,193,16,0.45)" : `${avatarColor}40`; el.style.transform = "translateY(-2px)"; el.style.boxShadow = `0 12px 32px rgba(0,0,0,0.4)`; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = esPend ? "rgba(255,193,16,0.25)" : C.border; el.style.transform = "translateY(0)"; el.style.boxShadow = "none"; }}>
+
+      {/* Pending ribbon */}
+      {esPend && (
+        <div style={{ position: "absolute", top: 12, right: -28, background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, color: "#000", fontSize: 9, fontWeight: 900, padding: "3px 36px", transform: "rotate(45deg)", letterSpacing: "0.08em", zIndex: 2, fontFamily: FB }}>
+          PENDIENTE
+        </div>
+      )}
+
+      {/* Header gradient */}
+      <div style={{ height: 68, background: `linear-gradient(135deg, ${avatarColor}22 0%, ${C.purple}18 50%, ${C.pink}14 100%)`, position: "relative", borderBottom: `1px solid ${avatarColor}18` }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 30% 50%, ${avatarColor}15, transparent 70%)` }} />
+        {/* Avatar */}
+        <div style={{ position: "absolute", bottom: -22, left: "50%", transform: "translateX(-50%)", width: 52, height: 52, borderRadius: "50%", border: `2.5px solid ${esPend ? C.gold : avatarColor}50`, background: artista.foto_perfil ? "transparent" : `linear-gradient(135deg, ${avatarColor}28, ${C.purple}22)`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px rgba(0,0,0,0.5)`, zIndex: 1 }}>
+          {artista.foto_perfil
+            ? <img src={artista.foto_perfil} alt={artista.nombre_completo} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            : <span style={{ fontSize: 18, fontWeight: 900, color: avatarColor, fontFamily: FB }}>{initials}</span>
+          }
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: "32px 16px 16px", display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+        {/* Name */}
+        <div style={{ fontSize: 15, fontWeight: 800, color: C.cream, fontFamily: FD, textAlign: "center", lineHeight: 1.2, marginBottom: 2 }}>
+          {artista.nombre_completo}
+        </div>
+        {artista.nombre_artistico && (
+          <div style={{ fontSize: 11, color: C.gold, display: "flex", alignItems: "center", gap: 3, marginBottom: 4, fontFamily: FB }}>
+            <Sparkles size={9} strokeWidth={2} color={C.gold} /> {artista.nombre_artistico}
+          </div>
+        )}
+        {artista.matricula && (
+          <div style={{ fontSize: 10, color: C.creamMut, fontFamily: FB, marginBottom: 4 }}>{artista.matricula}</div>
+        )}
+
+        {/* Categoria */}
+        {artista.categoria_nombre
+          ? <span style={{ fontSize: 10.5, padding: "3px 10px", borderRadius: 100, background: "rgba(121,170,245,0.10)", border: `1px solid rgba(121,170,245,0.22)`, color: C.blue, fontWeight: 700, fontFamily: FB, marginBottom: 10 }}>{artista.categoria_nombre}</span>
+          : <div style={{ marginBottom: 10 }} />
+        }
+
+        {/* Stats row */}
+        <div style={{ display: "flex", gap: 6, width: "100%", marginBottom: 12 }}>
+          <div style={{ flex: 1, background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.16)`, borderRadius: 9, padding: "7px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: C.orange, fontFamily: FD, lineHeight: 1 }}>{artista.porcentaje_comision ?? 15}%</div>
+            <div style={{ fontSize: 9.5, color: C.creamMut, fontFamily: FB, marginTop: 2 }}>Comisión</div>
+          </div>
+          <div style={{ flex: 1, background: `${avatarColor}08`, border: `1px solid ${avatarColor}18`, borderRadius: 9, padding: "7px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: avatarColor, fontFamily: FD, lineHeight: 1 }}>{artista.total_obras ?? 0}</div>
+            <div style={{ fontSize: 9.5, color: C.creamMut, fontFamily: FB, marginTop: 2 }}>Obras</div>
+          </div>
+        </div>
+
+        {/* Contact */}
+        {(artista.correo || artista.telefono) && (
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 3, marginBottom: 12, padding: "8px 10px", background: "rgba(255,232,200,0.03)", borderRadius: 9, border: `1px solid ${C.border}` }}>
+            {artista.correo && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: C.creamSub, fontFamily: FB }}>
+                <Mail size={9} strokeWidth={1.8} color={C.blue} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{artista.correo}</span>
+              </div>
+            )}
+            {artista.telefono && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: C.creamSub, fontFamily: FB }}>
+                <Phone size={9} strokeWidth={1.8} color={C.purple} />{artista.telefono}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ height: 1, width: "100%", background: C.border, marginBottom: 12 }} />
+
+        {/* Footer: estado + acciones */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 8 }}>
+          <button onClick={onCambiarEstado}
+            style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 100, background: `${estado.color}12`, border: `1px solid ${estado.color}30`, color: estado.color, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FB, transition: "background .15s" }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${estado.color}24`}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${estado.color}12`}>
+            <EstadoIcon size={10} strokeWidth={2.5} />{estado.label}
+          </button>
+
+          <div style={{ display: "flex", gap: 4 }}>
+            {esPend && (
+              <button onClick={onCambiarEstado} title="Revisar solicitud"
+                style={{ display: "flex", alignItems: "center", gap: 3, padding: "5px 8px", borderRadius: 7, background: "rgba(255,193,16,0.14)", border: `1px solid rgba(255,193,16,0.32)`, color: C.gold, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: FB, transition: "background .15s" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,193,16,0.28)"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,193,16,0.14)"}>
+                <Bell size={9} /> Revisar
+              </button>
+            )}
+            {([
+              { icon: Eye,    color: C.purple, action: onVerDetalle, title: "Ver detalle" },
+              { icon: Edit2,  color: C.blue,   action: onEditar,     title: "Editar"      },
+              { icon: Trash2, color: C.pink,   action: onEliminar,   title: "Eliminar"    },
+            ] as const).map(({ icon: Icon, color, action, title }) => (
+              <button key={title} onClick={action} title={title}
+                style={{ width: 30, height: 30, borderRadius: 8, background: `${color}10`, border: `1px solid ${color}22`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all .15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${color}24`; (e.currentTarget as HTMLElement).style.borderColor = `${color}48`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${color}10`; (e.currentTarget as HTMLElement).style.borderColor = `${color}22`; }}>
+                <Icon size={12} color={color} strokeWidth={2} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
-// ✅ Sin sidebar propio — AdminLayout lo provee via <Outlet />
 export default function ListaArtistas() {
   const navigate = useNavigate();
 
   const [artistas,      setArtistas]      = useState<ArtistaItem[]>([]);
+  const [allArtistas,   setAllArtistas]   = useState<ArtistaItem[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [search,        setSearch]        = useState("");
   const [filtroEstado,  setFiltroEstado]  = useState("todos");
@@ -274,12 +411,13 @@ export default function ListaArtistas() {
   const cargarArtistas = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${API_URL}/api/artistas?page=${page}&limit=10`, {
+      const res  = await fetch(`${API_URL}/api/artistas?page=${page}&limit=12`, {
         headers: { Authorization: `Bearer ${authService.getToken()}` },
       });
       const json = await res.json();
       if (json.success) {
         let data: ArtistaItem[] = json.data || [];
+        setAllArtistas(data);
         setPendientes(data.filter(a => a.estado === "pendiente").length);
         if (filtroEstado !== "todos") data = data.filter(a => a.estado === filtroEstado);
         if (search.trim()) {
@@ -325,34 +463,40 @@ export default function ListaArtistas() {
     } catch (err) { console.error(err); }
   };
 
-  const getInitials    = (nombre: string) => nombre?.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase() || "?";
-  const avatarColors   = [C.orange, C.blue, C.pink, C.purple, C.gold];
+  const avatarColors   = [C.orange, C.blue, C.pink, C.purple, C.gold, C.green];
   const getAvatarColor = (id: number) => avatarColors[id % avatarColors.length];
+
+  const countByEstado = (e: string) => allArtistas.filter(a => a.estado === e).length;
+
+  const STATS = [
+    { label: "Total artistas", value: total,                icon: Users,       color: C.orange  },
+    { label: "Activos",        value: countByEstado("activo"),    icon: CheckCircle, color: C.green   },
+    { label: "Pendientes",     value: pendientes,           icon: Clock,       color: C.gold    },
+    { label: "Inactivos",      value: countByEstado("inactivo") + countByEstado("rechazado"), icon: XCircle, color: "#7B8FA1" },
+  ];
 
   const FILTROS = [
     { key: "todos",     label: "Todos",      color: C.orange  },
-    { key: "pendiente", label: "Pendientes", color: C.gold    },
     { key: "activo",    label: "Activos",    color: C.green   },
+    { key: "pendiente", label: "Pendientes", color: C.gold    },
     { key: "inactivo",  label: "Inactivos",  color: "#7B8FA1" },
     { key: "rechazado", label: "Rechazados", color: C.pink    },
   ];
 
   return (
     <>
-      {modalEliminar && (
-        <ModalEliminar
-          artista={modalEliminar}
-          onConfirm={handleEliminar}
-          onCancel={() => setModalEliminar(null)}
-        />
-      )}
-      {modalEstado && (
-        <ModalEstado
-          artista={modalEstado}
-          onConfirm={handleCambiarEstado}
-          onCancel={() => setModalEstado(null)}
-        />
-      )}
+      <style>{`
+        @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+        * { box-sizing: border-box; }
+        input::placeholder { color: rgba(255,232,200,0.20); }
+        textarea::placeholder { color: rgba(255,232,200,0.20); }
+      `}</style>
+
+      {modalEliminar && <ModalEliminar artista={modalEliminar} onConfirm={handleEliminar} onCancel={() => setModalEliminar(null)} />}
+      {modalEstado   && <ModalEstado   artista={modalEstado}   onConfirm={handleCambiarEstado} onCancel={() => setModalEstado(null)} />}
 
       {/* Topbar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", height: 56, background: C.bgDeep, borderBottom: `1px solid ${C.borderBr}`, position: "sticky", top: 0, zIndex: 30, fontFamily: FB }}>
@@ -375,23 +519,23 @@ export default function ListaArtistas() {
             <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
           </button>
           <button onClick={() => navigate("/admin/artistas/crear")}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, border: "none", color: "white", padding: "7px 15px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FB, boxShadow: `0 4px 14px rgba(204,89,173,0.30)`, transition: "transform .15s, box-shadow .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, border: "none", color: "white", padding: "7px 16px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FB, boxShadow: `0 4px 14px rgba(204,89,173,0.30)`, transition: "transform .15s, box-shadow .15s" }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 22px rgba(204,89,173,0.45)`; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 14px rgba(204,89,173,0.30)`; }}>
-            <UserPlus size={14} strokeWidth={2.5} /> Nuevo Artista
+            <UserPlus size={14} strokeWidth={2.5} /> Nuevo artista
           </button>
         </div>
       </div>
 
-      <main style={{ flex: 1, padding: "22px 26px 28px", overflowY: "auto" }}>
+      <main style={{ flex: 1, padding: "24px 28px 32px", overflowY: "auto", fontFamily: FB }}>
 
-        {/* Encabezado */}
-        <div style={{ marginBottom: 18, animation: "fadeUp .4s ease both" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-            <Star size={11} color={C.gold} fill={C.gold} />
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: FB }}>Comunidad creativa</span>
+        {/* Header */}
+        <div style={{ marginBottom: 22, animation: "fadeUp .4s ease both" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+            <Star size={10} color={C.gold} fill={C.gold} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: "0.12em" }}>Comunidad creativa</span>
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, fontFamily: FD, color: C.cream, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0, fontFamily: FD, color: C.cream, letterSpacing: "-0.02em" }}>
             Gestión de{" "}
             <span style={{ background: `linear-gradient(90deg, ${C.pink}, ${C.purple})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               Artistas
@@ -399,18 +543,34 @@ export default function ListaArtistas() {
           </h1>
         </div>
 
+        {/* Stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20, animation: "fadeUp .4s ease .05s both" }}>
+          {STATS.map(({ label, value, icon: Icon, color }) => (
+            <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 3, background: `linear-gradient(180deg,${color},${color}40)`, borderRadius: "12px 0 0 12px" }} />
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}14`, border: `1px solid ${color}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon size={16} color={color} strokeWidth={1.8} />
+              </div>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: C.cream, fontFamily: FD, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 11, color: C.creamMut, marginTop: 2 }}>{label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Banner pendientes */}
         {pendientes > 0 && filtroEstado === "todos" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", marginBottom: 16, background: `linear-gradient(135deg, rgba(255,193,16,0.08), rgba(255,132,14,0.05))`, border: `1px solid rgba(255,193,16,0.28)`, borderRadius: 14, animation: "fadeUp .45s ease .05s both" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", marginBottom: 18, background: `linear-gradient(135deg, rgba(255,193,16,0.08), rgba(255,132,14,0.05))`, border: `1px solid rgba(255,193,16,0.28)`, borderRadius: 14, animation: "fadeUp .4s ease .08s both" }}>
             <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,193,16,0.16)", border: `1px solid rgba(255,193,16,0.30)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Bell size={17} color={C.gold} strokeWidth={2} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13.5, fontWeight: 800, color: C.gold, fontFamily: FD, marginBottom: 2 }}>{pendientes} solicitud{pendientes > 1 ? "es" : ""} pendiente{pendientes > 1 ? "s" : ""} de aprobación</div>
-              <div style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>Haz clic en el badge de estado para aprobar o rechazar</div>
+              <div style={{ fontSize: 12, color: C.creamMut }}>Haz clic en el badge de estado de cada artista para aprobar o rechazar</div>
             </div>
             <button onClick={() => setFiltroEstado("pendiente")}
-              style={{ padding: "7px 14px", borderRadius: 9, background: "rgba(255,193,16,0.16)", border: `1px solid rgba(255,193,16,0.38)`, color: C.gold, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", fontFamily: FB }}
+              style={{ padding: "7px 14px", borderRadius: 9, background: "rgba(255,193,16,0.16)", border: `1px solid rgba(255,193,16,0.38)`, color: C.gold, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,193,16,0.28)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,193,16,0.16)"}>
               Ver pendientes →
@@ -418,8 +578,8 @@ export default function ListaArtistas() {
           </div>
         )}
 
-        {/* Filtros */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "15px 18px", marginBottom: 14, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", animation: "fadeUp .45s ease .08s both" }}>
+        {/* Search + Filtros */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", marginBottom: 20, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", animation: "fadeUp .4s ease .10s both" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 200, background: "rgba(255,232,200,0.04)", border: `1px solid ${C.border}`, borderRadius: 9, padding: "9px 13px" }}>
             <Search size={13} color={C.creamMut} strokeWidth={1.8} />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -437,7 +597,7 @@ export default function ListaArtistas() {
               const cnt = key === "pendiente" ? pendientes : 0;
               return (
                 <button key={key} onClick={() => { setFiltroEstado(key); setPage(1); }}
-                  style={{ padding: "7px 14px", borderRadius: 100, display: "flex", alignItems: "center", gap: 5, border: `1.5px solid ${on ? `${color}50` : C.border}`, background: on ? `${color}14` : "transparent", color: on ? color : C.creamSub, fontWeight: on ? 700 : 400, fontSize: 12.5, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+                  style={{ padding: "7px 14px", borderRadius: 100, display: "flex", alignItems: "center", gap: 5, border: `1.5px solid ${on ? `${color}50` : C.border}`, background: on ? `${color}14` : "transparent", color: on ? color : C.creamSub, fontWeight: on ? 700 : 400, fontSize: 12.5, cursor: "pointer", transition: "all .15s" }}
                   onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; }}
                   onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.borderColor = C.border; }}>
                   {label}
@@ -450,145 +610,39 @@ export default function ListaArtistas() {
           </div>
         </div>
 
-        {/* Tabla */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden", animation: "fadeUp .5s ease .12s both" }}>
-          {loading ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 220, color: C.creamMut, gap: 10, fontSize: 13, fontFamily: FB }}>
-              <RefreshCw size={16} strokeWidth={1.8} style={{ animation: "spin 1s linear infinite", color: C.pink }} /> Cargando artistas…
+        {/* Grid de cards */}
+        {loading ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, animation: "fadeUp .4s ease .12s both" }}>
+            {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : artistas.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 280, gap: 12, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, animation: "fadeUp .4s ease both" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(204,89,173,0.10)", border: `1px solid rgba(204,89,173,0.20)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Users size={24} color={C.pink} strokeWidth={1.5} />
             </div>
-          ) : artistas.length === 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 220, gap: 10 }}>
-              <div style={{ fontSize: 14, fontFamily: FD, color: C.creamSub }}>No se encontraron artistas</div>
-            </div>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${C.borderBr}` }}>
-                  {["Artista", "Contacto", "Categoría", "Comisión", "Obras", "Estado", "Acciones"].map((h, i) => (
-                    <th key={h} style={{ textAlign: "left", padding: "13px 15px", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.creamSub, background: "rgba(255,232,200,0.03)", fontFamily: FB, borderRight: i < 6 ? `1px solid ${C.border}` : "none" }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {artistas.map((artista, i) => {
-                  const estado     = ESTADOS[artista.estado] || ESTADOS.pendiente;
-                  const EstadoIcon = estado.icon;
-                  const avatarCol  = getAvatarColor(artista.id_artista);
-                  const esPend     = artista.estado === "pendiente";
-                  return (
-                    <tr key={artista.id_artista}
-                      style={{ borderBottom: i < artistas.length - 1 ? `1px solid rgba(255,232,200,0.04)` : "none", transition: "background .12s", background: esPend ? "rgba(255,193,16,0.04)" : "transparent" }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = esPend ? "rgba(255,193,16,0.08)" : C.rowHover}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = esPend ? "rgba(255,193,16,0.04)" : "transparent"}>
-
-                      {/* Artista */}
-                      <td style={{ padding: "13px 15px", borderRight: `1px solid ${C.border}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                          <div style={{ width: 40, height: 40, borderRadius: 11, flexShrink: 0, background: artista.foto_perfil ? "transparent" : `${avatarCol}16`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: `1.5px solid ${esPend ? C.gold + "40" : avatarCol + "30"}` }}>
-                            {artista.foto_perfil
-                              ? <img src={artista.foto_perfil} alt={artista.nombre_completo} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                              : <span style={{ fontSize: 14, fontWeight: 900, color: avatarCol, fontFamily: FB }}>{getInitials(artista.nombre_completo)}</span>
-                            }
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: C.cream, fontFamily: FB }}>{artista.nombre_completo}</div>
-                            {artista.nombre_artistico && (
-                              <div style={{ fontSize: 11, color: C.gold, display: "flex", alignItems: "center", gap: 3, marginTop: 2, fontFamily: FB }}>
-                                <Star size={8} strokeWidth={2} fill={C.gold} color={C.gold} /> {artista.nombre_artistico}
-                              </div>
-                            )}
-                            {artista.matricula && (
-                              <div style={{ fontSize: 10.5, color: C.creamMut, marginTop: 1, fontFamily: FB }}>{artista.matricula}</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Contacto */}
-                      <td style={{ padding: "13px 15px", borderRight: `1px solid ${C.border}` }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          {artista.correo && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.creamSub, fontFamily: FB }}>
-                              <Mail size={10} strokeWidth={1.8} color={C.blue} />
-                              <span style={{ maxWidth: 155, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{artista.correo}</span>
-                            </div>
-                          )}
-                          {artista.telefono && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.creamSub, fontFamily: FB }}>
-                              <Phone size={10} strokeWidth={1.8} color={C.purple} />{artista.telefono}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Categoría */}
-                      <td style={{ padding: "13px 15px", borderRight: `1px solid ${C.border}` }}>
-                        {artista.categoria_nombre
-                          ? <span style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 100, background: "rgba(121,170,245,0.10)", border: `1px solid rgba(121,170,245,0.22)`, color: C.blue, fontWeight: 700, fontFamily: FB }}>{artista.categoria_nombre}</span>
-                          : <span style={{ color: C.creamMut, fontSize: 13 }}>—</span>}
-                      </td>
-
-                      {/* Comisión */}
-                      <td style={{ padding: "13px 15px", borderRight: `1px solid ${C.border}` }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: C.orange, fontFamily: FB }}>{artista.porcentaje_comision ?? 15}%</span>
-                      </td>
-
-                      {/* Obras */}
-                      <td style={{ padding: "13px 15px", borderRight: `1px solid ${C.border}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: C.creamSub, fontFamily: FB }}>
-                          <ImageIcon size={12} color={C.creamMut} strokeWidth={1.8} />{artista.total_obras ?? 0}
-                        </div>
-                      </td>
-
-                      {/* Estado */}
-                      <td style={{ padding: "13px 15px", borderRight: `1px solid ${C.border}` }}>
-                        <button onClick={() => setModalEstado(artista)}
-                          style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 100, background: `${estado.color}12`, border: `1px solid ${estado.color}30`, color: estado.color, fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, transition: "background .15s" }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${estado.color}24`}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${estado.color}12`}>
-                          <EstadoIcon size={11} strokeWidth={2.5} />{estado.label}
-                        </button>
-                      </td>
-
-                      {/* Acciones */}
-                      <td style={{ padding: "13px 15px" }}>
-                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                          {esPend && (
-                            <button onClick={() => setModalEstado(artista)}
-                              style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", borderRadius: 8, background: "rgba(255,193,16,0.14)", border: `1px solid rgba(255,193,16,0.32)`, color: C.gold, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FB }}
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,193,16,0.26)"}
-                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,193,16,0.14)"}>
-                              <Bell size={10} /> Revisar
-                            </button>
-                          )}
-                          {([
-                            { icon: Eye,    color: C.purple, action: () => navigate(`/admin/artistas/${artista.id_artista}`),        title: "Ver detalle" },
-                            { icon: Edit2,  color: C.blue,   action: () => navigate(`/admin/artistas/editar/${artista.id_artista}`), title: "Editar"      },
-                            { icon: Trash2, color: C.pink,   action: () => setModalEliminar(artista),                                title: "Eliminar"    },
-                          ] as const).map(({ icon: Icon, color, action, title }) => (
-                            <button key={title} onClick={action} title={title}
-                              style={{ width: 32, height: 32, borderRadius: 8, background: `${color}10`, border: `1px solid ${color}22`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all .15s" }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${color}24`; (e.currentTarget as HTMLElement).style.borderColor = `${color}48`; }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${color}10`; (e.currentTarget as HTMLElement).style.borderColor = `${color}22`; }}>
-                              <Icon size={13} color={color} strokeWidth={2} />
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+            <div style={{ fontSize: 16, fontFamily: FD, color: C.creamSub, fontWeight: 700 }}>No se encontraron artistas</div>
+            <div style={{ fontSize: 12, color: C.creamMut }}>Prueba cambiando el filtro o la búsqueda</div>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, animation: "fadeUp .4s ease .12s both" }}>
+            {artistas.map(artista => (
+              <ArtistaCard
+                key={artista.id_artista}
+                artista={artista}
+                avatarColor={getAvatarColor(artista.id_artista)}
+                onVerDetalle={() => navigate(`/admin/artistas/${artista.id_artista}`)}
+                onEditar={() => navigate(`/admin/artistas/editar/${artista.id_artista}`)}
+                onEliminar={() => setModalEliminar(artista)}
+                onCambiarEstado={() => setModalEstado(artista)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, animation: "fadeUp .5s ease .15s both" }}>
-            <div style={{ fontSize: 12.5, color: C.creamMut, fontFamily: FB }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 24, animation: "fadeUp .5s ease .15s both" }}>
+            <div style={{ fontSize: 12.5, color: C.creamMut }}>
               Página <span style={{ color: C.cream, fontWeight: 700 }}>{page}</span> de <span style={{ color: C.cream, fontWeight: 700 }}>{totalPages}</span>
             </div>
             <div style={{ display: "flex", gap: 5 }}>

@@ -1,4 +1,3 @@
-// src/routes/AppRoutes.tsx
 import { Routes, Route } from "react-router-dom";
 import PublicRoutes       from "./PublicRoutes";
 import NuBDashboard       from "../pages/private/NuBDashboard";
@@ -11,6 +10,8 @@ import EditarArtista      from "../pages/private/admin/EditarArtista";
 import DetalleArtista     from "../pages/private/admin/DetalleArtista";
 import Backups            from "../pages/private/admin/Backups";
 import AdminReportes      from "../pages/private/admin/AdminReportes";
+import AdminImportar      from "../pages/private/admin/AdminImportar";
+import AdminMonitoreo     from "../pages/private/admin/AdminMonitoreo";  // ← nuevo
 import AdminLayout        from "../layout/AdminLayout";
 import ArtistaLayout      from "../layout/ArtistaLayout";
 import PrivateRoute       from "../components/PrivateRoute";
@@ -20,11 +21,12 @@ import ArtistaDashboard   from "../pages/private/artista/ArtistaDashboard";
 import NuevaObra          from "../pages/private/artista/NuevaObra";
 import MisObras           from "../pages/private/artista/MisObras";
 import EditarObraArtista  from "../pages/private/artista/EditarObra";
-import MiPerfilPage        from "../pages/private/artista/MiPerfilPage";
+import MiPerfilPage       from "../pages/private/artista/MiPerfilPage";
 import RegistroArtista    from "../pages/public/RegistroArtista";
 import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
 import Unauthorized       from "../pages/public/Unauthorized";
+import AdminEstadisticas from "../pages/private/admin/AdminEstadisticas";
 
 export default function AppRoutes() {
   return (
@@ -35,7 +37,7 @@ export default function AppRoutes() {
         <PrivateRoute><NuBDashboard /></PrivateRoute>
       } />
 
-      {/* ── Artista — todas las páginas dentro del layout ── */}
+      {/* ── Artista ── */}
       <Route path="/artista" element={
         <ArtistaRoute><ArtistaLayout /></ArtistaRoute>
       }>
@@ -49,19 +51,22 @@ export default function AppRoutes() {
       <Route path="/registro-artista" element={<RegistroArtista />} />
       <Route path="/verificar-email"  element={<VerificarEmail />} />
 
-      {/* ── Admin — todas las páginas dentro del layout ── */}
+      {/* ── Admin ── */}
       <Route path="/admin" element={
         <AdminRoute><AdminLayout /></AdminRoute>
       }>
-        <Route index                   element={<AdminDashboard />} />
-        <Route path="obras"            element={<ListaObras />} />
-        <Route path="obras/editar/:id" element={<EditarObra />} />
-        <Route path="artistas"         element={<ListaArtistas />} />
+        <Route path="estadisticas" element={<AdminEstadisticas />} />
+        <Route index                      element={<AdminDashboard />} />
+        <Route path="obras"               element={<ListaObras />} />
+        <Route path="obras/editar/:id"    element={<EditarObra />} />
+        <Route path="artistas"            element={<ListaArtistas />} />
         <Route path="artistas/crear"      element={<CrearArtista />} />
         <Route path="artistas/editar/:id" element={<EditarArtista />} />
         <Route path="artistas/:id"        element={<DetalleArtista />} />
-        <Route path="backups"          element={<Backups />} />
-        <Route path="reportes"         element={<AdminReportes />} />
+        <Route path="backups"             element={<Backups />} />
+        <Route path="reportes"            element={<AdminReportes />} />
+        <Route path="importar"            element={<AdminImportar />} />
+        <Route path="monitoreo"           element={<AdminMonitoreo />} />  {/* ← nuevo */}
       </Route>
 
       {/* ── Error pages ── */}

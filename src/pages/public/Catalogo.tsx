@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, X, Image as ImageIcon,
-  Eye, Heart, Sparkles, RefreshCw,
+  Eye, Heart, Sparkles, 
   ChevronLeft, ChevronRight, ArrowRight,
 } from "lucide-react";
 
