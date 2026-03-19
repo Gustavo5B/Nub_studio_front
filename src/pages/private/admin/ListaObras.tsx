@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Search, Edit2, Trash2, CheckCircle, Clock, XCircle, Eye,
   ChevronLeft, ChevronRight, AlertTriangle, X, RefreshCw,
-  Image as ImageIcon, Star, Plus, Layers, DollarSign,
+  Image as ImageIcon, Star, Layers, DollarSign,
 } from "lucide-react";
 import { obraService } from "../../../services/obraService";
 import { authService } from "../../../services/authService";
@@ -413,12 +413,6 @@ export default function ListaObras() {
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = `${C.orange}45`}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
             <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
-          </button>
-          <button onClick={() => navigate("/admin/obras/crear")}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: `linear-gradient(135deg, ${C.blue}, ${C.purple})`, border: "none", color: "white", padding: "7px 16px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FB, boxShadow: `0 4px 14px rgba(121,170,245,0.28)`, transition: "transform .15s, box-shadow .15s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 22px rgba(121,170,245,0.42)`; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 14px rgba(121,170,245,0.28)`; }}>
-            <Plus size={14} strokeWidth={2.5} /> Nueva obra
           </button>
         </div>
       </div>

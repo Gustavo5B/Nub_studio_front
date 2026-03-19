@@ -47,12 +47,11 @@ function Counter({ to, duration = 1200 }: { to: number; duration?: number }) {
   return <>{val}</>;
 }
 
-const getBadge = (estado: string, activa?: boolean) => {
-  if (estado === "aprobada"  && activa)  return { label: "Publicada",   color: C.green };
-  if (estado === "aprobada"  && !activa) return { label: "Inactiva",    color: C.muted };
-  if (estado === "publicada")            return { label: "Publicada",   color: C.green };
-  if (estado === "pendiente")            return { label: "En revisión", color: C.gold  };
-  if (estado === "rechazada")            return { label: "Rechazada",   color: C.pink  };
+const getBadge = (estado: string) => {
+  if (estado === "publicada") return { label: "Publicada",   color: C.green };
+  if (estado === "pendiente") return { label: "En revisión", color: C.gold  };
+  if (estado === "rechazada") return { label: "Rechazada",   color: C.pink  };
+  if (estado === "agotada")   return { label: "Agotada",     color: C.muted };
   return { label: estado, color: C.muted };
 };
 
@@ -181,7 +180,7 @@ export default function ArtistaDashboard() {
                 </button>
               </div>
             ) : obras.slice(0, 6).map((obra, i) => {
-              const bdg = getBadge(obra.estado, obra.activa);
+              const bdg = getBadge(obra.estado);
               return (
                 <div key={obra.id_obra}
                   style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 24px", borderBottom: i < Math.min(obras.length, 6) - 1 ? `1px solid ${C.border}` : "none", transition: "background .15s" }}

@@ -8,7 +8,7 @@ import { handleNetworkError } from "../../../utils/handleApiError";
 interface Obra {
   id_obra: number; titulo: string; slug: string; descripcion: string;
   imagen_principal: string; precio_base: number;
-  estado: "pendiente" | "aprobada" | "rechazada" | "publicada";
+  estado: "pendiente" | "publicada" | "rechazada" | "agotada";
   activa: boolean; visible: boolean; destacada: boolean; vistas: number;
   fecha_creacion: string; fecha_aprobacion: string | null;
   motivo_rechazo: string | null; anio_creacion: number | null;
@@ -16,7 +16,7 @@ interface Obra {
   categoria: string | null;
 }
 interface Stats { total: number; publicadas: number; pendientes: number; rechazadas: number; }
-type Filtro = "todas" | "pendiente" | "aprobada" | "rechazada" | "publicada";
+type Filtro = "todas" | "pendiente" | "publicada" | "rechazada" | "agotada";
 
 const C = {
   orange: "#FF840E", pink: "#CC59AD", gold: "#FFC110",
@@ -62,12 +62,11 @@ export default function MisObras() {
 
   const obrasFiltradas = filtro === "todas" ? obras : obras.filter(o => o.estado === filtro);
 
-  const getBadge = (estado: string, activa: boolean) => {
-    if (estado === "aprobada"  && activa)  return { label: "Publicada",   color: C.green };
-    if (estado === "aprobada"  && !activa) return { label: "Inactiva",    color: C.muted };
-    if (estado === "publicada")            return { label: "Publicada",   color: C.green };
-    if (estado === "pendiente")            return { label: "En revisión", color: C.gold  };
-    if (estado === "rechazada")            return { label: "Rechazada",   color: C.pink  };
+  const getBadge = (estado: string) => {
+    if (estado === "publicada") return { label: "Publicada",   color: C.green };
+    if (estado === "pendiente") return { label: "En revisión", color: C.gold  };
+    if (estado === "rechazada") return { label: "Rechazada",   color: C.pink  };
+    if (estado === "agotada")   return { label: "Agotada",     color: C.muted };
     return { label: estado, color: C.muted };
   };
 
@@ -120,7 +119,7 @@ export default function MisObras() {
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         {([
           { id: "todas",     label: "Todas",       count: stats.total      },
-          { id: "aprobada",  label: "Publicadas",  count: stats.publicadas },
+          { id: "publicada", label: "Publicadas",  count: stats.publicadas },
           { id: "pendiente", label: "En revisión", count: stats.pendientes },
           { id: "rechazada", label: "Rechazadas",  count: stats.rechazadas },
         ] as { id: Filtro; label: string; count: number }[]).map(f => (
@@ -152,7 +151,7 @@ export default function MisObras() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 18 }}>
           {obrasFiltradas.map(obra => {
-            const badge = getBadge(obra.estado, obra.activa);
+            const badge = getBadge(obra.estado);
             return (
               <div key={obra.id_obra}
                 style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s,box-shadow .22s,border-color .22s" }}

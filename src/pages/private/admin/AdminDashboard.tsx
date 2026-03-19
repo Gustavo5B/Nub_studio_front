@@ -8,7 +8,7 @@ import {
   Image, RefreshCw, ArrowUpRight,
   BarChart as BarChartIcon, LineChart as LineChartIcon,
   AreaChart as AreaIcon,
-  Layers, Users, PlusCircle,
+  Layers, Users,
   Upload, BarChart2, Activity,
 } from "lucide-react";
 import {
@@ -221,14 +221,6 @@ function KpiCards({ kpis, loading }: { kpis:Record<string,number> | null; loadin
 function AccionesRapidas({ navigate }: { navigate:(p:string) => void }) {
   const acciones = [
     {
-      label: "Nueva Obra",
-      sub: "Agregar al catálogo",
-      Icon: PlusCircle,
-      color: C.orange,
-      path: "/admin/obras/nueva",
-      gradient: `linear-gradient(135deg, ${C.orange}18, ${C.gold}08)`,
-    },
-    {
       label: "Pendientes",
       sub: "Revisar solicitudes",
       Icon: Clock,
@@ -275,7 +267,7 @@ function AccionesRapidas({ navigate }: { navigate:(p:string) => void }) {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
         <span style={{ fontSize:11, fontWeight:800, color:C.creamMut, letterSpacing:"0.14em", textTransform:"uppercase", fontFamily:FB }}>Acciones rápidas</span>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
         {acciones.map(({ label, sub, Icon, color, path, gradient }, i) => (
           <button key={label} onClick={() => navigate(path)}
             style={{ background: gradient, border:`1px solid ${color}20`, borderRadius:14, padding:"18px 12px 16px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, cursor:"pointer", transition:"all .2s", fontFamily:FB, textAlign:"center", position:"relative", overflow:"hidden", animation:`fadeUp .45s ease ${i*0.05}s both` }}

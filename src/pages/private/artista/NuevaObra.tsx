@@ -150,6 +150,7 @@ export default function NuevaObra() {
   const [dragOver,         setDragOver]          = useState(false);
   const [step,             setStep]              = useState(1);
   const [perfilFaltantes,  setPerfilFaltantes]   = useState<string[]>([]);
+  const [checkingPerfil,   setCheckingPerfil]    = useState(true);
 
   const [form, setForm] = useState<FormData>({
     titulo: "", descripcion: "", id_categoria: "", tecnica: "",
@@ -162,12 +163,30 @@ export default function NuevaObra() {
     const token = authService.getToken();
     const h     = { Authorization: `Bearer ${token}` };
     Promise.all([
-      fetch(`${API}/api/categorias`, { headers: h }).then(r => r.json()),
-      fetch(`${API}/api/etiquetas`,  { headers: h }).then(r => r.json()),
-    ]).then(([cat, etq]) => {
+      fetch(`${API}/api/categorias`,              { headers: h }).then(r => r.json()),
+      fetch(`${API}/api/etiquetas`,               { headers: h }).then(r => r.json()),
+      fetch(`${API}/api/artista-portal/mi-perfil`, { headers: h }).then(r => r.json()),
+    ]).then(([cat, etq, perfil]) => {
       setCategorias(Array.isArray(cat) ? cat : cat.categorias || cat.data || []);
       setEtiquetas(Array.isArray(etq)  ? etq : etq.etiquetas  || etq.data  || []);
-    }).catch(() => {});
+
+      const faltantes: string[] = [];
+      if (!perfil.nombre_artistico)       faltantes.push('nombre artístico');
+      if (!perfil.biografia)              faltantes.push('biografía');
+      if (!perfil.telefono)               faltantes.push('teléfono');
+      if (!perfil.foto_perfil)            faltantes.push('foto de perfil');
+      if (!perfil.ciudad)                 faltantes.push('ciudad');
+      if (!perfil.id_estado_base)         faltantes.push('estado');
+      if (!perfil.codigo_postal)          faltantes.push('código postal');
+      if (!perfil.direccion_taller)       faltantes.push('dirección del taller');
+      if (!perfil.id_categoria_principal) faltantes.push('categoría principal');
+
+      if (faltantes.length > 0) {
+        showToast("Completa tu perfil antes de subir obras", "warn");
+        navigate("/artista/perfil");
+        return;
+      }
+    }).catch(() => {}).finally(() => setCheckingPerfil(false));
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -247,6 +266,14 @@ export default function NuevaObra() {
   const precio   = parseFloat(form.precio_base || "0");
   const comision = precio * 0.15;
   const neto     = precio * 0.85;
+
+  if (checkingPerfil) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
+      <div style={{ width: 40, height: 40, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
+      <p style={{ color: C.muted, fontSize: 13 }}>Verificando perfil...</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   if (success) return (
     <>

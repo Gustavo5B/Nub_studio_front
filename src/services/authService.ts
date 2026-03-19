@@ -252,6 +252,13 @@ class AuthService {
   }
 
   logout(): void {
+    const token = this.getToken();
+    if (token) {
+      fetch(`${this.apiUrl}/api/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('token');
     localStorage.removeItem('isLoggedIn');
@@ -259,6 +266,7 @@ class AuthService {
     localStorage.removeItem('userName');
     localStorage.removeItem('userId');
     localStorage.removeItem('temp_correo_2fa');
+    localStorage.removeItem('artistaFoto');
   }
 
   isAuthenticated(): boolean {
