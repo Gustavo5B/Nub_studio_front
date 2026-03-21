@@ -24,22 +24,48 @@ interface FormState {
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+// ── Sanitización frontend ─────────────────────────────────────────────────────
+const xssPattern  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:|data:text\/html/i;
+const sqliPattern = /'(\s)*(OR|AND)|\bUNION\b|\bSELECT\b|\bDROP\b|\bINSERT\b|\bDELETE\b|--|\/\*/i;
+
+const hasSuspiciousContent = (value: string): boolean =>
+  xssPattern.test(value) || sqliPattern.test(value);
+
+const sanitizeText = (value: string): string =>
+  value
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<iframe/gi, "")
+    .replace(/javascript:/gi, "")
+    .replace(/on\w+\s*=/gi, "")
+    .replace(/eval\(/gi, "")
+    .trim();
+
+// ── Validaciones de formato ───────────────────────────────────────────────────
+const validaciones: Partial<Record<keyof FormState, (v: string) => string | null>> = {
+  titulo:      v => !v.trim() ? "El título es requerido" : v.trim().length < 3 ? "Mínimo 3 caracteres" : null,
+  descripcion: v => !v.trim() ? null : v.trim().length < 20 ? "Mínimo 20 caracteres" : null,
+  tecnica:     v => !v.trim() ? null : v.trim().length < 3 ? "Mínimo 3 caracteres" : null,
+  precio_base: v => !v ? "El precio es requerido" : parseFloat(v) <= 0 ? "El precio debe ser mayor a 0" : null,
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function EditarObra() {
   const navigate      = useNavigate();
   const { id }        = useParams<{ id: string }>();
   const fileRef       = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [etiquetas,  setEtiquetas]  = useState<Etiqueta[]>([]);
-  const [imgFile,    setImgFile]    = useState<File | null>(null);
-  const [imgPreview, setImgPreview] = useState<string>("");
-  const [imgMode,    setImgMode]    = useState<"upload" | "url">("upload");
-  const [dragOver,   setDragOver]   = useState(false);
-  const [obraEstado, setObraEstado] = useState<string>("");
-  const [loading,    setLoading]    = useState(true);
-  const [saving,     setSaving]     = useState(false);
-  const [success,    setSuccess]    = useState(false);
+  const [categorias,  setCategorias]  = useState<Categoria[]>([]);
+  const [etiquetas,   setEtiquetas]   = useState<Etiqueta[]>([]);
+  const [imgFile,     setImgFile]     = useState<File | null>(null);
+  const [imgPreview,  setImgPreview]  = useState<string>("");
+  const [imgMode,     setImgMode]     = useState<"upload" | "url">("upload");
+  const [dragOver,    setDragOver]    = useState(false);
+  const [obraEstado,  setObraEstado]  = useState<string>("");
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [success,     setSuccess]     = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
 
   const [form, setForm] = useState<FormState>({
     titulo: "", descripcion: "", id_categoria: "", tecnica: "",
@@ -90,13 +116,36 @@ export default function EditarObra() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setForm(prev => ({ ...prev, [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value }));
+    const newValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
+
+    if (typeof newValue === "string") {
+      // Validación seguridad (XSS/SQLi)
+      if (["titulo", "descripcion", "tecnica"].includes(name)) {
+        if (hasSuspiciousContent(newValue)) {
+          setFieldErrors(prev => ({ ...prev, [name as keyof FormState]: "Contenido no permitido" }));
+          setForm(prev => ({ ...prev, [name]: newValue }));
+          return;
+        }
+      }
+      // Validación de formato en tiempo real
+      const validar = validaciones[name as keyof FormState];
+      if (validar) {
+        const error = validar(newValue);
+        setFieldErrors(prev => ({ ...prev, [name as keyof FormState]: error ?? undefined }));
+      } else {
+        setFieldErrors(prev => ({ ...prev, [name as keyof FormState]: undefined }));
+      }
+    }
+
+    setForm(prev => ({ ...prev, [name]: newValue }));
   };
 
   const toggleEtiqueta = (id: number) => {
     setForm(prev => ({
       ...prev,
-      etiquetas: prev.etiquetas.includes(id) ? prev.etiquetas.filter(e => e !== id) : [...prev.etiquetas, id],
+      etiquetas: prev.etiquetas.includes(id)
+        ? prev.etiquetas.filter(e => e !== id)
+        : [...prev.etiquetas, id],
     }));
   };
 
@@ -108,7 +157,11 @@ export default function EditarObra() {
     setImgPreview(URL.createObjectURL(file));
   };
 
-  const clearFile = () => { if (imgPreview) URL.revokeObjectURL(imgPreview); setImgFile(null); setImgPreview(""); };
+  const clearFile = () => {
+    if (imgPreview) URL.revokeObjectURL(imgPreview);
+    setImgFile(null);
+    setImgPreview("");
+  };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
@@ -118,16 +171,46 @@ export default function EditarObra() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.titulo.trim())                          { showToast("El título es requerido", "warn"); return; }
-    if (!form.precio_base || parseFloat(form.precio_base) <= 0) { showToast("El precio es requerido", "warn"); return; }
+
+    // ── Validación de formato completa ──
+    const erroresFormato: Partial<Record<keyof FormState, string>> = {};
+    (Object.entries(validaciones) as [keyof FormState, (v: string) => string | null][]).forEach(([campo, validar]) => {
+      const error = validar(String(form[campo] ?? ""));
+      if (error) erroresFormato[campo] = error;
+    });
+    if (Object.keys(erroresFormato).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...erroresFormato }));
+      showToast("Corrige los errores antes de guardar", "err");
+      return;
+    }
+
+    // ── Validación de seguridad ──
+    const camposTexto = ["titulo", "descripcion", "tecnica"] as const;
+    for (const campo of camposTexto) {
+      if (hasSuspiciousContent(String(form[campo]))) {
+        showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
+        setFieldErrors(prev => ({ ...prev, [campo]: "Contenido no permitido" }));
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const token = authService.getToken();
       let body: BodyInit;
       let headers: HeadersInit = { Authorization: `Bearer ${token}` };
+
+      // ── Sanitizar texto antes de enviar ──
+      const formSanitizado = {
+        ...form,
+        titulo:      sanitizeText(form.titulo),
+        descripcion: sanitizeText(form.descripcion),
+        tecnica:     sanitizeText(form.tecnica),
+      };
+
       if (imgFile) {
         const fd = new FormData();
-        Object.entries(form).forEach(([k, v]) => {
+        Object.entries(formSanitizado).forEach(([k, v]) => {
           if (k === "etiquetas") fd.append("etiquetas", JSON.stringify(v));
           else fd.append(k, String(v));
         });
@@ -135,10 +218,23 @@ export default function EditarObra() {
         body = fd;
       } else {
         headers = { ...headers, "Content-Type": "application/json" };
-        body = JSON.stringify({ ...form, etiquetas: JSON.stringify(form.etiquetas) });
+        body = JSON.stringify({ ...formSanitizado, etiquetas: JSON.stringify(formSanitizado.etiquetas) });
       }
+
       const res = await fetch(`${API}/api/artista-portal/obra/${id}`, { method: "PUT", headers, body });
-      if (!res.ok) { showToast(await handleApiError(res), "err"); return; }
+
+      if (!res.ok) {
+        const data = await res.json();
+        if (res.status === 400 && data.code === "XSS_DETECTED") {
+          showToast(`Contenido no permitido en el campo "${data.field}"`, "err"); return;
+        }
+        if (res.status === 400 && data.code === "SQL_INJECTION_DETECTED") {
+          showToast(`Contenido no permitido en el campo "${data.field}"`, "err"); return;
+        }
+        showToast(await handleApiError(res), "err");
+        return;
+      }
+
       setSuccess(true);
       showToast("¡Cambios guardados correctamente!", "ok");
       setTimeout(() => navigate("/artista/mis-obras"), 2200);
@@ -153,9 +249,9 @@ export default function EditarObra() {
   };
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh", flexDirection: "column", gap: 16 }}>
-      <Loader2 size={36} style={{ animation: "spin 1s linear infinite", color: "#FF840E" }} />
-      <p style={{ color: "rgba(245,240,255,0.45)", fontSize: 14 }}>Cargando obra...</p>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh", flexDirection:"column", gap:16 }}>
+      <Loader2 size={36} style={{ animation:"spin 1s linear infinite", color:"#FF840E" }} />
+      <p style={{ color:"rgba(245,240,255,0.45)", fontSize:14 }}>Cargando obra...</p>
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </div>
   );
@@ -172,30 +268,28 @@ export default function EditarObra() {
   );
 
   return (
-    <div style={{ padding: "32px 36px", maxWidth: 860 }} className="artista-main-pad">
+    <div style={{ padding:"32px 36px", maxWidth:860 }} className="artista-main-pad">
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom:28 }}>
         <button onClick={() => navigate("/artista/mis-obras")}
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "rgba(245,240,255,0.45)", cursor: "pointer", fontSize: 13, fontFamily: "'DM Sans',sans-serif", marginBottom: 16, padding: 0 }}>
+          style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", color:"rgba(245,240,255,0.45)", cursor:"pointer", fontSize:13, fontFamily:"'DM Sans',sans-serif", marginBottom:16, padding:0 }}>
           <ArrowLeft size={16} /> Mis obras
         </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#f5f0ff", margin: 0, fontFamily: "'Playfair Display',serif", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+          <h1 style={{ fontSize:26, fontWeight:900, color:"#f5f0ff", margin:0, fontFamily:"'Playfair Display',serif", display:"flex", alignItems:"center", gap:8 }}>
             <Sparkles size={22} color="#FF840E" /> Editar Obra
           </h1>
           {obraEstado && (
-            <span style={{
-              padding: "3px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800,
+            <span style={{ padding:"3px 12px", borderRadius:100, fontSize:10.5, fontWeight:800,
               color: estadoBadgeColor[obraEstado] || "#fff",
               background: `${estadoBadgeColor[obraEstado] || "#fff"}18`,
               border: `1px solid ${estadoBadgeColor[obraEstado] || "#fff"}40`,
-              textTransform: "uppercase",
-            }}>
+              textTransform:"uppercase" }}>
               {obraEstado}
             </span>
           )}
         </div>
-        <p style={{ fontSize: 13, color: "rgba(245,240,255,0.45)", margin: "6px 0 0" }}>{form.titulo}</p>
+        <p style={{ fontSize:13, color:"rgba(245,240,255,0.45)", margin:"6px 0 0" }}>{form.titulo}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="nueva-obra-form">
@@ -204,56 +298,53 @@ export default function EditarObra() {
           {/* IMAGEN */}
           <div className="form-section">
             <h3 className="section-title"><Image size={18} /> Imagen de la obra</h3>
-            <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 12 }}>
+            <div style={{ display:"flex", borderRadius:10, overflow:"hidden", border:"1px solid rgba(255,255,255,0.07)", marginBottom:12 }}>
               {(["upload", "url"] as const).map(tab => (
                 <button key={tab} type="button" onClick={() => setImgMode(tab)}
-                  style={{ flex: 1, padding: "9px", border: "none", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontSize: 12.5, fontWeight: imgMode === tab ? 800 : 500, background: imgMode === tab ? "linear-gradient(135deg,rgba(204,89,173,0.25),rgba(141,76,205,0.15))" : "transparent", color: imgMode === tab ? "#f5f0ff" : "rgba(245,240,255,0.45)", borderRight: tab === "upload" ? "1px solid rgba(255,255,255,0.07)" : "none", transition: "all .15s" }}>
+                  style={{ flex:1, padding:"9px", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12.5, fontWeight:imgMode===tab?800:500, background:imgMode===tab?"linear-gradient(135deg,rgba(204,89,173,0.25),rgba(141,76,205,0.15))":"transparent", color:imgMode===tab?"#f5f0ff":"rgba(245,240,255,0.45)", borderRight:tab==="upload"?"1px solid rgba(255,255,255,0.07)":"none", transition:"all .15s" }}>
                   {tab === "upload"
-                    ? <><UploadCloud size={12} style={{ marginRight: 5, verticalAlign: "middle" }} />Subir archivo</>
-                    : <><FileImage  size={12} style={{ marginRight: 5, verticalAlign: "middle" }} />URL externa</>
-                  }
+                    ? <><UploadCloud size={12} style={{ marginRight:5, verticalAlign:"middle" }} />Subir archivo</>
+                    : <><FileImage  size={12} style={{ marginRight:5, verticalAlign:"middle" }} />URL externa</>}
                 </button>
               ))}
             </div>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+            <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }}
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
             {imgMode === "upload" ? (
               imgFile ? (
-                <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid rgba(204,89,173,0.3)" }}>
-                  <img src={imgPreview} alt="preview" style={{ width: "100%", height: 200, objectFit: "cover", display: "block" }} />
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 14px", background: "linear-gradient(to top,rgba(8,6,18,0.9),transparent)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 12, color: "#f5f0ff", fontWeight: 600 }}>{imgFile.name} · {(imgFile.size / 1024 / 1024).toFixed(1)} MB</span>
+                <div style={{ position:"relative", borderRadius:12, overflow:"hidden", border:"1px solid rgba(204,89,173,0.3)" }}>
+                  <img src={imgPreview} alt="preview" style={{ width:"100%", height:200, objectFit:"cover", display:"block" }} />
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"10px 14px", background:"linear-gradient(to top,rgba(8,6,18,0.9),transparent)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span style={{ fontSize:12, color:"#f5f0ff", fontWeight:600 }}>{imgFile.name} · {(imgFile.size/1024/1024).toFixed(1)} MB</span>
                     <button type="button" onClick={() => fileRef.current?.click()}
-                      style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, color: "#f5f0ff", fontSize: 11, fontWeight: 700, padding: "4px 10px", cursor: "pointer" }}>
+                      style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, color:"#f5f0ff", fontSize:11, fontWeight:700, padding:"4px 10px", cursor:"pointer" }}>
                       Cambiar
                     </button>
                   </div>
                   <button type="button" onClick={clearFile}
-                    style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(10,7,20,0.8)", border: "1px solid rgba(204,89,173,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    style={{ position:"absolute", top:8, right:8, width:26, height:26, borderRadius:"50%", background:"rgba(10,7,20,0.8)", border:"1px solid rgba(204,89,173,0.5)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
                     <X size={14} color="#CC59AD" />
                   </button>
                 </div>
               ) : (
                 <div>
                   {form.imagen_principal && (
-                    <div style={{ marginBottom: 10, borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)", position: "relative" }}>
-                      <img src={form.imagen_principal} alt="actual" style={{ width: "100%", height: 180, objectFit: "cover", display: "block", opacity: 0.7 }} />
-                      <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(8,6,18,0.8)", color: "rgba(245,240,255,0.55)", fontSize: 10.5, fontWeight: 700, padding: "3px 10px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div style={{ marginBottom:10, borderRadius:12, overflow:"hidden", border:"1px solid rgba(255,255,255,0.07)", position:"relative" }}>
+                      <img src={form.imagen_principal} alt="actual" style={{ width:"100%", height:180, objectFit:"cover", display:"block", opacity:0.7 }} />
+                      <span style={{ position:"absolute", top:8, left:8, background:"rgba(8,6,18,0.8)", color:"rgba(245,240,255,0.55)", fontSize:10.5, fontWeight:700, padding:"3px 10px", borderRadius:100, border:"1px solid rgba(255,255,255,0.1)" }}>
                         Imagen actual
                       </span>
                     </div>
                   )}
-                  <div
-                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={onDrop}
+                  <div onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)} onDrop={onDrop}
                     onClick={() => fileRef.current?.click()}
-                    style={{ borderRadius: 12, border: `2px dashed ${dragOver ? "#CC59AD" : "rgba(255,255,255,0.12)"}`, height: 110, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", background: dragOver ? "rgba(204,89,173,0.05)" : "rgba(255,255,255,0.02)", transition: "all .2s" }}>
-                    <UploadCloud size={22} color={dragOver ? "#CC59AD" : "rgba(245,240,255,0.35)"} strokeWidth={1.5} />
-                    <span style={{ fontSize: 12.5, color: "rgba(245,240,255,0.45)", fontFamily: "'DM Sans',sans-serif" }}>
+                    style={{ borderRadius:12, border:`2px dashed ${dragOver?"#CC59AD":"rgba(255,255,255,0.12)"}`, height:110, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6, cursor:"pointer", background:dragOver?"rgba(204,89,173,0.05)":"rgba(255,255,255,0.02)", transition:"all .2s" }}>
+                    <UploadCloud size={22} color={dragOver?"#CC59AD":"rgba(245,240,255,0.35)"} strokeWidth={1.5} />
+                    <span style={{ fontSize:12.5, color:"rgba(245,240,255,0.45)", fontFamily:"'DM Sans',sans-serif" }}>
                       {form.imagen_principal ? "Arrastra para reemplazar la imagen" : "Arrastra o haz clic para seleccionar"}
                     </span>
-                    <span style={{ fontSize: 11, color: "rgba(245,240,255,0.25)" }}>PNG, JPG, WEBP — Máx 10 MB</span>
+                    <span style={{ fontSize:11, color:"rgba(245,240,255,0.25)" }}>PNG, JPG, WEBP — Máx 10 MB</span>
                   </div>
                 </div>
               )
@@ -263,8 +354,8 @@ export default function EditarObra() {
                   placeholder="https://ejemplo.com/imagen.jpg" className="field-input" />
                 {form.imagen_principal && (
                   <img src={form.imagen_principal} alt="preview url"
-                    style={{ marginTop: 10, width: "100%", height: 170, objectFit: "cover", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    style={{ marginTop:10, width:"100%", height:170, objectFit:"cover", borderRadius:10, border:"1px solid rgba(255,255,255,0.07)" }}
+                    onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />
                 )}
               </div>
             )}
@@ -274,12 +365,23 @@ export default function EditarObra() {
           <div className="form-section">
             <h3 className="section-title"><FileText size={18} /> Información básica</h3>
             <div className="field-group">
-              <label>Título de la obra *</label>
-              <input type="text" name="titulo" value={form.titulo} onChange={handleChange} placeholder="Ej: Atardecer en la Huasteca" className="field-input" />
+              <label>Título de la obra * <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400 }}>mínimo 3 caracteres</span></label>
+              <input type="text" name="titulo" value={form.titulo} onChange={handleChange}
+                placeholder="Ej: Atardecer en la Huasteca"
+                className={`field-input${fieldErrors.titulo ? " field-input-error" : ""}`} />
+              {fieldErrors.titulo && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.titulo}</span>}
             </div>
             <div className="field-group">
-              <label>Descripción</label>
-              <textarea name="descripcion" value={form.descripcion} onChange={handleChange} placeholder="Cuéntanos sobre esta obra..." rows={4} className="field-input field-textarea" />
+              <label>
+                Descripción
+                <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400, marginLeft:6 }}>
+                  {form.descripcion.length} caracteres{form.descripcion.length > 0 && form.descripcion.length < 20 ? " — mínimo 20" : ""}
+                </span>
+              </label>
+              <textarea name="descripcion" value={form.descripcion} onChange={handleChange}
+                placeholder="Cuéntanos sobre esta obra... (mínimo 20 caracteres si la llenas)" rows={4}
+                className={`field-input field-textarea${fieldErrors.descripcion ? " field-input-error" : ""}`} />
+              {fieldErrors.descripcion && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.descripcion}</span>}
             </div>
             <div className="fields-row">
               <div className="field-group">
@@ -290,12 +392,16 @@ export default function EditarObra() {
                 </select>
               </div>
               <div className="field-group">
-                <label>Técnica</label>
-                <input type="text" name="tecnica" value={form.tecnica} onChange={handleChange} placeholder="Ej: Óleo sobre lienzo" className="field-input" />
+                <label>Técnica <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400 }}>mínimo 3 caracteres</span></label>
+                <input type="text" name="tecnica" value={form.tecnica} onChange={handleChange}
+                  placeholder="Ej: Óleo sobre lienzo"
+                  className={`field-input${fieldErrors.tecnica ? " field-input-error" : ""}`} />
+                {fieldErrors.tecnica && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.tecnica}</span>}
               </div>
               <div className="field-group">
                 <label>Año de creación</label>
-                <input type="number" name="anio_creacion" value={form.anio_creacion} onChange={handleChange} min={1900} max={new Date().getFullYear()} className="field-input" />
+                <input type="number" name="anio_creacion" value={form.anio_creacion} onChange={handleChange}
+                  min={1900} max={new Date().getFullYear()} className="field-input" />
               </div>
             </div>
           </div>
@@ -305,9 +411,9 @@ export default function EditarObra() {
             <h3 className="section-title"><Ruler size={18} /> Dimensiones (cm)</h3>
             <div className="fields-row">
               {[
-                { name: "dimensiones_alto",        label: "Alto" },
-                { name: "dimensiones_ancho",       label: "Ancho" },
-                { name: "dimensiones_profundidad", label: "Profundidad" },
+                { name:"dimensiones_alto",        label:"Alto" },
+                { name:"dimensiones_ancho",       label:"Ancho" },
+                { name:"dimensiones_profundidad", label:"Profundidad" },
               ].map(f => (
                 <div key={f.name} className="field-group">
                   <label>{f.label}</label>
@@ -327,14 +433,16 @@ export default function EditarObra() {
                 <div className="price-input-wrap">
                   <span className="price-symbol">$</span>
                   <input type="number" name="precio_base" value={form.precio_base} onChange={handleChange}
-                    placeholder="0.00" min={0} step="0.01" className="field-input price-input" />
+                    placeholder="0.00" min={0} step="0.01"
+                    className={`field-input price-input${fieldErrors.precio_base ? " field-input-error" : ""}`} />
                 </div>
+                {fieldErrors.precio_base && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.precio_base}</span>}
               </div>
               {form.precio_base && parseFloat(form.precio_base) > 0 && (
                 <div className="price-breakdown">
                   <div className="breakdown-row"><span>Tu precio</span><strong>${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN</strong></div>
-                  <div className="breakdown-row commission"><span>Comisión Nu-B (15%)</span><strong>- ${(parseFloat(form.precio_base) * 0.15).toLocaleString("es-MX")} MXN</strong></div>
-                  <div className="breakdown-row total"><span>Tú recibes</span><strong className="receive-amount">${(parseFloat(form.precio_base) * 0.85).toLocaleString("es-MX")} MXN</strong></div>
+                  <div className="breakdown-row commission"><span>Comisión Nu-B (15%)</span><strong>- ${(parseFloat(form.precio_base)*0.15).toLocaleString("es-MX")} MXN</strong></div>
+                  <div className="breakdown-row total"><span>Tú recibes</span><strong className="receive-amount">${(parseFloat(form.precio_base)*0.85).toLocaleString("es-MX")} MXN</strong></div>
                 </div>
               )}
             </div>
@@ -376,8 +484,8 @@ export default function EditarObra() {
             <h3 className="section-title">✦ Resumen</h3>
             <div className="summary-grid">
               {previewSrc && (
-                <img src={previewSrc} alt="preview" style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 10 }}
-                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <img src={previewSrc} alt="preview" style={{ width:100, height:100, objectFit:"cover", borderRadius:10 }}
+                  onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />
               )}
               <div className="summary-info">
                 <p className="summary-title">{form.titulo || "Sin título"}</p>
@@ -392,7 +500,9 @@ export default function EditarObra() {
           <div className="form-actions two-btns">
             <button type="button" className="btn-back" onClick={() => navigate("/artista/mis-obras")}>← Cancelar</button>
             <button type="submit" className="btn-submit" disabled={saving}>
-              {saving ? <><Loader2 size={18} className="spin" /> Guardando...</> : <><Save size={18} /> Guardar cambios</>}
+              {saving
+                ? <><Loader2 size={18} className="spin" /> Guardando...</>
+                : <><Save size={18} /> Guardar cambios</>}
             </button>
           </div>
 

@@ -37,7 +37,7 @@ export interface ArtistaInfo {
   email_usuario?: string;
 }
 
-interface Estado { id_estado: number; nombre: string; codigo: string; }
+interface Estado    { id_estado:   number; nombre: string; codigo: string; }
 interface Categoria { id_categoria: number; nombre: string; }
 interface RedSocial { id_red: number; red_social: string; url: string; usuario?: string; }
 
@@ -47,27 +47,26 @@ interface Props {
   onActualizar: (nuevaFoto?: string) => void;
 }
 
-// ── Campos obligatorios para subir obras ─────────────────────
 const CAMPOS_REQUERIDOS: { key: keyof ArtistaInfo; label: string }[] = [
-  { key: "foto_perfil",          label: "Foto de perfil" },
-  { key: "nombre_artistico",     label: "Nombre artístico" },
-  { key: "biografia",            label: "Biografía" },
-  { key: "telefono",             label: "Teléfono" },
-  { key: "ciudad",               label: "Ciudad" },
-  { key: "id_estado_base",       label: "Estado" },
-  { key: "codigo_postal",        label: "Código postal" },
-  { key: "direccion_taller",     label: "Dirección del taller" },
+  { key: "foto_perfil",            label: "Foto de perfil" },
+  { key: "nombre_artistico",       label: "Nombre artístico" },
+  { key: "biografia",              label: "Biografía" },
+  { key: "telefono",               label: "Teléfono" },
+  { key: "ciudad",                 label: "Ciudad" },
+  { key: "id_estado_base",         label: "Estado" },
+  { key: "codigo_postal",          label: "Código postal" },
+  { key: "direccion_taller",       label: "Dirección del taller" },
   { key: "id_categoria_principal", label: "Categoría principal" },
 ];
 
 const REDES_OPCIONES = [
-  { value: "instagram",  label: "Instagram",  icon: "📸" },
-  { value: "facebook",   label: "Facebook",   icon: "📘" },
-  { value: "tiktok",     label: "TikTok",     icon: "🎵" },
-  { value: "youtube",    label: "YouTube",    icon: "▶️" },
-  { value: "twitter",    label: "Twitter/X",  icon: "🐦" },
-  { value: "pinterest",  label: "Pinterest",  icon: "📌" },
-  { value: "otra",       label: "Otra",       icon: "🔗" },
+  { value: "instagram", label: "Instagram", icon: "📸" },
+  { value: "facebook",  label: "Facebook",  icon: "📘" },
+  { value: "tiktok",    label: "TikTok",    icon: "🎵" },
+  { value: "youtube",   label: "YouTube",   icon: "▶️" },
+  { value: "twitter",   label: "Twitter/X", icon: "🐦" },
+  { value: "pinterest", label: "Pinterest", icon: "📌" },
+  { value: "otra",      label: "Otra",      icon: "🔗" },
 ];
 
 const css = `
@@ -83,6 +82,7 @@ const css = `
   .mp-input:focus,.mp-textarea:focus,.mp-select:focus{border-color:rgba(255,132,14,0.55);background:rgba(255,132,14,0.05);box-shadow:0 0 0 3px rgba(255,132,14,0.08)}
   .mp-input.required-empty,.mp-select.required-empty{border-color:rgba(255,77,106,0.5);background:rgba(255,77,106,0.04)}
   .mp-input.required-empty:focus,.mp-select.required-empty:focus{border-color:rgba(255,77,106,0.7);box-shadow:0 0 0 3px rgba(255,77,106,0.1)}
+  .mp-input.field-error,.mp-textarea.field-error{border-color:rgba(255,77,106,0.6);background:rgba(255,77,106,0.05)}
   .mp-input-ro{width:100%;background:rgba(255,255,255,0.02);border:1.5px solid rgba(255,255,255,0.05);border-radius:10px;padding:11px 14px;color:rgba(245,240,255,0.35);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;box-sizing:border-box;cursor:default}
   .mp-textarea{resize:vertical}
   .mp-section{background:rgba(255,255,255,0.025);border:1.5px solid rgba(255,255,255,0.08);border-radius:20px;padding:24px 28px 28px;margin-bottom:18px}
@@ -113,7 +113,35 @@ const css = `
   .mp-btn-del{background:none;border:none;cursor:pointer;color:rgba(255,77,106,0.5);font-size:16px;padding:4px 6px;border-radius:6px;transition:all 0.2s;flex-shrink:0}
   .mp-btn-del:hover{color:#FF4D6A;background:rgba(255,77,106,0.1)}
   .mp-label{font-size:10.5px;font-weight:700;color:rgba(245,240,255,0.45);text-transform:uppercase;letter-spacing:1.3px;margin-bottom:7px;font-family:'DM Sans',sans-serif}
+  .mp-field-error{font-size:11px;color:#FF4D6A;font-weight:600;margin-top:5px;display:flex;align-items:center;gap:4px}
 `;
+
+// ── Sanitización frontend ─────────────────────────────────────────────────────
+const xssPattern  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
+const sqliPattern = /'(\s)*(OR|AND)|\bUNION\b|\bSELECT\b|\bDROP\b|\bINSERT\b|\bDELETE\b|--|\/\*/i;
+
+const hasSuspiciousContent = (value: string): boolean =>
+  xssPattern.test(value) || sqliPattern.test(value);
+
+const sanitizeText = (value: string): string =>
+  value
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<iframe/gi, "")
+    .replace(/javascript:/gi, "")
+    .replace(/on\w+\s*=/gi, "")
+    .replace(/eval\(/gi, "")
+    .trim();
+
+// ── Validaciones de formato ───────────────────────────────────────────────────
+const validaciones: Record<string, (v: string) => string | null> = {
+  telefono:          v => !v ? null : !/^\d{10}$/.test(v.trim()) ? "Solo 10 dígitos numéricos" : null,
+  codigo_postal:     v => !v ? null : !/^\d{5}$/.test(v.trim()) ? "Solo 5 dígitos numéricos" : null,
+  ciudad:            v => !v ? null : v.trim().length < 3 ? "Mínimo 3 caracteres" : !/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]+$/.test(v.trim()) ? "Solo letras permitidas" : null,
+  direccion_taller:  v => !v ? null : v.trim().length < 10 ? "Mínimo 10 caracteres" : null,
+  nombre_artistico:  v => !v ? null : v.trim().length < 3 ? "Mínimo 3 caracteres" : null,
+  biografia:         v => !v ? null : v.trim().length < 20 ? "Mínimo 20 caracteres" : null,
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const SectionHeader = ({ icon, title, badge }: { icon: string; title: string; badge?: React.ReactNode }) => (
   <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:22, paddingBottom:16, borderBottom:"1.5px solid rgba(255,255,255,0.07)" }}>
@@ -146,34 +174,57 @@ const Toggle = ({ value, onChange, label }: { value:boolean; onChange:(v:boolean
 export default function MiPerfil({ artista, token, onActualizar }: Props) {
   const { showToast } = useToast();
   const fotoRef = useRef<HTMLInputElement>(null);
-  const [fotoFile, setFotoFile]       = useState<File | null>(null);
+  const [fotoFile,    setFotoFile]    = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string>(artista.foto_perfil ?? "");
-  const [saving, setSaving]           = useState(false);
-  const [estados, setEstados]         = useState<Estado[]>([]);
-  const [categorias, setCategorias]   = useState<Categoria[]>([]);
-  const [redes, setRedes]             = useState<RedSocial[]>([]);
-  const [loadingRedes, setLoadingRedes] = useState(true);
-  const [nuevaRed, setNuevaRed]       = useState<{ red_social: string; url: string; usuario: string } | null>(null);
-  const [savingRed, setSavingRed]     = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [estados,     setEstados]     = useState<Estado[]>([]);
+  const [categorias,  setCategorias]  = useState<Categoria[]>([]);
+  const [redes,       setRedes]       = useState<RedSocial[]>([]);
+  const [loadingRedes,setLoadingRedes]= useState(true);
+  const [nuevaRed,    setNuevaRed]    = useState<{ red_social: string; url: string; usuario: string } | null>(null);
+  const [savingRed,   setSavingRed]   = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
-    nombre_artistico:        artista.nombre_artistico        ?? "",
-    biografia:               artista.biografia               ?? "",
-    telefono:                artista.telefono                ?? "",
-    ciudad:                  artista.ciudad                  ?? "",
-    direccion_taller:        artista.direccion_taller        ?? "",
-    codigo_postal:           artista.codigo_postal           ?? "",
-    id_estado_base:          artista.id_estado_base          ? String(artista.id_estado_base) : "",
-    id_categoria_principal:  artista.id_categoria_principal  ? String(artista.id_categoria_principal) : "",
+    nombre_artistico:         artista.nombre_artistico         ?? "",
+    biografia:                artista.biografia                ?? "",
+    telefono:                 artista.telefono                 ?? "",
+    ciudad:                   artista.ciudad                   ?? "",
+    direccion_taller:         artista.direccion_taller         ?? "",
+    codigo_postal:            artista.codigo_postal            ?? "",
+    id_estado_base:           artista.id_estado_base           ? String(artista.id_estado_base) : "",
+    id_categoria_principal:   artista.id_categoria_principal   ? String(artista.id_categoria_principal) : "",
     dias_preparacion_default: artista.dias_preparacion_default ? String(artista.dias_preparacion_default) : "3",
-    acepta_envios:           artista.acepta_envios           ?? false,
-    solo_entrega_personal:   artista.solo_entrega_personal   ?? false,
-    politica_envios:         artista.politica_envios         ?? "",
-    politica_devoluciones:   artista.politica_devoluciones   ?? "",
+    acepta_envios:            artista.acepta_envios            ?? false,
+    solo_entrega_personal:    artista.solo_entrega_personal    ?? false,
+    politica_envios:          artista.politica_envios          ?? "",
+    politica_devoluciones:    artista.politica_devoluciones    ?? "",
   });
-  const set = (key: string, val: string | boolean) => setForm(f => ({ ...f, [key]: val }));
 
-  // ── Calcular progreso ─────────────────────────────────────
+  const set = (key: string, val: string | boolean) => {
+    if (typeof val === "string") {
+
+      // Validación de seguridad (XSS/SQLi)
+      if (["nombre_artistico","biografia","ciudad","direccion_taller","politica_envios","politica_devoluciones"].includes(key)) {
+        if (hasSuspiciousContent(val)) {
+          setFieldErrors(prev => ({ ...prev, [key]: "Contenido no permitido" }));
+          setForm(f => ({ ...f, [key]: val }));
+          return;
+        }
+      }
+
+      // Validación de formato
+      const validar = validaciones[key];
+      if (validar) {
+        const error = validar(val);
+        setFieldErrors(prev => ({ ...prev, [key]: error ?? "" }));
+      } else {
+        setFieldErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
+      }
+    }
+    setForm(f => ({ ...f, [key]: val }));
+  };
+
   const camposActuales: ArtistaInfo = {
     ...artista,
     foto_perfil:            fotoFile ? "ok" : artista.foto_perfil,
@@ -186,52 +237,87 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
     direccion_taller:       form.direccion_taller,
     id_categoria_principal: form.id_categoria_principal ? Number(form.id_categoria_principal) : undefined,
   };
-  const completados = CAMPOS_REQUERIDOS.filter(c => !!camposActuales[c.key]).length;
-  const progreso    = Math.round((completados / CAMPOS_REQUERIDOS.length) * 100);
+  const completados    = CAMPOS_REQUERIDOS.filter(c => !!camposActuales[c.key]).length;
+  const progreso       = Math.round((completados / CAMPOS_REQUERIDOS.length) * 100);
   const perfilCompleto = completados === CAMPOS_REQUERIDOS.length;
 
-  // ── Cargar estados y categorías ───────────────────────────
   useEffect(() => {
     fetch(`${API}/api/estados`)
-      .then(r => r.json())
-      .then(d => setEstados(d.data || []))
-      .catch(() => {});
-
+      .then(r => r.json()).then(d => setEstados(d.data || [])).catch(() => {});
     fetch(`${API}/api/categorias`)
-      .then(r => r.json())
-      .then(d => setCategorias(d.data || []))
-      .catch(() => {});
-
-    // Cargar redes sociales
-    fetch(`${API}/api/artista-portal/redes-sociales`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => setRedes(d.data || []))
-      .catch(() => {})
+      .then(r => r.json()).then(d => setCategorias(d.data || [])).catch(() => {});
+    fetch(`${API}/api/artista-portal/redes-sociales`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setRedes(d.data || [])).catch(() => {})
       .finally(() => setLoadingRedes(false));
   }, [token]);
 
-  // ── Submit perfil ─────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ── Validación de formato ────────────────────────────────
+    const erroresFormato: Record<string, string> = {};
+    Object.entries(validaciones).forEach(([campo, validar]) => {
+      const valor = String(form[campo as keyof typeof form] ?? "");
+      const error = validar(valor);
+      if (error) erroresFormato[campo] = error;
+    });
+    if (Object.keys(erroresFormato).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...erroresFormato }));
+      showToast("Corrige los errores antes de guardar", "err");
+      return;
+    }
+
+    // ── Validación de seguridad ──────────────────────────────
+    const camposTexto = [
+      "nombre_artistico", "biografia", "telefono", "ciudad",
+      "direccion_taller", "politica_envios", "politica_devoluciones"
+    ] as const;
+    for (const campo of camposTexto) {
+      if (hasSuspiciousContent(String(form[campo]))) {
+        showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
+        setFieldErrors(prev => ({ ...prev, [campo]: "Contenido no permitido" }));
+        return;
+      }
+    }
+
+    // ── Sanitizar antes de enviar ────────────────────────────
+    const formSanitizado = {
+      ...form,
+      nombre_artistico:     sanitizeText(form.nombre_artistico),
+      biografia:            sanitizeText(form.biografia),
+      ciudad:               sanitizeText(form.ciudad),
+      direccion_taller:     sanitizeText(form.direccion_taller),
+      politica_envios:      sanitizeText(form.politica_envios),
+      politica_devoluciones: sanitizeText(form.politica_devoluciones),
+    };
+
     setSaving(true);
     try {
       let body: BodyInit;
       const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+
       if (fotoFile) {
         const fd = new FormData();
         fd.append("foto", fotoFile);
-        Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)));
+        Object.entries(formSanitizado).forEach(([k, v]) => fd.append(k, String(v)));
         body = fd;
       } else {
         headers["Content-Type"] = "application/json";
-        body = JSON.stringify(form);
+        body = JSON.stringify(formSanitizado);
       }
 
       const res = await fetch(`${API}/api/artista-portal/mi-perfil`, { method: "PUT", headers, body });
 
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 400 && data.code === "XSS_DETECTED") {
+          showToast(`Contenido no permitido en el campo "${data.field}"`, "err");
+          return;
+        }
+        if (res.status === 400 && data.code === "SQL_INJECTION_DETECTED") {
+          showToast(`Contenido no permitido en el campo "${data.field}"`, "err");
+          return;
+        }
         const message = await handleApiError(res);
         showToast(message, "err");
         if (res.status === 401) setTimeout(() => window.location.href = "/login", 2000);
@@ -241,6 +327,7 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
       const data = await res.json();
       if (data.foto_perfil) setFotoPreview(data.foto_perfil);
       setFotoFile(null);
+      setFieldErrors({});
       showToast("Perfil actualizado correctamente", "ok");
       onActualizar(data.foto_perfil);
     } catch (err) {
@@ -250,11 +337,13 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
     }
   };
 
-  // ── Agregar red social ────────────────────────────────────
   const handleAgregarRed = async () => {
     if (!nuevaRed?.red_social || !nuevaRed?.url) {
-      showToast("Selecciona la red y escribe la URL", "warn");
-      return;
+      showToast("Selecciona la red y escribe la URL", "warn"); return;
+    }
+    // Validar URL
+    if (hasSuspiciousContent(nuevaRed.url)) {
+      showToast("La URL contiene contenido no permitido", "err"); return;
     }
     setSavingRed(true);
     try {
@@ -275,12 +364,10 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
     }
   };
 
-  // ── Eliminar red social ───────────────────────────────────
   const handleEliminarRed = async (id: number) => {
     try {
       const res = await fetch(`${API}/api/artista-portal/redes-sociales/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { showToast(await handleApiError(res), "err"); return; }
       setRedes(r => r.filter(x => x.id_red !== id));
@@ -290,7 +377,7 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
     }
   };
 
-  const redesUsadas = redes.map(r => r.red_social);
+  const redesUsadas      = redes.map(r => r.red_social);
   const redesDisponibles = REDES_OPCIONES.filter(o => !redesUsadas.includes(o.value));
 
   return (
@@ -317,13 +404,10 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
         <div style={{ background:"rgba(255,255,255,0.025)", border:"1.5px solid rgba(255,255,255,0.08)", borderRadius:16, padding:"18px 22px", marginBottom:18 }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:"'DM Sans',sans-serif" }}>
-                Completitud del perfil
-              </span>
+              <span style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:"'DM Sans',sans-serif" }}>Completitud del perfil</span>
               {perfilCompleto
                 ? <span className="mp-req-chip mp-green-pill"><span className="mp-green-dot" />Listo para subir obras</span>
-                : <span className="mp-req-chip mp-red-pill"><span className="mp-red-dot" />Completa para subir obras</span>
-              }
+                : <span className="mp-req-chip mp-red-pill"><span className="mp-red-dot" />Completa para subir obras</span>}
             </div>
             <span style={{ fontSize:15, fontWeight:800, color: progreso === 100 ? C.green : progreso >= 60 ? C.gold : C.red, fontFamily:"'DM Sans',sans-serif" }}>{progreso}%</span>
           </div>
@@ -345,7 +429,8 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
           <div className="mp-section">
             <SectionHeader icon="📷" title="Foto de perfil" />
             <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-              <div className="mp-foto-wrap" onClick={() => fotoRef.current?.click()} style={{ border:fotoPreview?"2.5px solid rgba(255,132,14,0.5)":!camposActuales.foto_perfil?"2px dashed rgba(255,77,106,0.4)":"2px dashed rgba(255,255,255,0.15)", background:fotoPreview?"transparent":"rgba(255,255,255,0.03)", boxShadow:fotoPreview?"0 0 0 5px rgba(255,132,14,0.08)":"none" }}>
+              <div className="mp-foto-wrap" onClick={() => fotoRef.current?.click()}
+                style={{ border:fotoPreview?"2.5px solid rgba(255,132,14,0.5)":!camposActuales.foto_perfil?"2px dashed rgba(255,77,106,0.4)":"2px dashed rgba(255,255,255,0.15)", background:fotoPreview?"transparent":"rgba(255,255,255,0.03)", boxShadow:fotoPreview?"0 0 0 5px rgba(255,132,14,0.08)":"none" }}>
                 {fotoPreview ? <img src={fotoPreview} alt="Foto" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span style={{ fontSize:30, opacity:0.2 }}>👤</span>}
                 <div className="mp-foto-overlay">📷</div>
               </div>
@@ -372,16 +457,23 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
             <SectionHeader icon="🎨" title="Información artística" />
             <div style={{ display:"grid", gap:18 }}>
               <Field label="Nombre artístico" required empty={!form.nombre_artistico}>
-                <input className={`mp-input${!form.nombre_artistico?" required-empty":""}`} value={form.nombre_artistico} onChange={e => set("nombre_artistico",e.target.value)} placeholder="Como aparecerás en el catálogo" />
+                <input className={`mp-input${!form.nombre_artistico?" required-empty":""}${fieldErrors.nombre_artistico?" field-error":""}`}
+                  value={form.nombre_artistico} onChange={e => set("nombre_artistico", e.target.value)}
+                  placeholder="Como aparecerás en el catálogo (mínimo 3 caracteres)" />
+                {fieldErrors.nombre_artistico && <div className="mp-field-error">⚠ {fieldErrors.nombre_artistico}</div>}
               </Field>
               <Field label="Categoría principal" required empty={!form.id_categoria_principal}>
-                <select className={`mp-select${!form.id_categoria_principal?" required-empty":""}`} value={form.id_categoria_principal} onChange={e => set("id_categoria_principal",e.target.value)}>
+                <select className={`mp-select${!form.id_categoria_principal?" required-empty":""}`}
+                  value={form.id_categoria_principal} onChange={e => set("id_categoria_principal", e.target.value)}>
                   <option value="">Selecciona una categoría</option>
                   {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
                 </select>
               </Field>
-              <Field label="Biografía" hint="Aparece en tu perfil público" required empty={!form.biografia}>
-                <textarea className={`mp-textarea${!form.biografia?" required-empty":""}`} rows={4} value={form.biografia} onChange={e => set("biografia",e.target.value)} placeholder="Cuéntanos sobre ti, tu técnica y tu obra…" />
+              <Field label="Biografía" hint={`${form.biografia.length} caracteres — mínimo 20`} required empty={!form.biografia}>
+                <textarea className={`mp-textarea${!form.biografia?" required-empty":""}${fieldErrors.biografia?" field-error":""}`}
+                  rows={4} value={form.biografia} onChange={e => set("biografia", e.target.value)}
+                  placeholder="Cuéntanos sobre ti, tu técnica y tu obra… (mínimo 20 caracteres)" />
+                {fieldErrors.biografia && <div className="mp-field-error">⚠ {fieldErrors.biografia}</div>}
               </Field>
             </div>
           </div>
@@ -391,22 +483,34 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
             <SectionHeader icon="📍" title="Contacto y ubicación" />
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
               <Field label="Teléfono" required empty={!form.telefono}>
-                <input className={`mp-input${!form.telefono?" required-empty":""}`} value={form.telefono} onChange={e => set("telefono",e.target.value)} placeholder="10 dígitos" />
+                <input className={`mp-input${!form.telefono?" required-empty":""}${fieldErrors.telefono?" field-error":""}`}
+                  value={form.telefono} onChange={e => set("telefono", e.target.value.replace(/\D/g, "").slice(0,10))}
+                  placeholder="10 dígitos" maxLength={10} inputMode="numeric" />
+                {fieldErrors.telefono && <div className="mp-field-error">⚠ {fieldErrors.telefono}</div>}
               </Field>
               <Field label="Ciudad" required empty={!form.ciudad}>
-                <input className={`mp-input${!form.ciudad?" required-empty":""}`} value={form.ciudad} onChange={e => set("ciudad",e.target.value)} placeholder="Ciudad" />
+                <input className={`mp-input${!form.ciudad?" required-empty":""}${fieldErrors.ciudad?" field-error":""}`}
+                  value={form.ciudad} onChange={e => set("ciudad", e.target.value)} placeholder="Ciudad" />
+                {fieldErrors.ciudad && <div className="mp-field-error">⚠ {fieldErrors.ciudad}</div>}
               </Field>
               <Field label="Estado" required empty={!form.id_estado_base}>
-                <select className={`mp-select${!form.id_estado_base?" required-empty":""}`} value={form.id_estado_base} onChange={e => set("id_estado_base",e.target.value)}>
+                <select className={`mp-select${!form.id_estado_base?" required-empty":""}`}
+                  value={form.id_estado_base} onChange={e => set("id_estado_base", e.target.value)}>
                   <option value="">Selecciona un estado</option>
                   {estados.map(e => <option key={e.id_estado} value={e.id_estado}>{e.nombre}</option>)}
                 </select>
               </Field>
               <Field label="Código postal" required empty={!form.codigo_postal}>
-                <input className={`mp-input${!form.codigo_postal?" required-empty":""}`} value={form.codigo_postal} onChange={e => set("codigo_postal",e.target.value)} placeholder="CP" />
+                <input className={`mp-input${!form.codigo_postal?" required-empty":""}${fieldErrors.codigo_postal?" field-error":""}`}
+                  value={form.codigo_postal} onChange={e => set("codigo_postal", e.target.value.replace(/\D/g, "").slice(0,5))}
+                  placeholder="5 dígitos" maxLength={5} inputMode="numeric" />
+                {fieldErrors.codigo_postal && <div className="mp-field-error">⚠ {fieldErrors.codigo_postal}</div>}
               </Field>
               <Field label="Dirección del taller" full required empty={!form.direccion_taller}>
-                <input className={`mp-input${!form.direccion_taller?" required-empty":""}`} value={form.direccion_taller} onChange={e => set("direccion_taller",e.target.value)} placeholder="Calle, número, colonia" />
+                <input className={`mp-input${!form.direccion_taller?" required-empty":""}${fieldErrors.direccion_taller?" field-error":""}`}
+                  value={form.direccion_taller} onChange={e => set("direccion_taller", e.target.value)}
+                  placeholder="Calle, número, colonia (mínimo 10 caracteres)" />
+                {fieldErrors.direccion_taller && <div className="mp-field-error">⚠ {fieldErrors.direccion_taller}</div>}
               </Field>
             </div>
           </div>
@@ -433,7 +537,6 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
                     </div>
                   );
                 })}
-
                 {nuevaRed ? (
                   <div style={{ background:"rgba(255,132,14,0.04)", border:"1.5px solid rgba(255,132,14,0.2)", borderRadius:14, padding:"16px 18px", display:"grid", gap:12 }}>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -454,10 +557,12 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
                       <input className="mp-input" value={nuevaRed.url} onChange={e => setNuevaRed(n => n ? {...n, url: e.target.value} : n)} placeholder="https://..." />
                     </div>
                     <div style={{ display:"flex", gap:10 }}>
-                      <button type="button" onClick={handleAgregarRed} disabled={savingRed} style={{ flex:1, padding:"10px 0", borderRadius:10, border:"none", background:"linear-gradient(135deg,#FF840E,#CC59AD)", color:"#fff", fontWeight:700, cursor:savingRed?"not-allowed":"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13.5, opacity:savingRed?0.6:1 }}>
+                      <button type="button" onClick={handleAgregarRed} disabled={savingRed}
+                        style={{ flex:1, padding:"10px 0", borderRadius:10, border:"none", background:"linear-gradient(135deg,#FF840E,#CC59AD)", color:"#fff", fontWeight:700, cursor:savingRed?"not-allowed":"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13.5, opacity:savingRed?0.6:1 }}>
                         {savingRed ? "Guardando…" : "Agregar"}
                       </button>
-                      <button type="button" onClick={() => setNuevaRed(null)} style={{ padding:"10px 20px", borderRadius:10, border:"1.5px solid rgba(255,255,255,0.1)", background:"none", color:C.muted, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13.5 }}>
+                      <button type="button" onClick={() => setNuevaRed(null)}
+                        style={{ padding:"10px 20px", borderRadius:10, border:"1.5px solid rgba(255,255,255,0.1)", background:"none", color:C.muted, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13.5 }}>
                         Cancelar
                       </button>
                     </div>
@@ -477,20 +582,27 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
           <div className="mp-section">
             <SectionHeader icon="📦" title="Política de envíos" />
             <div style={{ display:"grid", gap:10, marginBottom:22 }}>
-              <Toggle value={form.acepta_envios} onChange={v => set("acepta_envios",v)} label="Acepto envíos a domicilio" />
-              <Toggle value={form.solo_entrega_personal} onChange={v => set("solo_entrega_personal",v)} label="Solo entrega personal / en taller" />
+              <Toggle value={form.acepta_envios} onChange={v => set("acepta_envios", v)} label="Acepto envíos a domicilio" />
+              <Toggle value={form.solo_entrega_personal} onChange={v => set("solo_entrega_personal", v)} label="Solo entrega personal / en taller" />
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:18 }}>
               <Field label="Días de preparación" hint="Tiempo antes de enviar">
-                <input className="mp-input" type="number" min="1" max="30" value={form.dias_preparacion_default} onChange={e => set("dias_preparacion_default",e.target.value)} />
+                <input className="mp-input" type="number" min="1" max="30"
+                  value={form.dias_preparacion_default} onChange={e => set("dias_preparacion_default", e.target.value)} />
               </Field>
             </div>
             <div style={{ display:"grid", gap:18 }}>
               <Field label="Política de envíos" hint="Tiempos, costos, cobertura">
-                <textarea className="mp-textarea" rows={3} value={form.politica_envios} onChange={e => set("politica_envios",e.target.value)} placeholder="Ej: Envíos en 3–5 días hábiles…" />
+                <textarea className={`mp-textarea${fieldErrors.politica_envios?" field-error":""}`}
+                  rows={3} value={form.politica_envios} onChange={e => set("politica_envios", e.target.value)}
+                  placeholder="Ej: Envíos en 3–5 días hábiles…" />
+                {fieldErrors.politica_envios && <div className="mp-field-error">⚠ {fieldErrors.politica_envios}</div>}
               </Field>
               <Field label="Política de devoluciones">
-                <textarea className="mp-textarea" rows={3} value={form.politica_devoluciones} onChange={e => set("politica_devoluciones",e.target.value)} placeholder="Ej: No se aceptan devoluciones…" />
+                <textarea className={`mp-textarea${fieldErrors.politica_devoluciones?" field-error":""}`}
+                  rows={3} value={form.politica_devoluciones} onChange={e => set("politica_devoluciones", e.target.value)}
+                  placeholder="Ej: No se aceptan devoluciones…" />
+                {fieldErrors.politica_devoluciones && <div className="mp-field-error">⚠ {fieldErrors.politica_devoluciones}</div>}
               </Field>
             </div>
           </div>
@@ -513,10 +625,8 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
           <button type="submit" disabled={saving} className="mp-save-btn">
             {saving
               ? <><span style={{ width:17, height:17, border:"2.5px solid rgba(245,240,255,0.25)", borderTopColor:"rgba(245,240,255,0.7)", borderRadius:"50%", display:"inline-block", animation:"spin 0.7s linear infinite" }} />Guardando…</>
-              : "Guardar cambios"
-            }
+              : "Guardar cambios"}
           </button>
-
         </form>
         <div style={{ height:48 }} />
       </div>
