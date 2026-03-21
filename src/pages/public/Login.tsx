@@ -19,6 +19,12 @@ const C = {
   muted: "rgba(255,255,255,0.5)",
 };
 
+// ── Sanitización y validación frontend (RASP) ────────────────
+const xssPattern  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
+const sqliPattern = /'(\s)*(OR|AND)|\bUNION\b|\bSELECT\b|\bDROP\b|\bINSERT\b|\bDELETE\b|--|\/\*/i;
+const hasSuspiciousContent = (v: string): boolean => xssPattern.test(v) || sqliPattern.test(v);
+// ─────────────────────────────────────────────────────────────
+
 interface LoginError {
   status?: number;
   error?: {
@@ -58,6 +64,13 @@ export default function Login() {
     if (!formData.correo || !formData.contrasena) {
       showMessage("Por favor completa todos los campos", true); return;
     }
+
+    // ── Validación de seguridad RASP ──────────────────────────
+    if (hasSuspiciousContent(formData.correo) || hasSuspiciousContent(formData.contrasena)) {
+      showMessage("Los datos ingresados contienen contenido no permitido", true); return;
+    }
+    // ─────────────────────────────────────────────────────────
+
     setIsLoading(true);
     try {
       const response = await authService.login(formData.correo, formData.contrasena);

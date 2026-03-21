@@ -24,6 +24,43 @@ const C = {
   warningBorder: "rgba(255,193,16,0.25)",
 };
 
+// ── Sanitización y validación frontend (RASP) ────────────────
+const xssPattern  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
+const sqliPattern = /'(\s)*(OR|AND)|\bUNION\b|\bSELECT\b|\bDROP\b|\bINSERT\b|\bDELETE\b|--|\/\*/i;
+const hasSuspiciousContent = (v: string): boolean => xssPattern.test(v) || sqliPattern.test(v);
+
+// Validaciones de formato
+const soloLetrasEspacios = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]+$/;
+
+const validarNombreCompleto = (v: string): string | null => {
+  if (!v.trim()) return "El nombre completo es obligatorio";
+  if (v.trim().length < 3) return "Mínimo 3 caracteres";
+  if (!soloLetrasEspacios.test(v.trim())) return "Solo letras y espacios — no se permiten números";
+  if (hasSuspiciousContent(v)) return "Contenido no permitido";
+  return null;
+};
+
+const validarTelefono = (v: string): string | null => {
+  if (!v.trim()) return null; // opcional
+  if (!/^\d{10}$/.test(v.trim())) return "Solo 10 dígitos numéricos";
+  return null;
+};
+
+const validarNombreArtistico = (v: string): string | null => {
+  if (!v.trim()) return null; // opcional
+  if (v.trim().length < 2) return "Mínimo 2 caracteres";
+  if (hasSuspiciousContent(v)) return "Contenido no permitido";
+  return null;
+};
+
+const validarBiografia = (v: string): string | null => {
+  if (!v.trim()) return "La biografía es obligatoria";
+  if (v.trim().length < 30) return "Mínimo 30 caracteres";
+  if (hasSuspiciousContent(v)) return "Contenido no permitido";
+  return null;
+};
+// ─────────────────────────────────────────────────────────────
+
 interface Categoria { id_categoria: number; nombre: string; }
 
 const PASOS = ["Cuenta", "Perfil"];
@@ -37,9 +74,10 @@ export default function RegistroArtista() {
   const [mostrarPass, setMostrarPass] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [terminado, setTerminado] = useState(false);
-
-  // ── nuevo estado para nombre artístico ocupado ──────────
   const [nombreArtisticoOcupado, setNombreArtisticoOcupado] = useState(false);
+
+  // Errores de campo en tiempo real
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     nombre_completo: "",
@@ -61,22 +99,40 @@ export default function RegistroArtista() {
 
   const handle = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    // si el artista empieza a escribir un nombre nuevo, limpiamos el aviso
-    if (name === "nombre_artistico") {
-      setNombreArtisticoOcupado(false);
-    }
+    if (name === "nombre_artistico") setNombreArtisticoOcupado(false);
+
     setForm(f => ({
       ...f,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value
     }));
     setMensaje("");
+
+    // ── Validación en tiempo real ────────────────────────
+    if (name === "nombre_completo") {
+      const err = validarNombreCompleto(value);
+      setFieldErrors(prev => ({ ...prev, nombre_completo: err ?? "" }));
+    }
+    if (name === "telefono") {
+      const err = validarTelefono(value);
+      setFieldErrors(prev => ({ ...prev, telefono: err ?? "" }));
+    }
+    if (name === "nombre_artistico") {
+      const err = validarNombreArtistico(value);
+      setFieldErrors(prev => ({ ...prev, nombre_artistico: err ?? "" }));
+    }
+    if (name === "biografia") {
+      const err = validarBiografia(value);
+      setFieldErrors(prev => ({ ...prev, biografia: err ?? "" }));
+    }
+    // ────────────────────────────────────────────────────
   };
 
   const validarPaso0 = () => {
-    if (!form.nombre_completo.trim()) return "El nombre completo es obligatorio";
-    if (form.nombre_completo.length < 3) return "El nombre debe tener al menos 3 caracteres";
+    const errNombre = validarNombreCompleto(form.nombre_completo);
+    if (errNombre) return errNombre;
     if (!form.correo.trim()) return "El correo es obligatorio";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) return "Formato de correo inválido";
+    if (hasSuspiciousContent(form.correo)) return "El correo contiene contenido no permitido";
     if (!form.contrasena) return "La contraseña es obligatoria";
     if (form.contrasena.length < 8) return "La contraseña debe tener al menos 8 caracteres";
     if (!/[A-Z]/.test(form.contrasena)) return "La contraseña necesita al menos una mayúscula";
@@ -85,8 +141,12 @@ export default function RegistroArtista() {
   };
 
   const validarPaso1 = () => {
-    if (!form.biografia.trim()) return "La biografía es obligatoria";
-    if (form.biografia.length < 30) return "La biografía debe tener al menos 30 caracteres";
+    const errBio = validarBiografia(form.biografia);
+    if (errBio) return errBio;
+    const errTel = validarTelefono(form.telefono);
+    if (errTel) return errTel;
+    const errNomArt = validarNombreArtistico(form.nombre_artistico);
+    if (errNomArt) return errNomArt;
     if (!form.id_categoria_principal) return "Selecciona una categoría principal";
     if (!form.acepta_terminos) return "Debes aceptar los términos y condiciones";
     return null;
@@ -125,7 +185,6 @@ export default function RegistroArtista() {
 
       const data = await res.json();
 
-      // ── nombre artístico ocupado (409) ──────────────────
       if (res.status === 409 && data.nombreArtisticoOcupado) {
         setNombreArtisticoOcupado(true);
         setForm(f => ({ ...f, nombre_artistico: "" }));
@@ -151,12 +210,20 @@ export default function RegistroArtista() {
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <Field label="Nombre completo" icon={<User size={15} />}>
         <input name="nombre_completo" value={form.nombre_completo} onChange={handle}
-          placeholder="Ej: María López Hernández" style={inputStyle} />
+          placeholder="Ej: María López Hernández"
+          style={{ ...inputStyle, borderColor: fieldErrors.nombre_completo ? C.warning : "rgba(255,255,255,0.1)" }} />
+        {fieldErrors.nombre_completo && (
+          <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600, marginTop: 4, display: "block" }}>
+            ⚠ {fieldErrors.nombre_completo}
+          </span>
+        )}
       </Field>
+
       <Field label="Correo electrónico" icon={<Mail size={15} />}>
         <input name="correo" type="email" value={form.correo} onChange={handle}
           placeholder="tu@correo.com" style={inputStyle} />
       </Field>
+
       <Field label="Contraseña" icon={<Lock size={15} />}>
         <div style={{ position: "relative" }}>
           <input name="contrasena" type={mostrarPass ? "text" : "password"}
@@ -198,7 +265,6 @@ export default function RegistroArtista() {
   const renderPaso1 = () => (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
-      {/* nombre artístico + aviso si está ocupado */}
       <Field label="Nombre artístico (opcional)" icon={<Sparkles size={15} />}>
         <input
           name="nombre_artistico"
@@ -207,21 +273,23 @@ export default function RegistroArtista() {
           placeholder="Ej: María Colores"
           style={{
             ...inputStyle,
-            borderColor: nombreArtisticoOcupado ? C.warning : "rgba(255,255,255,0.1)",
+            borderColor: nombreArtisticoOcupado
+              ? C.warning
+              : fieldErrors.nombre_artistico
+              ? "#FF4D6A"
+              : "rgba(255,255,255,0.1)",
           }}
         />
-
-        {/* aviso nombre ocupado */}
+        {fieldErrors.nombre_artistico && (
+          <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600, marginTop: 4, display: "block" }}>
+            ⚠ {fieldErrors.nombre_artistico}
+          </span>
+        )}
         {nombreArtisticoOcupado && (
           <div style={{
-            marginTop: 10,
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: C.warningBg,
-            border: `1px solid ${C.warningBorder}`,
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
+            marginTop: 10, padding: "12px 14px", borderRadius: 10,
+            background: C.warningBg, border: `1px solid ${C.warningBorder}`,
+            display: "flex", gap: 10, alignItems: "flex-start",
           }}>
             <Info size={15} color={C.warning} style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
@@ -230,7 +298,7 @@ export default function RegistroArtista() {
               </p>
               <p style={{ margin: 0, fontSize: 12.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
                 Ese nombre ya está registrado en Nu-B Studio. Por ahora escribe un <strong style={{ color: "rgba(255,255,255,0.85)" }}>nombre provisional</strong> para completar tu solicitud.
-                Una vez dentro del portal podrás <strong style={{ color: C.orange }}>solicitar una aclaración al equipo</strong> si eres el artista original y consideras que hubo una suplantación.
+                Una vez dentro del portal podrás <strong style={{ color: C.orange }}>solicitar una aclaración al equipo</strong> si eres el artista original.
               </p>
             </div>
           </div>
@@ -239,7 +307,18 @@ export default function RegistroArtista() {
 
       <Field label="Teléfono (opcional)" icon={<Phone size={15} />}>
         <input name="telefono" value={form.telefono} onChange={handle}
-          placeholder="Ej: 7711234567" style={inputStyle} />
+          placeholder="Ej: 7711234567 (10 dígitos)"
+          inputMode="numeric"
+          maxLength={10}
+          style={{
+            ...inputStyle,
+            borderColor: fieldErrors.telefono ? "#FF4D6A" : "rgba(255,255,255,0.1)"
+          }} />
+        {fieldErrors.telefono && (
+          <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600, marginTop: 4, display: "block" }}>
+            ⚠ {fieldErrors.telefono}
+          </span>
+        )}
       </Field>
 
       <Field label="Categoría principal" icon={<Palette size={15} />}>
@@ -255,9 +334,19 @@ export default function RegistroArtista() {
       <Field label="Biografía" icon={<FileText size={15} />}>
         <textarea name="biografia" value={form.biografia} onChange={handle}
           placeholder="Cuéntanos sobre ti, tu obra y tu inspiración... (mínimo 30 caracteres)"
-          rows={4} style={{ ...inputStyle, resize: "vertical", minHeight: 100 }} />
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, textAlign: "right" }}>
-          {form.biografia.length} / 500
+          rows={4}
+          style={{
+            ...inputStyle,
+            resize: "vertical",
+            minHeight: 100,
+            borderColor: fieldErrors.biografia ? "#FF4D6A" : "rgba(255,255,255,0.1)"
+          }} />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+          {fieldErrors.biografia
+            ? <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600 }}>⚠ {fieldErrors.biografia}</span>
+            : <span />
+          }
+          <span style={{ fontSize: 11, color: C.muted, textAlign: "right" }}>{form.biografia.length} / 500</span>
         </div>
       </Field>
 
@@ -334,56 +423,23 @@ export default function RegistroArtista() {
       {/* ════════════════════════════════════════════════════
           PANEL IZQUIERDO
       ════════════════════════════════════════════════════ */}
-      <div
-        className="artista-banner"
-        style={{
-          flex: 1,
-          position: "relative",
-          overflow: "hidden",
-          background: "#0C0812",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
-      >
-        {/* Imagen de fondo — artesanía */}
-        <img src={obraImg1} alt="" style={{
-          position: "absolute", inset: 0,
-          width: "100%", height: "100%",
-          objectFit: "cover", objectPosition: "center",
-          opacity: 0.18,
-          zIndex: 0,
-        }} />
-
-        {/* Gradiente sobre imagen */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(160deg, #0C0812 30%, rgba(12,8,18,0.7) 65%, rgba(12,8,18,0.95) 100%)",
-          zIndex: 1,
-        }} />
-
-        {/* Línea arcoíris */}
+      <div className="artista-banner" style={{ flex: 1, position: "relative", overflow: "hidden", background: "#0C0812", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <img src={obraImg1} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", opacity: 0.18, zIndex: 0 }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, #0C0812 30%, rgba(12,8,18,0.7) 65%, rgba(12,8,18,0.95) 100%)", zIndex: 1 }} />
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg,#FF840E,#CC59AD,#8D4CCD,#FFC110)", zIndex: 10 }} />
 
-        {/* Contenido principal */}
         <div style={{ position: "relative", zIndex: 3, padding: "60px 52px" }}>
-
-          {/* Logo */}
           <img src={logoImg} alt="Nu-B Studio" style={{ height: 44, marginBottom: 40, display: "block" }} />
-
-          {/* Título */}
           <h1 style={{ fontSize: "clamp(28px,2.8vw,40px)", fontWeight: 900, color: C.text, lineHeight: 1.15, margin: "0 0 14px", fontFamily: "'Playfair Display','Georgia',serif" }}>
             Forma parte de<br />
             <span style={{ background: `linear-gradient(135deg,${C.orange},${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               nuestra galería
             </span>
           </h1>
-
           <p style={{ fontSize: 14.5, color: C.muted, lineHeight: 1.75, margin: "0 0 36px", fontFamily: "'DM Sans',sans-serif", maxWidth: 400 }}>
             Conectamos artistas de la <strong style={{ color: "rgba(255,255,255,0.75)" }}>Huasteca Hidalguense</strong> con coleccionistas de todo México.
           </p>
 
-          {/* Feature items */}
           {[
             { color: C.orange, title: "Exposición nacional",         desc: "Tu obra llega a coleccionistas de todo el país" },
             { color: C.pink,   title: "Certificado de autenticidad", desc: "Cada obra recibe su certificado oficial" },
@@ -395,7 +451,6 @@ export default function RegistroArtista() {
             </div>
           ))}
 
-          {/* Beneficios exclusivos */}
           <div style={{ marginTop: 28, background: "rgba(141,76,205,0.10)", border: "1px solid rgba(141,76,205,0.25)", borderRadius: 14, padding: "18px 20px" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: C.purple, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, fontFamily: "'DM Sans',sans-serif" }}>
               Beneficios exclusivos para artistas certificados
@@ -416,7 +471,6 @@ export default function RegistroArtista() {
             </div>
           </div>
 
-          {/* Mini galería de obras */}
           <div style={{ marginTop: 28, display: "flex", gap: 10, alignItems: "flex-end" }}>
             <div style={{ animation: "floatA 7s ease-in-out infinite" }}>
               <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,132,14,0.25)", boxShadow: "0 12px 32px rgba(0,0,0,0.5)", width: 100 }}>
@@ -442,42 +496,26 @@ export default function RegistroArtista() {
       </div>
 
       {/* ════════════════════════════════════════════════════
-          PANEL DERECHO — rediseñado
+          PANEL DERECHO
       ════════════════════════════════════════════════════ */}
       <div
-        style={{
-          width: 500,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "40px 32px",
-          position: "relative",
-          zIndex: 2,
-        }}
+        style={{ width: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", position: "relative", zIndex: 2 }}
         className="artista-form-panel"
       >
         <div style={{ width: "100%", maxWidth: 440 }}>
 
-          {/* ── Stepper mejorado ── */}
+          {/* ── Stepper ── */}
           {!terminado && (
             <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 36, gap: 0 }}>
               {PASOS.map((label, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", flex: i < PASOS.length - 1 ? 1 : "initial" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                    {/* Círculo del paso */}
                     <div style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      background: i <= paso
-                        ? `linear-gradient(135deg, ${C.orange}, ${C.pink})`
-                        : "rgba(255,255,255,0.06)",
+                      width: 36, height: 36, borderRadius: "50%",
+                      background: i <= paso ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.06)",
                       border: `2px solid ${i <= paso ? "transparent" : "rgba(255,255,255,0.12)"}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 14,
-                      fontWeight: 800,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 14, fontWeight: 800,
                       color: i <= paso ? "white" : C.muted,
                       transition: "all .3s",
                       boxShadow: i === paso ? `0 0 14px ${C.orange}55` : "none",
@@ -485,27 +523,14 @@ export default function RegistroArtista() {
                     }}>
                       {i < paso ? <Check size={16} strokeWidth={3} /> : i + 1}
                     </div>
-                    {/* Etiqueta del paso */}
-                    <span style={{
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: i <= paso ? C.orange : C.muted,
-                      fontFamily: "'DM Sans',sans-serif",
-                      letterSpacing: "0.03em",
-                    }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: i <= paso ? C.orange : C.muted, fontFamily: "'DM Sans',sans-serif", letterSpacing: "0.03em" }}>
                       {label}
                     </span>
                   </div>
-
-                  {/* Línea conectora */}
                   {i < PASOS.length - 1 && (
                     <div style={{
-                      flex: 1,
-                      height: 3,
-                      borderRadius: 2,
-                      background: paso > i
-                        ? `linear-gradient(90deg, ${C.orange}, ${C.pink})`
-                        : "rgba(255,255,255,0.08)",
+                      flex: 1, height: 3, borderRadius: 2,
+                      background: paso > i ? `linear-gradient(90deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.08)",
                       margin: "16px 10px 0",
                       transition: "background .4s",
                     }} />
@@ -515,7 +540,7 @@ export default function RegistroArtista() {
             </div>
           )}
 
-          {/* ── Card del formulario ── */}
+          {/* ── Card ── */}
           <div style={{
             background: "rgba(14,11,26,0.88)",
             border: "1px solid rgba(255,200,150,0.12)",
@@ -525,24 +550,11 @@ export default function RegistroArtista() {
             position: "relative",
             overflow: "hidden",
           }}>
-            {/* Línea arcoíris en la cima de la card */}
-            <div style={{
-              position: "absolute",
-              top: 0, left: 0, right: 0,
-              height: 2,
-              background: "linear-gradient(90deg, #FF840E, #CC59AD, #8D4CCD, #FFC110)",
-              borderRadius: "24px 24px 0 0",
-            }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #FF840E, #CC59AD, #8D4CCD, #FFC110)", borderRadius: "24px 24px 0 0" }} />
 
             {!terminado && (
               <>
-                <h2 style={{
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: C.text,
-                  margin: "0 0 4px",
-                  fontFamily: "'Playfair Display','Georgia',serif",
-                }}>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 4px", fontFamily: "'Playfair Display','Georgia',serif" }}>
                   {paso === 0 ? "Crea tu cuenta" : "Tu perfil artístico"}
                 </h2>
                 <p style={{ fontSize: 13, color: C.muted, margin: "0 0 24px", fontFamily: "'DM Sans',sans-serif" }}>
@@ -565,14 +577,11 @@ export default function RegistroArtista() {
         </div>
       </div>
 
-      {/* ── Estilos globales + keyframes ── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap');
-
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-6deg)} 50%{transform:translateY(-12px) rotate(-4deg)} }
         @keyframes floatB { 0%,100%{transform:translateY(0) rotate(5deg)} 50%{transform:translateY(-8px) rotate(7deg)} }
-
         @media (max-width: 900px) {
           .artista-banner { display: none !important; }
           .artista-form-panel { width: 100% !important; padding: 32px 20px !important; }

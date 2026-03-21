@@ -28,6 +28,22 @@ const C = {
   text: "#ffffff", muted: "rgba(255,255,255,0.5)",
 };
 
+// ── Sanitización y validación frontend (RASP) ────────────────
+const xssPattern   = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
+const sqliPattern  = /'(\s)*(OR|AND)|\bUNION\b|\bSELECT\b|\bDROP\b|\bINSERT\b|\bDELETE\b|--|\/\*/i;
+const hasSuspiciousContent = (v: string): boolean => xssPattern.test(v) || sqliPattern.test(v);
+
+// Validaciones de formato
+const soloLetrasYEspacios = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]+$/;
+const validarNombre = (v: string): string | null => {
+  if (!v.trim()) return null;
+  if (v.trim().length < 2) return "Mínimo 2 caracteres";
+  if (!soloLetrasYEspacios.test(v.trim())) return "Solo se permiten letras y espacios";
+  if (hasSuspiciousContent(v)) return "Contenido no permitido";
+  return null;
+};
+// ─────────────────────────────────────────────────────────────
+
 interface PasswordReq { text: string; met: boolean; }
 interface RegisterError {
   status?: number;
@@ -44,6 +60,7 @@ export default function Register() {
   const [mensaje, setMensaje] = useState("");
   const [isError, setIsError] = useState(false);
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
+  const [nombreError, setNombreError] = useState<string>("");
   const [passReqs, setPassReqs] = useState<PasswordReq[]>([
     { text: "Mínimo 8 caracteres",           met: false },
     { text: "Una letra mayúscula",            met: false },
@@ -69,6 +86,11 @@ export default function Register() {
     const { name, value } = e.target;
     setFormData(f => ({ ...f, [name]: value }));
     if (name === "contrasena") validatePassword(value);
+    // Validación en tiempo real del nombre
+    if (name === "nombre") {
+      const err = validarNombre(value);
+      setNombreError(err ?? "");
+    }
     setMensaje("");
   };
 
@@ -78,14 +100,25 @@ export default function Register() {
     if (!aceptoTerminos) { setMensaje("Debes aceptar los Términos y Condiciones"); setIsError(true); return; }
     if (!formData.nombre || !formData.correo || !formData.contrasena) { setMensaje("Todos los campos son obligatorios"); setIsError(true); return; }
     if (formData.nombre.length < 2) { setMensaje("El nombre debe tener al menos 2 caracteres"); setIsError(true); return; }
+
+    // ── Validación de formato del nombre ──────────────────
+    const errNombre = validarNombre(formData.nombre);
+    if (errNombre) { setMensaje(`Nombre: ${errNombre}`); setIsError(true); return; }
+    // ─────────────────────────────────────────────────────
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) { setMensaje("El formato del correo no es válido"); setIsError(true); return; }
     if (!isPasswordValid) { setMensaje("La contraseña no cumple todos los requisitos"); setIsError(true); return; }
+
+    // ── Validación de seguridad RASP ──────────────────────
+    if (hasSuspiciousContent(formData.nombre)) { setMensaje("El nombre contiene contenido no permitido"); setIsError(true); return; }
+    if (hasSuspiciousContent(formData.correo)) { setMensaje("El correo contiene contenido no permitido"); setIsError(true); return; }
+    // ─────────────────────────────────────────────────────
 
     setIsLoading(true);
     try {
       const response = await authService.register(formData.nombre, formData.correo, formData.contrasena, true);
 
-      if (response.requiresVerification) {
+      if (response.success) {
         localStorage.setItem('temp_correo_verificacion', formData.correo);
         setMensaje("¡Cuenta creada! Revisa tu correo para verificarla 📧");
         setIsError(false);
@@ -188,7 +221,6 @@ export default function Register() {
         }} />
 
         {/* Floating card 1 — top-right (artesanas) */}
-        {/* STATIC: replace obraImg1 with a live API thumbnail when available */}
         <div style={{
           position: "absolute",
           top: 60,
@@ -223,7 +255,6 @@ export default function Register() {
         </div>
 
         {/* Floating card 2 — bottom-left (cuadro) */}
-        {/* STATIC: replace obraImg2 with a live API thumbnail when available */}
         <div style={{
           position: "absolute",
           bottom: 130,
@@ -321,7 +352,6 @@ export default function Register() {
           ))}
 
           {/* Stats row */}
-          {/* STATIC: numbers below are placeholders — fetch from a /stats API endpoint to make dynamic */}
           <div style={{
             display: "flex",
             gap: 10,
@@ -435,8 +465,13 @@ export default function Register() {
                   placeholder="Ej: Juan Pérez"
                   disabled={isLoading}
                   required
-                  style={inputStyle}
+                  style={{ ...inputStyle, borderColor: nombreError ? "#FF4D6A" : "rgba(255,255,255,0.2)" }}
                 />
+                {nombreError && (
+                  <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600, marginTop: 4, display: "block" }}>
+                    ⚠ {nombreError}
+                  </span>
+                )}
               </div>
 
               {/* Correo */}
@@ -656,10 +691,7 @@ export default function Register() {
             </p>
           </div>
 
-          {/* ── Step journey indicator ──
-              STATIC: always shows paso 1 active since this is the Register page.
-              Connect to routing state if you want to highlight different steps on /verify-email-code, etc.
-          */}
+          {/* ── Step journey indicator ── */}
           <div style={{
             display: "flex",
             alignItems: "center",
