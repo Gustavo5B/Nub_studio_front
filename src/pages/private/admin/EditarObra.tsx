@@ -1,4 +1,3 @@
-// src/pages/private/admin/EditarObra.tsx
 import { useState, useEffect, useRef } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -43,6 +42,26 @@ const FD = "'Playfair Display', serif";
 const FB = "'DM Sans', sans-serif";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+// ── Sanitización y validaciones RASP frontend ────────────────────────────────
+const xssPattern  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
+const sqliPattern = /'(\s)*(OR|AND)|\bUNION\b|\bSELECT\b|\bDROP\b|\bINSERT\b|\bDELETE\b|--|\/\*/i;
+const hasSuspiciousContent = (v: string) => xssPattern.test(v) || sqliPattern.test(v);
+
+const validarObra = (form: {
+  titulo: string; descripcion: string;
+}): string | null => {
+  if (!form.titulo.trim()) return "El título es obligatorio";
+  if (hasSuspiciousContent(form.titulo)) return "El título contiene contenido no permitido";
+  if (form.titulo.trim().length < 3) return "El título debe tener mínimo 3 caracteres";
+  
+  if (!form.descripcion.trim()) return "La descripción es obligatoria";
+  if (hasSuspiciousContent(form.descripcion)) return "La descripción contiene contenido no permitido";
+  if (form.descripcion.trim().length < 10) return "La descripción debe tener mínimo 10 caracteres";
+  
+  return null;
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ESTADOS: Record<string, { label: string; color: string; icon: React.ElementType; desc: string }> = {
   pendiente: { label: "Pendiente", color: C.gold,    icon: Clock,       desc: "En revisión"           },
   publicada: { label: "Publicada", color: C.green,   icon: CheckCircle, desc: "Visible en catálogo"   },
@@ -54,11 +73,11 @@ interface Categoria { id_categoria: number; nombre: string; }
 interface Tecnica   { id_tecnica: number;   nombre: string; }
 interface Artista   { id_artista: number;   nombre_completo: string; nombre_artistico?: string; }
 
-function IS(focused: boolean, disabled: boolean): React.CSSProperties {
+function IS(focused: boolean, disabled: boolean, error?: boolean): React.CSSProperties {
   return {
     width: "100%", padding: "11px 14px", boxSizing: "border-box",
-    background: focused ? C.inputFocus : C.input,
-    border: `1.5px solid ${focused ? C.orange : C.inputBorder}`,
+    background: error ? "rgba(204,89,173,0.05)" : focused ? C.inputFocus : C.input,
+    border: `1.5px solid ${error ? C.pink : focused ? C.orange : C.inputBorder}`,
     borderRadius: 10, fontSize: 13.5, color: C.cream, outline: "none",
     transition: "border-color .15s, background .15s",
     fontFamily: FB, opacity: disabled ? 0.5 : 1,
@@ -71,6 +90,11 @@ function Lbl({ children, req }: { children: React.ReactNode; req?: boolean }) {
       {children}{req && <span style={{ color: C.orange }}>*</span>}
     </div>
   );
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <div style={{ fontSize: 11.5, color: C.pink, fontWeight: 600, marginTop: 5, fontFamily: FB }}>⚠ {msg}</div>;
 }
 
 function Card({ accent, icon: Icon, title, children, delay = 0 }: {
@@ -129,6 +153,7 @@ export default function EditarObra() {
   const [imgPreview,    setImgPreview]    = useState<string>("");
   const [imgMode,       setImgMode]       = useState<"upload" | "url">("upload");
   const [dragOver,      setDragOver]      = useState(false);
+  const [fieldErrors,   setFieldErrors]   = useState<Record<string, string>>({});
 
   const [estadoActual,   setEstadoActual]   = useState("pendiente");
   const [estadoSelected, setEstadoSelected] = useState("pendiente");
@@ -181,14 +206,34 @@ export default function EditarObra() {
         showToast(handleNetworkError(err), "err");
       } finally { setLoadingData(false); }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, showToast]);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") setForm(p => ({ ...p, [name]: (e.target as HTMLInputElement).checked }));
     else if (type === "number") setForm(p => ({ ...p, [name]: value === "" ? 0 : Number(value) }));
     else setForm(p => ({ ...p, [name]: value }));
+
+    // Validación RASP en tiempo real
+    if (name === "titulo") {
+      if (value && hasSuspiciousContent(value)) {
+        setFieldErrors(p => ({ ...p, titulo: "Contenido no permitido" }));
+      } else if (value && value.trim().length < 3) {
+        setFieldErrors(p => ({ ...p, titulo: "Mínimo 3 caracteres" }));
+      } else {
+        setFieldErrors(p => { const n = { ...p }; delete n.titulo; return n; });
+      }
+    }
+
+    if (name === "descripcion") {
+      if (value && hasSuspiciousContent(value)) {
+        setFieldErrors(p => ({ ...p, descripcion: "Contenido no permitido" }));
+      } else if (value && value.trim().length < 10) {
+        setFieldErrors(p => ({ ...p, descripcion: "Mínimo 10 caracteres" }));
+      } else {
+        setFieldErrors(p => { const n = { ...p }; delete n.descripcion; return n; });
+      }
+    }
   };
 
   const handleFile = (file: File) => {
@@ -212,7 +257,12 @@ export default function EditarObra() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form.titulo || !form.descripcion) { showToast("Completa título y descripción", "warn"); return; }
+    
+    // ── Validaciones RASP completas ──────────────────
+    const error = validarObra(form);
+    if (error) { showToast(error, "err"); return; }
+    // ─────────────────────────────────────────────────
+    
     if (!form.id_categoria) { showToast("Selecciona una categoría", "warn"); return; }
     if (!form.id_artista)   { showToast("Selecciona un artista", "warn"); return; }
     setLoading(true);
@@ -273,10 +323,8 @@ export default function EditarObra() {
     </div>
   );
 
-  // ✅ Sin wrapper externo, sin <Sidebar />, sin <style> — todo lo maneja AdminLayout
   return (
     <>
-      {/* Topbar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", height: 56, background: C.bgDeep, borderBottom: `1px solid ${C.borderBr}`, position: "sticky", top: 0, zIndex: 30, fontFamily: FB }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => navigate("/admin/obras")}
@@ -332,17 +380,18 @@ export default function EditarObra() {
         <form id="editar-obra-form" onSubmit={onSubmit}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 14, alignItems: "start" }}>
 
-            {/* ── IZQUIERDA ── */}
             <div>
               <Card accent={C.orange} icon={Type} title="Información básica" delay={0.05}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
                     <Lbl req>Título de la obra</Lbl>
-                    <input name="titulo" value={form.titulo} onChange={onChange} required disabled={loading} style={IS(focused === "titulo", loading)} placeholder="Ej: Amanecer en la Huasteca" {...fi("titulo")} />
+                    <input name="titulo" value={form.titulo} onChange={onChange} required disabled={loading} style={IS(focused === "titulo", loading, !!fieldErrors.titulo)} placeholder="Ej: Amanecer en la Huasteca" {...fi("titulo")} />
+                    <FieldError msg={fieldErrors.titulo} />
                   </div>
                   <div>
                     <Lbl req><FileText size={10} /> Descripción</Lbl>
-                    <textarea name="descripcion" value={form.descripcion} onChange={onChange} rows={4} required disabled={loading} placeholder="Describe la obra, técnica, inspiración…" style={{ ...IS(focused === "desc", loading), resize: "vertical" as const }} {...fi("desc")} />
+                    <textarea name="descripcion" value={form.descripcion} onChange={onChange} rows={4} required disabled={loading} placeholder="Describe la obra, técnica, inspiración…" style={{ ...IS(focused === "desc", loading, !!fieldErrors.descripcion), resize: "vertical" as const }} {...fi("desc")} />
+                    <FieldError msg={fieldErrors.descripcion} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                     <div>
@@ -396,7 +445,6 @@ export default function EditarObra() {
                 </div>
               </Card>
 
-              {/* Panel de revisión */}
               <div style={{ background: C.card, border: `1px solid ${C.green}22`, borderRadius: 14, overflow: "hidden", marginBottom: 14, position: "relative", animation: "fadeUp .5s ease .16s both" }}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${C.green}, ${C.blue}50, transparent)` }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderBottom: `1px solid ${C.border}` }}>
@@ -436,7 +484,7 @@ export default function EditarObra() {
                       <Lbl><MessageSquare size={10} /> Motivo del rechazo</Lbl>
                       <textarea value={motivoRechazo} onChange={e => setMotivoRechazo(e.target.value)}
                         placeholder="Explica al artista qué debe corregir…" rows={3}
-                        style={{ ...IS(focused === "motivo", false), resize: "vertical" as const, borderColor: `${C.pink}45` }}
+                        style={{ ...IS(focused === "motivo", false), borderColor: `${C.pink}45` }}
                         {...fi("motivo")} />
                     </div>
                   )}
@@ -473,7 +521,6 @@ export default function EditarObra() {
               </div>
             </div>
 
-            {/* ── DERECHA ── */}
             <div>
               <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden", marginBottom: 14, position: "relative", animation: "fadeUp .5s ease .05s both" }}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.pink})`, zIndex: 1 }} />

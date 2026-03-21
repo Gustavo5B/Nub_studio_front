@@ -26,6 +26,7 @@ interface LoginResponse {
 }
 
 interface RegisterResponse {
+  success?: boolean;   
   message: string;
   user?: {
     id: number;
