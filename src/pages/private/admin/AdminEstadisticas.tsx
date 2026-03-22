@@ -61,7 +61,15 @@ interface DiaData { dia_num:number; label:string; total:number; exitosos:number;
 interface SemanaData { semana:string; label:string; fecha_label:string; total:number; exitosos:number; fallidos:number; usuarios_unicos:number; x:number }
 interface DiaHistData { dia:string; label:string; total:number; exitosos:number; fallidos:number; promedio_movil:number; x:number }
 interface Prediccion { label:string; fecha_label:string; prediccion:number }
-interface Modelo { a:number; b:number; r2:number; formula:string; interpretacion:string }
+interface ModeloError { x:number; y_real:number; y_modelo:number; error:number; error_relativo:number|null }
+interface Modelo {
+  y0: number; k: number;
+  fase: "crecimiento"|"decrecimiento"|"estable";
+  ecuacion: string;
+  t_caracteristico: number|null;
+  estadisticos: { media:number; moda:number; desv_std:number; r2:number };
+  errores: ModeloError[];
+}
 interface DistItem { tipo_evento:string; total:number; porcentaje:number }
 interface CalorCell { dia:number; dia_label:string; hora:number; hora_label:string; total:number; intensidad:number }
 interface EventoHistorial { id_historial:number; correo:string; tipo_evento:string; ip_address:string; fecha:string; detalles:string; nombre_completo:string }
@@ -174,53 +182,177 @@ function KpiCard({ label, value, contexto, sub, accent, icon:Icon, tendencia, an
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// MODELO BOX
+// MODELO BOX — sección humana visible + sección técnica colapsable
 // ═════════════════════════════════════════════════════════════════════════════
 function ModeloBox({ modelo, periodo }: { modelo:Modelo; periodo:string }) {
-  const r2Pct    = (modelo.r2*100).toFixed(1);
-  const buenAjuste = modelo.r2 >= 0.7;
-  const confianza = modelo.r2 >= 0.8 ? "Alta" : modelo.r2 >= 0.6 ? "Media" : "Baja";
-  const confColor = modelo.r2 >= 0.8 ? C.green : modelo.r2 >= 0.6 ? C.gold : C.red;
+  const [verTecnico, setVerTecnico] = useState(false);
+  const { estadisticos, y0, k, fase, ecuacion, t_caracteristico, errores } = modelo;
+
+  const r2Pct     = (estadisticos.r2 * 100).toFixed(0);
+  const confColor = estadisticos.r2 >= 0.8 ? C.green : estadisticos.r2 >= 0.6 ? C.gold : C.red;
+  const confianza = estadisticos.r2 >= 0.8 ? "Alta" : estadisticos.r2 >= 0.6 ? "Media" : "Baja";
+  const faseColor = fase === "crecimiento" ? C.green : fase === "decrecimiento" ? C.red : C.gold;
+
+  // Cuando R² < 0.3 el modelo no detectó tendencia confiable
+  const confiableR2  = estadisticos.r2 >= 0.3;
+  // Tiempo de duplicación > 60 periodos equivale a "sin crecimiento real"
+  const tCaractUtil  = t_caracteristico !== null && t_caracteristico <= 60;
+
+  // Texto en lenguaje natural — depende de si el modelo es confiable
+  const tituloPrincipal = !confiableR2
+    ? "No se detectó una tendencia clara"
+    : fase === "crecimiento" ? "Los accesos están creciendo"
+    : fase === "decrecimiento" ? "Los accesos están bajando"
+    : "Los accesos se mantienen estables";
+
+  const descripcionFase = !confiableR2
+    ? "Los datos varían demasiado (picos y caídas) para que el modelo exponencial detecte una tendencia definida. Las predicciones son aproximadas."
+    : fase === "crecimiento"
+    ? "La plataforma está ganando actividad de forma exponencial."
+    : fase === "decrecimiento"
+    ? "La actividad en la plataforma está disminuyendo con el tiempo."
+    : "No hay una tendencia clara de crecimiento ni caída.";
+
+  const tCaractLabel =
+    fase === "crecimiento" ? "los accesos se duplican cada" :
+    fase === "decrecimiento" ? "los accesos se reducen a la mitad cada" : null;
+
+  // Solo mostrar tiempo característico si el modelo es confiable y el valor es relevante
+  const tCaractVal = confiableR2 && tCaractUtil && tCaractLabel
+    ? `${t_caracteristico} periodos`
+    : null;
+
+  const erroresConRel = errores.filter(e => e.error_relativo !== null);
+  const errMed = erroresConRel.length > 0
+    ? erroresConRel.reduce((s, e) => s + (e.error_relativo ?? 0), 0) / erroresConRel.length
+    : null;
 
   return (
-    <div style={{ background:`linear-gradient(135deg, rgba(141,76,205,0.08), rgba(121,170,245,0.04))`, border:`1px solid rgba(141,76,205,0.25)`, borderRadius:14, padding:"18px 22px", marginBottom:18 }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:10, background:"rgba(141,76,205,0.18)", border:`1px solid rgba(141,76,205,0.30)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <Sparkles size={16} color={C.purple} strokeWidth={2} />
-          </div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:800, color:C.cream, fontFamily:FD }}>🔮 Modelo Predictivo — Regresión Lineal</div>
-            <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:1 }}>{periodo} · mínimos cuadrados</div>
+    <div style={{ border:`1px solid rgba(141,76,205,0.28)`, borderRadius:16, overflow:"hidden", marginBottom:18, boxShadow:"0 8px 32px rgba(0,0,0,0.22)" }}>
+
+      {/* ══ SECCIÓN HUMANA ══ */}
+      <div style={{ background:`linear-gradient(135deg, rgba(141,76,205,0.13) 0%, rgba(7,5,16,0.70) 100%)`, padding:"20px 22px" }}>
+
+        {/* Encabezado */}
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:18 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:`${!confiableR2 ? C.gold : faseColor}20`, border:`1px solid ${!confiableR2 ? C.gold : faseColor}40`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:22 }}>
+              {!confiableR2 ? "⚠️" : fase === "crecimiento" ? "📈" : fase === "decrecimiento" ? "📉" : "➡️"}
+            </div>
+            <div>
+              <div style={{ fontSize:16, fontWeight:900, color: !confiableR2 ? C.gold : faseColor, fontFamily:FD, lineHeight:1 }}>{tituloPrincipal}</div>
+              <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:5, lineHeight:1.5, maxWidth:480 }}>{descripcionFase}</div>
+              {tCaractVal && (
+                <div style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:8, padding:"4px 10px", borderRadius:20, background:`${faseColor}14`, border:`1px solid ${faseColor}30` }}>
+                  <span style={{ fontSize:11, color:faseColor, fontFamily:FB }}>
+                    ⏱ {tCaractLabel} <strong>{tCaractVal}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ padding:"4px 12px", borderRadius:20, background:`${confColor}14`, border:`1px solid ${confColor}30`, fontSize:11, color:confColor, fontWeight:700, fontFamily:FB }}>
-            Confianza {confianza}
-          </div>
+
+        {/* 3 stats en lenguaje simple */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+          {[
+            { emoji:"📊", label:"Promedio histórico", value:String(estadisticos.media), sub:`accesos por periodo`, color:C.orange },
+            { emoji:"🔁", label:"Valor más frecuente", value:String(estadisticos.moda), sub:"el que más se repite", color:C.pink },
+            { emoji:"📐", label:"Variación típica", value:`±${estadisticos.desv_std}`, sub:"qué tanto varía normalmente", color:C.blue },
+          ].map(({ emoji, label, value, sub, color }) => (
+            <div key={label} style={{ padding:"12px 14px", borderRadius:12, background:"rgba(255,232,200,0.03)", border:`1px solid rgba(255,200,150,0.08)`, transition:"border-color .2s, background .2s" }}
+              onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${color}35`; el.style.background=`${color}08`; }}
+              onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor="rgba(255,200,150,0.08)"; el.style.background="rgba(255,232,200,0.03)"; }}>
+              <div style={{ fontSize:16, marginBottom:6 }}>{emoji}</div>
+              <div style={{ fontSize:9.5, color:C.creamMut, fontFamily:FB, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.08em" }}>{label}</div>
+              <div style={{ fontSize:22, fontWeight:900, color, fontFamily:FD, lineHeight:1, marginBottom:3 }}>{value}</div>
+              <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>{sub}</div>
+            </div>
+          ))}
         </div>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:10 }}>
-        {[
-          { label:"Ecuación y = a + bx", value:modelo.formula, sub:"método mínimos cuadrados", color:C.purple, mono:true },
-          { label:"Pendiente (b)", value:modelo.b >= 0 ? `+${modelo.b}` : String(modelo.b), sub:`${modelo.b >= 0 ? "tendencia al alza" : "tendencia a la baja"}`, color:modelo.b>=0?C.green:C.red, mono:true },
-          { label:"R² — Precisión del modelo", value:`${r2Pct}%`, sub:buenAjuste ? "✓ buen ajuste" : "⚠ ajuste moderado", color:buenAjuste?C.green:C.gold, mono:false },
-          { label:"Interpretación", value:"", sub:modelo.interpretacion, color:C.blue, mono:false },
-        ].map(({ label, value, sub, color, mono }) => (
-          <div key={label} style={{ padding:"10px 14px", borderRadius:10, background:"rgba(141,76,205,0.07)", border:`1px solid rgba(141,76,205,0.14)` }}>
-            <div style={{ fontSize:9.5, color:C.creamMut, fontFamily:FB, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.09em" }}>{label}</div>
-            {value && <div style={{ fontSize: mono ? 12 : 18, fontWeight:900, color, fontFamily: mono ? FM : FD, lineHeight:1, marginBottom:3 }}>{value}</div>}
-            <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, lineHeight:1.4 }}>{sub}</div>
+
+      {/* ══ SECCIÓN TÉCNICA (colapsable) ══ */}
+      <div style={{ borderTop:`1px solid rgba(141,76,205,0.18)` }}>
+        <button
+          onClick={() => setVerTecnico(v => !v)}
+          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 22px", background:"rgba(141,76,205,0.06)", border:"none", cursor:"pointer", transition:"background .15s" }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background="rgba(141,76,205,0.11)"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="rgba(141,76,205,0.06)"}
+        >
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Sparkles size={12} color={C.purple} strokeWidth={2} />
+            <span style={{ fontSize:11, fontWeight:700, color:C.purple, fontFamily:FB }}>Detalle técnico del modelo</span>
+            <span style={{ fontSize:10, color:C.creamMut, fontFamily:FM }}>y(t) = y₀·eᵏᵗ · {periodo}</span>
           </div>
-        ))}
-      </div>
-      {/* Barra de confianza visual */}
-      <div style={{ marginTop:12, display:"flex", alignItems:"center", gap:10 }}>
-        <span style={{ fontSize:10, color:C.creamMut, fontFamily:FB, whiteSpace:"nowrap" }}>Confianza del modelo</span>
-        <div style={{ flex:1, height:4, borderRadius:99, background:"rgba(255,255,255,0.08)", overflow:"hidden" }}>
-          <div style={{ width:`${r2Pct}%`, height:"100%", borderRadius:99, background:`linear-gradient(90deg, ${confColor}90, ${confColor})`, transition:"width 1s ease" }} />
-        </div>
-        <span style={{ fontSize:10, color:confColor, fontFamily:FM, fontWeight:700, whiteSpace:"nowrap" }}>{r2Pct}%</span>
+          <span style={{ fontSize:11, color:C.creamMut, fontFamily:FM, transition:"transform .2s", display:"inline-block", transform: verTecnico ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
+        </button>
+
+        {verTecnico && (
+          <div style={{ padding:"16px 22px 20px", background:"rgba(7,5,16,0.55)" }}>
+
+            {/* Ecuación destacada */}
+            <div style={{ marginBottom:14, padding:"11px 16px", borderRadius:10, background:"rgba(141,76,205,0.10)", border:`1px solid rgba(141,76,205,0.25)` }}>
+              <div style={{ fontSize:9, color:`${C.purple}90`, fontFamily:FB, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.10em" }}>Ecuación · dy/dt = k·y</div>
+              <div style={{ fontSize:14, fontWeight:900, color:C.purple, fontFamily:FM }}>{ecuacion}</div>
+              <div style={{ fontSize:9.5, color:C.creamMut, fontFamily:FB, marginTop:4 }}>k y y₀ estimados por mínimos cuadrados sobre ln(y) = ln(y₀) + k·t</div>
+            </div>
+
+            {/* Stats técnicos: y₀, k, t_caract, R² */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:14 }}>
+              {[
+                { label:"y₀ — valor inicial",   value:String(y0),                           sub:"condición inicial t = 0",            color:C.blue    },
+                { label:"k — tasa de cambio",    value:k >= 0 ? `+${k}` : String(k),         sub:`ln(2)/|k| = ${t_caracteristico ?? "∞"}`, color:faseColor },
+                { label:"R² — ajuste linealizado", value:`${r2Pct}%`,                         sub: estadisticos.r2 >= 0.7 ? "buen ajuste en ln(y)" : "ajuste en escala ln(y)", color:confColor },
+                { label:"Error relativo medio",  value:errMed !== null ? `${errMed.toFixed(2)}%` : "—", sub:"sMAPE · simétrico, acotado 0–200%", color: errMed !== null && errMed < 20 ? C.green : C.gold },
+              ].map(({ label, value, sub, color }) => (
+                <div key={label} style={{ padding:"9px 12px", borderRadius:9, background:"rgba(255,232,200,0.02)", border:`1px solid rgba(255,200,150,0.06)` }}>
+                  <div style={{ fontSize:8.5, color:C.creamMut, fontFamily:FB, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.08em" }}>{label}</div>
+                  <div style={{ fontSize:17, fontWeight:900, color, fontFamily:FM, lineHeight:1, marginBottom:2 }}>{value}</div>
+                  <div style={{ fontSize:9.5, color:C.creamMut, fontFamily:FB }}>{sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabla de errores */}
+            {errores.length > 0 && (
+              <div style={{ borderRadius:9, border:`1px solid rgba(141,76,205,0.16)`, overflow:"hidden" }}>
+                <div style={{ padding:"6px 12px", background:"rgba(141,76,205,0.10)", fontSize:9.5, fontWeight:700, color:C.purple, fontFamily:FB, textTransform:"uppercase", letterSpacing:"0.07em" }}>
+                  Errores punto a punto ({errores.length} observaciones)
+                </div>
+                <div style={{ overflowX:"auto", maxHeight:200, overflowY:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11, fontFamily:FM }}>
+                    <thead>
+                      <tr style={{ background:"rgba(7,5,16,0.60)", position:"sticky", top:0 }}>
+                        {["t","y real","ŷ modelo","error abs.","error rel."].map(h => (
+                          <th key={h} style={{ padding:"6px 12px", textAlign:"right", color:C.creamMut, fontWeight:700, fontSize:9, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {errores.map((e, i) => {
+                        const ec = e.error_relativo !== null && e.error_relativo > 30 ? C.red : e.error_relativo !== null && e.error_relativo > 15 ? C.gold : C.green;
+                        return (
+                          <tr key={i} style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:i%2===0?"rgba(255,232,200,0.012)":"transparent" }}>
+                            <td style={{ padding:"5px 12px", textAlign:"right", color:C.creamMut }}>{e.x}</td>
+                            <td style={{ padding:"5px 12px", textAlign:"right", color:C.cream, fontWeight:600 }}>{e.y_real}</td>
+                            <td style={{ padding:"5px 12px", textAlign:"right", color:C.purple }}>{e.y_modelo}</td>
+                            <td style={{ padding:"5px 12px", textAlign:"right", color:e.error >= 0 ? C.green : C.red }}>{e.error >= 0 ? "+" : ""}{e.error}</td>
+                            <td style={{ padding:"5px 12px", textAlign:"right" }}>
+                              <span style={{ padding:"2px 7px", borderRadius:20, background:`${ec}18`, color:ec, fontSize:10, fontWeight:700 }}>
+                                {e.error_relativo !== null ? `${e.error_relativo}%` : "—"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -464,7 +596,7 @@ export default function AdminEstadisticas() {
               <strong style={{ color:C.creamSub }}>{fechaInicio}</strong>
               {" "}hasta{" "}
               <strong style={{ color:C.creamSub }}>{fechaFin}</strong>
-              {" "}· Regresión lineal por mínimos cuadrados
+              {" "}· Modelo exponencial y(t) = y₀·eᵏᵗ
             </p>
           </div>
           <div style={{ display:"flex", gap:8, flexShrink:0 }}>
@@ -620,82 +752,126 @@ export default function AdminEstadisticas() {
 
         {/* ── POR SEMANA ── */}
         {tab === "semanal" && (
-          <div style={{ animation:"tabSlide .3s ease" }}>
-            {modeloSem && <ModeloBox modelo={modeloSem} periodo="Últimas 12 semanas" />}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"20px 24px" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-                <div>
-                  <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FD }}>📊 Accesos totales por semana</div>
-                  <div style={{ display:"flex", gap:12, marginTop:6 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.creamMut, fontFamily:FB }}>
-                      <div style={{ width:12, height:12, borderRadius:3, background:C.blue }} /> Accesos reales
-                    </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.creamMut, fontFamily:FB }}>
-                      <div style={{ width:12, height:12, borderRadius:3, background:C.gold, opacity:0.7 }} /> 🔮 Predicción (estimado)
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginTop:16 }}>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={semanalComb} margin={{ top:5, right:10, bottom:5, left:-10 }}>
-                    <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="fecha_label" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
-                    <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={32} />
-                    <Tooltip content={<ChartTip />} />
-                    {semanal.length > 0 && <ReferenceLine x={semanal[semanal.length-1]?.fecha_label} stroke={`${C.gold}50`} strokeDasharray="4 2" label={{ value:"hoy →", fill:C.gold, fontSize:10, position:"insideTopRight" }} />}
-                    <Bar dataKey="total"      name="Accesos reales esa semana"    fill={C.blue} radius={[5,5,0,0]} fillOpacity={0.88} />
-                    <Bar dataKey="prediccion" name="Accesos predichos (estimación)" fill={C.gold} radius={[5,5,0,0]} fillOpacity={0.65} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              {/* Predicciones */}
-              {predSemanal.length > 0 && (
-                <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.borderBr}` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-                    <span style={{ fontSize:16 }}>🔮</span>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FB }}>Predicción — próximas 4 semanas</div>
-                      <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>
-                        Basado en la tendencia de las últimas 12 semanas · confianza del modelo: {modeloSem ? `${(modeloSem.r2*100).toFixed(0)}%` : "—"}
+          <div style={{ animation:"tabSlide .3s ease", display:"flex", flexDirection:"column", gap:14 }}>
+            {/* Fila superior: modelo + predicciones */}
+            {(modeloSem || predSemanal.length > 0) && (
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:14, alignItems:"start" }}>
+                {/* Modelo */}
+                {modeloSem && <ModeloBox modelo={modeloSem} periodo="Últimas 12 semanas" />}
+                {/* Predicciones verticales */}
+                {predSemanal.length > 0 && (
+                  <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px 18px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                      <span style={{ fontSize:18 }}>🔮</span>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:800, color:C.cream, fontFamily:FD, lineHeight:1 }}>Próximas 4 semanas</div>
+                        <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:2 }}>
+                          confianza: {modeloSem ? `${(modeloSem.estadisticos.r2*100).toFixed(0)}%` : "—"}
+                        </div>
                       </div>
                     </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      {predSemanal.map((p, i) => {
+                        const opacity = 1 - i * 0.10;
+                        return (
+                          <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderRadius:12, background:`rgba(255,193,16,${0.06 - i * 0.01})`, border:`1px solid rgba(255,193,16,${0.22 - i * 0.04})`, opacity }}>
+                            <div>
+                              <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginBottom:2 }}>semana del {p.fecha_label}</div>
+                              <div style={{ fontSize:10, color:`rgba(255,193,16,0.55)`, fontFamily:FM }}>+{i+1} sem. · {p.label}</div>
+                            </div>
+                            <div style={{ textAlign:"right" }}>
+                              <div style={{ fontSize:26, fontWeight:900, color:C.gold, fontFamily:FD, lineHeight:1 }}>{p.prediccion}</div>
+                              <div style={{ fontSize:9.5, color:C.creamMut, fontFamily:FB }}>accesos est.</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
-                    {predSemanal.map((p, i) => {
-                      const opacity = 1 - i * 0.12;
-                      return (
-                        <div key={i} style={{ textAlign:"center", padding:"14px 10px", borderRadius:12, background:`rgba(255,193,16,${0.05 + i * 0.01})`, border:`1px solid rgba(255,193,16,${0.20 - i * 0.03})`, opacity }}>
-                          <div style={{ fontSize:28, fontWeight:900, color:C.gold, fontFamily:FD, lineHeight:1 }}>{p.prediccion}</div>
-                          <div style={{ fontSize:11, fontWeight:700, color:C.creamSub, fontFamily:FB, marginTop:5 }}>accesos estimados</div>
-                          <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginTop:3 }}>semana del {p.fecha_label}</div>
-                          <div style={{ fontSize:10, color:`rgba(255,193,16,0.6)`, fontFamily:FM, marginTop:4 }}>+{(i+1)} sem.</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                )}
+              </div>
+            )}
+            {/* Gráfica full-width */}
+            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"20px 24px" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+                <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FD }}>📊 Accesos por semana — histórico y predicción</div>
+                <div style={{ display:"flex", gap:12 }}>
+                  {[{ bg:C.blue, label:"Accesos reales" },{ bg:C.gold, label:"Predicción", op:0.7 }].map(({ bg, label, op }) => (
+                    <div key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.creamMut, fontFamily:FB }}>
+                      <div style={{ width:10, height:10, borderRadius:3, background:bg, opacity:op??1 }} /> {label}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={semanalComb} margin={{ top:5, right:10, bottom:5, left:-10 }}>
+                  <CartesianGrid stroke="rgba(255,232,200,0.05)" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="fecha_label" stroke="transparent" tick={{ fill:C.creamMut, fontSize:10, fontFamily:FB }} />
+                  <YAxis stroke="transparent" tick={{ fill:C.creamMut, fontSize:9, fontFamily:FB }} width={32} />
+                  <Tooltip content={<ChartTip />} />
+                  {semanal.length > 0 && <ReferenceLine x={semanal[semanal.length-1]?.fecha_label} stroke={`${C.gold}50`} strokeDasharray="4 2" label={{ value:"hoy →", fill:C.gold, fontSize:10, position:"insideTopRight" }} />}
+                  <Bar dataKey="total"      name="Accesos reales esa semana"      fill={C.blue} radius={[5,5,0,0]} fillOpacity={0.88} />
+                  <Bar dataKey="prediccion" name="Accesos predichos (estimación)" fill={C.gold} radius={[5,5,0,0]} fillOpacity={0.65} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         )}
 
         {/* ── POR DÍA ── */}
         {tab === "diario" && (
-          <div style={{ animation:"tabSlide .3s ease" }}>
-            {modeloDia && <ModeloBox modelo={modeloDia} periodo="Últimos 30 días" />}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"20px 24px" }}>
-              <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:4 }}>📈 Accesos diarios — últimos 30 días</div>
-              <div style={{ display:"flex", gap:14, marginBottom:16, flexWrap:"wrap" }}>
-                {[
-                  { color:C.orange, label:"📊 Accesos reales ese día" },
-                  { color:C.gold,   label:"🔮 Predicción próximos 7 días" },
-                  { color:C.green,  label:"〰 Promedio móvil 7 días" },
-                ].map(({ color, label }) => (
-                  <div key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.creamMut, fontFamily:FB }}>
-                    <div style={{ width:12, height:3, borderRadius:99, background:color }} />{label}
+          <div style={{ animation:"tabSlide .3s ease", display:"flex", flexDirection:"column", gap:14 }}>
+            {/* Fila superior: modelo + predicciones */}
+            {(modeloDia || predDiario.length > 0) && (
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:14, alignItems:"start" }}>
+                {modeloDia && <ModeloBox modelo={modeloDia} periodo="Últimos 30 días" />}
+                {predDiario.length > 0 && (
+                  <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px 18px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                      <span style={{ fontSize:18 }}>🔮</span>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:800, color:C.cream, fontFamily:FD, lineHeight:1 }}>Próximos 7 días</div>
+                        <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:2 }}>accesos estimados por día</div>
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                      {predDiario.map((p, i) => {
+                        const opacity = 1 - i * 0.07;
+                        const barW = Math.max(...predDiario.map(x => x.prediccion)) > 0
+                          ? (p.prediccion / Math.max(...predDiario.map(x => x.prediccion))) * 100
+                          : 0;
+                        return (
+                          <div key={i} style={{ opacity }}>
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:3 }}>
+                              <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}>{p.fecha_label}</span>
+                              <span style={{ fontSize:14, fontWeight:900, color:C.gold, fontFamily:FD }}>{p.prediccion}</span>
+                            </div>
+                            <div style={{ height:3, borderRadius:99, background:"rgba(255,255,255,0.05)", overflow:"hidden" }}>
+                              <div style={{ width:`${barW}%`, height:"100%", borderRadius:99, background:`linear-gradient(90deg,${C.gold}80,${C.gold})` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))}
+                )}
+              </div>
+            )}
+            {/* Gráfica full-width */}
+            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"20px 24px" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+                <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FD }}>📈 Accesos diarios — últimos 30 días</div>
+                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+                  {[
+                    { color:C.orange, label:"Accesos reales" },
+                    { color:C.gold,   label:"Predicción" },
+                    { color:C.green,  label:"Promedio móvil 7d" },
+                  ].map(({ color, label }) => (
+                    <div key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.creamMut, fontFamily:FB }}>
+                      <div style={{ width:12, height:3, borderRadius:99, background:color }} />{label}
+                    </div>
+                  ))}
+                </div>
               </div>
               <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={diarioComb} margin={{ top:5, right:10, bottom:5, left:-10 }}>
@@ -711,32 +887,9 @@ export default function AdminEstadisticas() {
                   <Tooltip content={<ChartTip />} />
                   <Area type="monotone" dataKey="total"          name="Accesos reales ese día"    stroke={C.orange} strokeWidth={2.2} fill="url(#gO2)" dot={false} />
                   <Area type="monotone" dataKey="prediccion"     name="Predicción (días futuros)" stroke={C.gold}   strokeWidth={2}   fill="none" dot={{ r:5, fill:C.gold, strokeWidth:0 }} strokeDasharray="5 3" />
-                  <Line type="monotone" dataKey="promedio_movil" name="Promedio móvil 7 días"    stroke={C.green}  strokeWidth={1.5} dot={false} strokeDasharray="3 2" />
+                  <Line type="monotone" dataKey="promedio_movil" name="Promedio móvil 7 días"     stroke={C.green}  strokeWidth={1.5} dot={false} strokeDasharray="3 2" />
                 </AreaChart>
               </ResponsiveContainer>
-              {predDiario.length > 0 && (
-                <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.borderBr}` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-                    <span style={{ fontSize:16 }}>🔮</span>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FB }}>Predicción — próximos 7 días</div>
-                      <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>El número indica cuántos accesos se esperan ese día según la tendencia actual</div>
-                    </div>
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:8 }}>
-                    {predDiario.map((p, i) => {
-                      const opacity = 1 - i * 0.08;
-                      return (
-                        <div key={i} style={{ textAlign:"center", padding:"12px 6px", borderRadius:10, background:`rgba(255,193,16,0.06)`, border:`1px solid rgba(255,193,16,0.18)`, opacity }}>
-                          <div style={{ fontSize:24, fontWeight:900, color:C.gold, fontFamily:FD, lineHeight:1 }}>{p.prediccion}</div>
-                          <div style={{ fontSize:10, fontWeight:600, color:C.creamSub, fontFamily:FB, marginTop:4 }}>accesos</div>
-                          <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:3 }}>{p.fecha_label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
