@@ -9,7 +9,7 @@ import {
   BarChart as BarChartIcon, LineChart as LineChartIcon,
   AreaChart as AreaIcon,
   Layers, Users,
-  Upload, BarChart2, Activity,
+  Upload, BarChart2, Activity,FileText,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
@@ -258,6 +258,14 @@ function AccionesRapidas({ navigate }: { navigate:(p:string) => void }) {
       Icon: Activity,
       color: C.green,
       path: "/admin/estadisticas",
+      gradient: `linear-gradient(135deg, ${C.green}18, ${C.blue}08)`,
+    },
+    {
+      label: "Sobre nosotros",
+      sub: "Editar contenido",
+      Icon: FileText,
+      color: C.green,
+      path: "/admin/sobre-nosotros",
       gradient: `linear-gradient(135deg, ${C.green}18, ${C.blue}08)`,
     },
   ];

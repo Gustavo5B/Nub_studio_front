@@ -27,6 +27,8 @@ import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
 import Unauthorized       from "../pages/public/Unauthorized";
 import AdminEstadisticas from "../pages/private/admin/AdminEstadisticas";
+import AdminSobreNosotros from "../pages/private/admin/sobreNosotros";
+
 
 export default function AppRoutes() {
   return (
@@ -67,6 +69,7 @@ export default function AppRoutes() {
         <Route path="reportes"            element={<AdminReportes />} />
         <Route path="importar"            element={<AdminImportar />} />
         <Route path="monitoreo"           element={<AdminMonitoreo />} />  {/* ← nuevo */}
+        <Route path="sobre-nosotros" element={<AdminSobreNosotros />} />
       </Route>
 
       {/* ── Error pages ── */}
