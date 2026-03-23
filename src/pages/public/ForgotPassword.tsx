@@ -99,7 +99,7 @@ export default function ForgotPassword() {
   // ── Inputs del código: acepta letras y números ──
   const handleCodeChange = (idx: number, val: string) => {
     // Toma solo el último carácter, convierte a mayúscula
-    const char = val.replace(/[^A-Za-z0-9]/g, "").slice(-1).toUpperCase();
+    const char = val.replaceAll(/[^A-Za-z0-9]/g, "").slice(-1).toUpperCase();
     const next = [...codeDigits];
     next[idx] = char;
     setCodeDigits(next);
@@ -128,8 +128,8 @@ export default function ForgotPassword() {
   const handleCodePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     // Acepta pegado de código con o sin guión: "VM32-V8JQ" → "VM32V8JQ" → toma primeros 6
     const pasted = e.clipboardData.getData("text")
-      .replace(/-/g, "")           // quita guiones
-      .replace(/[^A-Za-z0-9]/g, "") // quita otros especiales
+      .replaceAll('-', "")           // quita guiones
+      .replaceAll(/[^A-Za-z0-9]/g, "") // quita otros especiales
       .toUpperCase()
       .slice(0, 6);
     if (pasted.length > 0) {
@@ -191,7 +191,7 @@ export default function ForgotPassword() {
     if (p.length >= 8) s++;
     if (/[A-Z]/.test(p)) s++;
     if (/[a-z]/.test(p)) s++;
-    if (/[0-9]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
     if (/[@$!%*?&#._-]/.test(p)) s++;
     return s;
   };
@@ -325,7 +325,7 @@ export default function ForgotPassword() {
               <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 8 }} onPaste={handleCodePaste}>
                 {codeDigits.map((d, i) => (
                   <input
-                    key={i}
+                    key={`cp${i}`}
                     ref={el => { inputRefs.current[i] = el; }}
                     className="fp-code-input"
                     value={d}

@@ -1,7 +1,7 @@
 // src/pages/public/TwoFactorVerify.tsx
 import { useState, useEffect } from "react";
-import type { FormEvent, ChangeEvent } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import type { ChangeEvent } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Shield, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
@@ -24,7 +24,7 @@ export default function TwoFactorVerify() {
   }, [correo, navigate]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    const value = e.target.value.replaceAll(/\D/g, '').slice(0, 6);
     setCodigo2fa(value);
   };
 
@@ -33,7 +33,7 @@ export default function TwoFactorVerify() {
     setIsError(error);
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setMensaje("");
 
@@ -45,7 +45,7 @@ export default function TwoFactorVerify() {
     setIsLoading(true);
 
     try {
-      const response = await authService.verifyTOTP2FA(correo!, codigo2fa);
+      const response = await authService.verifyTOTP2FA(correo, codigo2fa);
 
       const token = response.access_token || response.token;
       if (token) {

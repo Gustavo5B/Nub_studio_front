@@ -1,6 +1,5 @@
 // src/pages/public/VerifyEmailCode.tsx
 import { useState, useEffect } from "react";
-import type { FormEvent, ChangeEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, ArrowLeft, Loader2, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { authService } from "../../services/authService";
@@ -28,8 +27,8 @@ export default function VerifyEmailCode() {
     if (!correo) navigate('/login');
   }, [correo, navigate]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+  const handleChange = (e: { target: HTMLInputElement }) => {
+    const value = e.target.value.replaceAll(/\D/g, '').slice(0, 6);
     setCodigo(value);
     setMensaje("");
   };
@@ -39,7 +38,7 @@ export default function VerifyEmailCode() {
     setIsError(error);
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setMensaje("");
 
@@ -51,7 +50,7 @@ export default function VerifyEmailCode() {
     setIsLoading(true);
 
     try {
-      await authService.verifyEmail(correo!, codigo);
+      await authService.verifyEmail(correo ?? '', codigo);
       showMessage("¡Cuenta verificada! Redirigiendo al login... ✓", false);
       setTimeout(() => {
         localStorage.removeItem('temp_correo_verificacion');
@@ -244,9 +243,9 @@ export default function VerifyEmailCode() {
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
               ¿No recibiste el código?{" "}
-              <span onClick={handleReenviar} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={handleReenviar} style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 600, padding: 0, fontFamily: "'Outfit', sans-serif", fontSize: 13 }}>
                 Reenviar código
-              </span>
+              </button>
             </p>
           </div>
 

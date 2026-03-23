@@ -1,6 +1,6 @@
 // src/layout/Footer.tsx
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Twitter, Mail, MapPin, Phone, Sparkles } from "lucide-react";
+import { Globe, Share2, X, Mail, MapPin, Phone, Sparkles } from "lucide-react";
 import logoImg from "../assets/images/logo.png";
 
 const C = {
@@ -38,9 +38,9 @@ const ESTUDIO = [
 ];
 
 const SOCIAL = [
-  { Icon: Instagram, href: "#", color: C.pink },
-  { Icon: Facebook,  href: "#", color: C.blue },
-  { Icon: Twitter,   href: "#", color: C.blue },
+  { Icon: Globe,  href: "#", color: C.pink,  label: "Instagram" },
+  { Icon: Share2, href: "#", color: C.blue,  label: "Facebook"  },
+  { Icon: X,      href: "#", color: C.blue,  label: "Twitter"   },
 ];
 
 const CONTACTO = [
@@ -96,8 +96,8 @@ export default function Footer() {
             </Link>
 
             <div style={{ display: "flex", gap: 8 }}>
-              {SOCIAL.map(({ Icon, href, color }, i) => (
-                <a key={i} href={href} style={{
+              {SOCIAL.map(({ Icon, href, color, label }) => (
+                <a key={label} href={href} aria-label={label} style={{
                   width: 36, height: 36, borderRadius: 10,
                   background: "rgba(255,200,150,0.04)",
                   border: `1px solid ${C.border}`,
@@ -151,8 +151,8 @@ export default function Footer() {
           {/* ── Contacto ── */}
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, color: C.pink, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 20, fontFamily: FB }}>Contacto</div>
-            {CONTACTO.map(({ Icon, text }, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
+            {CONTACTO.map(({ Icon, text }) => (
+              <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
                 <div style={{ width: 30, height: 30, borderRadius: 8, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                   <Icon size={13} color={C.orange} strokeWidth={1.8} />
                 </div>

@@ -41,7 +41,7 @@ const requisitos = [
   { id: "num",   label: "Un número",                      test: (p: string) => /\d/.test(p)                },
 ];
 
-function LogoMark({ size = 38 }: { size?: number }) {
+function LogoMark({ size = 38 }: { readonly size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
       <defs>
@@ -60,7 +60,7 @@ function LogoMark({ size = 38 }: { size?: number }) {
 }
 
 // ── Medidor de fortaleza ───────────────────────────────────────
-function FuerzaPassword({ password }: { password: string }) {
+function FuerzaPassword({ password }: { readonly password: string }) {
   const score = requisitos.filter(r => r.test(password)).length;
   const niveles = [
     { label: "Muy débil",  color: "#ef4444" },
@@ -75,7 +75,7 @@ function FuerzaPassword({ password }: { password: string }) {
     <div style={{ marginTop: 8 }}>
       <div style={{ display: "flex", gap: 4, marginBottom: 5 }}>
         {niveles.map((n, i) => (
-          <div key={i} style={{
+          <div key={n.label} style={{
             flex: 1, height: 3, borderRadius: 2,
             background: i < score ? n.color : "rgba(255,232,200,0.1)",
             transition: "background .3s",
@@ -93,21 +93,23 @@ function FuerzaPassword({ password }: { password: string }) {
 function InputPassword({
   label, value, onChange, placeholder, error,
 }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; error?: string;
+  readonly label: string; readonly value: string; readonly onChange: (v: string) => void;
+  readonly placeholder?: string; readonly error?: string;
 }) {
   const [visible, setVisible] = useState(false);
   const [focused, setFocused] = useState(false);
+  const borderColor = error ? `${C.pink}60` : focused ? `${C.orange}50` : C.border;
+  const shadowColor = error ? C.pink : C.orange;
   return (
     <div style={{ marginBottom: 18 }}>
       <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, fontFamily: FB }}>{label}</label>
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
         background: "rgba(255,232,200,0.04)",
-        border: `1px solid ${error ? `${C.pink}60` : focused ? `${C.orange}50` : C.border}`,
+        border: `1px solid ${borderColor}`,
         borderRadius: 12, padding: "0 14px",
         transition: "border-color .2s, box-shadow .2s",
-        boxShadow: focused ? `0 0 0 3px ${error ? C.pink : C.orange}12` : "none",
+        boxShadow: focused ? `0 0 0 3px ${shadowColor}12` : "none",
       }}>
         <Lock size={15} color={focused ? C.orange : C.creamMut} strokeWidth={1.8} style={{ flexShrink: 0, transition: "color .2s" }} />
         <input
@@ -233,7 +235,7 @@ export default function ActivarCuenta() {
           </p>
           <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
             {[C.orange, C.pink, C.purple, C.blue, C.green].map((c, i) => (
-              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: c, animation: `pulse 1.2s ease ${i * 0.15}s infinite` }} />
+              <div key={c} style={{ width: 8, height: 8, borderRadius: "50%", background: c, animation: `pulse 1.2s ease ${i * 0.15}s infinite` }} />
             ))}
           </div>
         </div>
@@ -356,7 +358,7 @@ export default function ActivarCuenta() {
 }
 
 // ── Wrapper centrado ───────────────────────────────────────────
-function Wrapper({ children }: { children: React.ReactNode }) {
+function Wrapper({ children }: { readonly children: React.ReactNode }) {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px", position: "relative", fontFamily: FB }}>
       {/* Orbes de fondo */}
@@ -385,7 +387,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LinkButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function LinkButton({ onClick, children }: { readonly onClick: () => void; readonly children: React.ReactNode }) {
   return (
     <button onClick={onClick} style={{ padding: "12px 28px", borderRadius: 12, background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, border: "none", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: FB, boxShadow: `0 6px 22px ${C.pink}40` }}>
       {children}

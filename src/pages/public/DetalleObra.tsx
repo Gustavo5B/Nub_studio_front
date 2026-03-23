@@ -34,32 +34,35 @@ const FB = "'DM Sans', sans-serif";
 const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(p);
 
+async function fetchObraBySlug(slug: string) {
+  const r = await fetch(`${API_URL}/api/obras/slug/${slug}`);
+  return r.json();
+}
+
 export default function DetalleObra() {
   const navigate  = useNavigate();
   const { slug }  = useParams<{ slug: string }>();
   const [obra,      setObra]    = useState<any>(null);
   const [loading,   setLoading] = useState(true);
-  const [imgError,  setImgErr]  = useState(false);
+  const [imgError,  setImgError]  = useState(false);
   const [tamSel,    setTamSel]  = useState<any>(null);
   const [liked,     setLiked]   = useState(false);
-  const [imgActiva, setImg]     = useState<string | null>(null);
+  const [imgActiva, setImgActiva] = useState<string | null>(null);
   const [zoomed,    setZoomed]  = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-    (async () => {
-      setLoading(true);
-      try {
-        const r = await fetch(`${API_URL}/api/obras/slug/${slug}`);
-        const j = await r.json();
+    globalThis.scrollTo(0, 0);
+    setLoading(true);
+    fetchObraBySlug(slug ?? "")
+      .then(j => {
         if (j.success) {
           setObra(j.data);
-          setImg(j.data.imagen_principal);
+          setImgActiva(j.data.imagen_principal);
           if (j.data.tamaños?.length) setTamSel(j.data.tamaños[0]);
         }
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    })();
+      })
+      .catch(e => console.error(e))
+      .finally(() => setLoading(false));
   }, [slug]);
 
   if (loading) return (
@@ -96,8 +99,8 @@ export default function DetalleObra() {
             { label:"Inicio",              action:() => navigate("/")                                         },
             { label:"Catálogo",            action:() => navigate("/catalogo")                                 },
             { label:obra.categoria_nombre, action:() => navigate(`/catalogo?categoria=${obra.id_categoria}`) },
-          ].map((item, i) => (
-            <span key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>
+          ].map((item) => (
+            <span key={item.label} style={{ display:"flex", alignItems:"center", gap:6 }}>
               <button onClick={item.action} style={{ background:"none", border:"none", cursor:"pointer", color:C.creamMut, fontFamily:FB, fontSize:12.5, padding:0, transition:"color .15s" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.creamSub}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.creamMut}
@@ -126,12 +129,12 @@ export default function DetalleObra() {
           {/* ══ IZQUIERDA ══ */}
           <div>
             {/* Imagen principal */}
-            <div onClick={() => setZoomed(true)} style={{ position:"relative", borderRadius:24, overflow:"hidden", background:C.panel, border:`1px solid ${C.borderBr}`, marginBottom:12, boxShadow:"0 40px 100px rgba(0,0,0,0.55)", cursor:"zoom-in" }}>
+            <div role="button" tabIndex={0} onClick={() => setZoomed(true)} onKeyDown={e => { if (e.key === "Enter") setZoomed(true); }} style={{ position:"relative", borderRadius:24, overflow:"hidden", background:C.panel, border:`1px solid ${C.borderBr}`, marginBottom:12, boxShadow:"0 40px 100px rgba(0,0,0,0.55)", cursor:"zoom-in" }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:500, overflow:"hidden" }}>
                 {(imgActiva || obra.imagen_principal) && !imgError ? (
                   <img src={imgActiva || obra.imagen_principal} alt={obra.titulo}
                     style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }}
-                    onError={() => setImgErr(true)}
+                    onError={() => setImgError(true)}
                   />
                 ) : (
                   <ImageIcon size={64} color={C.creamMut} strokeWidth={1} style={{ opacity:.15 }} />
@@ -150,7 +153,7 @@ export default function DetalleObra() {
                   style={{ width:38, height:38, borderRadius:10, background: liked ? `${C.pink}22` : "rgba(7,5,16,0.78)", border:`1px solid ${liked ? C.pink+"44" : C.borderBr}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s" }}>
                   <Heart size={14} color={liked ? C.pink : C.creamMut} fill={liked ? C.pink : "none"} strokeWidth={2} />
                 </button>
-                <button onClick={e => { e.stopPropagation(); navigator.share?.({ title:obra.titulo, url:window.location.href }); }}
+                <button onClick={e => { e.stopPropagation(); navigator.share?.({ title:obra.titulo, url:globalThis.location.href }); }}
                   style={{ width:38, height:38, borderRadius:10, background:"rgba(7,5,16,0.78)", border:`1px solid ${C.borderBr}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
                   <Share2 size={14} color={C.creamMut} strokeWidth={2} />
                 </button>
@@ -163,7 +166,7 @@ export default function DetalleObra() {
                 {todasImg.map((img: any) => {
                   const sel = imgActiva === img.url_imagen;
                   return (
-                    <div key={img.id_imagen} onClick={() => setImg(img.url_imagen)}
+                    <div key={img.id_imagen} role="button" tabIndex={0} onClick={() => setImgActiva(img.url_imagen)} onKeyDown={e => { if (e.key === "Enter") setImgActiva(img.url_imagen); }}
                       style={{ width:76, height:76, borderRadius:13, overflow:"hidden", border:`2px solid ${sel ? C.orange : C.borderBr}`, cursor:"pointer", transition:"all .2s", opacity: sel ? 1 : 0.6, boxShadow: sel ? `0 0 16px ${C.orange}38` : "none" }}>
                       <img src={img.url_imagen} alt={obra.titulo} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
                     </div>
@@ -278,7 +281,10 @@ export default function DetalleObra() {
               </h1>
 
               <button onClick={() => navigate(`/artistas/${obra.id_artista}`)}
-                style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0 }}>
+                style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0 }}
+                onMouseEnter={e => (e.currentTarget.lastElementChild as HTMLElement).style.color=C.creamSub}
+                onMouseLeave={e => (e.currentTarget.lastElementChild as HTMLElement).style.color=C.pink}
+              >
                 <div style={{ width:32, height:32, borderRadius:10, background:`${C.pink}16`, border:`1px solid ${C.pink}28`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
                   {obra.artista_foto
                     ? <img src={obra.artista_foto} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
@@ -286,8 +292,6 @@ export default function DetalleObra() {
                   }
                 </div>
                 <span style={{ fontSize:14, color:C.pink, fontWeight:700, fontFamily:FB, transition:"color .15s" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=C.creamSub}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=C.pink}
                 >{obra.artista_alias || obra.artista_nombre}</span>
               </button>
             </div>
@@ -412,7 +416,7 @@ export default function DetalleObra() {
             {/* Skeleton estático de 4 obras */}
             <div className="relacionadas-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18 }}>
               {["Artesanía Huasteca","Pintura Rupestre","Escultura Totonaca","Fotografía Regional"].map((titulo, i) => (
-                <div key={i} onClick={() => navigate("/catalogo")}
+                <div key={titulo} role="button" tabIndex={0} onClick={() => navigate("/catalogo")} onKeyDown={e => { if (e.key === "Enter") navigate("/catalogo"); }}
                   style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, overflow:"hidden", cursor:"pointer", transition:"all .22s", backdropFilter:"blur(12px)" }}
                   onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.transform="translateY(-5px)"; el.style.borderColor=C.borderHi; }}
                   onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.transform="none"; el.style.borderColor=C.border; }}
@@ -455,7 +459,7 @@ export default function DetalleObra() {
 
             <div className="relacionadas-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18 }}>
               {obra.obras_relacionadas.map((rel: any) => (
-                <div key={rel.id_obra} onClick={() => { navigate(`/obras/${rel.slug}`); window.scrollTo(0,0); }}
+                <div key={rel.id_obra} role="button" tabIndex={0} onClick={() => { navigate(`/obras/${rel.slug}`); globalThis.scrollTo(0, 0); }} onKeyDown={e => { if (e.key === "Enter") { navigate(`/obras/${rel.slug}`); globalThis.scrollTo(0, 0); } }}
                   style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, overflow:"hidden", cursor:"pointer", transition:"all .22s", backdropFilter:"blur(12px)" }}
                   onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.transform="translateY(-5px)"; el.style.borderColor=C.borderHi; el.style.boxShadow=`0 20px 50px rgba(0,0,0,0.45)`; }}
                   onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.transform="none"; el.style.borderColor=C.border; el.style.boxShadow="none"; }}
@@ -483,7 +487,7 @@ export default function DetalleObra() {
 
       {/* ── Lightbox ── */}
       {zoomed && (
-        <div onClick={() => setZoomed(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.93)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", cursor:"zoom-out", backdropFilter:"blur(10px)" }}>
+        <div role="button" tabIndex={0} onClick={() => setZoomed(false)} onKeyDown={e => { if (e.key === "Escape" || e.key === "Enter") setZoomed(false); }} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.93)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", cursor:"zoom-out", backdropFilter:"blur(10px)" }}>
           <img src={imgActiva || obra.imagen_principal} alt={obra.titulo}
             style={{ maxWidth:"90vw", maxHeight:"90vh", objectFit:"contain", borderRadius:16, boxShadow:"0 40px 100px rgba(0,0,0,0.8)" }}
           />
@@ -513,7 +517,7 @@ export default function DetalleObra() {
 
 // ── Componente InfoPanel ──────────────────────────────────
 function InfoPanel({ label, accentColor, children }: {
-  label: string; accentColor: string; children: React.ReactNode;
+  readonly label: string; readonly accentColor: string; readonly children: React.ReactNode;
 }) {
   return (
     <div style={{ background:"rgba(16,13,28,0.92)", borderRadius:20, border:"1px solid rgba(255,200,150,0.08)", overflow:"hidden", backdropFilter:"blur(20px)" }}>

@@ -1,6 +1,6 @@
 // src/pages/public/ArtistaEnRevision.tsx
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Clock, Mail, LogOut, Palette, CheckCircle2, Circle } from "lucide-react";
 import logoImg from "../../assets/images/logo.png";
 
@@ -87,35 +87,46 @@ export default function ArtistaEnRevision() {
 
         {/* Pasos */}
         <div style={{ textAlign: "left", marginBottom: 32 }}>
-          {pasos.map((paso, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: i < pasos.length - 1 ? 0 : 0 }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                {paso.done
-                  ? <CheckCircle2 size={22} color="#4ADE80" />
-                  : paso.active
-                    ? <div style={{
-                        width: 22, height: 22, borderRadius: "50%",
-                        border: `2px solid ${C.gold}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        animation: "pulse 1.5s ease-in-out infinite",
-                      }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.gold }} />
-                      </div>
-                    : <Circle size={22} color="rgba(255,255,255,0.2)" />
-                }
-                {i < pasos.length - 1 && (
-                  <div style={{ width: 2, height: 28, background: paso.done ? "#4ADE8040" : "rgba(255,255,255,0.08)", margin: "4px 0" }} />
-                )}
+          {pasos.map((paso, i) => {
+            let stepIcon: ReactNode;
+            if (paso.done) {
+              stepIcon = <CheckCircle2 size={22} color="#4ADE80" />;
+            } else if (paso.active) {
+              stepIcon = (
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%",
+                  border: `2px solid ${C.gold}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  animation: "pulse 1.5s ease-in-out infinite",
+                }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.gold }} />
+                </div>
+              );
+            } else {
+              stepIcon = <Circle size={22} color="rgba(255,255,255,0.2)" />;
+            }
+            let stepColor: string;
+            if (paso.done) stepColor = "#4ADE80";
+            else if (paso.active) stepColor = C.gold;
+            else stepColor = "rgba(255,255,255,0.3)";
+            return (
+              <div key={paso.label} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  {stepIcon}
+                  {i < pasos.length - 1 && (
+                    <div style={{ width: 2, height: 28, background: paso.done ? "#4ADE8040" : "rgba(255,255,255,0.08)", margin: "4px 0" }} />
+                  )}
+                </div>
+                <span style={{
+                  fontSize: 14, fontWeight: paso.active ? 700 : 500,
+                  color: stepColor,
+                  paddingBottom: i < pasos.length - 1 ? 28 : 0,
+                }}>
+                  {paso.label}
+                </span>
               </div>
-              <span style={{
-                fontSize: 14, fontWeight: paso.active ? 700 : 500,
-                color: paso.done ? "#4ADE80" : paso.active ? C.gold : "rgba(255,255,255,0.3)",
-                paddingBottom: i < pasos.length - 1 ? 28 : 0,
-              }}>
-                {paso.label}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Info correo */}
@@ -153,8 +164,8 @@ export default function ArtistaEnRevision() {
             "Si eres aprobado, podrás subir tus obras",
             "Tus obras aparecerán en la galería pública",
             "Ganarás comisiones por cada venta",
-          ].map((item, i) => (
-            <p key={i} style={{ fontSize: 12.5, color: C.muted, margin: "0 0 6px", display: "flex", alignItems: "flex-start", gap: 8 }}>
+          ].map((item) => (
+            <p key={item} style={{ fontSize: 12.5, color: C.muted, margin: "0 0 6px", display: "flex", alignItems: "flex-start", gap: 8 }}>
               <span style={{ color: C.orange, fontWeight: 700, flexShrink: 0 }}>→</span> {item}
             </p>
           ))}

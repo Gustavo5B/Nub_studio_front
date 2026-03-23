@@ -73,7 +73,7 @@ export default function Navbar() {
     setDropOpen(false);
     setOpen(false);
     navigate("/");
-    window.location.reload();
+    globalThis.location.reload();
   };
 
   const initials = userName
@@ -325,9 +325,11 @@ export default function Navbar() {
 
       {/* ── MENÚ MÓVIL ── */}
       {open && (
-        <div
+        <button
           onClick={() => setOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, backdropFilter: "blur(6px)" }}
+          onKeyDown={e => { if (e.key === "Escape") setOpen(false); }}
+          aria-label="Cerrar menú"
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, backdropFilter: "blur(6px)", border: "none", padding: 0, cursor: "default", display: "block", width: "100%" }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -408,7 +410,7 @@ export default function Navbar() {
               )}
             </div>
           </div>
-        </div>
+        </button>
       )}
 
       <style>{`
@@ -427,7 +429,7 @@ export default function Navbar() {
 
 // ── Helpers ────────────────────────────────────────────────
 function DropItem({ icon, label, onClick, color = "" }: {
-  icon: React.ReactNode; label: string; onClick: () => void; color?: string;
+  readonly icon: React.ReactNode; readonly label: string; readonly onClick: () => void; readonly color?: string;
 }) {
   const [hov, setHov] = useState(false);
   const C2 = { cream: "#FFF8EE", creamSub: "#D8CABC", border: "rgba(255,200,150,0.09)" };
@@ -440,7 +442,7 @@ function DropItem({ icon, label, onClick, color = "" }: {
 }
 
 function MobileItem({ icon, label, onClick, color = "" }: {
-  icon: React.ReactNode; label: string; onClick: () => void; color?: string;
+  readonly icon: React.ReactNode; readonly label: string; readonly onClick: () => void; readonly color?: string;
 }) {
   const C2 = { creamSub: "#D8CABC" };
   return (

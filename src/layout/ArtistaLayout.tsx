@@ -25,8 +25,9 @@ export default function ArtistaLayout() {
       {/* Sidebar móvil overlay */}
       {sidebarOpen && (
         <>
-          <div
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 49 }}
+          <button
+            aria-label="Cerrar menú"
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 49, border: "none", cursor: "default", padding: 0 }}
             onClick={() => setSidebarOpen(false)}
           />
           <div style={{ position: "fixed", left: 0, top: 0, zIndex: 50 }}>

@@ -88,14 +88,17 @@ interface Obra {
 function CatCard({
   label, count, color, icon: Icon, img, gridStyle = {}, onClick,
 }: {
-  label: string; count: string; color: string;
-  icon: React.ElementType; img: string;
-  gridStyle?: React.CSSProperties; onClick: () => void;
+  readonly label: string; readonly count: string; readonly color: string;
+  readonly icon: React.ElementType; readonly img: string;
+  readonly gridStyle?: React.CSSProperties; readonly onClick: () => void;
 }) {
   const [hov, setHov] = useState(false);
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={e => { if (e.key === "Enter") onClick(); }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -159,6 +162,131 @@ function CatCard({
   );
 }
 
+function heroAnim(visible: boolean, delay: string) {
+  return {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(34px)",
+    transition: `opacity 0.85s ease ${delay}, transform 0.85s ease ${delay}`,
+  };
+}
+
+function sectionFade(inView: boolean, delay = "0s") {
+  return {
+    opacity: inView ? 1 : 0,
+    transform: inView ? "translateY(0)" : "translateY(24px)",
+    transition: `opacity 0.7s ease ${delay}, transform 0.7s ease ${delay}`,
+  };
+}
+
+function MarqueeStrip() {
+  return (
+    <div style={{
+      background: C.bgDeep, overflow: "hidden",
+      borderTop: `1px solid ${C.borderBr}`, borderBottom: `1px solid ${C.borderBr}`,
+      padding: "14px 0",
+    }}>
+      <div style={{ display: "flex", animation: "marqueeScroll 30s linear infinite", width: "max-content" }}>
+        {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+          <span key={`mq-${i}`} style={{
+            display: "inline-flex", alignItems: "center", gap: 20,
+            padding: "0 28px",
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.16em",
+            textTransform: "uppercase", fontFamily: FB,
+            color: i % 3 === 1 ? `${C.orange}85` : C.creamMut,
+          }}>
+            {item}
+            <span style={{ width: 4, height: 4, borderRadius: "50%", background: C.orange, display: "inline-block", opacity: 0.55, flexShrink: 0 }} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ObrasRecientesSection({ obras, obrasLoad, navigate, onView }: {
+  readonly obras: Obra[];
+  readonly obrasLoad: boolean;
+  readonly navigate: ReturnType<typeof useNavigate>;
+  readonly onView: (id: string) => void;
+}) {
+  const { ref, inView } = useInView(0.08);
+
+  const renderObras = () => {
+    if (obrasLoad) {
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+          {[...new Array(4)].map((_, i) => (
+            <div key={`sk-${i}`} style={{ borderRadius: 18, background: C.panel, border: `1px solid ${C.border}`, height: 340, animation: "shimmer 1.5s ease-in-out infinite", opacity: 0.5 }} />
+          ))}
+        </div>
+      );
+    }
+    if (obras.length === 0) {
+      return (
+        <div style={{ textAlign: "center", padding: "60px 0", color: C.creamMut, fontSize: 15, fontFamily: FB }}>
+          Pronto habrá obras disponibles aquí.
+        </div>
+      );
+    }
+    return (
+      <div className="mp-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        {obras.map(obra => (
+          <ProductCard
+            key={obra.id_obra}
+            id={String(obra.id_obra)}
+            category={obra.categoria_nombre || "Arte"}
+            title={obra.titulo}
+            price={Number(obra.precio_minimo || obra.precio_base) || 0}
+            image={obra.imagen_principal || ""}
+            available={obra.estado === "publicada"}
+            artistName={obra.artista_alias || obra.artista_nombre}
+            onView={onView}
+            onBuy={onView}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <section ref={ref} style={{
+      padding: "0 60px 100px", maxWidth: 1320, margin: "0 auto",
+      opacity: inView ? 1 : 0,
+      transform: inView ? "translateY(0)" : "translateY(32px)",
+      transition: "opacity 0.8s ease, transform 0.8s ease",
+    }}>
+      <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.borderBr}, transparent)`, marginBottom: 64 }} />
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 40 }}>
+        <div>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            padding: "5px 14px", borderRadius: 100,
+            background: `${C.gold}15`, border: `1px solid ${C.gold}35`,
+            fontSize: 11, fontWeight: 800, color: C.gold,
+            letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, fontFamily: FB,
+          }}>
+            <Star size={11} fill={C.gold} color={C.gold} /> Recién llegadas
+          </div>
+          <h2 style={{ fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 900, color: C.cream, margin: 0, fontFamily: FD, letterSpacing: "-0.025em" }}>
+            Obras{" "}
+            <span style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>recientes</span>
+          </h2>
+          <p style={{ fontSize: 14.5, color: C.creamSub, margin: "10px 0 0", fontFamily: FB }}>Las últimas incorporaciones a nuestra galería</p>
+        </div>
+        <button className="btn-ghost-sm" onClick={() => navigate("/catalogo")}>
+          Ver colección completa <ArrowRight size={14} strokeWidth={2.5} />
+        </button>
+      </div>
+      {renderObras()}
+      <div style={{ textAlign: "center", marginTop: 52 }}>
+        <button className="btn-primary" onClick={() => navigate("/catalogo")}>
+          Ver colección completa <ArrowRight size={17} strokeWidth={2.5} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
 // ── Home ────────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate();
@@ -169,7 +297,6 @@ export default function Home() {
 
   const catSection  = useInView();
   const valSection  = useInView();
-  const featSection = useInView(0.08);
   const ctaSection  = useInView();
 
   useEffect(() => { const t = setTimeout(() => setHeroVisible(true), 120); return () => clearTimeout(t); }, []);
@@ -240,7 +367,7 @@ export default function Home() {
           opacity: heroVisible ? 1 : 0, transition: "opacity 0.7s ease 0.4s",
         }}>
           <div style={{ display: "flex", gap: 2 }}>
-            {[...Array(5)].map((_, i) => <Star key={i} size={12} fill={C.gold} color={C.gold} />)}
+            {[...new Array(5)].map((_, i) => <Star key={`star-${i}`} size={12} fill={C.gold} color={C.gold} />)}
           </div>
           <div style={{ width: 1, height: 15, background: C.borderBr }} />
           <span style={{ fontSize: 13, fontWeight: 800, color: C.cream, fontFamily: FB }}>5.0</span>
@@ -261,8 +388,7 @@ export default function Home() {
               <h1 style={{
                 fontSize: "clamp(50px, 6.2vw, 82px)", fontWeight: 900, color: C.cream,
                 lineHeight: 0.95, margin: "0 0 3px", fontFamily: FD, letterSpacing: "-0.03em",
-                opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(34px)",
-                transition: "opacity 0.85s ease 0.3s, transform 0.85s ease 0.3s",
+                ...heroAnim(heroVisible, "0.3s"),
               }}>
                 El Arte
               </h1>
@@ -271,16 +397,14 @@ export default function Home() {
                 margin: "0 0 3px", fontFamily: FD, letterSpacing: "-0.03em",
                 background: `linear-gradient(135deg, ${C.orange} 0%, ${C.pink} 50%, ${C.purple} 100%)`,
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(34px)",
-                transition: "opacity 0.85s ease 0.44s, transform 0.85s ease 0.44s",
+                ...heroAnim(heroVisible, "0.44s"),
               }}>
                 Huasteco
               </h1>
               <h1 style={{
                 fontSize: "clamp(50px, 6.2vw, 82px)", fontWeight: 900, color: C.cream,
                 lineHeight: 0.95, margin: 0, fontFamily: FD, letterSpacing: "-0.03em",
-                opacity: heroVisible ? 1 : 0, transform: heroVisible ? "translateY(0)" : "translateY(34px)",
-                transition: "opacity 0.85s ease 0.58s, transform 0.85s ease 0.58s",
+                ...heroAnim(heroVisible, "0.58s"),
               }}>
                 que{" "}
                 <span style={{ position: "relative", display: "inline-block" }}>
@@ -351,26 +475,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           MARQUEE STRIP
       ══════════════════════════════════════════════════ */}
-      <div style={{
-        background: C.bgDeep, overflow: "hidden",
-        borderTop: `1px solid ${C.borderBr}`, borderBottom: `1px solid ${C.borderBr}`,
-        padding: "14px 0",
-      }}>
-        <div style={{ display: "flex", animation: "marqueeScroll 30s linear infinite", width: "max-content" }}>
-          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-            <span key={i} style={{
-              display: "inline-flex", alignItems: "center", gap: 20,
-              padding: "0 28px",
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.16em",
-              textTransform: "uppercase", fontFamily: FB,
-              color: i % 3 === 1 ? `${C.orange}85` : C.creamMut,
-            }}>
-              {item}
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: C.orange, display: "inline-block", opacity: 0.55, flexShrink: 0 }} />
-            </span>
-          ))}
-        </div>
-      </div>
+      <MarqueeStrip />
 
       {/* ══════════════════════════════════════════════════
           CATEGORÍAS — Bento asimétrico
@@ -379,8 +484,7 @@ export default function Home() {
         {/* Header */}
         <div style={{
           display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 52,
-          opacity: catSection.inView ? 1 : 0, transform: catSection.inView ? "translateY(0)" : "translateY(24px)",
-          transition: "opacity 0.7s ease, transform 0.7s ease",
+          ...sectionFade(catSection.inView),
         }}>
           <div>
             <div style={{
@@ -483,71 +587,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           OBRAS RECIENTES
       ══════════════════════════════════════════════════ */}
-      <section ref={featSection.ref} style={{
-        padding: "0 60px 100px", maxWidth: 1320, margin: "0 auto",
-        opacity: featSection.inView ? 1 : 0,
-        transform: featSection.inView ? "translateY(0)" : "translateY(32px)",
-        transition: "opacity 0.8s ease, transform 0.8s ease",
-      }}>
-        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.borderBr}, transparent)`, marginBottom: 64 }} />
-
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 40 }}>
-          <div>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              padding: "5px 14px", borderRadius: 100,
-              background: `${C.gold}15`, border: `1px solid ${C.gold}35`,
-              fontSize: 11, fontWeight: 800, color: C.gold,
-              letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, fontFamily: FB,
-            }}>
-              <Star size={11} fill={C.gold} color={C.gold} /> Recién llegadas
-            </div>
-            <h2 style={{ fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 900, color: C.cream, margin: 0, fontFamily: FD, letterSpacing: "-0.025em" }}>
-              Obras{" "}
-              <span style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>recientes</span>
-            </h2>
-            <p style={{ fontSize: 14.5, color: C.creamSub, margin: "10px 0 0", fontFamily: FB }}>Las últimas incorporaciones a nuestra galería</p>
-          </div>
-          <button className="btn-ghost-sm" onClick={() => navigate("/catalogo")}>
-            Ver colección completa <ArrowRight size={14} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        {obrasLoad ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
-            {[...Array(4)].map((_, i) => (
-              <div key={i} style={{ borderRadius: 18, background: C.panel, border: `1px solid ${C.border}`, height: 340, animation: "shimmer 1.5s ease-in-out infinite", opacity: 0.5 }} />
-            ))}
-          </div>
-        ) : obras.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: C.creamMut, fontSize: 15, fontFamily: FB }}>
-            Pronto habrá obras disponibles aquí.
-          </div>
-        ) : (
-          <div className="mp-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-            {obras.map(obra => (
-              <ProductCard
-                key={obra.id_obra}
-                id={String(obra.id_obra)}
-                category={obra.categoria_nombre || "Arte"}
-                title={obra.titulo}
-                price={Number(obra.precio_minimo || obra.precio_base) || 0}
-                image={obra.imagen_principal || ""}
-                available={obra.estado === "publicada"}
-                artistName={obra.artista_alias || obra.artista_nombre}
-                onView={handleVerObra}
-                onBuy={handleVerObra}
-              />
-            ))}
-          </div>
-        )}
-
-        <div style={{ textAlign: "center", marginTop: 52 }}>
-          <button className="btn-primary" onClick={() => navigate("/catalogo")}>
-            Ver colección completa <ArrowRight size={17} strokeWidth={2.5} />
-          </button>
-        </div>
-      </section>
+      <ObrasRecientesSection obras={obras} obrasLoad={obrasLoad} navigate={navigate} onView={handleVerObra} />
 
       {/* ══════════════════════════════════════════════════
           CTA FINAL

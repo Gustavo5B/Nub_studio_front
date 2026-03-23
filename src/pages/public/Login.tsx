@@ -1,6 +1,6 @@
 // src/pages/public/Login.tsx
 import { useState } from "react";
-import type { FormEvent, ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Mail, Lock, Eye, EyeOff, LogIn, Loader2,
@@ -58,18 +58,36 @@ export default function Login() {
     setMensaje(msg); setIsError(error);
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const validateLoginInput = (): string | null => {
+    if (!formData.correo || !formData.contrasena) return "Por favor completa todos los campos";
+    if (hasSuspiciousContent(formData.correo) || hasSuspiciousContent(formData.contrasena)) return "Los datos ingresados contienen contenido no permitido";
+    return null;
+  };
+
+  const handleLoginError = (err: unknown) => {
+    const error = err as LoginError;
+    if (error.status === 0) {
+      showMessage(error.error?.message || "No se pudo conectar", true);
+    } else if (error.status === 403 && error.error?.blocked) {
+      const m = error.error.minutesRemaining || error.error.minutesBlocked || 5;
+      showMessage(`🔒 Cuenta bloqueada. Intenta en ${m} minuto${m > 1 ? "s" : ""}.`, true);
+    } else if (error.status === 401 && error.error?.attemptsRemaining !== undefined) {
+      const r = error.error.attemptsRemaining;
+      const plural = r > 1 ? "s" : "";
+      const msg = r === 0 ? "🔒 Has excedido el límite de intentos." : `❌ Contraseña incorrecta. Te quedan ${r} intento${plural}.`;
+      showMessage(msg, true);
+    } else if (error.status === 404) {
+      showMessage("Usuario no encontrado", true);
+    } else {
+      showMessage(error.error?.message || "Error al iniciar sesión", true);
+    }
+  };
+
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setMensaje("");
-    if (!formData.correo || !formData.contrasena) {
-      showMessage("Por favor completa todos los campos", true); return;
-    }
-
-    // ── Validación de seguridad RASP ──────────────────────────
-    if (hasSuspiciousContent(formData.correo) || hasSuspiciousContent(formData.contrasena)) {
-      showMessage("Los datos ingresados contienen contenido no permitido", true); return;
-    }
-    // ─────────────────────────────────────────────────────────
+    const validationError = validateLoginInput();
+    if (validationError) { showMessage(validationError, true); return; }
 
     setIsLoading(true);
     try {
@@ -106,29 +124,15 @@ export default function Login() {
       localStorage.setItem("isLoggedIn", "true");
       showMessage("Inicio de sesión exitoso ✓", false);
       setTimeout(() => {
-  const rol = response.usuario?.rol;
-  const artista_estado = response.usuario?.artista_estado;
-
-  if (rol === "admin") navigate("/admin");
-  else if (rol === "artista" && artista_estado === "pendiente") navigate("/artista/pendiente");
-  else if (rol === "artista") navigate("/artista/dashboard");
-  else navigate("/");
-}, 1000);
-
+        const rol = response.usuario?.rol;
+        const artista_estado = response.usuario?.artista_estado;
+        if (rol === "admin") navigate("/admin");
+        else if (rol === "artista" && artista_estado === "pendiente") navigate("/artista/pendiente");
+        else if (rol === "artista") navigate("/artista/dashboard");
+        else navigate("/");
+      }, 1000);
     } catch (err) {
-      const error = err as LoginError;
-      if (error.status === 0) { showMessage(error.error?.message || "No se pudo conectar", true); }
-      else if (error.status === 403 && error.error?.blocked) {
-        const m = error.error.minutesRemaining || error.error.minutesBlocked || 5;
-        showMessage(`🔒 Cuenta bloqueada. Intenta en ${m} minuto${m > 1 ? "s" : ""}.`, true);
-      } else if (error.status === 401 && error.error?.attemptsRemaining !== undefined) {
-        const r = error.error.attemptsRemaining;
-        showMessage(r === 0 ? "🔒 Has excedido el límite de intentos." : `❌ Contraseña incorrecta. Te quedan ${r} intento${r > 1 ? "s" : ""}.`, true);
-      } else if (error.status === 404) {
-        showMessage("Usuario no encontrado", true);
-      } else {
-        showMessage(error.error?.message || "Error al iniciar sesión", true);
-      }
+      handleLoginError(err);
     } finally {
       setIsLoading(false);
     }
@@ -421,11 +425,11 @@ export default function Login() {
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
               ¿No tienes cuenta?{" "}
-              <span onClick={() => navigate("/register")} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Crear una cuenta</span>
+              <button onClick={() => navigate("/register")} style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 600, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}>Crear una cuenta</button>
             </p>
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
               ¿Eres artista?{" "}
-              <span onClick={() => navigate("/registro-artista")} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Regístrate aquí</span>
+              <button onClick={() => navigate("/registro-artista")} style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 600, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}>Regístrate aquí</button>
             </p>
           </div>
 

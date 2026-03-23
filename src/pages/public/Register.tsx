@@ -9,7 +9,7 @@
 //    → static visual, always shows step 1 as active since this is the Register page.
 
 import { useState } from "react";
-import type { FormEvent, ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Mail, Lock, Eye, EyeOff, UserPlus, Loader2,
@@ -73,7 +73,7 @@ export default function Register() {
     { text: "Mínimo 8 caracteres",            met: p.length >= 8 },
     { text: "Una letra mayúscula",            met: /[A-Z]/.test(p) },
     { text: "Una letra minúscula",            met: /[a-z]/.test(p) },
-    { text: "Un número",                      met: /[0-9]/.test(p) },
+    { text: "Un número",                      met: /\d/.test(p) },
     { text: "Un carácter especial (@$!%*?&#)", met: /[@$!%*?&#]/.test(p) },
   ]);
 
@@ -94,25 +94,25 @@ export default function Register() {
     setMensaje("");
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const validateForm = (): string | null => {
+    if (!aceptoTerminos) return "Debes aceptar los Términos y Condiciones";
+    if (!formData.nombre || !formData.correo || !formData.contrasena) return "Todos los campos son obligatorios";
+    if (formData.nombre.length < 2) return "El nombre debe tener al menos 2 caracteres";
+    const errNombre = validarNombre(formData.nombre);
+    if (errNombre) return `Nombre: ${errNombre}`;
+    const emailParts = formData.correo.split("@");
+    if (emailParts.length !== 2 || !emailParts[1].includes(".")) return "El formato del correo no es válido";
+    if (!isPasswordValid) return "La contraseña no cumple todos los requisitos";
+    if (hasSuspiciousContent(formData.nombre)) return "El nombre contiene contenido no permitido";
+    if (hasSuspiciousContent(formData.correo)) return "El correo contiene contenido no permitido";
+    return null;
+  };
+
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setMensaje("");
-    if (!aceptoTerminos) { setMensaje("Debes aceptar los Términos y Condiciones"); setIsError(true); return; }
-    if (!formData.nombre || !formData.correo || !formData.contrasena) { setMensaje("Todos los campos son obligatorios"); setIsError(true); return; }
-    if (formData.nombre.length < 2) { setMensaje("El nombre debe tener al menos 2 caracteres"); setIsError(true); return; }
-
-    // ── Validación de formato del nombre ──────────────────
-    const errNombre = validarNombre(formData.nombre);
-    if (errNombre) { setMensaje(`Nombre: ${errNombre}`); setIsError(true); return; }
-    // ─────────────────────────────────────────────────────
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) { setMensaje("El formato del correo no es válido"); setIsError(true); return; }
-    if (!isPasswordValid) { setMensaje("La contraseña no cumple todos los requisitos"); setIsError(true); return; }
-
-    // ── Validación de seguridad RASP ──────────────────────
-    if (hasSuspiciousContent(formData.nombre)) { setMensaje("El nombre contiene contenido no permitido"); setIsError(true); return; }
-    if (hasSuspiciousContent(formData.correo)) { setMensaje("El correo contiene contenido no permitido"); setIsError(true); return; }
-    // ─────────────────────────────────────────────────────
+    const validationError = validateForm();
+    if (validationError) { setMensaje(validationError); setIsError(true); return; }
 
     setIsLoading(true);
     try {
@@ -573,7 +573,7 @@ export default function Register() {
                   }}>
                     {passReqs.map((req, i) => (
                       <div
-                        key={i}
+                        key={req.text}
                         style={{
                           display: "flex", alignItems: "center", gap: 8,
                           marginBottom: i < 4 ? 8 : 0,
@@ -596,7 +596,10 @@ export default function Register() {
               {/* Términos */}
               <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", marginTop: 4 }}>
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setAceptoTerminos(p => !p)}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setAceptoTerminos(p => !p); }}
                   style={{
                     width: 20, height: 20, borderRadius: 5,
                     border: `1.5px solid ${aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)"}`,
@@ -673,21 +676,21 @@ export default function Register() {
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
               ¿Ya tienes cuenta?{" "}
-              <span
+              <button
                 onClick={() => navigate("/login")}
-                style={{ color: C.orange, cursor: "pointer", fontWeight: 700 }}
+                style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 700, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}
               >
                 Iniciar sesión
-              </span>
+              </button>
             </p>
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
               ¿Eres artista?{" "}
-              <span
+              <button
                 onClick={() => navigate("/registro-artista")}
-                style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}
+                style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 600, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}
               >
                 Regístrate aquí
-              </span>
+              </button>
             </p>
           </div>
 

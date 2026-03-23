@@ -138,7 +138,7 @@ export default function VerificarEmail() {
                   "Recibirás un correo cuando seas aprobado",
                   "Una vez aprobado podrás subir tus obras",
                 ].map((t, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 2 ? 8 : 0, fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+                  <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 2 ? 8 : 0, fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
                     <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C97A", flexShrink: 0 }} />
                     {t}
                   </div>
@@ -162,7 +162,18 @@ export default function VerificarEmail() {
                 Este enlace de verificación ya no es válido. Podemos enviarte uno nuevo.
               </p>
 
-              {!reenvioExitoso ? (
+              {reenvioExitoso ? (
+                <div style={{
+                  background: "rgba(34,201,122,0.08)",
+                  border: "1px solid rgba(34,201,122,0.2)",
+                  borderRadius: 12, padding: "16px",
+                  marginTop: 20, fontSize: 14,
+                  color: "#22C97A",
+                }}>
+                  <CheckCircle2 size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />
+                  Enlace enviado. Revisa tu correo.
+                </div>
+              ) : (
                 <>
                   {correoReenvio && (
                     <div style={{
@@ -184,17 +195,6 @@ export default function VerificarEmail() {
                     }
                   </button>
                 </>
-              ) : (
-                <div style={{
-                  background: "rgba(34,201,122,0.08)",
-                  border: "1px solid rgba(34,201,122,0.2)",
-                  borderRadius: 12, padding: "16px",
-                  marginTop: 20, fontSize: 14,
-                  color: "#22C97A",
-                }}>
-                  <CheckCircle2 size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />
-                  Enlace enviado. Revisa tu correo.
-                </div>
               )}
             </>
           )}

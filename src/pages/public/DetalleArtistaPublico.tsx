@@ -82,8 +82,8 @@ export default function DetalleArtistaPublico() {
       {/* ── Breadcrumb ── */}
       <div style={{ background:"rgba(7,5,16,0.85)", backdropFilter:"blur(20px)", borderBottom:`1px solid ${C.borderBr}` }}>
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"12px 48px", display:"flex", alignItems:"center", gap:6, fontSize:12.5, color:C.creamMut }}>
-          {[{ label:"Inicio", action:() => navigate("/") }, { label:"Artistas", action:() => navigate("/artistas") }].map((item, i) => (
-            <span key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>
+          {[{ label:"Inicio", action:() => navigate("/") }, { label:"Artistas", action:() => navigate("/artistas") }].map((item) => (
+            <span key={item.label} style={{ display:"flex", alignItems:"center", gap:6 }}>
               <button onClick={item.action} style={{ background:"none", border:"none", cursor:"pointer", color:C.creamMut, fontFamily:FB, fontSize:12.5, padding:0, transition:"color .15s" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=C.creamSub}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=C.creamMut}
@@ -247,7 +247,10 @@ export default function DetalleArtistaPublico() {
                   const disponible = obra.estado === "publicada";
                   return (
                     <div key={obra.id_obra}
+                      role={obra.slug ? "button" : undefined}
+                      tabIndex={obra.slug ? 0 : undefined}
                       onClick={() => obra.slug && navigate(`/obras/${obra.slug}`)}
+                      onKeyDown={e => { if (e.key === "Enter" && obra.slug) navigate(`/obras/${obra.slug}`); }}
                       style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:"hidden", cursor: obra.slug ? "pointer" : "default", transition:"all .22s", backdropFilter:"blur(12px)" }}
                       onMouseEnter={e => { if(obra.slug){ const el=e.currentTarget as HTMLElement; el.style.transform="translateY(-5px)"; el.style.borderColor=C.borderHi; el.style.boxShadow=`0 20px 50px rgba(0,0,0,0.45)`; } }}
                       onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.transform="none"; el.style.borderColor=C.border; el.style.boxShadow="none"; }}

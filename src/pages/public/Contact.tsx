@@ -2,10 +2,23 @@
 import {
   Mail, Phone, MapPin, Clock, Send, Star, Users,
   User, MessageSquare, CheckCircle, Palette, ArrowLeft,
-  Instagram, Facebook, Sparkles
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
-import type { FormEvent, ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
+
+const InstagramIcon = ({ size }: { readonly size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+  </svg>
+);
+const FacebookIcon = ({ size }: { readonly size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+  </svg>
+);
 import { useNavigate } from "react-router-dom";
 
 const C = {
@@ -52,7 +65,7 @@ export default function Contact() {
   const [enviado, setEnviado] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: { preventDefault(): void }) => {
     e.preventDefault();
     setIsLoading(true);
     setTimeout(() => {
@@ -65,7 +78,8 @@ export default function Contact() {
     }, 1200);
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  type FormField = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  const handleChange = (e: ChangeEvent<FormField>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -240,17 +254,8 @@ export default function Contact() {
                 background: C.card,
                 border: "1px solid rgba(255,255,255,0.07)",
                 backdropFilter: "blur(20px)",
-                transition: "border-color .2s, background .2s",
                 cursor: "default",
               }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = `${color}40`;
-                  (e.currentTarget as HTMLElement).style.background = `${color}08`;
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
-                  (e.currentTarget as HTMLElement).style.background = C.card;
-                }}
               >
                 <div style={{
                   width: 44, height: 44, borderRadius: 12, flexShrink: 0,
@@ -319,8 +324,8 @@ export default function Contact() {
               <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.08em" }}>Síguenos</div>
               <div style={{ display: "flex", gap: 10 }}>
                 {[
-                  { icon: <Instagram size={16} />, label: "@altarstudio" },
-                  { icon: <Facebook size={16} />, label: "Altar Studio" },
+                  { icon: <InstagramIcon size={16} />, label: "@altarstudio" },
+                  { icon: <FacebookIcon size={16} />, label: "Altar Studio" },
                 ].map(({ icon, label }) => (
                   <button key={label} style={{
                     display: "flex", alignItems: "center", gap: 8,
@@ -484,13 +489,11 @@ export default function Contact() {
                       (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${C.orange}30`;
                     }}
                   >
-                    {isLoading ? (
-                      <><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} /> Enviando...</>
-                    ) : enviado ? (
-                      <><CheckCircle size={16} /> ¡Enviado!</>
-                    ) : (
-                      <><Send size={16} /> Enviar mensaje</>
-                    )}
+                    {(() => {
+                      if (isLoading) return <><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} /> Enviando...</>;
+                      if (enviado) return <><CheckCircle size={16} /> ¡Enviado!</>;
+                      return <><Send size={16} /> Enviar mensaje</>;
+                    })()}
                   </button>
                 </form>
               </div>
@@ -633,18 +636,15 @@ export default function Contact() {
               a:"Muchos de nuestros artistas aceptan encargos personalizados. Contáctanos y te ponemos en contacto directo con el artista ideal.",
               color:C.pink,
             },
-          ].map(({ q, a, color }, i) => (
-            <div key={i} style={{
+          ].map(({ q, a, color }) => (
+            <div key={q} style={{
               background:"rgba(255,255,255,0.025)",
               border:`1px solid rgba(255,255,255,0.07)`,
               borderRadius:18,
               padding:"24px 22px",
               backdropFilter:"blur(20px)",
-              transition:"border-color .2s, transform .2s",
               cursor:"default",
             }}
-              onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor=`${color}40`; el.style.transform="translateY(-3px)"; }}
-              onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.borderColor="rgba(255,255,255,0.07)"; el.style.transform="translateY(0)"; }}
             >
               <div style={{ width:8, height:8, borderRadius:"50%", background:color, marginBottom:14, boxShadow:`0 0 12px ${color}60` }} />
               <div style={{ fontSize:15, fontWeight:800, color:C.text, marginBottom:10, lineHeight:1.35, fontFamily:"'Outfit',sans-serif" }}>{q}</div>

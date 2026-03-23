@@ -178,7 +178,7 @@ export default function About() {
       <section style={{ background: C.bgDeep, borderTop: `1px solid ${C.borderBr}`, borderBottom: `1px solid ${C.borderBr}` }}>
         <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: `repeat(${logros.length}, 1fr)` }} className="about-stats-grid">
           {logros.map((logro, i) => (
-            <div key={i} style={{ padding: "48px 32px", borderRight: i < logros.length - 1 ? `1px solid ${C.borderBr}` : "none", textAlign: "center" }}>
+            <div key={logro.trim()} style={{ padding: "48px 32px", borderRight: i < logros.length - 1 ? `1px solid ${C.borderBr}` : "none", textAlign: "center" }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: STATS_COLORS[i % STATS_COLORS.length], fontFamily: FB }}>{logro.trim()}</div>
             </div>
           ))}
@@ -195,7 +195,7 @@ export default function About() {
           {valores.map((valor, i) => {
             const { icon: Icon, color } = VALOR_ICONS[i % VALOR_ICONS.length];
             return (
-              <div key={i}>
+              <div key={valor.trim()}>
                 <Icon size={20} color={color} strokeWidth={1.8} style={{ marginBottom: 14 }} />
                 <div style={{ height: 1, width: 20, background: color, marginBottom: 14, borderRadius: 1 }} />
                 <div style={{ fontSize: 14, color: C.creamSub, lineHeight: 1.8 }}>{valor.trim()}</div>

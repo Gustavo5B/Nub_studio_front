@@ -1,6 +1,6 @@
 // src/pages/public/RegistroArtista.tsx
 import { useState, useEffect } from "react";
-import type { FormEvent, ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User, Mail, Lock, Phone, Palette, FileText,
@@ -131,12 +131,13 @@ export default function RegistroArtista() {
     const errNombre = validarNombreCompleto(form.nombre_completo);
     if (errNombre) return errNombre;
     if (!form.correo.trim()) return "El correo es obligatorio";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) return "Formato de correo inválido";
+    const emailParts = form.correo.split("@");
+    if (emailParts.length !== 2 || !emailParts[1].includes(".")) return "Formato de correo inválido";
     if (hasSuspiciousContent(form.correo)) return "El correo contiene contenido no permitido";
     if (!form.contrasena) return "La contraseña es obligatoria";
     if (form.contrasena.length < 8) return "La contraseña debe tener al menos 8 caracteres";
     if (!/[A-Z]/.test(form.contrasena)) return "La contraseña necesita al menos una mayúscula";
-    if (!/[0-9]/.test(form.contrasena)) return "La contraseña necesita al menos un número";
+    if (!/\d/.test(form.contrasena)) return "La contraseña necesita al menos un número";
     return null;
   };
 
@@ -159,7 +160,7 @@ export default function RegistroArtista() {
     setPaso(p => p + 1);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     const error = validarPaso1();
     if (error) { setMensaje(error); setIsError(true); return; }
@@ -179,7 +180,7 @@ export default function RegistroArtista() {
           nombre_artistico: form.nombre_artistico || null,
           telefono: form.telefono || null,
           biografia: form.biografia,
-          id_categoria_principal: parseInt(form.id_categoria_principal),
+          id_categoria_principal: Number.parseInt(form.id_categoria_principal, 10),
         }),
       });
 
@@ -238,12 +239,12 @@ export default function RegistroArtista() {
         {form.contrasena && (
           <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
             {[
-              form.contrasena.length >= 8,
-              /[A-Z]/.test(form.contrasena),
-              /[0-9]/.test(form.contrasena),
-              /[@$!%*?&#]/.test(form.contrasena),
-            ].map((met, i) => (
-              <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: met ? C.orange : "rgba(255,255,255,0.1)", transition: "background .2s" }} />
+              { key: "len",     met: form.contrasena.length >= 8 },
+              { key: "upper",   met: /[A-Z]/.test(form.contrasena) },
+              { key: "digit",   met: /\d/.test(form.contrasena) },
+              { key: "special", met: /[@$!%*?&#]/.test(form.contrasena) },
+            ].map(({ key, met }) => (
+              <div key={key} style={{ flex: 1, height: 3, borderRadius: 2, background: met ? C.orange : "rgba(255,255,255,0.1)", transition: "background .2s" }} />
             ))}
           </div>
         )}
@@ -266,20 +267,20 @@ export default function RegistroArtista() {
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
       <Field label="Nombre artístico (opcional)" icon={<Sparkles size={15} />}>
-        <input
-          name="nombre_artistico"
-          value={form.nombre_artistico}
-          onChange={handle}
-          placeholder="Ej: María Colores"
-          style={{
-            ...inputStyle,
-            borderColor: nombreArtisticoOcupado
-              ? C.warning
-              : fieldErrors.nombre_artistico
-              ? "#FF4D6A"
-              : "rgba(255,255,255,0.1)",
-          }}
-        />
+        {(() => {
+          let borderColor = "rgba(255,255,255,0.1)";
+          if (nombreArtisticoOcupado) borderColor = C.warning;
+          else if (fieldErrors.nombre_artistico) borderColor = "#FF4D6A";
+          return (
+            <input
+              name="nombre_artistico"
+              value={form.nombre_artistico}
+              onChange={handle}
+              placeholder="Ej: María Colores"
+              style={{ ...inputStyle, borderColor }}
+            />
+          );
+        })()}
         {fieldErrors.nombre_artistico && (
           <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600, marginTop: 4, display: "block" }}>
             ⚠ {fieldErrors.nombre_artistico}
@@ -352,7 +353,11 @@ export default function RegistroArtista() {
 
       {/* términos */}
       <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-        <div onClick={() => setForm(f => ({ ...f, acepta_terminos: !f.acepta_terminos }))}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setForm(f => ({ ...f, acepta_terminos: !f.acepta_terminos }))}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setForm(f => ({ ...f, acepta_terminos: !f.acepta_terminos })); }}
           style={{ width: 20, height: 20, borderRadius: 5, border: `1.5px solid ${form.acepta_terminos ? C.orange : C.border}`, background: form.acepta_terminos ? C.orange : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all .15s", cursor: "pointer" }}>
           {form.acepta_terminos && <Check size={12} color="white" strokeWidth={3} />}
         </div>
@@ -400,7 +405,7 @@ export default function RegistroArtista() {
           "Si eres aprobado, podrás subir tus obras",
           "El equipo puede contactarte para más info",
         ].map((t, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 2 ? 8 : 0, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+          <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 2 ? 8 : 0, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.orange, flexShrink: 0 }} />
             {t}
           </div>
@@ -508,7 +513,7 @@ export default function RegistroArtista() {
           {!terminado && (
             <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 36, gap: 0 }}>
               {PASOS.map((label, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", flex: i < PASOS.length - 1 ? 1 : "initial" }}>
+                <div key={label} style={{ display: "flex", alignItems: "flex-start", flex: i < PASOS.length - 1 ? 1 : "initial" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: "50%",
@@ -570,9 +575,9 @@ export default function RegistroArtista() {
 
           <p style={{ fontSize: 13, color: C.muted, textAlign: "center", marginTop: 20, fontFamily: "'DM Sans',sans-serif" }}>
             ¿Ya tienes cuenta?{" "}
-            <span onClick={() => navigate("/login")} style={{ color: C.orange, cursor: "pointer", fontWeight: 700 }}>
+            <button onClick={() => navigate("/login")} style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 700, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}>
               Inicia sesión
-            </span>
+            </button>
           </p>
         </div>
       </div>
@@ -592,7 +597,7 @@ export default function RegistroArtista() {
 }
 
 // ── helpers ────────────────────────────────────────────────
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Field({ label, icon, children }: { readonly label: string; readonly icon: React.ReactNode; readonly children: React.ReactNode }) {
   return (
     <div>
       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8, fontFamily: "'DM Sans',sans-serif" }}>

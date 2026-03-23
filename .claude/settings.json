@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"const r=require\\(''./node_modules/lucide-react/package.json''\\); console.log\\(r.version\\)\")",
+      "Bash(node -e \"const icons=require\\(''./node_modules/lucide-react''\\); const names=[''XTwitter'',''X'',''Globe'',''Share2'',''MessageCircle'',''Link2'',''ExternalLink'']; names.forEach\\(n=>console.log\\(n, n in icons\\)\\)\")"
+    ]
+  }
+}

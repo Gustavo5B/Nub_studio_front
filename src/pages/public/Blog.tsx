@@ -92,10 +92,13 @@ const POSTS: Post[] = [
 ];
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, delay, onLeer }: { post: Post; delay: number; onLeer: () => void }) {
+function PostCard({ post, delay, onLeer }: { readonly post: Post; readonly delay: number; readonly onLeer: () => void }) {
   return (
     <article
       onClick={onLeer}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") onLeer(); }}
+      role="button"
+      tabIndex={0}
       style={{
         background: C.panel, border: `1px solid ${C.border}`, borderRadius: 20,
         overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column",
@@ -263,7 +266,7 @@ export default function Blog() {
         {/* Barra de color */}
         <div style={{ marginTop: 36, display: "flex", gap: 5, animation: "fadeUp .45s ease .28s both" }}>
           {([C.pink, C.orange, C.gold, C.green, C.blue, C.purple] as string[]).map((c, i) => (
-            <div key={i} style={{ height: 4, width: i === 0 ? 52 : 14, borderRadius: 2, background: c, opacity: i === 0 ? 1 : 0.55 }} />
+            <div key={c} style={{ height: 4, width: i === 0 ? 52 : 14, borderRadius: 2, background: c, opacity: i === 0 ? 1 : 0.55 }} />
           ))}
         </div>
       </section>
@@ -310,6 +313,9 @@ export default function Blog() {
             {featured && (
               <article
                 onClick={handleLeer}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") handleLeer(); }}
+                role="button"
+                tabIndex={0}
                 style={{
                   display: "grid", gridTemplateColumns: "1fr 1fr",
                   borderRadius: 24, overflow: "hidden",

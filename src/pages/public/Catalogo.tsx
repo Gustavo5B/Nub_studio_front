@@ -63,14 +63,17 @@ function catColorByName(nombre: string): string {
 }
 
 // ── ObraCard — portrait full-image with overlay info ──────────────────
-function ObraCard({ obra, navigate }: { obra: Obra; navigate: ReturnType<typeof useNavigate> }) {
+function ObraCard({ obra, navigate }: { readonly obra: Obra; readonly navigate: ReturnType<typeof useNavigate> }) {
   const [hov, setHov] = useState(false);
   const precio = obra.precio_minimo || obra.precio_base;
   const color  = catColorByName(obra.categoria_nombre);
 
   return (
     <article
+      role="button"
+      tabIndex={0}
       onClick={() => navigate(`/obras/${obra.slug}`)}
+      onKeyDown={e => { if (e.key === "Enter") navigate(`/obras/${obra.slug}`); }}
       className="obra-card"
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -236,14 +239,17 @@ function ObraCard({ obra, navigate }: { obra: Obra; navigate: ReturnType<typeof 
 }
 
 // ── Featured Obra — large horizontal card ──────────────────────────────
-function FeaturedCard({ obra, navigate }: { obra: Obra; navigate: ReturnType<typeof useNavigate> }) {
+function FeaturedCard({ obra, navigate }: { readonly obra: Obra; readonly navigate: ReturnType<typeof useNavigate> }) {
   const [hov, setHov] = useState(false);
   const precio = obra.precio_minimo || obra.precio_base;
   const color  = catColorByName(obra.categoria_nombre);
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => navigate(`/obras/${obra.slug}`)}
+      onKeyDown={e => { if (e.key === "Enter") navigate(`/obras/${obra.slug}`); }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -411,6 +417,77 @@ export default function Catalogo() {
   const featuredObra = showFeatured ? obras[0] : null;
   const gridObras    = showFeatured ? obras.slice(1) : obras;
 
+  const renderObras = () => {
+    if (loading) {
+      return (
+        <div>
+          <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", borderRadius: 24, overflow: "hidden", marginBottom: 36, height: 200, background: C.panel, border: `1px solid ${C.border}`, animation: "shimmer 1.5s ease-in-out infinite" }} className="skeleton-shimmer" />
+          <div className="obras-grid">
+            {[...new Array(9)].map((_, i) => (
+              <div key={`sk-${i}`} style={{ borderRadius: 22, background: C.panel, border: `1px solid ${C.border}`, aspectRatio: "3/4", animation: "shimmer 1.5s ease-in-out infinite", opacity: 0.6 - i * 0.04 }} className="skeleton-shimmer" />
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (obras.length === 0) {
+      return (
+        <div style={{ textAlign: "center", padding: "100px 0", fontFamily: FB }}>
+          <div style={{
+            width: 120, height: 120, borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.orange}16, ${C.purple}10, transparent)`,
+            border: `1px solid ${C.borderHi}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 28px",
+          }}>
+            <ImageIcon size={44} strokeWidth={1} color={C.creamMut} style={{ opacity: 0.55 }} />
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.creamSub, marginBottom: 10, fontFamily: FD, letterSpacing: "-0.01em" }}>Sin resultados</div>
+          <div style={{ fontSize: 14, color: C.creamMut, lineHeight: 1.7, marginBottom: 24 }}>Intenta con otro término o categoría</div>
+          <button onClick={() => { handleCat(null); handleSearch(""); }} style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "11px 24px", borderRadius: 12,
+            background: `linear-gradient(135deg, ${C.orange}, ${C.magenta})`,
+            border: "none", color: "white", fontSize: 14, fontWeight: 700,
+            cursor: "pointer", fontFamily: FB, boxShadow: `0 8px 24px ${C.orange}40`,
+          }}>
+            Ver todas las obras <ArrowRight size={15} strokeWidth={2.5} />
+          </button>
+        </div>
+      );
+    }
+    return (
+      <>
+        {featuredObra && (
+          <div style={{ marginBottom: 40 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: 11, fontWeight: 800, color: C.gold,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              marginBottom: 16, fontFamily: FB,
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.gold, display: "inline-block" }} />{" "}
+              Obra destacada
+            </div>
+            <FeaturedCard obra={featuredObra} navigate={navigate} />
+          </div>
+        )}
+        {gridObras.length > 0 && (
+          <>
+            {featuredObra && (
+              <div style={{ fontSize: 11, fontWeight: 800, color: C.creamMut, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 20, fontFamily: FB }}>
+                Toda la colección
+              </div>
+            )}
+            <div className="obras-grid">
+              {gridObras.map(obra => <ObraCard key={obra.id_obra} obra={obra} navigate={navigate} />)}
+            </div>
+          </>
+        )}
+      </>
+    );
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: FB }}>
 
@@ -551,72 +628,7 @@ export default function Catalogo() {
         </div>
 
         {/* ══ GRID / STATES ══ */}
-        {loading ? (
-          /* Skeleton */
-          <div>
-            <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", borderRadius: 24, overflow: "hidden", marginBottom: 36, height: 200, background: C.panel, border: `1px solid ${C.border}`, animation: "shimmer 1.5s ease-in-out infinite" }} className="skeleton-shimmer" />
-            <div className="obras-grid">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} style={{ borderRadius: 22, background: C.panel, border: `1px solid ${C.border}`, aspectRatio: "3/4", animation: "shimmer 1.5s ease-in-out infinite", opacity: 0.6 - i * 0.04 }} className="skeleton-shimmer" />
-              ))}
-            </div>
-          </div>
-        ) : obras.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "100px 0", fontFamily: FB }}>
-            <div style={{
-              width: 120, height: 120, borderRadius: "50%",
-              background: `radial-gradient(circle, ${C.orange}16, ${C.purple}10, transparent)`,
-              border: `1px solid ${C.borderHi}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 28px",
-            }}>
-              <ImageIcon size={44} strokeWidth={1} color={C.creamMut} style={{ opacity: 0.55 }} />
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: C.creamSub, marginBottom: 10, fontFamily: FD, letterSpacing: "-0.01em" }}>Sin resultados</div>
-            <div style={{ fontSize: 14, color: C.creamMut, lineHeight: 1.7, marginBottom: 24 }}>Intenta con otro término o categoría</div>
-            <button onClick={() => { handleCat(null); handleSearch(""); }} style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "11px 24px", borderRadius: 12,
-              background: `linear-gradient(135deg, ${C.orange}, ${C.magenta})`,
-              border: "none", color: "white", fontSize: 14, fontWeight: 700,
-              cursor: "pointer", fontFamily: FB, boxShadow: `0 8px 24px ${C.orange}40`,
-            }}>
-              Ver todas las obras <ArrowRight size={15} strokeWidth={2.5} />
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Featured obra */}
-            {featuredObra && (
-              <div style={{ marginBottom: 40 }}>
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  fontSize: 11, fontWeight: 800, color: C.gold,
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  marginBottom: 16, fontFamily: FB,
-                }}>
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.gold, display: "inline-block" }} />
-                  Obra destacada
-                </div>
-                <FeaturedCard obra={featuredObra} navigate={navigate} />
-              </div>
-            )}
-
-            {/* Grid */}
-            {gridObras.length > 0 && (
-              <>
-                {featuredObra && (
-                  <div style={{ fontSize: 11, fontWeight: 800, color: C.creamMut, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 20, fontFamily: FB }}>
-                    Toda la colección
-                  </div>
-                )}
-                <div className="obras-grid">
-                  {gridObras.map(obra => <ObraCard key={obra.id_obra} obra={obra} navigate={navigate} />)}
-                </div>
-              </>
-            )}
-          </>
-        )}
+        {renderObras()}
 
         {/* ── Pagination ── */}
         {totalPages > 1 && !loading && (

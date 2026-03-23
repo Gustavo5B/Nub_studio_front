@@ -90,7 +90,7 @@ function SkeletonCard() {
   );
 }
 
-function ArtistaCard({ artista, index }: { artista: Artista; index: number }) {
+function ArtistaCard({ artista, index }: { readonly artista: Artista; readonly index: number }) {
   const navigate = useNavigate();
   const [hov, setHov] = useState(false);
   const [entered, setEntered] = useState(false);
@@ -106,9 +106,17 @@ function ArtistaCard({ artista, index }: { artista: Artista; index: number }) {
     }
   }, [inView, entered, index]);
 
+  let cardTransform: string;
+  if (!inView) cardTransform = "translateY(32px) scale(0.97)";
+  else if (hov) cardTransform = "translateY(-7px) scale(1.01)";
+  else cardTransform = "translateY(0) scale(1)";
+
   return (
     <div ref={ref}
+      role="button"
+      tabIndex={0}
       onClick={() => navigate(`/artistas/${artista.id_artista}`)}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate(`/artistas/${artista.id_artista}`); }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -119,7 +127,7 @@ function ArtistaCard({ artista, index }: { artista: Artista; index: number }) {
         transition: entered
           ? "border-color .22s 0s, box-shadow .22s 0s, transform .22s 0s"
           : `opacity .55s ${index * 0.06}s, transform .65s cubic-bezier(0.16,1,0.3,1) ${index * 0.06}s, border-color .22s 0s, box-shadow .22s 0s`,
-        transform: inView ? (hov ? "translateY(-7px) scale(1.01)" : "translateY(0) scale(1)") : "translateY(32px) scale(0.97)",
+        transform: cardTransform,
         opacity: inView ? 1 : 0,
         boxShadow: hov ? `0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px ${color}18` : "0 4px 20px rgba(0,0,0,0.3)",
         backdropFilter: "blur(20px)",
@@ -211,7 +219,7 @@ function ArtistaCard({ artista, index }: { artista: Artista; index: number }) {
             borderRadius: 8,
             padding: "5px 12px",
           }}>
-            Ver perfil
+            {"Ver perfil"}
             <span style={{ display: "inline-flex", transform: hov ? "translateX(3px)" : "translateX(0)", transition: "transform .2s" }}>
               <ChevronRight size={13} strokeWidth={2.5} />
             </span>
@@ -370,21 +378,25 @@ export default function Artistas() {
         )}
 
         {/* Grid / Loading / Empty */}
-        {loading ? (
-          <div className="artistas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
-            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        ) : filtrados.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "100px 0" }}>
-            <ImageIcon size={52} color={C.creamMut} strokeWidth={1} style={{ opacity: .2, marginBottom: 20 }} />
-            <div style={{ fontSize: 20, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 8 }}>Sin resultados</div>
-            <div style={{ fontSize: 14, color: C.creamSub, fontFamily: FB }}>Intenta con otro término o categoría</div>
-          </div>
-        ) : (
-          <div className="artistas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
-            {filtrados.map((a, i) => <ArtistaCard key={a.id_artista} artista={a} index={i} />)}
-          </div>
-        )}
+        {(() => {
+          if (loading) return (
+            <div className="artistas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
+              {(['sk1','sk2','sk3','sk4','sk5','sk6']).map(k => <SkeletonCard key={k} />)}
+            </div>
+          );
+          if (filtrados.length === 0) return (
+            <div style={{ textAlign: "center", padding: "100px 0" }}>
+              <ImageIcon size={52} color={C.creamMut} strokeWidth={1} style={{ opacity: .2, marginBottom: 20 }} />
+              <div style={{ fontSize: 20, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 8 }}>Sin resultados</div>
+              <div style={{ fontSize: 14, color: C.creamSub, fontFamily: FB }}>Intenta con otro término o categoría</div>
+            </div>
+          );
+          return (
+            <div className="artistas-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
+              {filtrados.map((a, i) => <ArtistaCard key={a.id_artista} artista={a} index={i} />)}
+            </div>
+          );
+        })()}
       </div>
 
       <style>{`
@@ -412,10 +424,11 @@ export default function Artistas() {
 }
 
 // ── Stat card with hover translateX effect ──
-function StatCard({ num, label, color, Icon }: { num: number; label: string; color: string; Icon: React.ElementType }) {
+function StatCard({ num, label, color, Icon }: { readonly num: number; readonly label: string; readonly color: string; readonly Icon: React.ElementType }) {
   const [hov, setHov] = useState(false);
   return (
     <div
+      role="presentation"
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
