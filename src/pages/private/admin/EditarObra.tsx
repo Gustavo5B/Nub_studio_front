@@ -613,7 +613,7 @@ export default function EditarObra() {
                           </div>
                         </div>
                       )}
-                      <div onClick={() => fileRef.current?.click()}
+                      <div role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={e => { if (e.key === "Enter") fileRef.current?.click(); }}
                         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                         onDragLeave={() => setDragOver(false)}
                         onDrop={onDrop}

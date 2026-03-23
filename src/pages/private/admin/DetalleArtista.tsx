@@ -167,7 +167,7 @@ export default function DetalleArtista() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { window.scrollTo(0, 0); cargar(); }, [id]);
+  useEffect(() => { globalThis.scrollTo(0, 0); cargar(); }, [id]);
 
   const handleAprobacion = async (accion: "activo" | "rechazado") => {
     setSaving(true);

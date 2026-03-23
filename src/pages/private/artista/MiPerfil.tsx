@@ -42,9 +42,9 @@ interface Categoria { id_categoria: number; nombre: string; }
 interface RedSocial { id_red: number; red_social: string; url: string; usuario?: string; }
 
 interface Props {
-  artista: ArtistaInfo;
-  token: string;
-  onActualizar: (nuevaFoto?: string) => void;
+  readonly artista: ArtistaInfo;
+  readonly token: string;
+  readonly onActualizar: (nuevaFoto?: string) => void;
 }
 
 const CAMPOS_REQUERIDOS: { key: keyof ArtistaInfo; label: string }[] = [
@@ -163,7 +163,7 @@ const Field = ({ label, hint, children, full, required, empty }: { label:string;
 );
 
 const Toggle = ({ value, onChange, label }: { value:boolean; onChange:(v:boolean)=>void; label:string }) => (
-  <div className={`mp-toggle-row${value?" active":""}`} onClick={() => onChange(!value)}>
+  <div className={`mp-toggle-row${value?" active":""}`} role="button" tabIndex={0} onClick={() => onChange(!value)} onKeyDown={e => { if (e.key === "Enter") onChange(!value); }}>
     <div style={{ width:46, height:26, borderRadius:13, flexShrink:0, position:"relative", background:value?"linear-gradient(135deg,#FF840E,#CC59AD)":"rgba(255,255,255,0.1)", boxShadow:value?"0 0 14px rgba(255,132,14,0.4)":"none", transition:"all 0.25s ease" }}>
       <div style={{ position:"absolute", top:4, left:value?24:4, width:18, height:18, borderRadius:"50%", background:"#fff", boxShadow:"0 2px 6px rgba(0,0,0,0.3)", transition:"left 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} />
     </div>
@@ -320,7 +320,7 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
         }
         const message = await handleApiError(res);
         showToast(message, "err");
-        if (res.status === 401) setTimeout(() => window.location.href = "/login", 2000);
+        if (res.status === 401) setTimeout(() => { globalThis.location.href = "/login"; }, 2000);
         return;
       }
 
@@ -429,7 +429,7 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
           <div className="mp-section">
             <SectionHeader icon="📷" title="Foto de perfil" />
             <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-              <div className="mp-foto-wrap" onClick={() => fotoRef.current?.click()}
+              <div className="mp-foto-wrap" role="button" tabIndex={0} onClick={() => fotoRef.current?.click()} onKeyDown={e => { if (e.key === "Enter") fotoRef.current?.click(); }}
                 style={{ border:fotoPreview?"2.5px solid rgba(255,132,14,0.5)":!camposActuales.foto_perfil?"2px dashed rgba(255,77,106,0.4)":"2px dashed rgba(255,255,255,0.15)", background:fotoPreview?"transparent":"rgba(255,255,255,0.03)", boxShadow:fotoPreview?"0 0 0 5px rgba(255,132,14,0.08)":"none" }}>
                 {fotoPreview ? <img src={fotoPreview} alt="Foto" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span style={{ fontSize:30, opacity:0.2 }}>👤</span>}
                 <div className="mp-foto-overlay">📷</div>

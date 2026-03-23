@@ -487,7 +487,7 @@ export default function ListaObras() {
         {/* Grid */}
         {loading ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16, animation: "fadeUp .4s ease .1s both" }}>
-            {Array.from({ length: 8 }).map((_, i) => <ObraCardSkeleton key={i} />)}
+            {Array.from({ length: 8 }).map((_, i) => <ObraCardSkeleton key={`sk-${i}`} />)}
           </div>
         ) : obras.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 14, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, animation: "fadeUp .4s ease both" }}>

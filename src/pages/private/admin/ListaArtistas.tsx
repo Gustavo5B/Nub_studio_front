@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Search, RefreshCw, X, Eye, Edit2, Trash2,
   CheckCircle, Clock, XCircle, UserPlus, Phone, Mail,
-  ChevronLeft, ChevronRight, AlertTriangle, Image as ImageIcon,
+  ChevronLeft, ChevronRight, AlertTriangle,
   Star, Check, Ban, Bell, ShieldOff, UserCheck, Users,
   Sparkles,
 } from "lucide-react";
@@ -613,7 +613,7 @@ export default function ListaArtistas() {
         {/* Grid de cards */}
         {loading ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, animation: "fadeUp .4s ease .12s both" }}>
-            {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
+            {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={`sk-${i}`} />)}
           </div>
         ) : artistas.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 280, gap: 12, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, animation: "fadeUp .4s ease both" }}>

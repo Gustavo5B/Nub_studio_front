@@ -543,12 +543,12 @@ export default function Register() {
                 {formData.contrasena.length > 0 && (
                   <div style={{ marginTop: 10 }}>
                     <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                      {[1, 2, 3, 4, 5].map(i => (
+                      {[1, 2, 3, 4, 5].map(n => (
                         <div
-                          key={i}
+                          key={n}
                           style={{
                             flex: 1, height: 4, borderRadius: 2,
-                            background: i <= metCount ? strengthColor : "rgba(255,255,255,0.08)",
+                            background: n <= metCount ? strengthColor : "rgba(255,255,255,0.08)",
                             transition: "background .2s",
                           }}
                         />

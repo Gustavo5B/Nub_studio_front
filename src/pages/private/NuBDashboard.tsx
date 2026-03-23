@@ -78,8 +78,8 @@ const Tip = ({ active, payload, label }: {
   return (
     <div style={{ background:"#fff", border:`1px solid ${P.border}`, borderRadius:10, padding:"8px 12px", fontSize:12, boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
       <div style={{ color:P.muted, marginBottom:4 }}>{label}</div>
-      {payload.map((entry, i) => (
-        <div key={i} style={{ color:entry.color, fontWeight:700 }}>{entry.name}: {entry.value}</div>
+      {payload.map((entry) => (
+        <div key={entry.name} style={{ color:entry.color, fontWeight:700 }}>{entry.name}: {entry.value}</div>
       ))}
     </div>
   );
@@ -388,7 +388,7 @@ function TxTable() {
         </thead>
         <tbody>
           {txs.map(({ obra, who, monto, tag, c, t }, i) => (
-            <tr key={i}
+            <tr key={`${obra}-${who}`}
               style={{ borderBottom: i < txs.length-1 ? `1px solid ${P.bg}` : "none", cursor:"default" }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background=P.bg}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="transparent"}

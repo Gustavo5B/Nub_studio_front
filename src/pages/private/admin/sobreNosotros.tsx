@@ -218,7 +218,7 @@ export default function AdminSobreNosotros() {
               {trayectoria.map((item, i) => {
                 const color = TRAYECTORIA_COLORS[i % TRAYECTORIA_COLORS.length];
                 return (
-                  <div key={i} style={{ background: "rgba(255,232,200,0.02)", border: `1px solid ${color}22`, borderRadius: 12, padding: "16px 18px", position: "relative" }}>
+                  <div key={`tray-${i}`} style={{ background: "rgba(255,232,200,0.02)", border: `1px solid ${color}22`, borderRadius: 12, padding: "16px 18px", position: "relative" }}>
                     <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: color, borderRadius: "12px 0 0 12px" }} />
                     <div style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-end" }}>
                       <div style={{ flex: "0 0 100px" }}>

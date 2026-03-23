@@ -3,15 +3,15 @@ import { Eye, Heart, Star } from "lucide-react";
 import "../styles/products.css";
 
 interface ProductCardProps {
-  id: string;
-  category: string;
-  title: string;
-  price: number;
-  image: string;
-  available: boolean;
-  artistName?: string;
-  onView?: (id: string) => void;
-  onBuy?: (id: string) => void;
+  readonly id: string;
+  readonly category: string;
+  readonly title: string;
+  readonly price: number;
+  readonly image: string;
+  readonly available: boolean;
+  readonly artistName?: string;
+  readonly onView?: (id: string) => void;
+  readonly onBuy?: (id: string) => void;
 }
 
 export default function ProductCard({
@@ -20,7 +20,7 @@ export default function ProductCard({
   const fmt = (p: number) => `$${p.toLocaleString('es-MX')}`;
 
   return (
-    <article className="mp-card" onClick={() => onView?.(id)}>
+    <article className="mp-card" role="button" tabIndex={0} onClick={() => onView?.(id)} onKeyDown={e => { if (e.key === "Enter") onView?.(id); }}>
       {/* Imagen */}
       <div className="mp-img-wrap">
         <img
@@ -33,7 +33,7 @@ export default function ProductCard({
           <Heart size={16} />
         </button>
         {!available && <div className="mp-sold">Agotado</div>}
-        <div className="mp-quick" onClick={e => { e.stopPropagation(); onView?.(id); }}>
+        <div className="mp-quick" role="button" tabIndex={0} onClick={e => { e.stopPropagation(); onView?.(id); }} onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); onView?.(id); } }}>
           <Eye size={14} /> Vista rápida
         </div>
       </div>

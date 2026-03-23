@@ -171,8 +171,8 @@ function VacuumModal({ resultados, duracion, onClose }:{ resultados:VacuumResult
           ))}
         </div>
         <div style={{ overflowY:"auto", maxHeight:280, display:"flex", flexDirection:"column", gap:4 }}>
-          {resultados.map((r,i)=>(
-            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"7px 12px", borderRadius:7, background:r.ok?"rgba(34,201,122,0.05)":"rgba(240,78,107,0.07)", border:`1px solid ${r.ok?"rgba(34,201,122,0.15)":"rgba(240,78,107,0.20)"}` }}>
+          {resultados.map((r)=>(
+            <div key={r.tabla} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"7px 12px", borderRadius:7, background:r.ok?"rgba(34,201,122,0.05)":"rgba(240,78,107,0.07)", border:`1px solid ${r.ok?"rgba(34,201,122,0.15)":"rgba(240,78,107,0.20)"}` }}>
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 {r.ok?<CheckCircle size={12} color={C.green}/>:<AlertCircle size={12} color={C.red}/>}
                 <span style={{ fontSize:12, color:C.cream, fontFamily:FM }}>{r.tabla}</span>
@@ -194,7 +194,7 @@ function Topbar({ navigate, onRefresh, loading }:{
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <span style={{ fontSize:11.5, fontWeight:700, color:C.orange, letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer" }} onClick={()=>navigate("/admin")}>Admin</span>
+        <span role="button" tabIndex={0} style={{ fontSize:11.5, fontWeight:700, color:C.orange, letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer" }} onClick={()=>navigate("/admin")} onKeyDown={e => { if (e.key === "Enter") navigate("/admin"); }}>Admin</span>
         <ChevronRight size={12} color={C.creamMut} />
         <span style={{ fontSize:13, color:C.creamSub }}>Monitoreo</span>
       </div>
@@ -518,7 +518,7 @@ export default function AdminMonitoreo() {
                 <span style={{ fontSize:13, color:C.red, fontWeight:700, fontFamily:FB }}>{alertasCriticas} problema(s) crítico(s) — requieren atención inmediata</span>
               </div>
             )}
-            {alertas.map((a,i)=><AlertaBadge key={i} alerta={a} onVacuum={a.tipo==="vacuum"?handleVacuumTabla:undefined} vacuuming={vacuumingTabla===a.tabla} />)}
+            {alertas.map((a)=><AlertaBadge key={`${a.tipo}-${a.tabla}`} alerta={a} onVacuum={a.tipo==="vacuum"?handleVacuumTabla:undefined} vacuuming={vacuumingTabla===a.tabla} />)}
           </div>
         )}
 
@@ -538,8 +538,8 @@ export default function AdminMonitoreo() {
                 <table style={{ width:"100%", borderCollapse:"collapse" }}>
                   <thead>
                     <tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                      {["Tabla","Filas vivas","Filas obsoletas","Tamaño","Índices","Escaneos (Comp./Índice)","Operaciones (I/U/E)","Últ. Análisis","VACUUM","REINDEX"].map((h,i)=>(
-                        <th key={i} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+                      {["Tabla","Filas vivas","Filas obsoletas","Tamaño","Índices","Escaneos (Comp./Índice)","Operaciones (I/U/E)","Últ. Análisis","VACUUM","REINDEX"].map((h)=>(
+                        <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -648,7 +648,7 @@ export default function AdminMonitoreo() {
                     )}
                   </div>
                 ) : queries.map((q,i)=>(
-                  <div key={i} style={{ padding:"11px 13px", borderRadius:9, marginBottom:6, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
+                  <div key={`q-${i}`} style={{ padding:"11px 13px", borderRadius:9, marginBottom:6, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <span style={{ width:20, height:20, borderRadius:5, background:`${C.orange}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:C.orange }}>{i+1}</span>
@@ -680,11 +680,11 @@ export default function AdminMonitoreo() {
                   <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Candidatos a eliminar — liberan espacio sin afectar rendimiento</span>
                 </div>
                 <div style={{ padding:"8px 10px" }}>
-                  {indices.sin_uso.map((idx,i)=>{
+                  {indices.sin_uso.map((idx)=>{
                     const expKey = `sinuso-${idx.indice}`;
                     const exp = expandedIdx === expKey;
                     return (
-                      <div key={i} style={{ borderRadius:9, marginBottom:6, overflow:"hidden", border:`1px solid ${exp?"rgba(255,193,16,0.30)":"rgba(255,193,16,0.12)"}`, transition:"border-color .2s" }}>
+                      <div key={idx.indice} style={{ borderRadius:9, marginBottom:6, overflow:"hidden", border:`1px solid ${exp?"rgba(255,193,16,0.30)":"rgba(255,193,16,0.12)"}`, transition:"border-color .2s" }}>
                         {/* Fila principal */}
                         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", background:"rgba(255,193,16,0.04)", cursor:"pointer" }}
                           onClick={()=>setExpandedIdx(exp?null:expKey)}>
@@ -747,7 +747,7 @@ export default function AdminMonitoreo() {
                   const maxUsos = indices.usados[0]?.usos ?? 1;
                   const pct = Math.min(((idx.usos??0)/(maxUsos||1))*100, 100);
                   return (
-                    <div key={i} style={{ borderRadius:9, marginBottom:4, overflow:"hidden", border:`1px solid ${exp?"rgba(34,201,122,0.25)":C.border}`, transition:"border-color .2s" }}>
+                    <div key={idx.indice} style={{ borderRadius:9, marginBottom:4, overflow:"hidden", border:`1px solid ${exp?"rgba(34,201,122,0.25)":C.border}`, transition:"border-color .2s" }}>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 90px 90px 80px 24px", alignItems:"center", gap:10, padding:"9px 12px", background:i%2===0?"rgba(255,232,200,0.01)":"transparent", cursor:"pointer" }}
                         onClick={()=>setExpandedIdx(exp?null:expKey)}>
                         <div>
@@ -799,8 +799,8 @@ export default function AdminMonitoreo() {
                   <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Tablas con búsquedas completas frecuentes (más lentas)</span>
                 </div>
                 <div style={{ padding:"8px 10px" }}>
-                  {indices.posibles_faltantes.map((t:TablaInfo,i)=>(
-                    <div key={i} style={{ padding:"8px 12px", borderRadius:7, marginBottom:4, background:"rgba(240,78,107,0.04)", border:`1px solid rgba(240,78,107,0.12)` }}>
+                  {indices.posibles_faltantes.map((t:TablaInfo)=>(
+                    <div key={t.nombre} style={{ padding:"8px 12px", borderRadius:7, marginBottom:4, background:"rgba(240,78,107,0.04)", border:`1px solid rgba(240,78,107,0.12)` }}>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                         <span style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{t.nombre}</span>
                         <div style={{ display:"flex", gap:12 }}>
@@ -842,8 +842,8 @@ export default function AdminMonitoreo() {
               <div style={{ overflowX:"auto" }}>
                 <table style={{ width:"100%", borderCollapse:"collapse" }}>
                   <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                    {["PID","Usuario","Aplicación","Estado","Duración","Consulta en curso","Acción"].map((h,i)=>(
-                      <th key={i} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+                    {["PID","Usuario","Aplicación","Estado","Duración","Consulta en curso","Acción"].map((h)=>(
+                      <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                     ))}
                   </tr></thead>
                   <tbody>
@@ -897,8 +897,8 @@ export default function AdminMonitoreo() {
                   <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Bloqueos activos</span>
                 </div>
                 <div style={{ padding:"10px" }}>
-                  {bloqueos.bloqueos_activos.map((b,i)=>(
-                    <div key={i} style={{ padding:"12px 14px", borderRadius:9, marginBottom:6, background:"rgba(240,78,107,0.05)", border:`1px solid rgba(240,78,107,0.15)` }}>
+                  {bloqueos.bloqueos_activos.map((b)=>(
+                    <div key={b.pid_bloqueado} style={{ padding:"12px 14px", borderRadius:9, marginBottom:6, background:"rgba(240,78,107,0.05)", border:`1px solid rgba(240,78,107,0.15)` }}>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                         <div>
                           <div style={{ fontSize:10, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Proceso bloqueado (PID {b.pid_bloqueado})</div>
@@ -935,8 +935,8 @@ export default function AdminMonitoreo() {
                   <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Procesos en espera</span>
                 </div>
                 <div style={{ padding:"8px 10px" }}>
-                  {(bloqueos.eventos_espera as { wait_event_type:string; wait_event:string; total:number }[]).map((e,i)=>(
-                    <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", borderRadius:7, marginBottom:3, background:"rgba(255,193,16,0.04)", border:`1px solid rgba(255,193,16,0.12)` }}>
+                  {(bloqueos.eventos_espera as { wait_event_type:string; wait_event:string; total:number }[]).map((e)=>(
+                    <div key={`${e.wait_event_type}-${e.wait_event}`} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", borderRadius:7, marginBottom:3, background:"rgba(255,193,16,0.04)", border:`1px solid rgba(255,193,16,0.12)` }}>
                       <div>
                         <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:700 }}>{e.wait_event}</span>
                         <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginLeft:8 }}>{e.wait_event_type}</span>
@@ -1091,8 +1091,8 @@ export default function AdminMonitoreo() {
                   <div style={{ overflowX:"auto" }}>
                     <table style={{ width:"100%", borderCollapse:"collapse" }}>
                       <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                        {["Operación","Tabla afectada","Alcance","Duración","Resultado","Admin","Fecha y hora"].map((h,i)=>(
-                          <th key={i} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+                        {["Operación","Tabla afectada","Alcance","Duración","Resultado","Admin","Fecha y hora"].map((h)=>(
+                          <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                         ))}
                       </tr></thead>
                       <tbody>

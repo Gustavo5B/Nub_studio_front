@@ -61,9 +61,9 @@ interface TooltipPayloadItem {
 }
 
 interface CustomTooltipProps {
-  active?: boolean;
-  payload?: TooltipPayloadItem[];
-  label?: string;
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
+  readonly label?: string;
 }
 
 function authH() { return { Authorization: `Bearer ${authService.getToken()}` }; }
@@ -122,8 +122,8 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   return (
     <div style={{ background: "rgba(10,7,20,0.98)", border: `1px solid ${C.borderBr}`, borderRadius: 10, padding: "10px 14px", fontFamily: FB }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: C.creamMut, marginBottom: 8 }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: C.creamSub, marginBottom: 3 }}>
+      {payload.map((p) => (
+        <div key={p.name} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: C.creamSub, marginBottom: 3 }}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: p.color, display: "inline-block" }} />
           <span style={{ color: C.creamMut }}>{p.name}:</span>
           <strong style={{ color: C.cream }}>{fmtM(p.value)}</strong>

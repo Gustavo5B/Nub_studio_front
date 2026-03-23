@@ -145,7 +145,7 @@ export default function ArtistaDashboard() {
             { label: "En revisión",  value: stats.pendientes, icon: <Clock size={22} />,       grad: `${C.gold},#e07b00`,        shadow: C.gold    },
             { label: "Comisión %",   value: artista?.porcentaje_comision || 15, icon: <TrendingUp size={22} />, grad: `${C.purple},${C.pink}`, shadow: C.purple },
           ].map((s, i) => (
-            <div key={i}
+            <div key={s.label}
               style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: "22px", position: "relative", overflow: "hidden", animation: `fadeUp .5s ease ${i * 0.08}s both`, transition: "transform .2s,box-shadow .2s" }}
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-4px)"; el.style.boxShadow = `0 16px 40px ${s.shadow}20`; }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; }}>

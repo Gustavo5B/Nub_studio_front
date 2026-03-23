@@ -248,7 +248,7 @@ export default function NuevaObra() {
     }
 
     setStep(2);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    globalThis.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -306,7 +306,7 @@ export default function NuevaObra() {
         }
         if (res.status === 403 && data.camposFaltantes) {
           setPerfilFaltantes(data.camposFaltantes);
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          globalThis.scrollTo({ top: 0, behavior: "smooth" });
           return;
         }
         showToast(data.message || "Error al enviar la obra", "err");

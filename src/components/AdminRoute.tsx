@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 interface AdminRouteProps {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 export default function AdminRoute({ children }: AdminRouteProps) {

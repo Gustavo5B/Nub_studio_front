@@ -198,8 +198,8 @@ export default function VerifyEmailCode() {
                 />
                 {/* Indicador de dígitos */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 8 }}>
-                  {[0,1,2,3,4,5].map(i => (
-                    <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i < codigo.length ? C.orange : "rgba(255,255,255,0.15)", transition: "background .15s" }} />
+                  {[0,1,2,3,4,5].map(n => (
+                    <div key={n} style={{ width: 8, height: 8, borderRadius: "50%", background: n < codigo.length ? C.orange : "rgba(255,255,255,0.15)", transition: "background .15s" }} />
                   ))}
                 </div>
               </div>

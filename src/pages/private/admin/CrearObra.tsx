@@ -79,7 +79,7 @@ function Sidebar({ navigate }: { navigate: (p: string) => void }) {
       <div style={{ height: 2, background: `linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.pink}, ${C.purple}, ${C.blue})` }} />
 
       <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${C.borderBr}` }}>
-        <div onClick={() => navigate("/")} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 16 }}>
+        <div role="button" tabIndex={0} onClick={() => navigate("/")} onKeyDown={e => { if (e.key === "Enter") navigate("/"); }} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 16 }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, overflow: "hidden", border: `1px solid ${C.borderBr}`, flexShrink: 0 }}>
             <img src={logoImg} alt="Galería Altar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>

@@ -1,16 +1,15 @@
 // src/pages/private/admin/AdminEstadisticas.tsx
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity, ChevronRight, RefreshCw, Users, TrendingUp, TrendingDown,
-  Clock, Calendar, BarChart2, Table2, CheckCircle, XCircle, Zap,
-  PieChart as PieIcon, Thermometer, Info, LogIn, LogOut, ShieldOff,
-  Eye, Sparkles,
+  Clock, Calendar, BarChart2, Table2, CheckCircle, XCircle,
+  PieChart as PieIcon, Thermometer, Sparkles,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, AreaChart, Area, Line, Legend,
-  PieChart, Pie, Cell, ReferenceLine,
+  PieChart, Pie, ReferenceLine,
 } from "recharts";
 import { authService } from "../../../services/authService";
 import { useToast }    from "../../../context/ToastContext";
@@ -70,10 +69,10 @@ interface Modelo {
   estadisticos: { media:number; moda:number; desv_std:number; r2:number };
   errores: ModeloError[];
 }
-interface DistItem { tipo_evento:string; total:number; porcentaje:number }
+interface DistItem { tipo_evento:string; total:number; porcentaje:number; fill?:string }
 interface CalorCell { dia:number; dia_label:string; hora:number; hora_label:string; total:number; intensidad:number }
 interface EventoHistorial { id_historial:number; correo:string; tipo_evento:string; ip_address:string; fecha:string; detalles:string; nombre_completo:string }
-interface TipProps { active?:boolean; payload?:{color:string;name:string;value:number}[]; label?:string }
+interface TipProps { readonly active?:boolean; readonly payload?:{color:string;name:string;value:number}[]; readonly label?:string }
 
 type Tab = "resumen"|"semanal"|"diario"|"hora"|"dia-semana"|"pastel"|"calor"|"historial";
 
@@ -109,8 +108,8 @@ const ChartTip = ({ active, payload, label }: TipProps) => {
   return (
     <div style={{ background:"rgba(7,4,18,0.98)", border:`1px solid rgba(255,132,14,0.25)`, borderRadius:12, padding:"12px 16px", fontFamily:FB, boxShadow:"0 8px 32px rgba(0,0,0,0.6)", backdropFilter:"blur(12px)" }}>
       <div style={{ fontSize:10, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.10em", marginBottom:10, paddingBottom:6, borderBottom:`1px solid rgba(255,132,14,0.15)` }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, fontWeight:600, marginBottom:4 }}>
+      {payload.map((p) => (
+        <div key={p.name} style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, fontWeight:600, marginBottom:4 }}>
           <div style={{ width:8, height:8, borderRadius:"50%", background:p.color, boxShadow:`0 0 6px ${p.color}` }} />
           <span style={{ color:C.creamMut }}>{p.name}:</span>
           <strong style={{ color:C.cream }}>{fmt(p.value)}</strong>
@@ -190,7 +189,6 @@ function ModeloBox({ modelo, periodo }: { modelo:Modelo; periodo:string }) {
 
   const r2Pct     = (estadisticos.r2 * 100).toFixed(0);
   const confColor = estadisticos.r2 >= 0.8 ? C.green : estadisticos.r2 >= 0.6 ? C.gold : C.red;
-  const confianza = estadisticos.r2 >= 0.8 ? "Alta" : estadisticos.r2 >= 0.6 ? "Media" : "Baja";
   const faseColor = fase === "crecimiento" ? C.green : fase === "decrecimiento" ? C.red : C.gold;
 
   // Cuando R² < 0.3 el modelo no detectó tendencia confiable
@@ -333,7 +331,7 @@ function ModeloBox({ modelo, periodo }: { modelo:Modelo; periodo:string }) {
                       {errores.map((e, i) => {
                         const ec = e.error_relativo !== null && e.error_relativo > 30 ? C.red : e.error_relativo !== null && e.error_relativo > 15 ? C.gold : C.green;
                         return (
-                          <tr key={i} style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:i%2===0?"rgba(255,232,200,0.012)":"transparent" }}>
+                          <tr key={`err-${i}`} style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:i%2===0?"rgba(255,232,200,0.012)":"transparent" }}>
                             <td style={{ padding:"5px 12px", textAlign:"right", color:C.creamMut }}>{e.x}</td>
                             <td style={{ padding:"5px 12px", textAlign:"right", color:C.cream, fontWeight:600 }}>{e.y_real}</td>
                             <td style={{ padding:"5px 12px", textAlign:"right", color:C.purple }}>{e.y_modelo}</td>
@@ -361,7 +359,7 @@ function ModeloBox({ modelo, periodo }: { modelo:Modelo; periodo:string }) {
 // ═════════════════════════════════════════════════════════════════════════════
 // MAPA DE CALOR
 // ═════════════════════════════════════════════════════════════════════════════
-function MapaCalor({ datos, maxVal }: { datos:CalorCell[]; maxVal:number }) {
+function MapaCalor({ datos, maxVal: _maxVal }: { datos:CalorCell[]; maxVal:number }) {
   const DIAS  = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
   const HORAS = Array.from({length:24}, (_,h) => `${String(h).padStart(2,"00")}:00`);
   const [tooltip, setTooltip] = useState<{ cell:CalorCell; x:number; y:number }|null>(null);
@@ -426,8 +424,8 @@ function MapaCalor({ datos, maxVal }: { datos:CalorCell[]; maxVal:number }) {
           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:14, justifyContent:"center" }}>
             <span style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>⬜ Sin actividad</span>
             <div style={{ display:"flex", gap:3 }}>
-              {[0.05, 0.15, 0.35, 0.60, 0.85, 1.0].map((v, i) => (
-                <div key={i} style={{ width:22, height:14, borderRadius:3, background:getColor(v) }} />
+              {[0.05, 0.15, 0.35, 0.60, 0.85, 1.0].map((v) => (
+                <div key={`heat-${v}`} style={{ width:22, height:14, borderRadius:3, background:getColor(v) }} />
               ))}
             </div>
             <span style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>🔥 Máxima actividad</span>
@@ -465,7 +463,7 @@ function Topbar({ navigate, onRefresh, loading }: { navigate:(p:string)=>void; o
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <span style={{ fontSize:11.5, fontWeight:700, color:C.orange, letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer" }} onClick={() => navigate("/admin")}>Admin</span>
+        <span role="button" tabIndex={0} style={{ fontSize:11.5, fontWeight:700, color:C.orange, letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer" }} onClick={() => navigate("/admin")} onKeyDown={e => { if (e.key === "Enter") navigate("/admin"); }}>Admin</span>
         <ChevronRight size={12} color={C.creamMut} />
         <span style={{ fontSize:13, color:C.creamSub }}>Estadísticas</span>
         <div style={{ marginLeft:8, padding:"3px 10px", borderRadius:100, background:"rgba(255,200,150,0.05)", border:`1px solid ${C.border}`, fontSize:11, color:C.creamMut, fontFamily:FB }}>{hoy}</div>
@@ -488,7 +486,6 @@ export default function AdminEstadisticas() {
   const navigate      = useNavigate();
   const { showToast } = useToast();
   const [tab,          setTab]          = useState<Tab>("resumen");
-  const [prevTab,      setPrevTab]      = useState<Tab>("resumen");
   const [loading,      setLoading]      = useState(true);
   const [animKpis,     setAnimKpis]     = useState(false);
   const [resumen,      setResumen]      = useState<Resumen|null>(null);
@@ -501,6 +498,7 @@ export default function AdminEstadisticas() {
   const [modeloSem,    setModeloSem]    = useState<Modelo|null>(null);
   const [modeloDia,    setModeloDia]    = useState<Modelo|null>(null);
   const [distribucion, setDistribucion] = useState<DistItem[]>([]);
+  const distribucionWithFill = distribucion.map(d => ({ ...d, fill: PIE_COLORS[d.tipo_evento] ?? C.blue }));
   const [mapaCalor,    setMapaCalor]    = useState<CalorCell[]>([]);
   const [mapaMax,      setMapaMax]      = useState(1);
   const [mapaTop5,     setMapaTop5]     = useState<CalorCell[]>([]);
@@ -536,7 +534,7 @@ export default function AdminEstadisticas() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const changeTab = (t: Tab) => { setPrevTab(tab); setTab(t); };
+  const changeTab = (t: Tab) => { setTab(t); };
 
   // Rango de fechas
   const fechaInicio = historial.length > 0 ? new Date(historial[historial.length-1]?.fecha).toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}) : "—";
@@ -549,7 +547,6 @@ export default function AdminEstadisticas() {
   // Historial filtrado
   const histFiltrado = filtroDia === "todos" ? historial : historial.filter(e => e.tipo_evento === filtroDia);
 
-  const tipoColor: Record<string,string> = { LOGIN_EXITOSO:C.green, LOGIN_FALLIDO:C.red, LOGOUT:C.blue, LOGIN_2FA:C.gold, LOGIN_BLOQUEADO:C.pink };
 
   const TABS: { id:Tab; label:string; icon:React.ElementType; desc:string }[] = [
     { id:"resumen",    label:"Resumen",      icon:BarChart2,   desc:"Vista general" },
@@ -615,7 +612,7 @@ export default function AdminEstadisticas() {
         {/* ── KPIs ── */}
         {loading ? (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:24 }}>
-            {Array.from({length:6}).map((_,i) => <KpiSkeleton key={i} />)}
+            {Array.from({length:6}).map((_,i) => <KpiSkeleton key={`kpi-sk-${i}`} />)}
           </div>
         ) : resumen && (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:24, animation:"fadeUp .4s ease" }}>
@@ -683,17 +680,15 @@ export default function AdminEstadisticas() {
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
                 <ResponsiveContainer width={140} height={140}>
                   <PieChart>
-                    <Pie data={distribucion} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={60} innerRadius={32} paddingAngle={2} strokeWidth={0}>
-                      {distribucion.map((entry, i) => <Cell key={i} fill={PIE_COLORS[entry.tipo_evento]??C.blue} />)}
-                    </Pie>
+                    <Pie data={distribucionWithFill} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={60} innerRadius={32} paddingAngle={2} strokeWidth={0} />
                     <Tooltip content={<PieTip />} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ flex:1, display:"flex", flexDirection:"column", gap:6 }}>
-                  {distribucion.map((d, i) => {
+                  {distribucion.map((d) => {
                     const ev = EVENTO_LABELS[d.tipo_evento] ?? { label:d.tipo_evento, icon:"●", color:C.blue };
                     return (
-                      <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <div key={d.tipo_evento} style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                         <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                           <span style={{ fontSize:13 }}>{ev.icon}</span>
                           <span style={{ fontSize:11, color:C.creamSub, fontFamily:FB }}>{ev.label}</span>
@@ -774,7 +769,7 @@ export default function AdminEstadisticas() {
                       {predSemanal.map((p, i) => {
                         const opacity = 1 - i * 0.10;
                         return (
-                          <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderRadius:12, background:`rgba(255,193,16,${0.06 - i * 0.01})`, border:`1px solid rgba(255,193,16,${0.22 - i * 0.04})`, opacity }}>
+                          <div key={p.fecha_label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderRadius:12, background:`rgba(255,193,16,${0.06 - i * 0.01})`, border:`1px solid rgba(255,193,16,${0.22 - i * 0.04})`, opacity }}>
                             <div>
                               <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginBottom:2 }}>semana del {p.fecha_label}</div>
                               <div style={{ fontSize:10, color:`rgba(255,193,16,0.55)`, fontFamily:FM }}>+{i+1} sem. · {p.label}</div>
@@ -841,7 +836,7 @@ export default function AdminEstadisticas() {
                           ? (p.prediccion / Math.max(...predDiario.map(x => x.prediccion))) * 100
                           : 0;
                         return (
-                          <div key={i} style={{ opacity }}>
+                          <div key={p.fecha_label} style={{ opacity }}>
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:3 }}>
                               <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}>{p.fecha_label}</span>
                               <span style={{ fontSize:14, fontWeight:900, color:C.gold, fontFamily:FD }}>{p.prediccion}</span>
@@ -1010,9 +1005,7 @@ export default function AdminEstadisticas() {
               <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginBottom:16 }}>Distribución de todos los eventos en el historial</div>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
-                  <Pie data={distribucion} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={110} innerRadius={55} paddingAngle={3} strokeWidth={0}>
-                    {distribucion.map((entry, i) => <Cell key={i} fill={PIE_COLORS[entry.tipo_evento]??C.blue} />)}
-                  </Pie>
+                  <Pie data={distribucionWithFill} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={110} innerRadius={55} paddingAngle={3} strokeWidth={0} />
                   <Tooltip content={<PieTip />} />
                 </PieChart>
               </ResponsiveContainer>
@@ -1021,11 +1014,11 @@ export default function AdminEstadisticas() {
               <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:4 }}>Desglose por tipo de evento</div>
               <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginBottom:16 }}>Qué significa cada tipo y cuántos hubo</div>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                {distribucion.map((d, i) => {
+                {distribucion.map((d) => {
                   const ev    = EVENTO_LABELS[d.tipo_evento] ?? { label:d.tipo_evento, icon:"●", color:C.blue };
                   const color = ev.color;
                   return (
-                    <div key={i} style={{ padding:"13px 16px", borderRadius:12, background:`${color}07`, border:`1px solid ${color}20`, position:"relative", overflow:"hidden",
+                    <div key={d.tipo_evento} style={{ padding:"13px 16px", borderRadius:12, background:`${color}07`, border:`1px solid ${color}20`, position:"relative", overflow:"hidden",
                       transition:"all .2s", cursor:"default" }}
                       onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.background=`${color}12`; el.style.borderColor=`${color}35`; }}
                       onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.background=`${color}07`; el.style.borderColor=`${color}20`; }}>
@@ -1069,7 +1062,7 @@ export default function AdminEstadisticas() {
                   {mapaTop5.map((c, i) => {
                     const medals = ["🥇","🥈","🥉","4️⃣","5️⃣"];
                     return (
-                      <div key={i} style={{ textAlign:"center", padding:"16px 10px", borderRadius:14, background:"rgba(255,132,14,0.07)", border:`1px solid rgba(255,132,14,0.20)`,
+                      <div key={`top-${i}`} style={{ textAlign:"center", padding:"16px 10px", borderRadius:14, background:"rgba(255,132,14,0.07)", border:`1px solid rgba(255,132,14,0.20)`,
                         transition:"all .2s" }}
                         onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.background="rgba(255,132,14,0.12)"; el.style.transform="translateY(-2px)"; }}
                         onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.background="rgba(255,132,14,0.07)"; el.style.transform="translateY(0)"; }}>
@@ -1119,8 +1112,8 @@ export default function AdminEstadisticas() {
                 <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:FB }}>
                   <thead>
                     <tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                      {["Fecha y hora","Usuario","Correo","Resultado","IP","Detalle"].map((h,i) => (
-                        <th key={i} style={{ padding:"10px 14px", textAlign:"left", fontSize:10.5, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+                      {["Fecha y hora","Usuario","Correo","Resultado","IP","Detalle"].map((h) => (
+                        <th key={h} style={{ padding:"10px 14px", textAlign:"left", fontSize:10.5, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>

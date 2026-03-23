@@ -77,7 +77,7 @@ function Topbar({ navigate }:{ navigate:(p:string)=>void }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:52, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
       <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        <span style={{ fontSize:11, fontWeight:700, color:C.orange, letterSpacing:"0.10em", textTransform:"uppercase", cursor:"pointer" }} onClick={() => navigate("/admin")}>Admin</span>
+        <span role="button" tabIndex={0} style={{ fontSize:11, fontWeight:700, color:C.orange, letterSpacing:"0.10em", textTransform:"uppercase", cursor:"pointer" }} onClick={() => navigate("/admin")} onKeyDown={e => { if (e.key === "Enter") navigate("/admin"); }}>Admin</span>
         <ChevronRight size={11} color={C.creamMut} />
         <span style={{ fontSize:12.5, color:C.creamSub, fontWeight:500 }}>Backups</span>
       </div>
@@ -392,7 +392,7 @@ function SelectorTablas({ tablas, excluidas, onChange }:{ tablas:string[]; exclu
         {tablas.map(t => {
           const excluida = excluidas.includes(t);
           return (
-            <div key={t} onClick={() => toggle(t)}
+            <div key={t} role="button" tabIndex={0} onClick={() => toggle(t)} onKeyDown={e => { if (e.key === "Enter") toggle(t); }}
               style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 8px", borderRadius:7, cursor:"pointer",
                 background:excluida?"rgba(240,78,107,0.05)":"rgba(34,201,122,0.04)",
                 border:`1px solid ${excluida?"rgba(240,78,107,0.22)":"rgba(34,201,122,0.14)"}`,
@@ -606,7 +606,7 @@ function ConfigCron({ config, onSave, saving }:{ config:CronConfig|null; onSave:
                 style={{ width:"100%", padding:"8px 11px", borderRadius:8, background:"rgba(255,255,255,0.04)",
                   border:"1px solid rgba(255,255,255,0.09)", color:C.cream, fontSize:12.5,
                   fontFamily:FM, cursor:"pointer", outline:"none" }}>
-                {Array.from({length:24},(_,i) => <option key={i} value={i} style={{ background:"#0C0812" }}>{String(i).padStart(2,"0")}:00</option>)}
+                {Array.from({length:24},(_,i) => <option key={`h-${i}`} value={i} style={{ background:"#0C0812" }}>{String(i).padStart(2,"0")}:00</option>)}
               </select>
             </div>
             {frecuencia==="semanal" && (
@@ -617,7 +617,7 @@ function ConfigCron({ config, onSave, saving }:{ config:CronConfig|null; onSave:
                   style={{ width:"100%", padding:"8px 11px", borderRadius:8, background:"rgba(255,255,255,0.04)",
                     border:"1px solid rgba(255,255,255,0.09)", color:C.cream, fontSize:12.5,
                     fontFamily:FM, cursor:"pointer", outline:"none" }}>
-                  {DIAS.map((d,i) => <option key={i} value={i} style={{ background:"#0C0812" }}>{d}</option>)}
+                  {DIAS.map((d,i) => <option key={d} value={i} style={{ background:"#0C0812" }}>{d}</option>)}
                 </select>
               </div>
             )}
@@ -912,7 +912,7 @@ export default function Backups() {
                     </div>
                   </div>
                 ) : historial.map(entry => (
-                  <div key={entry.id} onClick={() => setSelected(entry)} style={{ cursor:"pointer" }}>
+                  <div key={entry.id} role="button" tabIndex={0} onClick={() => setSelected(entry)} onKeyDown={e => { if (e.key === "Enter") setSelected(entry); }} style={{ cursor:"pointer" }}>
                     <BackupRow
                       entry={entry}
                       onDelete={handleEliminar}
@@ -947,8 +947,8 @@ export default function Backups() {
                 [C.orange, "Máximo 3 backups en Storage"],
                 [C.gold,   "Backup selectivo disponible"],
                 [C.blue,   "Cron automático configurable"],
-              ] as [string,string][]).map(([color, text], i) => (
-                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom:7 }}>
+              ] as [string,string][]).map(([color, text]) => (
+                <div key={text} style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom:7 }}>
                   <div style={{ width:14, height:14, borderRadius:"50%", background:`${color}18`,
                     border:`1px solid ${color}35`, display:"flex", alignItems:"center",
                     justifyContent:"center", flexShrink:0, marginTop:1 }}>

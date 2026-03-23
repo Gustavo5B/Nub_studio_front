@@ -6,7 +6,7 @@
 const cookieOptions = "path=/; SameSite=Strict; max-age=86400";
 
 const setCookie = (name: string, value: string) => {
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  const secure = globalThis.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${name}=${value}; ${cookieOptions}${secure}`;
 };
 

@@ -150,11 +150,11 @@ export default function Unauthorized() {
             </span>
             {/* Puntos parpadeantes */}
             <span style={{ display: "flex", gap: 3, marginLeft: 4 }}>
-              {[0,1,2].map(i => (
-                <span key={i} className="ua-dot" style={{
+              {[0,1,2].map(n => (
+                <span key={n} className="ua-dot" style={{
                   width: 4, height: 4, borderRadius: "50%",
                   background: C.red, display: "inline-block",
-                  animationDelay: `${i * 0.2}s`,
+                  animationDelay: `${n * 0.2}s`,
                 }} />
               ))}
             </span>

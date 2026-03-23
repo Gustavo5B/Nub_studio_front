@@ -61,9 +61,9 @@ interface StatsData {
   strip: Record<string, number>;
 }
 interface TooltipProps {
-  active?: boolean;
-  payload?: { color: string; name: string; value: number }[];
-  label?: string;
+  readonly active?: boolean;
+  readonly payload?: { color: string; name: string; value: number }[];
+  readonly label?: string;
 }
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
@@ -72,8 +72,8 @@ const ChartTip = ({ active, payload, label }: TooltipProps) => {
   return (
     <div style={{ background:"rgba(10,7,20,0.98)", border:`1px solid ${C.borderBr}`, borderRadius:10, padding:"10px 14px", fontFamily:FB, boxShadow:"0 8px 28px rgba(0,0,0,0.5)" }}>
       <div style={{ fontSize:10, fontWeight:700, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:8 }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12.5, fontWeight:600, color:C.creamSub, marginBottom:3 }}>
+      {payload.map((p) => (
+        <div key={p.name} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12.5, fontWeight:600, color:C.creamSub, marginBottom:3 }}>
           <span style={{ width:8, height:8, borderRadius:"50%", background:p.color, display:"inline-block", flexShrink:0 }} />
           <span style={{ color:C.creamMut }}>{p.name}:</span>
           <strong style={{ color:C.cream }}>{fmt(p.value)}</strong>
@@ -392,7 +392,7 @@ function ObrasRecientes({ obras, loading, navigate }: { obras:ObraReciente[]; lo
       <div style={{ display:"flex", flexDirection:"column", gap:2, flex:1 }}>
         {loading ? (
           Array.from({length:5}).map((_,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 6px" }}>
+            <div key={`sk-${i}`} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 6px" }}>
               <div style={{ width:40, height:40, borderRadius:8, background:"rgba(255,232,200,0.05)", flexShrink:0 }} />
               <div style={{ flex:1 }}>
                 <div style={{ height:10, background:"rgba(255,232,200,0.05)", borderRadius:3, marginBottom:5, width:"68%" }} />

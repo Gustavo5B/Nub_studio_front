@@ -106,8 +106,8 @@ export default function MisObras() {
           { label: "PUBLICADAS",   value: stats.publicadas, color: C.green  },
           { label: "EN REVISIÓN",  value: stats.pendientes, color: C.gold   },
           { label: "RECHAZADAS",   value: stats.rechazadas, color: C.pink   },
-        ].map((s, i) => (
-          <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden" }}>
+        ].map((s) => (
+          <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.color }} />
             <div style={{ fontSize: 32, fontWeight: 900, color: C.text, fontFamily: "'Playfair Display',serif", marginBottom: 4 }}>{s.value}</div>
             <div style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>

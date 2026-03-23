@@ -268,7 +268,7 @@ function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
                     const idField = tipo === "obras" ? "ID Obra" : "ID Artista";
                     const esNueva = !row[idField] || String(row[idField]).trim() === "";
                     return (
-                      <tr key={i}
+                      <tr key={`row-${i}`}
                         style={{ borderBottom: `1px solid rgba(255,200,150,0.04)`, background: i % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent", transition: "background .15s" }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.04)"}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent"}>
@@ -381,7 +381,7 @@ function ResultadoPanel({ resumen, detalle, onReset }: { resumen: Resumen; detal
                 const bg     = isErr ? "rgba(240,78,107,0.05)" : isNew ? "rgba(34,201,122,0.04)" : "rgba(255,193,16,0.04)";
                 const border = isErr ? "rgba(240,78,107,0.15)" : isNew ? "rgba(34,201,122,0.12)" : "rgba(255,193,16,0.12)";
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 14px", borderRadius: 9, background: bg, border: `1px solid ${border}` }}>
+                  <div key={`res-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 14px", borderRadius: 9, background: bg, border: `1px solid ${border}` }}>
                     <div style={{ width: 24, height: 24, borderRadius: 6, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                       {isErr ? <AlertCircle size={11} color={color} /> : isNew ? <CheckCircle size={11} color={color} /> : <RefreshCw size={11} color={color} />}
                     </div>

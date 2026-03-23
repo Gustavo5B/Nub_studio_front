@@ -42,7 +42,7 @@ export default function DetalleArtistaPublico() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    globalThis.scrollTo(0, 0);
     (async () => {
       setLoading(true);
       try {

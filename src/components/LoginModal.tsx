@@ -18,8 +18,8 @@ const C = {
 };
 
 interface LoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
 }
 
 interface LoginError {
@@ -57,8 +57,8 @@ function ModalContent({ isOpen, onClose }: LoginModalProps) {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    globalThis.addEventListener("keydown", handleKey);
+    return () => globalThis.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -178,7 +178,7 @@ function ModalContent({ isOpen, onClose }: LoginModalProps) {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <label style={{ ...labelStyle, margin: 0 }}><Lock size={14} /> Contraseña</label>
-              <span onClick={() => { onClose(); navigate("/forgot-password"); }} style={{ fontSize: 12, color: C.orange, cursor: "pointer", fontWeight: 500 }}>¿Olvidaste tu contraseña?</span>
+              <span role="button" tabIndex={0} onClick={() => { onClose(); navigate("/forgot-password"); }} onKeyDown={e => { if (e.key === "Enter") { onClose(); navigate("/forgot-password"); } }} style={{ fontSize: 12, color: C.orange, cursor: "pointer", fontWeight: 500 }}>¿Olvidaste tu contraseña?</span>
             </div>
             <div style={{ position: "relative" }}>
               <input type={mostrarPass ? "text" : "password"} name="contrasena" value={formData.contrasena} onChange={handleChange} placeholder="••••••••" disabled={isLoading} required style={{ ...inputStyle, paddingRight: 44 }} />
@@ -212,12 +212,12 @@ function ModalContent({ isOpen, onClose }: LoginModalProps) {
         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 10 }}>
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
             ¿No tienes cuenta?{" "}
-            <span onClick={() => { onClose(); navigate("/register"); }} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Crear una cuenta</span>
+            <span role="button" tabIndex={0} onClick={() => { onClose(); navigate("/register"); }} onKeyDown={e => { if (e.key === "Enter") { onClose(); navigate("/register"); } }} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Crear una cuenta</span>
           </p>
           <p style={{ fontSize: 13, color: C.muted, margin: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
             <Palette size={13} color={C.orange} />
             ¿Eres artista?{" "}
-            <span onClick={() => { onClose(); navigate("/registro-artista"); }} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Regístrate aquí</span>
+            <span role="button" tabIndex={0} onClick={() => { onClose(); navigate("/registro-artista"); }} onKeyDown={e => { if (e.key === "Enter") { onClose(); navigate("/registro-artista"); } }} style={{ color: C.orange, cursor: "pointer", fontWeight: 600 }}>Regístrate aquí</span>
           </p>
         </div>
       </div>

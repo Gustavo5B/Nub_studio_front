@@ -18,7 +18,7 @@ const NAV = [
 ];
 
 interface Props {
-  onClose?: () => void;
+  readonly onClose?: () => void;
 }
 
 export default function ArtistaSidebar({ onClose }: Props) {
