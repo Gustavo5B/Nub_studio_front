@@ -70,9 +70,17 @@ interface HistorialEntry {
   duracion_ms:number; exitoso:boolean; error_msg:string|null;
   ejecutado_en:string; admin_nombre:string|null;
 }
+interface ConexionData { pid:number; usuario:string; aplicacion:string; state:string; query:string; duracion_seg:number; }
+interface ConexionesState { conexiones:ConexionData[]; max_conexiones:number; por_estado:{ state:string; total:number }[] }
+interface BloqueosState { bloqueos_activos:Bloqueo[]; estadisticas_bd:Record<string,unknown>; eventos_espera:{ wait_event_type:string; wait_event:string; total:number }[] }
+interface ConfigState { parametros:ParamPG[]; evaluaciones:Record<string,{estado:string;recomendacion:string|null}>; version:string; extensiones:{ name:string; installed_version:string }[] }
+interface IndicesState { usados:Indice[]; sin_uso:Indice[]; posibles_faltantes:TablaInfo[] }
+
 type Tab = "resumen"|"alertas"|"tablas"|"queries"|"indices"|"conexiones"|"bloqueos"|"configuracion"|"herramientas"|"historial";
 
-// ── Gauge ─────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// GAUGE
+// ═══════════════════════════════════════════════════════════════════════════
 function Gauge({ value, color, size=72 }: { value:number; color:string; size?:number }) {
   const r=size/2-7, circ=2*Math.PI*r, dash=(Math.min(value,100)/100)*circ;
   return (
@@ -85,7 +93,9 @@ function Gauge({ value, color, size=72 }: { value:number; color:string; size?:nu
   );
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// KPI CARD
+// ═══════════════════════════════════════════════════════════════════════════
 function KpiCard({ label, value, sub, accent, icon:Icon, gauge }:{
   label:string; value:string|number; sub?:string; accent:string; icon:React.ElementType; gauge?:number;
 }) {
@@ -116,15 +126,18 @@ function KpiCard({ label, value, sub, accent, icon:Icon, gauge }:{
   );
 }
 
-// ── Alerta badge ──────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// ALERTA BADGE
+// ═══════════════════════════════════════════════════════════════════════════
+const ALERTA_MAP = {
+  ok:          { color:C.green, bg:"rgba(34,201,122,0.07)",   bd:"rgba(34,201,122,0.20)",  icon:CheckCircle   },
+  info:        { color:C.blue,  bg:"rgba(121,170,245,0.07)",  bd:"rgba(121,170,245,0.20)", icon:Info          },
+  advertencia: { color:C.gold,  bg:"rgba(255,193,16,0.07)",   bd:"rgba(255,193,16,0.20)",  icon:AlertTriangle },
+  critico:     { color:C.red,   bg:"rgba(240,78,107,0.09)",   bd:"rgba(240,78,107,0.25)",  icon:AlertCircle   },
+};
+
 function AlertaBadge({ alerta, onVacuum, vacuuming }:{ alerta:Alerta; onVacuum?:(t:string)=>void; vacuuming?:boolean }) {
-  const map = {
-    ok:          { color:C.green, bg:"rgba(34,201,122,0.07)",   bd:"rgba(34,201,122,0.20)",  icon:CheckCircle   },
-    info:        { color:C.blue,  bg:"rgba(121,170,245,0.07)",  bd:"rgba(121,170,245,0.20)", icon:Info          },
-    advertencia: { color:C.gold,  bg:"rgba(255,193,16,0.07)",   bd:"rgba(255,193,16,0.20)",  icon:AlertTriangle },
-    critico:     { color:C.red,   bg:"rgba(240,78,107,0.09)",   bd:"rgba(240,78,107,0.25)",  icon:AlertCircle   },
-  };
-  const s = map[alerta.nivel];
+  const s = ALERTA_MAP[alerta.nivel];
   const Icon = s.icon;
   return (
     <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 16px", borderRadius:10, background:s.bg, border:`1px solid ${s.bd}`, marginBottom:8 }}>
@@ -149,7 +162,9 @@ function AlertaBadge({ alerta, onVacuum, vacuuming }:{ alerta:Alerta; onVacuum?:
   );
 }
 
-// ── Modal VACUUM Global ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// VACUUM MODAL
+// ═══════════════════════════════════════════════════════════════════════════
 function VacuumModal({ resultados, duracion, onClose }:{ resultados:VacuumResult[]; duracion:number; onClose:()=>void }) {
   const ok=resultados.filter(r=>r.ok).length, err=resultados.filter(r=>!r.ok).length;
   return (
@@ -187,10 +202,10 @@ function VacuumModal({ resultados, duracion, onClose }:{ resultados:VacuumResult
   );
 }
 
-// ── Topbar ────────────────────────────────────────────────────────────────────
-function Topbar({ navigate, onRefresh, loading }:{
-  navigate:(p:string)=>void; onRefresh:()=>void; loading:boolean;
-}) {
+// ═══════════════════════════════════════════════════════════════════════════
+// TOPBAR
+// ═══════════════════════════════════════════════════════════════════════════
+function Topbar({ navigate, onRefresh, loading }:{ navigate:(p:string)=>void; onRefresh:()=>void; loading:boolean }) {
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 28px", height:56, background:C.bgDeep, borderBottom:`1px solid ${C.borderBr}`, position:"sticky", top:0, zIndex:30, fontFamily:FB }}>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -213,9 +228,845 @@ function Topbar({ navigate, onRefresh, loading }:{
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ROOT
-// ══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTION BUTTON helper
+// ═══════════════════════════════════════════════════════════════════════════
+function ActionBtn({ onClick, disabled, icon:Icon, label, color, borderColor, bgColor }: {
+  onClick:()=>void; disabled:boolean; icon:React.ElementType; label:string;
+  color:string; borderColor:string; bgColor:string;
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 8px", borderRadius:6,
+        border:`1px solid ${borderColor}`, background:bgColor,
+        color:disabled?C.creamMut:color, fontSize:10.5, fontWeight:600,
+        cursor:disabled?"wait":"pointer", fontFamily:FB, whiteSpace:"nowrap" }}>
+      {disabled?<RefreshCw size={9} style={{ animation:"spin 1s linear infinite" }}/>:<Icon size={9}/>}
+      {disabled?"...":label}
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: RESUMEN
+// ═══════════════════════════════════════════════════════════════════════════
+function getCacheAccent(ratio: number): string {
+  if (ratio >= 99) return C.green;
+  if (ratio >= 95) return C.gold;
+  return C.red;
+}
+
+function getCacheSub(ratio: number): string {
+  if (ratio >= 99) return "✓ Óptimo — datos en RAM";
+  if (ratio >= 95) return `⚠ ${(100-ratio).toFixed(1)}% lecturas de disco`;
+  return `❌ ${(100-ratio).toFixed(1)}% lecturas de disco — RAM insuficiente`;
+}
+
+function getMemAccent(pct: number): string {
+  if (pct > 85) return C.red;
+  if (pct > 70) return C.gold;
+  return C.green;
+}
+
+function getMemSub(pct: number, total: number): string {
+  const label = pct > 85 ? "⚠ Crítica" : pct > 70 ? "Elevada" : "Normal";
+  return `${label} · ${total} MB total`;
+}
+
+function TabResumen({ resumen }: { resumen:Resumen }) {
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:12 }}>
+        <KpiCard label="Tamaño de la BD" value={resumen.bd.size} accent={C.blue} icon={Database} sub="Espacio total ocupado en disco" />
+        <KpiCard label="Eficiencia de caché" value={`${resumen.rendimiento.cache_hit_ratio}%`}
+          sub={getCacheSub(resumen.rendimiento.cache_hit_ratio)}
+          accent={getCacheAccent(resumen.rendimiento.cache_hit_ratio)}
+          icon={TrendingUp} gauge={resumen.rendimiento.cache_hit_ratio} />
+        <KpiCard label="RAM del servidor" value={`${resumen.servidor.mem_usada_mb} MB`}
+          accent={getMemAccent(resumen.servidor.mem_pct)} icon={Cpu} gauge={resumen.servidor.mem_pct}
+          sub={getMemSub(resumen.servidor.mem_pct, resumen.servidor.mem_total_mb)} />
+        <KpiCard label="Tiempo en línea" value={resumen.servidor.uptime} accent={C.purple} icon={Clock} sub="Desde el último reinicio" />
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
+        <KpiCard label="Total de tablas" value={resumen.bd.tablas} accent={C.orange} icon={Table2} sub="En schema público" />
+        <KpiCard label="Total de filas" value={fmt(resumen.bd.filas)} accent={C.blue} icon={HardDrive} sub="Filas activas en todas las tablas" />
+        <KpiCard label="Conexiones activas" value={resumen.rendimiento.conexiones_activas}
+          accent={resumen.rendimiento.conexiones_activas>20?C.gold:C.green} icon={Users}
+          sub={`${resumen.rendimiento.conexiones_total} total · ${resumen.rendimiento.conexiones_activas>20?"⚠ Alta demanda":"Normal"}`} />
+        <KpiCard label="Índices inactivos" value={resumen.indices.sin_uso}
+          accent={resumen.indices.sin_uso>5?C.gold:C.green} icon={Zap}
+          sub={resumen.indices.sin_uso>0?"Sin uso — candidatos a eliminar":"Sin índices innecesarios"} />
+      </div>
+      <TxStats rendimiento={resumen.rendimiento} />
+    </div>
+  );
+}
+
+function TxStats({ rendimiento }: { rendimiento:Resumen["rendimiento"] }) {
+  const items = [
+    { label:"Total de transacciones", value:fmt(rendimiento.tx_total), color:C.blue },
+    { label:"Commits exitosos", value:fmt(rendimiento.tx_commits), color:C.green },
+    { label:"Rollbacks (errores)", value:fmt(rendimiento.tx_rollbacks), color:rendimiento.tx_rollbacks>100?C.red:C.gold },
+  ];
+  return (
+    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"16px 20px" }}>
+      <div style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:12 }}>Estadísticas de transacciones</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+        {items.map(({ label,value,color })=>(
+          <div key={label} style={{ padding:"13px 16px", borderRadius:10, background:`${color}08`, border:`1px solid ${color}22`, textAlign:"center", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${color},transparent)` }} />
+            <div style={{ fontSize:22, fontWeight:900, color, fontFamily:FD }}>{value}</div>
+            <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:4 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: ALERTAS
+// ═══════════════════════════════════════════════════════════════════════════
+function TabAlertas({ alertas, alertasCriticas, onVacuum, vacuumingTabla }: {
+  alertas:Alerta[]; alertasCriticas:number; onVacuum:(t:string)=>void; vacuumingTabla:string|null;
+}) {
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      {alertasCriticas>0 && (
+        <div style={{ padding:"10px 16px", borderRadius:10, background:"rgba(240,78,107,0.08)", border:`1px solid rgba(240,78,107,0.25)`, marginBottom:14, display:"flex", alignItems:"center", gap:10 }}>
+          <AlertCircle size={14} color={C.red} />
+          <span style={{ fontSize:13, color:C.red, fontWeight:700, fontFamily:FB }}>{alertasCriticas} problema(s) crítico(s) — requieren atención inmediata</span>
+        </div>
+      )}
+      {alertas.map((a)=><AlertaBadge key={`${a.tipo}-${a.tabla}`} alerta={a} onVacuum={a.tipo==="vacuum"?onVacuum:undefined} vacuuming={vacuumingTabla===a.tabla} />)}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: TABLAS
+// ═══════════════════════════════════════════════════════════════════════════
+function TablaRow({ t, index, onVacuum, onReindex, vacuumingTabla, reindexing }: {
+  t:TablaInfo; index:number; onVacuum:(s:string)=>void; onReindex:(s:string)=>void;
+  vacuumingTabla:string|null; reindexing:string|null;
+}) {
+  const pctM = t.filas_vivas>0 ? Math.round((t.filas_muertas/(t.filas_vivas+t.filas_muertas))*100) : 0;
+  const needsV = pctM>5 || t.filas_muertas>500;
+  const isV = vacuumingTabla===t.nombre;
+  const isR = reindexing===t.nombre;
+  const lastA = t.last_analyze ? new Date(t.last_analyze).toLocaleDateString("es-MX",{day:"2-digit",month:"short"}) : "Nunca";
+  const muertasColor = pctM>15?C.red:pctM>5?C.gold:C.creamMut;
+
+  return (
+    <tr style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:index%2===0?"rgba(255,232,200,0.01)":"transparent" }}
+      onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="rgba(255,132,14,0.04)"}
+      onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=index%2===0?"rgba(255,232,200,0.01)":"transparent"}>
+      <td style={{ padding:"8px 12px" }}><span style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{t.nombre}</span></td>
+      <td style={{ padding:"8px 12px", fontSize:11.5, color:C.green, fontFamily:FM, fontWeight:600 }}>{fmt(t.filas_vivas)}</td>
+      <td style={{ padding:"8px 12px" }}>
+        <span style={{ fontSize:11.5, color:muertasColor, fontFamily:FM }}>
+          {fmt(t.filas_muertas)}{pctM>5&&<span style={{ fontSize:9.5 }}> ({pctM}%)</span>}
+        </span>
+      </td>
+      <td style={{ padding:"8px 12px", fontSize:11.5, color:C.blue, fontFamily:FM }}>{t.size_total}</td>
+      <td style={{ padding:"8px 12px", fontSize:11.5, color:C.purple, fontFamily:FM }}>{t.size_indices}</td>
+      <td style={{ padding:"8px 12px", fontSize:11, color:C.creamMut, fontFamily:FM }}>
+        <span style={{ color:t.scans_secuenciales>1000?C.gold:C.creamMut }}>{fmt(t.scans_secuenciales)}</span>/<span style={{ color:C.green }}>{fmt(t.scans_por_indice)}</span>
+      </td>
+      <td style={{ padding:"8px 12px", fontSize:11, fontFamily:FM }}>
+        <span style={{ color:C.green }}>{fmt(t.inserciones)}</span>/<span style={{ color:C.gold }}>{fmt(t.actualizaciones)}</span>/<span style={{ color:C.red }}>{fmt(t.eliminaciones)}</span>
+      </td>
+      <td style={{ padding:"8px 12px", fontSize:11, color:lastA==="Nunca"?C.red:C.creamMut, fontFamily:FM }}>{lastA}</td>
+      <td style={{ padding:"8px 12px" }}>
+        <ActionBtn onClick={()=>onVacuum(t.nombre)} disabled={isV||!!vacuumingTabla}
+          icon={PlayCircle} label="VACUUM" color={needsV?C.orange:C.creamMut}
+          borderColor={needsV?C.orange+"45":C.border} bgColor={needsV?`${C.orange}10`:"rgba(255,232,200,0.03)"} />
+      </td>
+      <td style={{ padding:"8px 12px" }}>
+        <ActionBtn onClick={()=>onReindex(t.nombre)} disabled={isR||!!reindexing}
+          icon={Zap} label="REINDEX" color={C.purple}
+          borderColor="rgba(141,76,205,0.35)" bgColor="rgba(141,76,205,0.08)" />
+      </td>
+    </tr>
+  );
+}
+
+function TabTablas({ tablas, onVacuum, onReindex, vacuumingTabla, reindexing }: {
+  tablas:TablaInfo[]; onVacuum:(s:string)=>void; onReindex:(s:string)=>void;
+  vacuumingTabla:string|null; reindexing:string|null;
+}) {
+  const [busqueda, setBusqueda] = useState("");
+  const filtradas = tablas.filter(t=>t.nombre.toLowerCase().includes(busqueda.toLowerCase()));
+
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px" }}>
+          <Search size={12} color={C.creamMut} />
+          <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar tabla..."
+            style={{ background:"transparent", border:"none", outline:"none", color:C.cream, fontSize:12.5, fontFamily:FM, flex:1 }} />
+        </div>
+        <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{filtradas.length} tablas</span>
+      </div>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+            <thead>
+              <tr style={{ background:"rgba(7,5,16,0.98)" }}>
+                {["Tabla","Filas vivas","Filas obsoletas","Tamaño","Índices","Escaneos (Comp./Índice)","Operaciones (I/U/E)","Últ. Análisis","VACUUM","REINDEX"].map(h=>(
+                  <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtradas.map((t,i)=>(
+                <TablaRow key={t.nombre} t={t} index={i} onVacuum={onVacuum} onReindex={onReindex} vacuumingTabla={vacuumingTabla} reindexing={reindexing} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:14, marginTop:8, padding:"8px 12px", borderRadius:9, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
+        <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.orange }}>●</span> Naranja = tabla necesita VACUUM (filas obsoletas &gt; 5%)</span>
+        <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.red }}>Nunca</span> = sin estadísticas — ANALYZE mejora el planificador</span>
+        <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.purple }}>REINDEX</span> = reconstruye índices inflados o corruptos</span>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: QUERIES
+// ═══════════════════════════════════════════════════════════════════════════
+function ActiveQueryCard({ c }: { c:ConexionData }) {
+  return (
+    <div style={{ padding:"10px 13px", borderRadius:9, background:"rgba(34,201,122,0.04)", border:`1px solid rgba(34,201,122,0.14)` }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:10, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.12)", color:C.green, fontFamily:FM, fontWeight:700 }}>PID {c.pid}</span>
+          <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>{c.usuario}</span>
+        </div>
+        <span style={{ fontSize:12, color:c.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{c.duracion_seg}s</span>
+      </div>
+      <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{c.query}</div>
+    </div>
+  );
+}
+
+function QueryCard({ q, index }: { q:QueryLenta; index:number }) {
+  return (
+    <div style={{ padding:"11px 13px", borderRadius:9, marginBottom:6, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ width:20, height:20, borderRadius:5, background:`${C.orange}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:C.orange }}>{index+1}</span>
+          {q.calls!==undefined&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FM }}>{fmt(q.calls)} ejecuciones</span>}
+          {q.state&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.10)", color:C.green, fontFamily:FB }}>{q.state}</span>}
+        </div>
+        <div style={{ display:"flex", gap:10 }}>
+          {q.tiempo_promedio_ms!==undefined&&<span style={{ fontSize:12, color:q.tiempo_promedio_ms>1000?C.red:q.tiempo_promedio_ms>100?C.gold:C.green, fontFamily:FM, fontWeight:700 }}>Prom. {q.tiempo_promedio_ms}ms</span>}
+          {q.duracion_seg!==undefined&&<span style={{ fontSize:12, color:q.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{q.duracion_seg}s activa</span>}
+        </div>
+      </div>
+      <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{q.query}</div>
+    </div>
+  );
+}
+
+function TabQueries({ queries, conexiones }: { queries:QueryLenta[]; conexiones:ConexionesState|null }) {
+  const activeConns = conexiones ? (conexiones.conexiones as ConexionData[]).filter(c=>c.query&&c.state==="active") : [];
+
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <div style={{ padding:"13px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
+          <Search size={13} color={C.orange} />
+          <span style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Consultas más lentas</span>
+          <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Top 10 por tiempo promedio de ejecución</span>
+        </div>
+        <div style={{ padding:"8px 10px" }}>
+          {queries.length===0 ? (
+            <QueriesFallback activeConns={activeConns} />
+          ) : queries.map((q,i)=>(
+            <QueryCard key={`q-${i}`} q={q} index={i} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QueriesFallback({ activeConns }: { activeConns:ConexionData[] }) {
+  return (
+    <div style={{ padding:"20px" }}>
+      <div style={{ padding:"14px 16px", borderRadius:10, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:14, display:"flex", alignItems:"flex-start", gap:10 }}>
+        <Info size={14} color={C.blue} style={{ flexShrink:0, marginTop:1 }} />
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FB, marginBottom:2 }}>pg_stat_statements no disponible</div>
+          <div style={{ fontSize:12, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
+            Requiere activación por el proveedor. Mostrando consultas activas en tiempo real desde <span style={{ color:C.blue, fontFamily:FM }}>pg_stat_activity</span>.
+          </div>
+        </div>
+      </div>
+      {activeConns.length > 0 ? (
+        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+          {activeConns.map(c=><ActiveQueryCard key={c.pid} c={c} />)}
+        </div>
+      ) : (
+        <div style={{ textAlign:"center", padding:"20px", color:C.creamMut, fontSize:13, fontFamily:FB }}>No hay consultas activas en este momento</div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: ÍNDICES
+// ═══════════════════════════════════════════════════════════════════════════
+function IndiceExpandido({ idx, tipo, onEliminar, deleting }: {
+  idx:Indice; tipo:"sinuso"|"usado"; onEliminar?:(n:string,t:string)=>void; deleting?:boolean;
+  position?:number; totalUsados?:number;
+}) {
+  if (tipo === "sinuso") {
+    return (
+      <div style={{ padding:"12px 16px", borderTop:`1px solid rgba(255,193,16,0.15)`, background:"rgba(0,0,0,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+          <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,193,16,0.06)", border:`1px solid rgba(255,193,16,0.15)` }}>
+            <div style={{ fontSize:9.5, fontWeight:800, color:C.gold, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Usos desde último reset</div>
+            <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>0</div>
+            <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>idx_scan = 0 — nunca usado</div>
+          </div>
+          <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(121,170,245,0.06)", border:`1px solid rgba(121,170,245,0.15)` }}>
+            <div style={{ fontSize:9.5, fontWeight:800, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Espacio que libera</div>
+            <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{idx.tamanio}</div>
+            <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>si se elimina</div>
+          </div>
+          <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.15)` }}>
+            <div style={{ fontSize:9.5, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Impacto al eliminar</div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.green, fontFamily:FB, marginTop:4 }}>✓ Ninguno</div>
+            <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>las queries no lo usan</div>
+          </div>
+        </div>
+        <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.15)`, fontSize:11.5, color:C.creamSub, fontFamily:FB, lineHeight:1.6 }}>
+          💡 <strong style={{ color:C.orange }}>¿Por qué existe?</strong> Este índice fue creado pero PostgreSQL nunca lo ha usado para acelerar ninguna consulta. Eliminarlo libera {idx.tamanio} sin afectar el rendimiento.
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+function IndiceUsadoExpandido({ idx, position, totalUsados }: { idx:Indice; position:number; totalUsados:number }) {
+  return (
+    <div style={{ padding:"12px 16px", borderTop:`1px solid ${C.borderBr}`, background:"rgba(0,0,0,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+        <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.15)` }}>
+          <div style={{ fontSize:9.5, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Total de usos</div>
+          <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{fmt(idx.usos??0)}</div>
+          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>escaneos por índice</div>
+        </div>
+        <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(121,170,245,0.06)", border:`1px solid rgba(121,170,245,0.15)` }}>
+          <div style={{ fontSize:9.5, fontWeight:800, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Tamaño en disco</div>
+          <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{idx.tamanio}</div>
+          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>espacio usado</div>
+        </div>
+        <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.15)` }}>
+          <div style={{ fontSize:9.5, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Posición por uso</div>
+          <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>#{position}</div>
+          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>de {totalUsados} índices activos</div>
+        </div>
+      </div>
+      <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.05)", border:`1px solid rgba(34,201,122,0.15)`, fontSize:11.5, color:C.creamSub, fontFamily:FB, lineHeight:1.6 }}>
+        ✅ <strong style={{ color:C.green }}>Índice saludable</strong> — PostgreSQL lo usa activamente para acelerar consultas en la tabla <span style={{ color:C.cream, fontFamily:FM }}>{idx.tabla}</span>.
+      </div>
+    </div>
+  );
+}
+
+function TabIndices({ indices, onEliminar, deletingIdx }: {
+  indices:IndicesState; onEliminar:(n:string,t:string)=>void; deletingIdx:string|null;
+}) {
+  const [expandedIdx, setExpandedIdx] = useState<string|null>(null);
+  const maxUsos = indices.usados[0]?.usos ?? 1;
+
+  return (
+    <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
+      {indices.sin_uso.length>0 && (
+        <div style={{ background:C.card, border:`1px solid rgba(255,193,16,0.22)`, borderRadius:13, overflow:"hidden" }}>
+          <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(255,193,16,0.05)" }}>
+            <AlertTriangle size={13} color={C.gold} />
+            <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices inactivos</span>
+            <span style={{ fontSize:10.5, padding:"1px 7px", borderRadius:20, background:"rgba(255,193,16,0.12)", border:"1px solid rgba(255,193,16,0.25)", color:C.gold, fontWeight:700 }}>{indices.sin_uso.length}</span>
+            <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Candidatos a eliminar</span>
+          </div>
+          <div style={{ padding:"8px 10px" }}>
+            {indices.sin_uso.map(idx => {
+              const expKey = `sinuso-${idx.indice}`;
+              const exp = expandedIdx === expKey;
+              return (
+                <div key={idx.indice} style={{ borderRadius:9, marginBottom:6, overflow:"hidden", border:`1px solid ${exp?"rgba(255,193,16,0.30)":"rgba(255,193,16,0.12)"}` }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", background:"rgba(255,193,16,0.04)", cursor:"pointer" }}
+                    onClick={()=>setExpandedIdx(exp?null:expKey)}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      {exp?<ChevronUp size={12} color={C.gold}/>:<ChevronDown size={12} color={C.gold}/>}
+                      <div>
+                        <div style={{ fontSize:12.5, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
+                        <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>tabla: {idx.tabla}</div>
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:600 }}>{idx.tamanio}</span>
+                      <button onClick={e=>{ e.stopPropagation(); onEliminar(idx.indice, idx.tabla); }} disabled={deletingIdx===idx.indice}
+                        style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:7, border:`1px solid rgba(240,78,107,0.35)`, background:"rgba(240,78,107,0.08)", color:deletingIdx===idx.indice?C.creamMut:C.red, fontSize:11, fontWeight:700, cursor:deletingIdx===idx.indice?"wait":"pointer", fontFamily:FB }}>
+                        {deletingIdx===idx.indice?<RefreshCw size={10} style={{ animation:"spin 1s linear infinite" }}/>:<Trash2 size={10}/>}
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                  {exp && <IndiceExpandido idx={idx} tipo="sinuso" onEliminar={onEliminar} deleting={deletingIdx===idx.indice} />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
+          <Zap size={13} color={C.green} />
+          <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices más utilizados</span>
+        </div>
+        <div style={{ padding:"8px 10px" }}>
+          {indices.usados.map((idx,i) => {
+            const expKey = `usado-${idx.indice}`;
+            const exp = expandedIdx === expKey;
+            const pct = Math.min(((idx.usos??0)/(maxUsos||1))*100, 100);
+            return (
+              <div key={idx.indice} style={{ borderRadius:9, marginBottom:4, overflow:"hidden", border:`1px solid ${exp?"rgba(34,201,122,0.25)":C.border}` }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 90px 90px 80px 24px", alignItems:"center", gap:10, padding:"9px 12px", background:i%2===0?"rgba(255,232,200,0.01)":"transparent", cursor:"pointer" }}
+                  onClick={()=>setExpandedIdx(exp?null:expKey)}>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
+                    <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>{idx.tabla}</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:11.5, color:C.green, fontFamily:FM, fontWeight:700 }}>{fmt(idx.usos??0)}</div>
+                    <div style={{ fontSize:9, color:C.creamMut }}>usos</div>
+                  </div>
+                  <div style={{ textAlign:"right", fontSize:11.5, color:C.blue, fontFamily:FM }}>{idx.tamanio}</div>
+                  <div><div style={{ height:4, background:`${C.green}18`, borderRadius:99, overflow:"hidden" }}><div style={{ height:"100%", width:`${pct}%`, background:C.green, borderRadius:99 }}/></div></div>
+                  {exp?<ChevronUp size={12} color={C.creamMut}/>:<ChevronDown size={12} color={C.creamMut}/>}
+                </div>
+                {exp && <IndiceUsadoExpandido idx={idx} position={i+1} totalUsados={indices.usados.length} />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {indices.posibles_faltantes.length>0 && (
+        <div style={{ background:C.card, border:`1px solid rgba(240,78,107,0.22)`, borderRadius:13, overflow:"hidden" }}>
+          <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(240,78,107,0.05)" }}>
+            <AlertCircle size={13} color={C.red} />
+            <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Posibles índices faltantes</span>
+          </div>
+          <div style={{ padding:"8px 10px" }}>
+            {indices.posibles_faltantes.map(t=>(
+              <div key={t.nombre} style={{ padding:"8px 12px", borderRadius:7, marginBottom:4, background:"rgba(240,78,107,0.04)", border:`1px solid rgba(240,78,107,0.12)` }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{t.nombre}</span>
+                  <div style={{ display:"flex", gap:12 }}>
+                    <span style={{ fontSize:11, color:C.red, fontFamily:FM }}>Completas: {fmt(t.scans_secuenciales)}</span>
+                    <span style={{ fontSize:11, color:C.green, fontFamily:FM }}>Por índice: {fmt(t.scans_por_indice)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: CONEXIONES
+// ═══════════════════════════════════════════════════════════════════════════
+function TabConexiones({ conexiones, onKill, killingPid }: { conexiones:ConexionesState; onKill:(pid:number)=>void; killingPid:number|null }) {
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:12 }}>
+        {conexiones.por_estado.map(({ state, total })=>{
+          const color=state==="active"?C.green:state==="idle"?C.blue:C.gold;
+          return (
+            <div key={state} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:11, padding:"13px 16px", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${color},transparent)` }} />
+              <div style={{ fontSize:24, fontWeight:900, color, fontFamily:FD }}>{total}</div>
+              <div style={{ fontSize:11, color:C.creamMut, fontFamily:FM, marginTop:3, textTransform:"uppercase", letterSpacing:"0.06em" }}>{state||"sin estado"}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Users size={13} color={C.blue} />
+            <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Conexiones activas</span>
+          </div>
+          <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Máximo permitido: {conexiones.max_conexiones}</span>
+        </div>
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+            <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
+              {["PID","Usuario","Aplicación","Estado","Duración","Consulta en curso","Acción"].map(h=>(
+                <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {conexiones.conexiones.map((c,i)=>(
+                <ConexionRow key={c.pid} c={c} index={i} onKill={onKill} killingPid={killingPid} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConexionRow({ c, index, onKill, killingPid }: { c:ConexionData; index:number; onKill:(pid:number)=>void; killingPid:number|null }) {
+  return (
+    <tr style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:index%2===0?"rgba(255,232,200,0.01)":"transparent" }}>
+      <td style={{ padding:"7px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FM }}>{c.pid}</td>
+      <td style={{ padding:"7px 12px", fontSize:11.5, color:C.cream, fontFamily:FM, fontWeight:600 }}>{c.usuario}</td>
+      <td style={{ padding:"7px 12px", fontSize:11, color:C.creamMut, fontFamily:FB }}>{c.aplicacion||"—"}</td>
+      <td style={{ padding:"7px 12px" }}>
+        <span style={{ fontSize:10, padding:"2px 7px", borderRadius:20, fontWeight:700, fontFamily:FM, background:c.state==="active"?"rgba(34,201,122,0.12)":"rgba(121,170,245,0.10)", color:c.state==="active"?C.green:C.blue }}>{c.state}</span>
+      </td>
+      <td style={{ padding:"7px 12px", fontSize:11.5, color:c.duracion_seg>30?C.red:C.creamMut, fontFamily:FM }}>{c.duracion_seg!=null?`${c.duracion_seg}s`:"—"}</td>
+      <td style={{ padding:"7px 12px", fontSize:10.5, color:C.creamSub, fontFamily:FM, maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.query||"—"}</td>
+      <td style={{ padding:"7px 12px" }}>
+        <ActionBtn onClick={()=>onKill(c.pid)} disabled={killingPid===c.pid} icon={XCircle} label="Kill" color={C.red} borderColor="rgba(240,78,107,0.35)" bgColor="rgba(240,78,107,0.08)" />
+      </td>
+    </tr>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: BLOQUEOS
+// ═══════════════════════════════════════════════════════════════════════════
+function TabBloqueos({ bloqueos, onKill, killingPid }: { bloqueos:BloqueosState; onKill:(pid:number)=>void; killingPid:number|null }) {
+  const count = bloqueos.bloqueos_activos.length;
+  return (
+    <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
+      <div style={{ padding:"12px 16px", borderRadius:11, display:"flex", alignItems:"center", gap:12,
+        background:count>0?"rgba(240,78,107,0.08)":"rgba(34,201,122,0.07)",
+        border:`1px solid ${count>0?"rgba(240,78,107,0.25)":"rgba(34,201,122,0.20)"}` }}>
+        <Lock size={16} color={count>0?C.red:C.green} />
+        <div>
+          <div style={{ fontSize:13.5, fontWeight:700, color:C.cream, fontFamily:FB }}>
+            {count>0 ? `${count} proceso(s) bloqueado(s) en este momento` : "Sin bloqueos activos — sistema fluido"}
+          </div>
+          <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>
+            Deadlocks históricos: {String(bloqueos.estadisticas_bd.deadlocks ?? 0)} · Conflictos: {String(bloqueos.estadisticas_bd.conflicts ?? 0)}
+          </div>
+        </div>
+      </div>
+      {count>0 && <BloqueosActivos bloqueos={bloqueos.bloqueos_activos} onKill={onKill} killingPid={killingPid} />}
+      {bloqueos.eventos_espera.length>0 && <EventosEspera eventos={bloqueos.eventos_espera} />}
+    </div>
+  );
+}
+
+function BloqueosActivos({ bloqueos, onKill, killingPid }: { bloqueos:Bloqueo[]; onKill:(pid:number)=>void; killingPid:number|null }) {
+  return (
+    <div style={{ background:C.card, border:`1px solid rgba(240,78,107,0.22)`, borderRadius:13, overflow:"hidden" }}>
+      <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(240,78,107,0.06)" }}>
+        <AlertCircle size={13} color={C.red} />
+        <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Bloqueos activos</span>
+      </div>
+      <div style={{ padding:"10px" }}>
+        {bloqueos.map(b=><BloqueoCard key={b.pid_bloqueado} b={b} onKill={onKill} killingPid={killingPid} />)}
+      </div>
+    </div>
+  );
+}
+
+function BloqueoCard({ b, onKill, killingPid }: { b:Bloqueo; onKill:(pid:number)=>void; killingPid:number|null }) {
+  return (
+    <div style={{ padding:"12px 14px", borderRadius:9, marginBottom:6, background:"rgba(240,78,107,0.05)", border:`1px solid rgba(240,78,107,0.15)` }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+        <div>
+          <div style={{ fontSize:10, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Proceso bloqueado (PID {b.pid_bloqueado})</div>
+          <div style={{ fontSize:12, color:C.cream, fontFamily:FM, fontWeight:600 }}>{b.usuario}</div>
+          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FM, marginTop:3, wordBreak:"break-all" }}>{b.query_bloqueada}</div>
+          <div style={{ fontSize:11, color:C.red, marginTop:4 }}>⏳ Esperando {b.espera_seg}s · {b.wait_event_type}: {b.wait_event}</div>
+        </div>
+        <div>
+          <div style={{ fontSize:10, fontWeight:700, color:C.gold, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Proceso bloqueante (PID {b.pid_bloqueante})</div>
+          <div style={{ fontSize:12, color:C.cream, fontFamily:FM, fontWeight:600 }}>{b.usuario_bloqueante}</div>
+          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FM, marginTop:3, wordBreak:"break-all" }}>{b.query_bloqueante}</div>
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid rgba(240,78,107,0.15)` }}>
+        <ActionBtn onClick={()=>onKill(b.pid_bloqueante)} disabled={killingPid===b.pid_bloqueante} icon={XCircle}
+          label={`Terminar bloqueante (PID ${b.pid_bloqueante})`} color={C.red} borderColor="rgba(240,78,107,0.40)" bgColor="rgba(240,78,107,0.12)" />
+        <ActionBtn onClick={()=>onKill(b.pid_bloqueado)} disabled={killingPid===b.pid_bloqueado} icon={XCircle}
+          label={`Terminar bloqueado (PID ${b.pid_bloqueado})`} color={C.creamMut} borderColor="rgba(255,200,150,0.20)" bgColor="rgba(255,200,150,0.05)" />
+      </div>
+    </div>
+  );
+}
+
+function EventosEspera({ eventos }: { eventos:{ wait_event_type:string; wait_event:string; total:number }[] }) {
+  return (
+    <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+      <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
+        <Clock size={13} color={C.gold} />
+        <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Procesos en espera</span>
+      </div>
+      <div style={{ padding:"8px 10px" }}>
+        {eventos.map(e=>(
+          <div key={`${e.wait_event_type}-${e.wait_event}`} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", borderRadius:7, marginBottom:3, background:"rgba(255,193,16,0.04)", border:`1px solid rgba(255,193,16,0.12)` }}>
+            <div>
+              <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:700 }}>{e.wait_event}</span>
+              <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginLeft:8 }}>{e.wait_event_type}</span>
+            </div>
+            <span style={{ fontSize:12, color:C.cream, fontFamily:FM, fontWeight:700 }}>{e.total} procesos</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: CONFIGURACIÓN
+// ═══════════════════════════════════════════════════════════════════════════
+function TabConfiguracion({ config }: { config:ConfigState }) {
+  return (
+    <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"14px 18px" }}>
+        <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginBottom:6 }}>Versión del motor de base de datos</div>
+        <div style={{ fontSize:13, color:C.green, fontFamily:FM, fontWeight:600 }}>{config.version}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
+          {config.extensiones.map(e=>(
+            <span key={e.name} style={{ fontSize:10.5, padding:"2px 8px", borderRadius:20, background:"rgba(34,201,122,0.10)", border:"1px solid rgba(34,201,122,0.22)", color:C.green, fontFamily:FM }}>
+              {e.name} {e.installed_version}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
+          <Settings size={13} color={C.orange} />
+          <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Parámetros clave de PostgreSQL</span>
+        </div>
+        <div style={{ padding:"8px 10px" }}>
+          {config.parametros.map((p,i)=><ParamRow key={p.name} param={p} eval={config.evaluaciones[p.name]} index={i} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ParamRow({ param, eval: ev, index }: { param:ParamPG; eval?:{estado:string;recomendacion:string|null}; index:number }) {
+  const color = ev?.estado==="critico"?C.red:ev?.estado==="advertencia"?C.gold:ev?.estado==="info"?C.blue:C.green;
+  return (
+    <div style={{ padding:"10px 14px", borderRadius:9, marginBottom:4, background:index%2===0?"rgba(255,232,200,0.01)":"transparent", border:`1px solid ${ev?.estado!=="ok"&&ev?.estado?`${color}20`:C.border}` }}>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+        <div style={{ flex:1 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+            <span style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FM }}>{param.name}</span>
+            <span style={{ fontSize:9.5, padding:"1px 6px", borderRadius:20, background:`${color}18`, color, fontWeight:700, border:`1px solid ${color}25` }}>{ev?.estado??'ok'}</span>
+          </div>
+          <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, lineHeight:1.5 }}>{param.short_desc}</div>
+          {ev?.recomendacion&&<div style={{ fontSize:11.5, color, fontFamily:FB, marginTop:4, fontStyle:"italic" }}>💡 {ev.recomendacion}</div>}
+        </div>
+        <div style={{ textAlign:"right", flexShrink:0 }}>
+          <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FM }}>{param.setting}<span style={{ fontSize:10, color:C.creamMut, fontWeight:400 }}> {param.unit}</span></div>
+          <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{param.category}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: HERRAMIENTAS
+// ═══════════════════════════════════════════════════════════════════════════
+function getHerramientaIcon(tipo: string, disponible: boolean) {
+  const color = disponible?C.green:C.red;
+  if (tipo==="extensión") return <Zap size={14} color={color}/>;
+  if (tipo==="comando SQL") return <Code2 size={14} color={color}/>;
+  return <Database size={14} color={color}/>;
+}
+
+function HerramientaCard({ h, expanded, onToggle }: { h:Herramienta; expanded:boolean; onToggle:()=>void }) {
+  return (
+    <div style={{ background:C.card, border:`1px solid ${h.disponible?C.border:"rgba(240,78,107,0.15)"}`, borderRadius:12, overflow:"hidden" }}>
+      <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", background:h.disponible?"transparent":"rgba(240,78,107,0.04)" }}
+        onClick={onToggle}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:34, height:34, borderRadius:9, background:h.disponible?"rgba(34,201,122,0.10)":"rgba(240,78,107,0.10)", border:`1px solid ${h.disponible?"rgba(34,201,122,0.22)":"rgba(240,78,107,0.22)"}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            {getHerramientaIcon(h.tipo, h.disponible)}
+          </div>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FM }}>{h.nombre}</span>
+              <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, fontFamily:FB, fontWeight:700, background:h.disponible?"rgba(34,201,122,0.12)":"rgba(240,78,107,0.12)", color:h.disponible?C.green:C.red, border:`1px solid ${h.disponible?"rgba(34,201,122,0.25)":"rgba(240,78,107,0.25)"}` }}>
+                {h.disponible?"✓ Disponible":"✗ No disponible"}
+              </span>
+              <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FB }}>{h.tipo}</span>
+            </div>
+            <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{h.descripcion.substring(0,90)}...</div>
+          </div>
+        </div>
+        {expanded?<ChevronUp size={14} color={C.creamMut}/>:<ChevronDown size={14} color={C.creamMut}/>}
+      </div>
+      {expanded && <HerramientaDetalle h={h} />}
+    </div>
+  );
+}
+
+function HerramientaDetalle({ h }: { h:Herramienta }) {
+  return (
+    <div style={{ padding:"0 16px 16px", borderTop:`1px solid ${C.borderBr}` }}>
+      <div style={{ paddingTop:14, display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ fontSize:13, color:C.creamSub, fontFamily:FB, lineHeight:1.7 }}>{h.descripcion}</div>
+        <div>
+          <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Métricas que expone</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+            {h.metricas.map((m,mi)=>(
+              <span key={mi} style={{ fontSize:11.5, padding:"3px 10px", borderRadius:20, background:"rgba(255,200,150,0.05)", border:`1px solid ${C.border}`, color:C.creamSub, fontFamily:FB }}>{m}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding:"8px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.18)` }}>
+          <span style={{ fontSize:11, fontWeight:700, color:C.orange, fontFamily:FB }}>📍 En este panel: </span>
+          <span style={{ fontSize:11.5, color:C.creamSub, fontFamily:FB }}>{h.uso_en_panel}</span>
+        </div>
+        <div>
+          <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Consulta de ejemplo</div>
+          <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${C.borderBr}`, borderRadius:9, padding:"10px 14px", fontFamily:FM, fontSize:12, color:C.cream, lineHeight:1.6, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>{h.sql_ejemplo}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabHerramientas({ herramientas }: { herramientas:Herramienta[] }) {
+  const [expandedHerr, setExpandedHerr] = useState<string|null>(null);
+  const grouped = herramientas.reduce((acc, h) => {
+    if (!acc[h.categoria]) acc[h.categoria] = [];
+    acc[h.categoria].push(h);
+    return acc;
+  }, {} as Record<string, Herramienta[]>);
+
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      <div style={{ padding:"14px 18px", borderRadius:12, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:16, display:"flex", alignItems:"flex-start", gap:12 }}>
+        <BookOpen size={18} color={C.blue} style={{ flexShrink:0, marginTop:2 }} />
+        <div>
+          <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:4 }}>Herramientas de Monitoreo del SGBD</div>
+          <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
+            PostgreSQL incluye un conjunto de <strong style={{ color:C.blue }}>vistas del sistema, extensiones y comandos</strong> que permiten supervisar el rendimiento en tiempo real.
+          </div>
+        </div>
+      </div>
+      {Object.entries(grouped).map(([categoria, items])=>(
+        <div key={categoria} style={{ marginBottom:14 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:C.creamMut, letterSpacing:"0.10em", textTransform:"uppercase", fontFamily:FB, marginBottom:8, paddingLeft:4 }}>{categoria}</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            {items.map(h=>(
+              <HerramientaCard key={h.nombre} h={h} expanded={expandedHerr===h.nombre} onToggle={()=>setExpandedHerr(expandedHerr===h.nombre?null:h.nombre)} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB: HISTORIAL
+// ═══════════════════════════════════════════════════════════════════════════
+function HistorialRow({ h, index }: { h:HistorialEntry; index:number }) {
+  const tipoColor = h.tipo==="vacuum"?C.green:C.purple;
+  return (
+    <tr style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:index%2===0?"rgba(255,232,200,0.01)":"transparent" }}>
+      <td style={{ padding:"8px 12px" }}>
+        <span style={{ fontSize:11, padding:"2px 8px", borderRadius:20, fontWeight:700, fontFamily:FM,
+          background:`${tipoColor}14`, color:tipoColor, border:`1px solid ${tipoColor}25`, textTransform:"uppercase" }}>
+          {h.tipo}
+        </span>
+      </td>
+      <td style={{ padding:"8px 12px", fontSize:12, color:C.cream, fontFamily:FM }}>{h.tabla ?? <span style={{ color:C.creamMut }}>todas las tablas</span>}</td>
+      <td style={{ padding:"8px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{h.alcance}</td>
+      <td style={{ padding:"8px 12px", fontSize:11.5, color:C.blue, fontFamily:FM }}>{h.duracion_ms}ms</td>
+      <td style={{ padding:"8px 12px" }}>
+        {h.exitoso
+          ?<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.green }}><CheckCircle size={11}/>Exitoso</span>
+          :<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.red }}><AlertCircle size={11}/>{h.error_msg?.substring(0,40)}</span>}
+      </td>
+      <td style={{ padding:"8px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{h.admin_nombre??"—"}</td>
+      <td style={{ padding:"8px 12px", fontSize:11, color:C.creamMut, fontFamily:FM }}>
+        {new Date(h.ejecutado_en).toLocaleString("es-MX",{ day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}
+      </td>
+    </tr>
+  );
+}
+
+function TabHistorial({ historial }: { historial:HistorialEntry[] }) {
+  return (
+    <div style={{ animation:"fadeUp .3s ease" }}>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
+          <History size={13} color={C.purple} />
+          <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Historial de mantenimiento</span>
+          <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Últimas 100 operaciones ejecutadas</span>
+        </div>
+        {historial.length===0
+          ? <div style={{ padding:"32px", textAlign:"center", color:C.creamMut, fontSize:13, fontFamily:FB }}>Sin operaciones registradas aún.</div>
+          : (
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
+                  {["Operación","Tabla afectada","Alcance","Duración","Resultado","Admin","Fecha y hora"].map(h=>(
+                    <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {historial.map((h,i)=><HistorialRow key={h.id} h={h} index={i} />)}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TAB BAR
+// ═══════════════════════════════════════════════════════════════════════════
+function TabButton({ id, label, icon:Icon, badge, badgeColor, active, onClick }: {
+  id:string; label:string; icon:React.ElementType; badge?:number; badgeColor?:string; active:boolean; onClick:()=>void;
+}) {
+  return (
+    <button onClick={onClick}
+      style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"9px 10px",
+        borderRadius:10, border:active?`1px solid ${C.orange}40`:`1px solid ${C.border}`,
+        background:active?`rgba(255,132,14,0.11)`:`rgba(255,232,200,0.02)`,
+        color:active?C.orange:C.creamMut, fontSize:12, fontWeight:active?700:400,
+        cursor:"pointer", fontFamily:FB, transition:"all .15s", position:"relative", whiteSpace:"nowrap" }}>
+      {active && <div style={{ position:"absolute", bottom:0, left:"15%", right:"15%", height:2, borderRadius:"2px 2px 0 0", background:C.orange }} />}
+      <Icon size={12} strokeWidth={active?2.2:1.7} />
+      {label}
+      {badge!==undefined && <span style={{ fontSize:9, padding:"1px 5px", borderRadius:20, background:badgeColor, color:"white", fontWeight:800 }}>{badge}</span>}
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ROOT — low complexity
+// ═══════════════════════════════════════════════════════════════════════════
 export default function AdminMonitoreo() {
   const navigate      = useNavigate();
   const { showToast } = useToast();
@@ -225,16 +1076,13 @@ export default function AdminMonitoreo() {
   const [resumen,     setResumen]     = useState<Resumen|null>(null);
   const [tablas,      setTablas]      = useState<TablaInfo[]>([]);
   const [queries,     setQueries]     = useState<QueryLenta[]>([]);
-  const [indices,     setIndices]     = useState<{ usados:Indice[]; sin_uso:Indice[]; posibles_faltantes:TablaInfo[] }|null>(null);
-  const [conexiones,  setConexiones]  = useState<{ conexiones:unknown[]; max_conexiones:number; por_estado:unknown[] }|null>(null);
+  const [indices,     setIndices]     = useState<IndicesState|null>(null);
+  const [conexiones,  setConexiones]  = useState<ConexionesState|null>(null);
   const [alertas,     setAlertas]     = useState<Alerta[]>([]);
-  const [bloqueos,    setBloqueos]    = useState<{ bloqueos_activos:Bloqueo[]; estadisticas_bd:Record<string,unknown>; eventos_espera:unknown[] }|null>(null);
-  const [config,      setConfig]      = useState<{ parametros:ParamPG[]; evaluaciones:Record<string,{estado:string;recomendacion:string|null}>; version:string; extensiones:unknown[] }|null>(null);
+  const [bloqueos,    setBloqueos]    = useState<BloqueosState|null>(null);
+  const [config,      setConfig]      = useState<ConfigState|null>(null);
   const [herramientas,setHerramientas]= useState<Herramienta[]>([]);
   const [historial,   setHistorial]   = useState<HistorialEntry[]>([]);
-  const [busqueda,    setBusqueda]    = useState("");
-  const [expandedHerr,setExpandedHerr]= useState<string|null>(null);
-  const [expandedIdx,  setExpandedIdx] = useState<string|null>(null);
 
   const [vacuumingTabla, setVacuumingTabla] = useState<string|null>(null);
   const [vacuumingAll,   setVacuumingAll]   = useState(false);
@@ -277,14 +1125,10 @@ export default function AdminMonitoreo() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // ── Auto-refresh cada 30s ──
   useEffect(() => {
     if (!autoRefresh) { setCountdown(30); return; }
     const tick = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) { cargar(); return 30; }
-        return c - 1;
-      });
+      setCountdown(c => { if (c <= 1) { cargar(); return 30; } return c - 1; });
     }, 1000);
     return () => clearInterval(tick);
   }, [autoRefresh, cargar]);
@@ -292,7 +1136,7 @@ export default function AdminMonitoreo() {
   const handleVacuumTabla = async (tabla:string) => {
     setVacuumingTabla(tabla);
     try {
-      const res  = await fetch(`${API}/api/admin/monitoreo/vacuum/${tabla}`, { method:"POST", headers:authH() });
+      const res = await fetch(`${API}/api/admin/monitoreo/vacuum/${tabla}`, { method:"POST", headers:authH() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       showToast(`VACUUM ANALYZE en "${tabla}" completado en ${json.duracion_ms}ms ✓`, "ok");
@@ -302,10 +1146,10 @@ export default function AdminMonitoreo() {
   };
 
   const handleVacuumAll = async () => {
-    if (!confirm("¿Ejecutar VACUUM ANALYZE en todas las tablas?\n\nEsto puede tardar varios segundos.")) return;
+    if (!confirm("¿Ejecutar VACUUM ANALYZE en todas las tablas?")) return;
     setVacuumingAll(true);
     try {
-      const res  = await fetch(`${API}/api/admin/monitoreo/vacuum-all`, { method:"POST", headers:authH() });
+      const res = await fetch(`${API}/api/admin/monitoreo/vacuum-all`, { method:"POST", headers:authH() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       setVacuumModal({ resultados:json.resultados, duracion:json.duracion_ms });
@@ -316,10 +1160,10 @@ export default function AdminMonitoreo() {
   };
 
   const handleReindex = async (tabla:string) => {
-    if (!confirm(`¿Reconstruir índices de "${tabla}"?\n\nEsta operación bloquea la tabla temporalmente.`)) return;
+    if (!confirm(`¿Reconstruir índices de "${tabla}"?`)) return;
     setReindexing(tabla);
     try {
-      const res  = await fetch(`${API}/api/admin/monitoreo/reindex/${tabla}`, { method:"POST", headers:authH() });
+      const res = await fetch(`${API}/api/admin/monitoreo/reindex/${tabla}`, { method:"POST", headers:authH() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       const ahorrado = json.bytes_ahorrados > 0 ? ` · ${fmtB(json.bytes_ahorrados)} liberados` : "";
@@ -330,10 +1174,10 @@ export default function AdminMonitoreo() {
   };
 
   const handleKillPid = async (pid:number) => {
-    if (!confirm(`¿Terminar la conexión PID ${pid}?\n\nLa consulta en ejecución se cancelará.`)) return;
+    if (!confirm(`¿Terminar la conexión PID ${pid}?`)) return;
     setKillingPid(pid);
     try {
-      const res  = await fetch(`${API}/api/admin/monitoreo/kill-pid/${pid}`, { method:"POST", headers:authH() });
+      const res = await fetch(`${API}/api/admin/monitoreo/kill-pid/${pid}`, { method:"POST", headers:authH() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       showToast(`Conexión PID ${pid} terminada ✓`,"ok");
@@ -343,10 +1187,10 @@ export default function AdminMonitoreo() {
   };
 
   const handleEliminarIndice = async (nombre:string, tabla:string) => {
-    if (!confirm(`¿Eliminar el índice "${nombre}" de la tabla "${tabla}"?\n\nEsta acción no se puede deshacer.`)) return;
+    if (!confirm(`¿Eliminar el índice "${nombre}" de "${tabla}"?`)) return;
     setDeletingIdx(nombre);
     try {
-      const res  = await fetch(`${API}/api/admin/monitoreo/indice/${nombre}`, { method:"DELETE", headers:authH() });
+      const res = await fetch(`${API}/api/admin/monitoreo/indice/${nombre}`, { method:"DELETE", headers:authH() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       showToast(`Índice "${nombre}" eliminado · ${json.tamanio_liberado} liberados ✓`,"ok");
@@ -357,7 +1201,6 @@ export default function AdminMonitoreo() {
 
   const alertasCriticas = alertas.filter(a=>a.nivel==="critico").length;
   const bloqueosActivos = bloqueos?.bloqueos_activos.length ?? 0;
-  const tablasFiltradas = tablas.filter(t=>t.nombre.toLowerCase().includes(busqueda.toLowerCase()));
 
   const TABS:{id:Tab;label:string;icon:React.ElementType;badge?:number;badgeColor?:string}[] = [
     { id:"resumen",       label:"Resumen",       icon:BarChart2    },
@@ -371,6 +1214,22 @@ export default function AdminMonitoreo() {
     { id:"herramientas",  label:"Herramientas",  icon:Wrench       },
     { id:"historial",     label:"Historial",     icon:History      },
   ];
+
+  const renderTab = () => {
+    switch (tab) {
+      case "resumen":       return resumen ? <TabResumen resumen={resumen} /> : null;
+      case "alertas":       return <TabAlertas alertas={alertas} alertasCriticas={alertasCriticas} onVacuum={handleVacuumTabla} vacuumingTabla={vacuumingTabla} />;
+      case "tablas":        return <TabTablas tablas={tablas} onVacuum={handleVacuumTabla} onReindex={handleReindex} vacuumingTabla={vacuumingTabla} reindexing={reindexing} />;
+      case "queries":       return <TabQueries queries={queries} conexiones={conexiones} />;
+      case "indices":       return indices ? <TabIndices indices={indices} onEliminar={handleEliminarIndice} deletingIdx={deletingIdx} /> : null;
+      case "conexiones":    return conexiones ? <TabConexiones conexiones={conexiones} onKill={handleKillPid} killingPid={killingPid} /> : null;
+      case "bloqueos":      return bloqueos ? <TabBloqueos bloqueos={bloqueos} onKill={handleKillPid} killingPid={killingPid} /> : null;
+      case "configuracion": return config ? <TabConfiguracion config={config} /> : null;
+      case "herramientas":  return <TabHerramientas herramientas={herramientas} />;
+      case "historial":     return <TabHistorial historial={historial} />;
+      default:              return null;
+    }
+  };
 
   return (
     <>
@@ -388,7 +1247,7 @@ export default function AdminMonitoreo() {
 
       <main style={{ flex:1, padding:"22px 26px 36px", overflowY:"auto", backgroundColor:C.bg, backgroundImage:`radial-gradient(ellipse at 80% 0%,rgba(34,201,122,0.05) 0%,transparent 40%),radial-gradient(ellipse at 5% 90%,rgba(141,76,205,0.05) 0%,transparent 35%)`, fontFamily:FB }}>
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20 }}>
           <div>
             <div style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:100, background:"rgba(34,201,122,0.08)", border:`1px solid rgba(34,201,122,0.20)`, fontSize:9.5, color:C.green, marginBottom:10, fontWeight:800, letterSpacing:"0.07em" }}>
@@ -416,718 +1275,18 @@ export default function AdminMonitoreo() {
           </div>
         </div>
 
-        {/* ── Tab bar ── */}
+        {/* Tab bar */}
         <div style={{ marginBottom:22 }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:6, marginBottom:6 }}>
-            {TABS.slice(0,5).map(({ id, label, icon:Icon, badge, badgeColor })=>{
-              const on=tab===id;
-              return (
-                <button key={id} onClick={()=>setTab(id)}
-                  style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"9px 10px",
-                    borderRadius:10, border:on?`1px solid ${C.orange}40`:`1px solid ${C.border}`,
-                    background:on?`rgba(255,132,14,0.11)`:`rgba(255,232,200,0.02)`,
-                    color:on?C.orange:C.creamMut, fontSize:12, fontWeight:on?700:400,
-                    cursor:"pointer", fontFamily:FB, transition:"all .15s", position:"relative", whiteSpace:"nowrap" }}>
-                  {on && <div style={{ position:"absolute", bottom:0, left:"15%", right:"15%", height:2, borderRadius:"2px 2px 0 0", background:C.orange }} />}
-                  <Icon size={12} strokeWidth={on?2.2:1.7} />
-                  {label}
-                  {badge!==undefined && <span style={{ fontSize:9, padding:"1px 5px", borderRadius:20, background:badgeColor, color:"white", fontWeight:800 }}>{badge}</span>}
-                </button>
-              );
-            })}
+            {TABS.slice(0,5).map(t=><TabButton key={t.id} {...t} active={tab===t.id} onClick={()=>setTab(t.id)} />)}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:6 }}>
-            {TABS.slice(5).map(({ id, label, icon:Icon, badge, badgeColor })=>{
-              const on=tab===id;
-              return (
-                <button key={id} onClick={()=>setTab(id)}
-                  style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"9px 10px",
-                    borderRadius:10, border:on?`1px solid ${C.orange}40`:`1px solid ${C.border}`,
-                    background:on?`rgba(255,132,14,0.11)`:`rgba(255,232,200,0.02)`,
-                    color:on?C.orange:C.creamMut, fontSize:12, fontWeight:on?700:400,
-                    cursor:"pointer", fontFamily:FB, transition:"all .15s", position:"relative", whiteSpace:"nowrap" }}>
-                  {on && <div style={{ position:"absolute", bottom:0, left:"15%", right:"15%", height:2, borderRadius:"2px 2px 0 0", background:C.orange }} />}
-                  <Icon size={12} strokeWidth={on?2.2:1.7} />
-                  {label}
-                  {badge!==undefined && <span style={{ fontSize:9, padding:"1px 5px", borderRadius:20, background:badgeColor, color:"white", fontWeight:800 }}>{badge}</span>}
-                </button>
-              );
-            })}
+            {TABS.slice(5).map(t=><TabButton key={t.id} {...t} active={tab===t.id} onClick={()=>setTab(t.id)} />)}
           </div>
         </div>
 
-        {/* ── RESUMEN ── */}
-        {tab==="resumen" && resumen && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:12 }}>
-              <KpiCard label="Tamaño de la BD" value={resumen.bd.size} accent={C.blue} icon={Database}
-                sub="Espacio total ocupado en disco" />
-              <KpiCard label="Eficiencia de caché"
-                value={`${resumen.rendimiento.cache_hit_ratio}%`}
-                sub={resumen.rendimiento.cache_hit_ratio>=99
-                  ? "✓ Óptimo — datos en RAM"
-                  : resumen.rendimiento.cache_hit_ratio>=95
-                  ? `⚠ ${(100-resumen.rendimiento.cache_hit_ratio).toFixed(1)}% lecturas de disco`
-                  : `❌ ${(100-resumen.rendimiento.cache_hit_ratio).toFixed(1)}% lecturas de disco — RAM insuficiente`}
-                accent={resumen.rendimiento.cache_hit_ratio>=99?C.green:resumen.rendimiento.cache_hit_ratio>=95?C.gold:C.red}
-                icon={TrendingUp} gauge={resumen.rendimiento.cache_hit_ratio} />
-              <KpiCard label="RAM del servidor" value={`${resumen.servidor.mem_usada_mb} MB`}
-                accent={resumen.servidor.mem_pct>85?C.red:resumen.servidor.mem_pct>70?C.gold:C.green}
-                icon={Cpu} gauge={resumen.servidor.mem_pct}
-                sub={`${resumen.servidor.mem_pct>85?"⚠ Crítica":resumen.servidor.mem_pct>70?"Elevada":"Normal"} · ${resumen.servidor.mem_total_mb} MB total`} />
-              <KpiCard label="Tiempo en línea" value={resumen.servidor.uptime}
-                accent={C.purple} icon={Clock} sub="Desde el último reinicio" />
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
-              <KpiCard label="Total de tablas"    value={resumen.bd.tablas}     accent={C.orange} icon={Table2}
-                sub="En schema público" />
-              <KpiCard label="Total de filas"     value={fmt(resumen.bd.filas)} accent={C.blue}   icon={HardDrive}
-                sub="Filas activas en todas las tablas" />
-              <KpiCard label="Conexiones activas" value={resumen.rendimiento.conexiones_activas}
-                accent={resumen.rendimiento.conexiones_activas>20?C.gold:C.green}
-                icon={Users} sub={`${resumen.rendimiento.conexiones_total} total · ${resumen.rendimiento.conexiones_activas>20?"⚠ Alta demanda":"Normal"}`} />
-              <KpiCard label="Índices inactivos"  value={resumen.indices.sin_uso}
-                accent={resumen.indices.sin_uso>5?C.gold:C.green} icon={Zap}
-                sub={resumen.indices.sin_uso>0?"Sin uso — candidatos a eliminar":"Sin índices innecesarios"} />
-            </div>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"16px 20px" }}>
-              <div style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:12 }}>Estadísticas de transacciones</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
-                {[
-                  { label:"Total de transacciones", value:fmt(resumen.rendimiento.tx_total),    color:C.blue  },
-                  { label:"Commits exitosos",        value:fmt(resumen.rendimiento.tx_commits),  color:C.green },
-                  { label:"Rollbacks (errores)",     value:fmt(resumen.rendimiento.tx_rollbacks),color:resumen.rendimiento.tx_rollbacks>100?C.red:C.gold },
-                ].map(({ label,value,color })=>(
-                  <div key={label} style={{ padding:"13px 16px", borderRadius:10, background:`${color}08`, border:`1px solid ${color}22`, textAlign:"center", position:"relative", overflow:"hidden" }}>
-                    <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${color},transparent)` }} />
-                    <div style={{ fontSize:22, fontWeight:900, color, fontFamily:FD }}>{value}</div>
-                    <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:4 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── ALERTAS ── */}
-        {tab==="alertas" && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            {alertasCriticas>0 && (
-              <div style={{ padding:"10px 16px", borderRadius:10, background:"rgba(240,78,107,0.08)", border:`1px solid rgba(240,78,107,0.25)`, marginBottom:14, display:"flex", alignItems:"center", gap:10 }}>
-                <AlertCircle size={14} color={C.red} />
-                <span style={{ fontSize:13, color:C.red, fontWeight:700, fontFamily:FB }}>{alertasCriticas} problema(s) crítico(s) — requieren atención inmediata</span>
-              </div>
-            )}
-            {alertas.map((a)=><AlertaBadge key={`${a.tipo}-${a.tabla}`} alerta={a} onVacuum={a.tipo==="vacuum"?handleVacuumTabla:undefined} vacuuming={vacuumingTabla===a.tabla} />)}
-          </div>
-        )}
-
-        {/* ── TABLAS ── */}
-        {tab==="tablas" && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px" }}>
-                <Search size={12} color={C.creamMut} />
-                <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar tabla..."
-                  style={{ background:"transparent", border:"none", outline:"none", color:C.cream, fontSize:12.5, fontFamily:FM, flex:1 }} />
-              </div>
-              <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{tablasFiltradas.length} tablas</span>
-            </div>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-              <div style={{ overflowX:"auto" }}>
-                <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                  <thead>
-                    <tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                      {["Tabla","Filas vivas","Filas obsoletas","Tamaño","Índices","Escaneos (Comp./Índice)","Operaciones (I/U/E)","Últ. Análisis","VACUUM","REINDEX"].map((h)=>(
-                        <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tablasFiltradas.map((t,i)=>{
-                      const pctM=t.filas_vivas>0?Math.round((t.filas_muertas/(t.filas_vivas+t.filas_muertas))*100):0;
-                      const needsV=pctM>5||t.filas_muertas>500;
-                      const isV=vacuumingTabla===t.nombre;
-                      const isR=reindexing===t.nombre;
-                      const lastA=t.last_analyze?new Date(t.last_analyze).toLocaleDateString("es-MX",{day:"2-digit",month:"short"}):"Nunca";
-                      return (
-                        <tr key={t.nombre} style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:i%2===0?"rgba(255,232,200,0.01)":"transparent" }}
-                          onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="rgba(255,132,14,0.04)"}
-                          onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=i%2===0?"rgba(255,232,200,0.01)":"transparent"}>
-                          <td style={{ padding:"8px 12px" }}><span style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{t.nombre}</span></td>
-                          <td style={{ padding:"8px 12px", fontSize:11.5, color:C.green, fontFamily:FM, fontWeight:600 }}>{fmt(t.filas_vivas)}</td>
-                          <td style={{ padding:"8px 12px" }}>
-                            <span style={{ fontSize:11.5, color:pctM>15?C.red:pctM>5?C.gold:C.creamMut, fontFamily:FM }}>
-                              {fmt(t.filas_muertas)}{pctM>5&&<span style={{ fontSize:9.5 }}> ({pctM}%)</span>}
-                            </span>
-                          </td>
-                          <td style={{ padding:"8px 12px", fontSize:11.5, color:C.blue, fontFamily:FM }}>{t.size_total}</td>
-                          <td style={{ padding:"8px 12px", fontSize:11.5, color:C.purple, fontFamily:FM }}>{t.size_indices}</td>
-                          <td style={{ padding:"8px 12px", fontSize:11, color:C.creamMut, fontFamily:FM }}>
-                            <span style={{ color:t.scans_secuenciales>1000?C.gold:C.creamMut }}>{fmt(t.scans_secuenciales)}</span>
-                            <span>/</span>
-                            <span style={{ color:C.green }}>{fmt(t.scans_por_indice)}</span>
-                          </td>
-                          <td style={{ padding:"8px 12px", fontSize:11, fontFamily:FM }}>
-                            <span style={{ color:C.green }}>{fmt(t.inserciones)}</span>/<span style={{ color:C.gold }}>{fmt(t.actualizaciones)}</span>/<span style={{ color:C.red }}>{fmt(t.eliminaciones)}</span>
-                          </td>
-                          <td style={{ padding:"8px 12px", fontSize:11, color:lastA==="Nunca"?C.red:C.creamMut, fontFamily:FM }}>{lastA}</td>
-                          <td style={{ padding:"8px 12px" }}>
-                            <button onClick={()=>handleVacuumTabla(t.nombre)} disabled={isV||!!vacuumingTabla}
-                              style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 8px", borderRadius:6,
-                                border:`1px solid ${needsV?C.orange+"45":C.border}`, background:needsV?`${C.orange}10`:"rgba(255,232,200,0.03)",
-                                color:isV?C.creamMut:needsV?C.orange:C.creamMut, fontSize:10.5, fontWeight:600,
-                                cursor:(isV||!!vacuumingTabla)?"wait":"pointer", fontFamily:FB, whiteSpace:"nowrap" }}>
-                              {isV?<RefreshCw size={9} style={{ animation:"spin 1s linear infinite" }}/>:<PlayCircle size={9}/>}
-                              {isV?"...":"VACUUM"}
-                            </button>
-                          </td>
-                          <td style={{ padding:"8px 12px" }}>
-                            <button onClick={()=>handleReindex(t.nombre)} disabled={isR||!!reindexing}
-                              style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 8px", borderRadius:6,
-                                border:`1px solid rgba(141,76,205,0.35)`, background:"rgba(141,76,205,0.08)",
-                                color:isR?C.creamMut:C.purple, fontSize:10.5, fontWeight:600,
-                                cursor:(isR||!!reindexing)?"wait":"pointer", fontFamily:FB, whiteSpace:"nowrap" }}>
-                              {isR?<RefreshCw size={9} style={{ animation:"spin 1s linear infinite" }}/>:<Zap size={9}/>}
-                              {isR?"...":"REINDEX"}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div style={{ display:"flex", gap:14, marginTop:8, padding:"8px 12px", borderRadius:9, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
-              <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.orange }}>●</span> Naranja = tabla necesita VACUUM (filas obsoletas &gt; 5%)</span>
-              <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.red }}>Nunca</span> = sin estadísticas — ANALYZE mejora el planificador</span>
-              <span style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB }}><span style={{ color:C.purple }}>REINDEX</span> = reconstruye índices inflados o corruptos</span>
-            </div>
-          </div>
-        )}
-
-        {/* ── QUERIES ── */}
-        {tab==="queries" && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-              <div style={{ padding:"13px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-                <Search size={13} color={C.orange} />
-                <span style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD }}>Consultas más lentas</span>
-                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Top 10 por tiempo promedio de ejecución</span>
-              </div>
-              <div style={{ padding:"8px 10px" }}>
-                {queries.length===0 ? (
-                  <div style={{ padding:"20px" }}>
-                    <div style={{ padding:"14px 16px", borderRadius:10, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:14, display:"flex", alignItems:"flex-start", gap:10 }}>
-                      <Info size={14} color={C.blue} style={{ flexShrink:0, marginTop:1 }} />
-                      <div>
-                        <div style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FB, marginBottom:2 }}>pg_stat_statements no disponible</div>
-                        <div style={{ fontSize:12, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
-                          Requiere activación por el proveedor. Mostrando consultas activas en tiempo real desde <span style={{ color:C.blue, fontFamily:FM }}>pg_stat_activity</span>.
-                        </div>
-                      </div>
-                    </div>
-                    {conexiones && (conexiones.conexiones as { pid:number; usuario:string; state:string; query:string; duracion_seg:number }[]).filter(c=>c.query&&c.state==="active").length > 0 ? (
-                      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                        {(conexiones.conexiones as { pid:number; usuario:string; state:string; query:string; duracion_seg:number }[]).filter(c=>c.query&&c.state==="active").map((c)=>(
-                          <div key={c.pid} style={{ padding:"10px 13px", borderRadius:9, background:"rgba(34,201,122,0.04)", border:`1px solid rgba(34,201,122,0.14)` }}>
-                            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                                <span style={{ fontSize:10, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.12)", color:C.green, fontFamily:FM, fontWeight:700 }}>PID {c.pid}</span>
-                                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>{c.usuario}</span>
-                              </div>
-                              <span style={{ fontSize:12, color:c.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{c.duracion_seg}s</span>
-                            </div>
-                            <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{c.query}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ textAlign:"center", padding:"20px", color:C.creamMut, fontSize:13, fontFamily:FB }}>No hay consultas activas en este momento</div>
-                    )}
-                  </div>
-                ) : queries.map((q,i)=>(
-                  <div key={`q-${i}`} style={{ padding:"11px 13px", borderRadius:9, marginBottom:6, background:"rgba(255,232,200,0.02)", border:`1px solid ${C.border}` }}>
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <span style={{ width:20, height:20, borderRadius:5, background:`${C.orange}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:C.orange }}>{i+1}</span>
-                        {q.calls!==undefined&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FM }}>{fmt(q.calls)} ejecuciones</span>}
-                        {q.state&&<span style={{ fontSize:10.5, padding:"2px 7px", borderRadius:20, background:"rgba(34,201,122,0.10)", color:C.green, fontFamily:FB }}>{q.state}</span>}
-                      </div>
-                      <div style={{ display:"flex", gap:10 }}>
-                        {q.tiempo_promedio_ms!==undefined&&<span style={{ fontSize:12, color:q.tiempo_promedio_ms>1000?C.red:q.tiempo_promedio_ms>100?C.gold:C.green, fontFamily:FM, fontWeight:700 }}>Prom. {q.tiempo_promedio_ms}ms</span>}
-                        {q.duracion_seg!==undefined&&<span style={{ fontSize:12, color:q.duracion_seg>30?C.red:C.gold, fontFamily:FM, fontWeight:700 }}>{q.duracion_seg}s activa</span>}
-                      </div>
-                    </div>
-                    <div style={{ fontSize:11, color:C.creamSub, fontFamily:FM, background:"rgba(0,0,0,0.2)", padding:"7px 10px", borderRadius:6, lineHeight:1.5, wordBreak:"break-all" }}>{q.query}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── ÍNDICES ── */}
-        {tab==="indices" && indices && (
-          <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
-            {indices.sin_uso.length>0&&(
-              <div style={{ background:C.card, border:`1px solid rgba(255,193,16,0.22)`, borderRadius:13, overflow:"hidden" }}>
-                <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(255,193,16,0.05)" }}>
-                  <AlertTriangle size={13} color={C.gold} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices inactivos</span>
-                  <span style={{ fontSize:10.5, padding:"1px 7px", borderRadius:20, background:"rgba(255,193,16,0.12)", border:"1px solid rgba(255,193,16,0.25)", color:C.gold, fontWeight:700 }}>{indices.sin_uso.length}</span>
-                  <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Candidatos a eliminar — liberan espacio sin afectar rendimiento</span>
-                </div>
-                <div style={{ padding:"8px 10px" }}>
-                  {indices.sin_uso.map((idx)=>{
-                    const expKey = `sinuso-${idx.indice}`;
-                    const exp = expandedIdx === expKey;
-                    return (
-                      <div key={idx.indice} style={{ borderRadius:9, marginBottom:6, overflow:"hidden", border:`1px solid ${exp?"rgba(255,193,16,0.30)":"rgba(255,193,16,0.12)"}`, transition:"border-color .2s" }}>
-                        {/* Fila principal */}
-                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 12px", background:"rgba(255,193,16,0.04)", cursor:"pointer" }}
-                          onClick={()=>setExpandedIdx(exp?null:expKey)}>
-                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                            {exp?<ChevronUp size={12} color={C.gold}/>:<ChevronDown size={12} color={C.gold}/>}
-                            <div>
-                              <div style={{ fontSize:12.5, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
-                              <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>tabla: {idx.tabla}</div>
-                            </div>
-                          </div>
-                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                            <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:600 }}>{idx.tamanio}</span>
-                            <button onClick={e=>{ e.stopPropagation(); handleEliminarIndice(idx.indice, idx.tabla); }} disabled={deletingIdx===idx.indice}
-                              style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:7, border:`1px solid rgba(240,78,107,0.35)`, background:"rgba(240,78,107,0.08)", color:deletingIdx===idx.indice?C.creamMut:C.red, fontSize:11, fontWeight:700, cursor:deletingIdx===idx.indice?"wait":"pointer", fontFamily:FB }}>
-                              {deletingIdx===idx.indice?<RefreshCw size={10} style={{ animation:"spin 1s linear infinite" }}/>:<Trash2 size={10}/>}
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                        {/* Detalle expandido */}
-                        {exp && (
-                          <div style={{ padding:"12px 16px", borderTop:`1px solid rgba(255,193,16,0.15)`, background:"rgba(0,0,0,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
-                            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
-                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,193,16,0.06)", border:`1px solid rgba(255,193,16,0.15)` }}>
-                                <div style={{ fontSize:9.5, fontWeight:800, color:C.gold, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Usos desde último reset</div>
-                                <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>0</div>
-                                <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>idx_scan = 0 — nunca usado</div>
-                              </div>
-                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(121,170,245,0.06)", border:`1px solid rgba(121,170,245,0.15)` }}>
-                                <div style={{ fontSize:9.5, fontWeight:800, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Espacio que libera</div>
-                                <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{idx.tamanio}</div>
-                                <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>si se elimina</div>
-                              </div>
-                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.15)` }}>
-                                <div style={{ fontSize:9.5, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Impacto al eliminar</div>
-                                <div style={{ fontSize:13, fontWeight:700, color:C.green, fontFamily:FB, marginTop:4 }}>✓ Ninguno</div>
-                                <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>las queries no lo usan</div>
-                              </div>
-                            </div>
-                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.15)`, fontSize:11.5, color:C.creamSub, fontFamily:FB, lineHeight:1.6 }}>
-                              💡 <strong style={{ color:C.orange }}>¿Por qué existe?</strong> Este índice fue creado pero PostgreSQL nunca lo ha usado para acelerar ninguna consulta. Eliminarlo libera {idx.tamanio} sin afectar el rendimiento, ya que las queries no lo aprovechan.
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-                <Zap size={13} color={C.green} />
-                <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Índices más utilizados</span>
-              </div>
-              <div style={{ padding:"8px 10px" }}>
-                {indices.usados.map((idx,i)=>{
-                  const expKey = `usado-${idx.indice}`;
-                  const exp = expandedIdx === expKey;
-                  const maxUsos = indices.usados[0]?.usos ?? 1;
-                  const pct = Math.min(((idx.usos??0)/(maxUsos||1))*100, 100);
-                  return (
-                    <div key={idx.indice} style={{ borderRadius:9, marginBottom:4, overflow:"hidden", border:`1px solid ${exp?"rgba(34,201,122,0.25)":C.border}`, transition:"border-color .2s" }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 90px 90px 80px 24px", alignItems:"center", gap:10, padding:"9px 12px", background:i%2===0?"rgba(255,232,200,0.01)":"transparent", cursor:"pointer" }}
-                        onClick={()=>setExpandedIdx(exp?null:expKey)}>
-                        <div>
-                          <div style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{idx.indice}</div>
-                          <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB }}>{idx.tabla}</div>
-                        </div>
-                        <div style={{ textAlign:"right" }}>
-                          <div style={{ fontSize:11.5, color:C.green, fontFamily:FM, fontWeight:700 }}>{fmt(idx.usos??0)}</div>
-                          <div style={{ fontSize:9, color:C.creamMut }}>usos</div>
-                        </div>
-                        <div style={{ textAlign:"right", fontSize:11.5, color:C.blue, fontFamily:FM }}>{idx.tamanio}</div>
-                        <div><div style={{ height:4, background:`${C.green}18`, borderRadius:99, overflow:"hidden" }}><div style={{ height:"100%", width:`${pct}%`, background:C.green, borderRadius:99 }}/></div></div>
-                        {exp?<ChevronUp size={12} color={C.creamMut}/>:<ChevronDown size={12} color={C.creamMut}/>}
-                      </div>
-                      {exp && (
-                        <div style={{ padding:"12px 16px", borderTop:`1px solid ${C.borderBr}`, background:"rgba(0,0,0,0.18)", display:"flex", flexDirection:"column", gap:10 }}>
-                          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
-                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.06)", border:`1px solid rgba(34,201,122,0.15)` }}>
-                              <div style={{ fontSize:9.5, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Total de usos</div>
-                              <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{fmt(idx.usos??0)}</div>
-                              <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>escaneos por índice</div>
-                            </div>
-                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(121,170,245,0.06)", border:`1px solid rgba(121,170,245,0.15)` }}>
-                              <div style={{ fontSize:9.5, fontWeight:800, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Tamaño en disco</div>
-                              <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>{idx.tamanio}</div>
-                              <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>espacio usado</div>
-                            </div>
-                            <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.15)` }}>
-                              <div style={{ fontSize:9.5, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:FB, marginBottom:4 }}>Posición por uso</div>
-                              <div style={{ fontSize:18, fontWeight:900, color:C.cream, fontFamily:FD }}>#{i+1}</div>
-                              <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>de {indices.usados.length} índices activos</div>
-                            </div>
-                          </div>
-                          <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(34,201,122,0.05)", border:`1px solid rgba(34,201,122,0.15)`, fontSize:11.5, color:C.creamSub, fontFamily:FB, lineHeight:1.6 }}>
-                            ✅ <strong style={{ color:C.green }}>Índice saludable</strong> — PostgreSQL lo usa activamente para acelerar consultas en la tabla <span style={{ color:C.cream, fontFamily:FM }}>{idx.tabla}</span>. Mantenerlo mejora el rendimiento de las búsquedas.
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {indices.posibles_faltantes.length>0&&(
-              <div style={{ background:C.card, border:`1px solid rgba(240,78,107,0.22)`, borderRadius:13, overflow:"hidden" }}>
-                <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(240,78,107,0.05)" }}>
-                  <AlertCircle size={13} color={C.red} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Posibles índices faltantes</span>
-                  <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Tablas con búsquedas completas frecuentes (más lentas)</span>
-                </div>
-                <div style={{ padding:"8px 10px" }}>
-                  {indices.posibles_faltantes.map((t:TablaInfo)=>(
-                    <div key={t.nombre} style={{ padding:"8px 12px", borderRadius:7, marginBottom:4, background:"rgba(240,78,107,0.04)", border:`1px solid rgba(240,78,107,0.12)` }}>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:12, fontWeight:700, color:C.cream, fontFamily:FM }}>{t.nombre}</span>
-                        <div style={{ display:"flex", gap:12 }}>
-                          <span style={{ fontSize:11, color:C.red, fontFamily:FM }}>Completas: {fmt(t.scans_secuenciales)}</span>
-                          <span style={{ fontSize:11, color:C.green, fontFamily:FM }}>Por índice: {fmt(t.scans_por_indice)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── CONEXIONES ── */}
-        {tab==="conexiones" && conexiones && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:12 }}>
-              {(conexiones.por_estado as { state:string; total:number }[]).map(({ state, total })=>{
-                const color=state==="active"?C.green:state==="idle"?C.blue:C.gold;
-                return (
-                  <div key={state} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:11, padding:"13px 16px", position:"relative", overflow:"hidden" }}>
-                    <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${color},transparent)` }} />
-                    <div style={{ fontSize:24, fontWeight:900, color, fontFamily:FD }}>{total}</div>
-                    <div style={{ fontSize:11, color:C.creamMut, fontFamily:FM, marginTop:3, textTransform:"uppercase", letterSpacing:"0.06em" }}>{state||"sin estado"}</div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <Users size={13} color={C.blue} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Conexiones activas</span>
-                </div>
-                <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>Máximo permitido: {conexiones.max_conexiones}</span>
-              </div>
-              <div style={{ overflowX:"auto" }}>
-                <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                  <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                    {["PID","Usuario","Aplicación","Estado","Duración","Consulta en curso","Acción"].map((h)=>(
-                      <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
-                    ))}
-                  </tr></thead>
-                  <tbody>
-                    {(conexiones.conexiones as { pid:number; usuario:string; aplicacion:string; state:string; query:string; duracion_seg:number }[]).map((c,i)=>(
-                      <tr key={c.pid} style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:i%2===0?"rgba(255,232,200,0.01)":"transparent" }}>
-                        <td style={{ padding:"7px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FM }}>{c.pid}</td>
-                        <td style={{ padding:"7px 12px", fontSize:11.5, color:C.cream, fontFamily:FM, fontWeight:600 }}>{c.usuario}</td>
-                        <td style={{ padding:"7px 12px", fontSize:11, color:C.creamMut, fontFamily:FB }}>{c.aplicacion||"—"}</td>
-                        <td style={{ padding:"7px 12px" }}>
-                          <span style={{ fontSize:10, padding:"2px 7px", borderRadius:20, fontWeight:700, fontFamily:FM, background:c.state==="active"?"rgba(34,201,122,0.12)":"rgba(121,170,245,0.10)", color:c.state==="active"?C.green:C.blue }}>{c.state}</span>
-                        </td>
-                        <td style={{ padding:"7px 12px", fontSize:11.5, color:c.duracion_seg>30?C.red:C.creamMut, fontFamily:FM }}>{c.duracion_seg!=null?`${c.duracion_seg}s`:"—"}</td>
-                        <td style={{ padding:"7px 12px", fontSize:10.5, color:C.creamSub, fontFamily:FM, maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.query||"—"}</td>
-                        <td style={{ padding:"7px 12px" }}>
-                          <button onClick={()=>handleKillPid(c.pid)} disabled={killingPid===c.pid}
-                            title="Terminar esta conexión"
-                            style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 9px", borderRadius:7, border:`1px solid rgba(240,78,107,0.35)`, background:"rgba(240,78,107,0.08)", color:killingPid===c.pid?C.creamMut:C.red, fontSize:10.5, fontWeight:700, cursor:killingPid===c.pid?"wait":"pointer", fontFamily:FB, whiteSpace:"nowrap" }}>
-                            {killingPid===c.pid?<RefreshCw size={9} style={{ animation:"spin 1s linear infinite" }}/>:<XCircle size={9}/>}
-                            Kill
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── BLOQUEOS ── */}
-        {tab==="bloqueos" && bloqueos && (
-          <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
-            <div style={{ padding:"12px 16px", borderRadius:11, display:"flex", alignItems:"center", gap:12,
-              background:bloqueosActivos>0?"rgba(240,78,107,0.08)":"rgba(34,201,122,0.07)",
-              border:`1px solid ${bloqueosActivos>0?"rgba(240,78,107,0.25)":"rgba(34,201,122,0.20)"}` }}>
-              <Lock size={16} color={bloqueosActivos>0?C.red:C.green} />
-              <div>
-                <div style={{ fontSize:13.5, fontWeight:700, color:C.cream, fontFamily:FB }}>
-                  {bloqueosActivos>0 ? `${bloqueosActivos} proceso(s) bloqueado(s) en este momento` : "Sin bloqueos activos — sistema fluido"}
-                </div>
-                <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>
-                  Deadlocks históricos: {String(bloqueos.estadisticas_bd.deadlocks ?? 0)} · Conflictos: {String(bloqueos.estadisticas_bd.conflicts ?? 0)}
-                </div>
-              </div>
-            </div>
-            {bloqueosActivos>0 && (
-              <div style={{ background:C.card, border:`1px solid rgba(240,78,107,0.22)`, borderRadius:13, overflow:"hidden" }}>
-                <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, background:"rgba(240,78,107,0.06)" }}>
-                  <AlertCircle size={13} color={C.red} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Bloqueos activos</span>
-                </div>
-                <div style={{ padding:"10px" }}>
-                  {bloqueos.bloqueos_activos.map((b)=>(
-                    <div key={b.pid_bloqueado} style={{ padding:"12px 14px", borderRadius:9, marginBottom:6, background:"rgba(240,78,107,0.05)", border:`1px solid rgba(240,78,107,0.15)` }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                        <div>
-                          <div style={{ fontSize:10, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Proceso bloqueado (PID {b.pid_bloqueado})</div>
-                          <div style={{ fontSize:12, color:C.cream, fontFamily:FM, fontWeight:600 }}>{b.usuario}</div>
-                          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FM, marginTop:3, wordBreak:"break-all" }}>{b.query_bloqueada}</div>
-                          <div style={{ fontSize:11, color:C.red, marginTop:4 }}>⏳ Esperando {b.espera_seg}s · {b.wait_event_type}: {b.wait_event}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize:10, fontWeight:700, color:C.gold, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Proceso bloqueante (PID {b.pid_bloqueante})</div>
-                          <div style={{ fontSize:12, color:C.cream, fontFamily:FM, fontWeight:600 }}>{b.usuario_bloqueante}</div>
-                          <div style={{ fontSize:10.5, color:C.creamMut, fontFamily:FM, marginTop:3, wordBreak:"break-all" }}>{b.query_bloqueante}</div>
-                        </div>
-                      </div>
-                      <div style={{ display:"flex", gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid rgba(240,78,107,0.15)` }}>
-                        <button onClick={()=>handleKillPid(b.pid_bloqueante)} disabled={killingPid===b.pid_bloqueante}
-                          style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, border:`1px solid rgba(240,78,107,0.40)`, background:"rgba(240,78,107,0.12)", color:killingPid===b.pid_bloqueante?C.creamMut:C.red, fontSize:12, fontWeight:700, cursor:killingPid===b.pid_bloqueante?"wait":"pointer", fontFamily:FB }}>
-                          {killingPid===b.pid_bloqueante?<RefreshCw size={11} style={{ animation:"spin 1s linear infinite" }}/>:<XCircle size={11}/>}
-                          Terminar bloqueante (PID {b.pid_bloqueante})
-                        </button>
-                        <button onClick={()=>handleKillPid(b.pid_bloqueado)} disabled={killingPid===b.pid_bloqueado}
-                          style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, border:`1px solid rgba(255,200,150,0.20)`, background:"rgba(255,200,150,0.05)", color:C.creamMut, fontSize:12, fontWeight:600, cursor:killingPid===b.pid_bloqueado?"wait":"pointer", fontFamily:FB }}>
-                          Terminar bloqueado (PID {b.pid_bloqueado})
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {(bloqueos.eventos_espera as { wait_event_type:string; wait_event:string; total:number }[]).length>0&&(
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-                <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-                  <Clock size={13} color={C.gold} />
-                  <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Procesos en espera</span>
-                </div>
-                <div style={{ padding:"8px 10px" }}>
-                  {(bloqueos.eventos_espera as { wait_event_type:string; wait_event:string; total:number }[]).map((e)=>(
-                    <div key={`${e.wait_event_type}-${e.wait_event}`} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", borderRadius:7, marginBottom:3, background:"rgba(255,193,16,0.04)", border:`1px solid rgba(255,193,16,0.12)` }}>
-                      <div>
-                        <span style={{ fontSize:12, color:C.gold, fontFamily:FM, fontWeight:700 }}>{e.wait_event}</span>
-                        <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginLeft:8 }}>{e.wait_event_type}</span>
-                      </div>
-                      <span style={{ fontSize:12, color:C.cream, fontFamily:FM, fontWeight:700 }}>{e.total} procesos</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── CONFIGURACIÓN ── */}
-        {tab==="configuracion" && config && (
-          <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"14px 18px" }}>
-              <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginBottom:6 }}>Versión del motor de base de datos</div>
-              <div style={{ fontSize:13, color:C.green, fontFamily:FM, fontWeight:600 }}>{config.version}</div>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
-                {(config.extensiones as { name:string; installed_version:string }[]).map(e=>(
-                  <span key={e.name} style={{ fontSize:10.5, padding:"2px 8px", borderRadius:20, background:"rgba(34,201,122,0.10)", border:"1px solid rgba(34,201,122,0.22)", color:C.green, fontFamily:FM }}>
-                    {e.name} {e.installed_version}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-                <Settings size={13} color={C.orange} />
-                <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Parámetros clave de PostgreSQL</span>
-              </div>
-              <div style={{ padding:"8px 10px" }}>
-                {config.parametros.map((p,i)=>{
-                  const ev=config.evaluaciones[p.name];
-                  const color=ev?.estado==="critico"?C.red:ev?.estado==="advertencia"?C.gold:ev?.estado==="info"?C.blue:C.green;
-                  return (
-                    <div key={p.name} style={{ padding:"10px 14px", borderRadius:9, marginBottom:4, background:i%2===0?"rgba(255,232,200,0.01)":"transparent", border:`1px solid ${ev?.estado!=="ok"&&ev?.estado?`${color}20`:C.border}` }}>
-                      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
-                        <div style={{ flex:1 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
-                            <span style={{ fontSize:13, fontWeight:700, color:C.cream, fontFamily:FM }}>{p.name}</span>
-                            <span style={{ fontSize:9.5, padding:"1px 6px", borderRadius:20, background:`${color}18`, color, fontWeight:700, border:`1px solid ${color}25` }}>{ev?.estado??'ok'}</span>
-                          </div>
-                          <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, lineHeight:1.5 }}>{p.short_desc}</div>
-                          {ev?.recomendacion&&<div style={{ fontSize:11.5, color, fontFamily:FB, marginTop:4, fontStyle:"italic" }}>💡 {ev.recomendacion}</div>}
-                        </div>
-                        <div style={{ textAlign:"right", flexShrink:0 }}>
-                          <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FM }}>{p.setting}<span style={{ fontSize:10, color:C.creamMut, fontWeight:400 }}> {p.unit}</span></div>
-                          <div style={{ fontSize:10, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{p.category}</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── HERRAMIENTAS ── */}
-        {tab==="herramientas" && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            <div style={{ padding:"14px 18px", borderRadius:12, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:16, display:"flex", alignItems:"flex-start", gap:12 }}>
-              <BookOpen size={18} color={C.blue} style={{ flexShrink:0, marginTop:2 }} />
-              <div>
-                <div style={{ fontSize:14, fontWeight:800, color:C.cream, fontFamily:FD, marginBottom:4 }}>Herramientas de Monitoreo del SGBD</div>
-                <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
-                  PostgreSQL incluye un conjunto de <strong style={{ color:C.blue }}>vistas del sistema, extensiones y comandos</strong> que permiten supervisar el rendimiento en tiempo real. Cada herramienta expone métricas específicas que el administrador usa para detectar cuellos de botella, optimizar consultas e identificar problemas antes de que afecten a los usuarios.
-                </div>
-              </div>
-            </div>
-            {Object.entries(
-              herramientas.reduce((acc, h) => {
-                if (!acc[h.categoria]) acc[h.categoria] = [];
-                acc[h.categoria].push(h);
-                return acc;
-              }, {} as Record<string, Herramienta[]>)
-            ).map(([categoria, items])=>(
-              <div key={categoria} style={{ marginBottom:14 }}>
-                <div style={{ fontSize:11, fontWeight:800, color:C.creamMut, letterSpacing:"0.10em", textTransform:"uppercase", fontFamily:FB, marginBottom:8, paddingLeft:4 }}>{categoria}</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                  {items.map(h=>{
-                    const exp=expandedHerr===h.nombre;
-                    return (
-                      <div key={h.nombre} style={{ background:C.card, border:`1px solid ${h.disponible?C.border:"rgba(240,78,107,0.15)"}`, borderRadius:12, overflow:"hidden" }}>
-                        <div style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", background:h.disponible?"transparent":"rgba(240,78,107,0.04)" }}
-                          onClick={()=>setExpandedHerr(exp?null:h.nombre)}>
-                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                            <div style={{ width:34, height:34, borderRadius:9, background:h.disponible?"rgba(34,201,122,0.10)":"rgba(240,78,107,0.10)", border:`1px solid ${h.disponible?"rgba(34,201,122,0.22)":"rgba(240,78,107,0.22)"}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                              {h.tipo==="extensión"?<Zap size={14} color={h.disponible?C.green:C.red}/>:
-                               h.tipo==="comando SQL"?<Code2 size={14} color={h.disponible?C.green:C.red}/>:
-                               <Database size={14} color={h.disponible?C.green:C.red}/>}
-                            </div>
-                            <div>
-                              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                                <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FM }}>{h.nombre}</span>
-                                <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, fontFamily:FB, fontWeight:700, background:h.disponible?"rgba(34,201,122,0.12)":"rgba(240,78,107,0.12)", color:h.disponible?C.green:C.red, border:`1px solid ${h.disponible?"rgba(34,201,122,0.25)":"rgba(240,78,107,0.25)"}` }}>
-                                  {h.disponible?"✓ Disponible":"✗ No disponible"}
-                                </span>
-                                <span style={{ fontSize:9.5, padding:"1px 7px", borderRadius:20, background:"rgba(121,170,245,0.10)", border:"1px solid rgba(121,170,245,0.22)", color:C.blue, fontFamily:FB }}>{h.tipo}</span>
-                              </div>
-                              <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{h.descripcion.substring(0,90)}...</div>
-                            </div>
-                          </div>
-                          {exp?<ChevronUp size={14} color={C.creamMut}/>:<ChevronDown size={14} color={C.creamMut}/>}
-                        </div>
-                        {exp&&(
-                          <div style={{ padding:"0 16px 16px", borderTop:`1px solid ${C.borderBr}` }}>
-                            <div style={{ paddingTop:14, display:"flex", flexDirection:"column", gap:12 }}>
-                              <div style={{ fontSize:13, color:C.creamSub, fontFamily:FB, lineHeight:1.7 }}>{h.descripcion}</div>
-                              <div>
-                                <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Métricas que expone</div>
-                                <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                                  {h.metricas.map((m,mi)=>(
-                                    <span key={mi} style={{ fontSize:11.5, padding:"3px 10px", borderRadius:20, background:"rgba(255,200,150,0.05)", border:`1px solid ${C.border}`, color:C.creamSub, fontFamily:FB }}>{m}</span>
-                                  ))}
-                                </div>
-                              </div>
-                              <div style={{ padding:"8px 12px", borderRadius:8, background:"rgba(255,132,14,0.06)", border:`1px solid rgba(255,132,14,0.18)` }}>
-                                <span style={{ fontSize:11, fontWeight:700, color:C.orange, fontFamily:FB }}>📍 En este panel: </span>
-                                <span style={{ fontSize:11.5, color:C.creamSub, fontFamily:FB }}>{h.uso_en_panel}</span>
-                              </div>
-                              <div>
-                                <div style={{ fontSize:10, fontWeight:800, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.10em", fontFamily:FB, marginBottom:6 }}>Consulta de ejemplo</div>
-                                <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${C.borderBr}`, borderRadius:9, padding:"10px 14px", fontFamily:FM, fontSize:12, color:C.cream, lineHeight:1.6, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>{h.sql_ejemplo}</div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── HISTORIAL ── */}
-        {tab==="historial" && (
-          <div style={{ animation:"fadeUp .3s ease" }}>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
-              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-                <History size={13} color={C.purple} />
-                <span style={{ fontSize:13.5, fontWeight:800, color:C.cream, fontFamily:FD }}>Historial de mantenimiento</span>
-                <span style={{ fontSize:11, color:C.creamMut, fontFamily:FB }}>Últimas 100 operaciones ejecutadas</span>
-              </div>
-              {historial.length===0
-                ? <div style={{ padding:"32px", textAlign:"center", color:C.creamMut, fontSize:13, fontFamily:FB }}>Sin operaciones registradas aún. Ejecuta un VACUUM o REINDEX para comenzar.</div>
-                : (
-                  <div style={{ overflowX:"auto" }}>
-                    <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                      <thead><tr style={{ background:"rgba(7,5,16,0.98)" }}>
-                        {["Operación","Tabla afectada","Alcance","Duración","Resultado","Admin","Fecha y hora"].map((h)=>(
-                          <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:800, color:C.orange, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}`, letterSpacing:"0.05em", textTransform:"uppercase" }}>{h}</th>
-                        ))}
-                      </tr></thead>
-                      <tbody>
-                        {historial.map((h,i)=>(
-                          <tr key={h.id} style={{ borderBottom:`1px solid rgba(255,200,150,0.04)`, background:i%2===0?"rgba(255,232,200,0.01)":"transparent" }}>
-                            <td style={{ padding:"8px 12px" }}>
-                              <span style={{ fontSize:11, padding:"2px 8px", borderRadius:20, fontWeight:700, fontFamily:FM,
-                                background:h.tipo==="vacuum"?`${C.green}14`:`${C.purple}14`,
-                                color:h.tipo==="vacuum"?C.green:C.purple,
-                                border:`1px solid ${h.tipo==="vacuum"?`${C.green}25`:`${C.purple}25`}`,
-                                textTransform:"uppercase" }}>
-                                {h.tipo}
-                              </span>
-                            </td>
-                            <td style={{ padding:"8px 12px", fontSize:12, color:C.cream, fontFamily:FM }}>{h.tabla ?? <span style={{ color:C.creamMut }}>todas las tablas</span>}</td>
-                            <td style={{ padding:"8px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{h.alcance}</td>
-                            <td style={{ padding:"8px 12px", fontSize:11.5, color:C.blue, fontFamily:FM }}>{h.duracion_ms}ms</td>
-                            <td style={{ padding:"8px 12px" }}>
-                              {h.exitoso
-                                ?<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.green }}><CheckCircle size={11}/>Exitoso</span>
-                                :<span style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:C.red }}><AlertCircle size={11}/>{h.error_msg?.substring(0,40)}</span>}
-                            </td>
-                            <td style={{ padding:"8px 12px", fontSize:11.5, color:C.creamMut, fontFamily:FB }}>{h.admin_nombre??"—"}</td>
-                            <td style={{ padding:"8px 12px", fontSize:11, color:C.creamMut, fontFamily:FM }}>
-                              {new Date(h.ejecutado_en).toLocaleString("es-MX",{ day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-            </div>
-          </div>
-        )}
+        {/* Tab content */}
+        {renderTab()}
 
         {loading && (
           <div style={{ position:"fixed", bottom:20, right:20, display:"flex", alignItems:"center", gap:7, padding:"9px 14px", borderRadius:9, background:C.card, border:`1px solid rgba(255,132,14,0.25)`, boxShadow:"0 4px 20px rgba(0,0,0,0.3)", zIndex:50 }}>

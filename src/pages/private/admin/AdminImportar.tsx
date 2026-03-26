@@ -5,7 +5,7 @@ import {
   Upload, FileSpreadsheet, X, CheckCircle, AlertCircle,
   RefreshCw, AlertTriangle, Eye, EyeOff,
   ChevronRight, Download, Layers, Users, ChevronDown,
- CloudUpload, Zap, TableProperties,
+  CloudUpload, Zap, TableProperties,
   FilePlus2, FileCheck2, FolderOpen, MousePointerClick,
   UploadCloud, ShieldCheck, FileWarning,
 } from "lucide-react";
@@ -43,7 +43,7 @@ const fmtB = (b: number) =>
 type TipoReg    = "obras" | "artistas";
 type FilaAccion = "insertada" | "actualizada" | "error";
 interface FilaRes  { fila: number; titulo: string; accion: FilaAccion; errores?: string[] }
-interface Resumen  { total: number; insertadas: number; actualizadas: number; errores: number }
+interface ResumenData  { total: number; insertadas: number; actualizadas: number; errores: number }
 interface ExcelPreview {
   headers: string[]; rows: Record<string, unknown>[]; allRows: Record<string, unknown>[];
   totalFilas: number; nuevas: number; actualizaciones: number;
@@ -75,7 +75,53 @@ function parseExcelPreview(file: File, tipo: TipoReg): Promise<ExcelPreview> {
   });
 }
 
-// ── Topbar ────────────────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════════════
+   HELPERS para reducir Cognitive Complexity de FilePreview
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const COLS_OBRAS    = ["ID Obra", "Título", "Artista", "Categoría", "Estado", "Precio Base (MXN)"];
+const COLS_ARTISTAS = ["ID Artista", "Nombre Completo", "Nombre Artístico", "Correo", "Ciudad", "Estado"];
+
+function getIdField(tipo: TipoReg): string {
+  return tipo === "obras" ? "ID Obra" : "ID Artista";
+}
+
+function normalizeHeader(h: string): string {
+  return h.replace(/\s*\*+\s*/g, "").trim();
+}
+
+function resolveVisibleCols(preview: ExcelPreview, tipo: TipoReg): string[] {
+  const priorCols = tipo === "obras" ? COLS_OBRAS : COLS_ARTISTAS;
+  const normalizedHeaders = preview.headers.map(normalizeHeader);
+  const matchedCols = priorCols.filter(c =>
+    preview.headers.includes(c) || normalizedHeaders.includes(normalizeHeader(c))
+  );
+  if (matchedCols.length === 0) return preview.headers.slice(0, 6);
+  return matchedCols.map(c => {
+    const idx = normalizedHeaders.indexOf(normalizeHeader(c));
+    return idx >= 0 ? preview.headers[idx] : c;
+  }).slice(0, 6);
+}
+
+function isRowNew(row: Record<string, unknown>, idField: string): boolean {
+  return !row[idField] || String(row[idField]).trim() === "";
+}
+
+function getRowAccionStyle(accion: FilaAccion): { color: string; bg: string; border: string } {
+  if (accion === "error") return { color: C.red, bg: "rgba(240,78,107,0.05)", border: "rgba(240,78,107,0.15)" };
+  if (accion === "insertada") return { color: C.green, bg: "rgba(34,201,122,0.04)", border: "rgba(34,201,122,0.12)" };
+  return { color: C.gold, bg: "rgba(255,193,16,0.04)", border: "rgba(255,193,16,0.12)" };
+}
+
+function getRowAccionIcon(accion: FilaAccion, color: string) {
+  if (accion === "error") return <AlertCircle size={11} color={color} />;
+  if (accion === "insertada") return <CheckCircle size={11} color={color} />;
+  return <RefreshCw size={11} color={color} />;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Topbar
+   ═══════════════════════════════════════════════════════════════════════════ */
 function Topbar({ navigate }: { navigate: (p: string) => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", height: 56, background: C.bgDeep, borderBottom: `1px solid ${C.borderBr}`, position: "sticky", top: 0, zIndex: 30, fontFamily: FB }}>
@@ -94,7 +140,9 @@ function Topbar({ navigate }: { navigate: (p: string) => void }) {
   );
 }
 
-// ── DropZone ──────────────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════════════
+   DropZone
+   ═══════════════════════════════════════════════════════════════════════════ */
 function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: boolean; accent: string }) {
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
@@ -145,7 +193,213 @@ function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: 
   );
 }
 
-// ── FilePreview ───────────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════════════
+   FilePreview — sub-componentes extraídos
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function PreviewFileHeader({ file, onCancel }: { file: File; onCancel: () => void }) {
+  return (
+    <div style={{ padding: "18px 22px", background: `linear-gradient(135deg, rgba(255,132,14,0.08) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid rgba(255,132,14,0.12)`, display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0, background: "rgba(34,201,122,0.12)", border: `1px solid rgba(34,201,122,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 14px rgba(34,201,122,0.15)` }}>
+        <FileSpreadsheet size={20} color={C.green} strokeWidth={1.7} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.cream, fontFamily: FB, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>{file.name}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 11.5, color: C.creamMut, fontFamily: FB }}>{fmtB(file.size)}</span>
+          <span style={{ width: 3, height: 3, borderRadius: "50%", background: C.borderBr, display: "inline-block" }} />
+          <span style={{ fontSize: 11.5, color: C.creamMut, fontFamily: FB }}>{new Date(file.lastModified).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}</span>
+          <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "rgba(34,201,122,0.12)", color: C.green, fontWeight: 700, fontFamily: FB, border: `1px solid rgba(34,201,122,0.2)` }}>XLSX</span>
+        </div>
+      </div>
+      <button onClick={onCancel}
+        style={{ width: 32, height: 32, borderRadius: 9, border: `1px solid ${C.border}`, background: "rgba(255,232,200,0.04)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .15s" }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(240,78,107,0.15)"; el.style.borderColor = "rgba(240,78,107,0.3)"; }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,232,200,0.04)"; el.style.borderColor = C.border; }}>
+        <X size={13} color={C.creamMut} />
+      </button>
+    </div>
+  );
+}
+
+function PreviewStatCards({ preview }: { preview: ExcelPreview }) {
+  const stats = [
+    { label: "Total filas",     value: preview.totalFilas,      color: C.blue,  bg: "rgba(121,170,245,0.08)",  bd: "rgba(121,170,245,0.18)" },
+    { label: "Nuevas entradas", value: preview.nuevas,          color: C.green, bg: "rgba(34,201,122,0.08)",   bd: "rgba(34,201,122,0.18)"  },
+    { label: "Actualizaciones", value: preview.actualizaciones, color: C.gold,  bg: "rgba(255,193,16,0.08)",   bd: "rgba(255,193,16,0.18)"  },
+  ];
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
+      {stats.map(({ label, value, color, bg, bd }) => (
+        <div key={label} style={{ padding: "16px 18px", borderRadius: 12, background: bg, border: `1px solid ${bd}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, transparent)` }} />
+          <span style={{ fontSize: 28, fontWeight: 900, color, fontFamily: FD, lineHeight: 1 }}>{value}</span>
+          <span style={{ fontSize: 10.5, color: C.creamMut, fontFamily: FB, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PreviewParsingState() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "36px 0", color: C.creamMut, fontFamily: FB, fontSize: 13 }}>
+      <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <RefreshCw size={14} color={C.orange} style={{ animation: "spin 1s linear infinite" }} />
+      </div>
+      Leyendo archivo...
+    </div>
+  );
+}
+
+function PreviewParseError() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 12, background: "rgba(240,78,107,0.07)", border: `1px solid rgba(240,78,107,0.2)`, marginBottom: 16 }}>
+      <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(240,78,107,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <AlertCircle size={15} color={C.red} />
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.red, fontFamily: FB, marginBottom: 2 }}>Archivo no válido</div>
+        <div style={{ fontSize: 12, color: "rgba(240,78,107,0.7)", fontFamily: FB }}>Verifica que sea una plantilla correcta (.xlsx)</div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewIdCell({ row, idField }: { row: Record<string, unknown>; idField: string }) {
+  const esNueva = isRowNew(row, idField);
+  if (esNueva) {
+    return <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, background: "rgba(34,201,122,0.14)", color: C.green, fontWeight: 800, border: `1px solid rgba(34,201,122,0.22)` }}>NUEVA</span>;
+  }
+  return <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, background: "rgba(121,170,245,0.14)", color: C.blue, fontWeight: 800, border: `1px solid rgba(121,170,245,0.22)` }}>{String(row[idField])}</span>;
+}
+
+function PreviewTableRow({ row, visibleCols, idField, index }: {
+  row: Record<string, unknown>; visibleCols: string[]; idField: string; index: number;
+}) {
+  return (
+    <tr
+      style={{ borderBottom: `1px solid rgba(255,200,150,0.04)`, background: index % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent", transition: "background .15s" }}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.04)"}
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = index % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent"}>
+      {visibleCols.map((col, j) => (
+        <td key={col} style={{ padding: "9px 14px", fontSize: 12.5, color: C.creamSub, whiteSpace: "nowrap", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", borderRight: j < visibleCols.length - 1 ? `1px solid rgba(255,200,150,0.04)` : "none" }}>
+          {col === idField ? <PreviewIdCell row={row} idField={idField} /> : String(row[col] || "—")}
+        </td>
+      ))}
+    </tr>
+  );
+}
+
+function PreviewTable({ preview, visibleCols, tipo, showAll, setShowAll }: {
+  preview: ExcelPreview; visibleCols: string[]; tipo: TipoReg;
+  showAll: boolean; setShowAll: (fn: (v: boolean) => boolean) => void;
+}) {
+  const idField = getIdField(tipo);
+  const displayRows = showAll ? preview.allRows : preview.rows;
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 3, height: 14, borderRadius: 2, background: C.orange }} />
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: C.creamMut, fontFamily: FB, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Vista previa · {showAll ? `${preview.totalFilas} filas` : `${Math.min(5, preview.rows.length)} de ${preview.totalFilas}`}
+          </span>
+        </div>
+        {preview.totalFilas > 5 && (
+          <button onClick={() => setShowAll(v => !v)}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: "rgba(255,232,200,0.03)", color: C.creamMut, fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}35`; el.style.background = "rgba(255,132,14,0.06)"; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.creamMut; el.style.borderColor = C.border; el.style.background = "rgba(255,232,200,0.03)"; }}>
+            {showAll ? <><EyeOff size={11} /> Mostrar menos</> : <><Eye size={11} /> Ver todas ({preview.totalFilas})</>}
+          </button>
+        )}
+      </div>
+      <div style={{ overflowX: "auto", borderRadius: 12, border: `1px solid ${C.border}`, maxHeight: showAll ? 340 : "none", overflowY: showAll ? "auto" : "visible" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FB }}>
+          <thead style={{ position: showAll ? "sticky" : "static", top: 0, zIndex: 2 }}>
+            <tr style={{ background: "rgba(7,5,16,0.98)" }}>
+              {visibleCols.map((col, i) => (
+                <th key={col} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10.5, fontWeight: 800, color: C.orange, whiteSpace: "nowrap", borderBottom: `1px solid ${C.border}`, letterSpacing: "0.06em", textTransform: "uppercase", borderRight: i < visibleCols.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                  {normalizeHeader(col)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {displayRows.map((row, i) => (
+              <PreviewTableRow key={`row-${i}`} row={row} visibleCols={visibleCols} idField={idField} index={i} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PreviewWarning() {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderRadius: 10, background: "rgba(255,193,16,0.05)", border: `1px solid rgba(255,193,16,0.16)`, marginBottom: 18 }}>
+      <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,193,16,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <AlertTriangle size={13} color={C.gold} strokeWidth={2} />
+      </div>
+      <div style={{ fontSize: 12.5, color: C.creamSub, fontFamily: FB, lineHeight: 1.6 }}>
+        <strong style={{ color: C.green }}>Verde</strong> = nueva entrada &nbsp;·&nbsp; <strong style={{ color: C.blue }}>Azul</strong> = actualización.
+        <span style={{ color: C.creamMut }}> Esta acción no se puede deshacer.</span>
+      </div>
+    </div>
+  );
+}
+
+function PreviewActions({ onCancel, onConfirm, loading, parsing, totalFilas }: {
+  onCancel: () => void; onConfirm: () => void; loading: boolean; parsing: boolean; totalFilas: number | undefined;
+}) {
+  const disabled = loading || parsing;
+  return (
+    <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+      <button onClick={onCancel}
+        style={{ padding: "9px 20px", borderRadius: 9, background: "transparent", border: `1px solid ${C.borderBr}`, color: C.creamMut, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.color = C.creamSub; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderBr; (e.currentTarget as HTMLElement).style.color = C.creamMut; }}>
+        Cancelar
+      </button>
+      <button onClick={onConfirm} disabled={disabled}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 24px", borderRadius: 9, background: disabled ? "rgba(255,132,14,0.08)" : `linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border: "none", color: disabled ? C.creamMut : "white", fontSize: 13, fontWeight: 700, cursor: disabled ? "wait" : "pointer", fontFamily: FB, boxShadow: disabled ? "none" : `0 6px 20px ${C.orange}40`, transition: "all .2s", opacity: disabled ? 0.6 : 1 }}>
+        {loading
+          ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Procesando...</>
+          : <><Zap size={13} strokeWidth={2.5} /> Confirmar importación ({totalFilas ?? "—"} filas)</>}
+      </button>
+    </div>
+  );
+}
+
+function PreviewBody({ file, tipo, preview, parsing, parseErr, onCancel, onConfirm, loading }: {
+  file: File; tipo: TipoReg; preview: ExcelPreview | null; parsing: boolean; parseErr: boolean;
+  onCancel: () => void; onConfirm: () => void; loading: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const visibleCols = preview ? resolveVisibleCols(preview, tipo) : [];
+
+  return (
+    <div style={{ padding: "20px 22px" }}>
+      {preview && !parsing && <PreviewStatCards preview={preview} />}
+
+      {parsing && <PreviewParsingState />}
+      {!parsing && parseErr && <PreviewParseError />}
+      {!parsing && preview && visibleCols.length > 0 && (
+        <PreviewTable preview={preview} visibleCols={visibleCols} tipo={tipo} showAll={showAll} setShowAll={setShowAll} />
+      )}
+
+      <PreviewWarning />
+      <PreviewActions onCancel={onCancel} onConfirm={onConfirm} loading={loading} parsing={parsing} totalFilas={preview?.totalFilas} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FilePreview — componente principal simplificado
+   ═══════════════════════════════════════════════════════════════════════════ */
 function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
   file: File; tipo: TipoReg; onCancel: () => void; onConfirm: () => void; loading: boolean;
 }) {
@@ -153,7 +407,6 @@ function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
   const parsing  = result.file !== file;
   const preview  = result.file === file ? result.preview  : null;
   const parseErr = result.file === file ? result.parseErr : false;
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,168 +416,41 @@ function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
     return () => { cancelled = true; };
   }, [file, tipo]);
 
-  const colsObras    = ["ID Obra",    "Título",          "Artista",        "Categoría",  "Estado",  "Precio Base (MXN)"];
-  const colsArtistas = ["ID Artista", "Nombre Completo", "Nombre Artístico","Correo",    "Ciudad",  "Estado"];
-  const priorCols    = tipo === "obras" ? colsObras : colsArtistas;
-  const normalizedHeaders = preview ? preview.headers.map(h => h.replace(/\s*\*+\s*/g, "").trim()) : [];
-  const matchedCols = preview ? priorCols.filter(c => preview.headers.includes(c) || normalizedHeaders.includes(c.replace(/\s*\*+\s*/g, "").trim())) : [];
-  const visibleCols = preview
-    ? (matchedCols.length > 0
-        ? matchedCols.map(c => { const idx = normalizedHeaders.indexOf(c.replace(/\s*\*+\s*/g, "").trim()); return idx >= 0 ? preview.headers[idx] : c; }).slice(0, 6)
-        : preview.headers.slice(0, 6))
-    : [];
-
   return (
     <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid rgba(255,132,14,0.20)`, boxShadow: `0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,200,150,0.06)` }}>
-      {/* Header archivo */}
-      <div style={{ padding: "18px 22px", background: `linear-gradient(135deg, rgba(255,132,14,0.08) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid rgba(255,132,14,0.12)`, display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0, background: "rgba(34,201,122,0.12)", border: `1px solid rgba(34,201,122,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 14px rgba(34,201,122,0.15)` }}>
-          <FileSpreadsheet size={20} color={C.green} strokeWidth={1.7} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.cream, fontFamily: FB, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>{file.name}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 11.5, color: C.creamMut, fontFamily: FB }}>{fmtB(file.size)}</span>
-            <span style={{ width: 3, height: 3, borderRadius: "50%", background: C.borderBr, display: "inline-block" }} />
-            <span style={{ fontSize: 11.5, color: C.creamMut, fontFamily: FB }}>{new Date(file.lastModified).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}</span>
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "rgba(34,201,122,0.12)", color: C.green, fontWeight: 700, fontFamily: FB, border: `1px solid rgba(34,201,122,0.2)` }}>XLSX</span>
-          </div>
-        </div>
-        <button onClick={onCancel}
-          style={{ width: 32, height: 32, borderRadius: 9, border: `1px solid ${C.border}`, background: "rgba(255,232,200,0.04)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .15s" }}
-          onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(240,78,107,0.15)"; el.style.borderColor = "rgba(240,78,107,0.3)"; }}
-          onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,232,200,0.04)"; el.style.borderColor = C.border; }}>
-          <X size={13} color={C.creamMut} />
-        </button>
-      </div>
-
-      <div style={{ padding: "20px 22px" }}>
-        {/* Stat cards */}
-        {preview && !parsing && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
-            {[
-              { label: "Total filas",     value: preview.totalFilas,      color: C.blue,  bg: "rgba(121,170,245,0.08)",  bd: "rgba(121,170,245,0.18)" },
-              { label: "Nuevas entradas", value: preview.nuevas,          color: C.green, bg: "rgba(34,201,122,0.08)",   bd: "rgba(34,201,122,0.18)"  },
-              { label: "Actualizaciones", value: preview.actualizaciones, color: C.gold,  bg: "rgba(255,193,16,0.08)",   bd: "rgba(255,193,16,0.18)"  },
-            ].map(({ label, value, color, bg, bd }) => (
-              <div key={label} style={{ padding: "16px 18px", borderRadius: 12, background: bg, border: `1px solid ${bd}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                <span style={{ fontSize: 28, fontWeight: 900, color, fontFamily: FD, lineHeight: 1 }}>{value}</span>
-                <span style={{ fontSize: 10.5, color: C.creamMut, fontFamily: FB, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Tabla preview */}
-        {parsing ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "36px 0", color: C.creamMut, fontFamily: FB, fontSize: 13 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <RefreshCw size={14} color={C.orange} style={{ animation: "spin 1s linear infinite" }} />
-            </div>
-            Leyendo archivo...
-          </div>
-        ) : parseErr ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderRadius: 12, background: "rgba(240,78,107,0.07)", border: `1px solid rgba(240,78,107,0.2)`, marginBottom: 16 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(240,78,107,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <AlertCircle size={15} color={C.red} />
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.red, fontFamily: FB, marginBottom: 2 }}>Archivo no válido</div>
-              <div style={{ fontSize: 12, color: "rgba(240,78,107,0.7)", fontFamily: FB }}>Verifica que sea una plantilla correcta (.xlsx)</div>
-            </div>
-          </div>
-        ) : preview && visibleCols.length > 0 ? (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 3, height: 14, borderRadius: 2, background: C.orange }} />
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: C.creamMut, fontFamily: FB, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Vista previa · {showAll ? `${preview.totalFilas} filas` : `${Math.min(5, preview.rows.length)} de ${preview.totalFilas}`}
-                </span>
-              </div>
-              {preview.totalFilas > 5 && (
-                <button onClick={() => setShowAll(v => !v)}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: "rgba(255,232,200,0.03)", color: C.creamMut, fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}35`; el.style.background = "rgba(255,132,14,0.06)"; }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.creamMut; el.style.borderColor = C.border; el.style.background = "rgba(255,232,200,0.03)"; }}>
-                  {showAll ? <><EyeOff size={11} /> Mostrar menos</> : <><Eye size={11} /> Ver todas ({preview.totalFilas})</>}
-                </button>
-              )}
-            </div>
-            <div style={{ overflowX: "auto", borderRadius: 12, border: `1px solid ${C.border}`, maxHeight: showAll ? 340 : "none", overflowY: showAll ? "auto" : "visible" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FB }}>
-                <thead style={{ position: showAll ? "sticky" : "static", top: 0, zIndex: 2 }}>
-                  <tr style={{ background: "rgba(7,5,16,0.98)" }}>
-                    {visibleCols.map((col, i) => (
-                      <th key={col} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10.5, fontWeight: 800, color: C.orange, whiteSpace: "nowrap", borderBottom: `1px solid ${C.border}`, letterSpacing: "0.06em", textTransform: "uppercase", borderRight: i < visibleCols.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                        {col.replace(/\s*\*+\s*/g, "").trim()}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(showAll ? preview.allRows : preview.rows).map((row, i) => {
-                    const idField = tipo === "obras" ? "ID Obra" : "ID Artista";
-                    const esNueva = !row[idField] || String(row[idField]).trim() === "";
-                    return (
-                      <tr key={`row-${i}`}
-                        style={{ borderBottom: `1px solid rgba(255,200,150,0.04)`, background: i % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent", transition: "background .15s" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.04)"}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent"}>
-                        {visibleCols.map((col, j) => (
-                          <td key={col} style={{ padding: "9px 14px", fontSize: 12.5, color: C.creamSub, whiteSpace: "nowrap", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", borderRight: j < visibleCols.length - 1 ? `1px solid rgba(255,200,150,0.04)` : "none" }}>
-                            {col === idField
-                              ? esNueva
-                                ? <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, background: "rgba(34,201,122,0.14)", color: C.green, fontWeight: 800, border: `1px solid rgba(34,201,122,0.22)` }}>NUEVA</span>
-                                : <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, background: "rgba(121,170,245,0.14)", color: C.blue, fontWeight: 800, border: `1px solid rgba(121,170,245,0.22)` }}>{String(row[col])}</span>
-                              : String(row[col] || "—")}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Aviso */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderRadius: 10, background: "rgba(255,193,16,0.05)", border: `1px solid rgba(255,193,16,0.16)`, marginBottom: 18 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,193,16,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <AlertTriangle size={13} color={C.gold} strokeWidth={2} />
-          </div>
-          <div style={{ fontSize: 12.5, color: C.creamSub, fontFamily: FB, lineHeight: 1.6 }}>
-            <strong style={{ color: C.green }}>Verde</strong> = nueva entrada &nbsp;·&nbsp; <strong style={{ color: C.blue }}>Azul</strong> = actualización.
-            <span style={{ color: C.creamMut }}> Esta acción no se puede deshacer.</span>
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onCancel}
-            style={{ padding: "9px 20px", borderRadius: 9, background: "transparent", border: `1px solid ${C.borderBr}`, color: C.creamMut, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.color = C.creamSub; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderBr; (e.currentTarget as HTMLElement).style.color = C.creamMut; }}>
-            Cancelar
-          </button>
-          <button onClick={onConfirm} disabled={loading || parsing}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 24px", borderRadius: 9, background: (loading || parsing) ? "rgba(255,132,14,0.08)" : `linear-gradient(135deg, ${C.orange}, ${C.magenta})`, border: "none", color: (loading || parsing) ? C.creamMut : "white", fontSize: 13, fontWeight: 700, cursor: (loading || parsing) ? "wait" : "pointer", fontFamily: FB, boxShadow: (loading || parsing) ? "none" : `0 6px 20px ${C.orange}40`, transition: "all .2s", opacity: (loading || parsing) ? 0.6 : 1 }}>
-            {loading
-              ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Procesando...</>
-              : <><Zap size={13} strokeWidth={2.5} /> Confirmar importación ({preview?.totalFilas ?? "—"} filas)</>}
-          </button>
-        </div>
-      </div>
+      <PreviewFileHeader file={file} onCancel={onCancel} />
+      <PreviewBody file={file} tipo={tipo} preview={preview} parsing={parsing} parseErr={parseErr} onCancel={onCancel} onConfirm={onConfirm} loading={loading} />
     </div>
   );
 }
 
-// ── ResultadoPanel ────────────────────────────────────────────────────────────
-function ResultadoPanel({ resumen, detalle, onReset }: { resumen: Resumen; detalle: FilaRes[]; onReset: () => void }) {
-  const [show, setShow] = useState(false);
-  const exitoso = resumen.errores === 0;
+/* ═══════════════════════════════════════════════════════════════════════════
+   ResultadoPanel — sub-componentes extraídos
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function ResultadoHeader({ resumen, exitoso, onReset }: { resumen: ResumenData; exitoso: boolean; onReset: () => void }) {
+  return (
+    <div style={{ padding: "20px 24px", background: exitoso ? `linear-gradient(135deg, rgba(34,201,122,0.10) 0%, rgba(18,13,30,0) 60%)` : `linear-gradient(135deg, rgba(240,78,107,0.09) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid ${exitoso ? "rgba(34,201,122,0.12)" : "rgba(240,78,107,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 12, background: exitoso ? "rgba(34,201,122,0.14)" : "rgba(240,78,107,0.14)", border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {exitoso ? <CheckCircle size={20} color={C.green} strokeWidth={2} /> : <AlertCircle size={20} color={C.red} strokeWidth={2} />}
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 3 }}>{exitoso ? "Importación completada" : "Importación con errores"}</div>
+          <div style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>{resumen.total} registros procesados · {resumen.insertadas} nuevos · {resumen.actualizadas} actualizados</div>
+        </div>
+      </div>
+      <button onClick={onReset}
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.25)`, color: C.orange, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.16)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.08)"; }}>
+        <RefreshCw size={12} /> Nueva importación
+      </button>
+    </div>
+  );
+}
+
+function ResultadoKpis({ resumen }: { resumen: ResumenData }) {
   const kpis = [
     { label: "Total",        value: resumen.total,        color: C.blue,  bg: "rgba(121,170,245,0.08)",  bd: "rgba(121,170,245,0.18)" },
     { label: "Insertadas",   value: resumen.insertadas,   color: C.green, bg: "rgba(34,201,122,0.08)",   bd: "rgba(34,201,122,0.18)"  },
@@ -332,77 +458,75 @@ function ResultadoPanel({ resumen, detalle, onReset }: { resumen: Resumen; detal
     { label: "Errores",      value: resumen.errores,      color: C.red,   bg: "rgba(240,78,107,0.08)",   bd: "rgba(240,78,107,0.18)"  },
   ];
   return (
-    <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, boxShadow: `0 8px 40px rgba(0,0,0,0.4)` }}>
-      <div style={{ padding: "20px 24px", background: exitoso ? `linear-gradient(135deg, rgba(34,201,122,0.10) 0%, rgba(18,13,30,0) 60%)` : `linear-gradient(135deg, rgba(240,78,107,0.09) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid ${exitoso ? "rgba(34,201,122,0.12)" : "rgba(240,78,107,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 46, height: 46, borderRadius: 12, background: exitoso ? "rgba(34,201,122,0.14)" : "rgba(240,78,107,0.14)", border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {exitoso ? <CheckCircle size={20} color={C.green} strokeWidth={2} /> : <AlertCircle size={20} color={C.red} strokeWidth={2} />}
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.cream, fontFamily: FD, marginBottom: 3 }}>{exitoso ? "Importación completada" : "Importación con errores"}</div>
-            <div style={{ fontSize: 12, color: C.creamMut, fontFamily: FB }}>{resumen.total} registros procesados · {resumen.insertadas} nuevos · {resumen.actualizadas} actualizados</div>
-          </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, padding: "20px 22px" }}>
+      {kpis.map(({ label, value, color, bg, bd }) => (
+        <div key={label} style={{ padding: "18px 16px", borderRadius: 12, background: bg, border: `1px solid ${bd}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, transparent)` }} />
+          <div style={{ fontSize: 34, fontWeight: 900, color, fontFamily: FD, lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: C.creamMut, fontFamily: FB, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
         </div>
-        <button onClick={onReset}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.25)`, color: C.orange, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.16)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.08)"; }}>
-          <RefreshCw size={12} /> Nueva importación
-        </button>
+      ))}
+    </div>
+  );
+}
+
+function DetalleRow({ r, index }: { r: FilaRes; index: number }) {
+  const { color, bg, border } = getRowAccionStyle(r.accion);
+  return (
+    <div key={`res-${index}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 14px", borderRadius: 9, background: bg, border: `1px solid ${border}` }}>
+      <div style={{ width: 24, height: 24, borderRadius: 6, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+        {getRowAccionIcon(r.accion, color)}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, padding: "20px 22px" }}>
-        {kpis.map(({ label, value, color, bg, bd }) => (
-          <div key={label} style={{ padding: "18px 16px", borderRadius: 12, background: bg, border: `1px solid ${bd}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, transparent)` }} />
-            <div style={{ fontSize: 34, fontWeight: 900, color, fontFamily: FD, lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: C.creamMut, fontFamily: FB, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-          </div>
-        ))}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: C.cream, fontFamily: FB }}>{r.titulo}</span>
+        <span style={{ fontSize: 11, color: C.creamMut, fontFamily: FB, marginLeft: 8 }}>fila {r.fila}</span>
+        {r.errores?.map((e, j) => <div key={j} style={{ fontSize: 11.5, color: C.red, fontFamily: FB, marginTop: 3 }}>· {e}</div>)}
       </div>
-      {detalle.length > 0 && (
-        <div style={{ padding: "0 22px 20px" }}>
-          <button onClick={() => setShow(v => !v)}
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 16px", borderRadius: 10, background: "rgba(255,232,200,0.03)", border: `1px solid ${C.border}`, color: C.creamMut, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.05)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.03)"; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              {show ? <EyeOff size={13} /> : <Eye size={13} />}
-              {show ? "Ocultar" : "Ver"} detalle fila por fila
-              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(255,200,150,0.07)", border: `1px solid ${C.border}`, color: C.creamMut }}>{detalle.length} registros</span>
-            </div>
-            <ChevronDown size={13} style={{ transform: show ? "rotate(180deg)" : "rotate(0)", transition: "transform .2s" }} />
-          </button>
-          {show && (
-            <div style={{ marginTop: 10, maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-              {detalle.map((r, i) => {
-                const isErr  = r.accion === "error";
-                const isNew  = r.accion === "insertada";
-                const color  = isErr ? C.red : isNew ? C.green : C.gold;
-                const bg     = isErr ? "rgba(240,78,107,0.05)" : isNew ? "rgba(34,201,122,0.04)" : "rgba(255,193,16,0.04)";
-                const border = isErr ? "rgba(240,78,107,0.15)" : isNew ? "rgba(34,201,122,0.12)" : "rgba(255,193,16,0.12)";
-                return (
-                  <div key={`res-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 14px", borderRadius: 9, background: bg, border: `1px solid ${border}` }}>
-                    <div style={{ width: 24, height: 24, borderRadius: 6, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                      {isErr ? <AlertCircle size={11} color={color} /> : isNew ? <CheckCircle size={11} color={color} /> : <RefreshCw size={11} color={color} />}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 600, color: C.cream, fontFamily: FB }}>{r.titulo}</span>
-                      <span style={{ fontSize: 11, color: C.creamMut, fontFamily: FB, marginLeft: 8 }}>fila {r.fila}</span>
-                      {r.errores?.map((e, j) => <div key={j} style={{ fontSize: 11.5, color: C.red, fontFamily: FB, marginTop: 3 }}>· {e}</div>)}
-                    </div>
-                    <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, fontWeight: 800, background: `${color}14`, color, flexShrink: 0, fontFamily: FB, border: `1px solid ${color}22` }}>{r.accion}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+      <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, fontWeight: 800, background: `${color}14`, color, flexShrink: 0, fontFamily: FB, border: `1px solid ${color}22` }}>{r.accion}</span>
+    </div>
+  );
+}
+
+function DetalleSection({ detalle }: { detalle: FilaRes[] }) {
+  const [show, setShow] = useState(false);
+  if (detalle.length === 0) return null;
+
+  return (
+    <div style={{ padding: "0 22px 20px" }}>
+      <button onClick={() => setShow(v => !v)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 16px", borderRadius: 10, background: "rgba(255,232,200,0.03)", border: `1px solid ${C.border}`, color: C.creamMut, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.05)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.03)"; }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          {show ? <EyeOff size={13} /> : <Eye size={13} />}
+          {show ? "Ocultar" : "Ver"} detalle fila por fila
+          <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(255,200,150,0.07)", border: `1px solid ${C.border}`, color: C.creamMut }}>{detalle.length} registros</span>
+        </div>
+        <ChevronDown size={13} style={{ transform: show ? "rotate(180deg)" : "rotate(0)", transition: "transform .2s" }} />
+      </button>
+      {show && (
+        <div style={{ marginTop: 10, maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+          {detalle.map((r, i) => <DetalleRow key={`res-${i}`} r={r} index={i} />)}
         </div>
       )}
     </div>
   );
 }
 
-// ── PasoCard ──────────────────────────────────────────────────────────────────
+function ResultadoPanel({ resumen, detalle, onReset }: { resumen: ResumenData; detalle: FilaRes[]; onReset: () => void }) {
+  const exitoso = resumen.errores === 0;
+  return (
+    <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, boxShadow: `0 8px 40px rgba(0,0,0,0.4)` }}>
+      <ResultadoHeader resumen={resumen} exitoso={exitoso} onReset={onReset} />
+      <ResultadoKpis resumen={resumen} />
+      <DetalleSection detalle={detalle} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PasoCard
+   ═══════════════════════════════════════════════════════════════════════════ */
 function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }: {
   n: string; title: string; desc: string;
   endpoint: string | null; endpointVacio: string | null;
@@ -419,57 +543,22 @@ function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", animation: `fadeUp .4s ease ${index * 0.09}s both`, transition: "border-color .2s, transform .2s, box-shadow .2s" }}
       onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${from}40`; el.style.transform = "translateY(-3px)"; el.style.boxShadow = `0 16px 40px rgba(0,0,0,0.35), 0 0 0 1px ${from}18`; }}
       onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.border; el.style.transform = "translateY(0)"; el.style.boxShadow = "none"; }}>
-
-      {/* Barra top degradada */}
       <div style={{ height: 3, background: `linear-gradient(90deg, ${from}, ${to}, transparent 80%)` }} />
-
-      {/* Hero */}
       <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        {/* Ícono principal con número */}
         <div style={{ position: "relative" }}>
           <div style={{ width: 60, height: 60, borderRadius: 16, background: `linear-gradient(135deg, ${from}20, ${to}10)`, border: `1px solid ${from}28`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 18px ${from}18` }}>
             <MainIcon size={28} color={from} strokeWidth={1.4} />
           </div>
           <div style={{ position: "absolute", top: -5, right: -5, width: 22, height: 22, borderRadius: "50%", background: `linear-gradient(135deg, ${from}, ${to})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "white", fontFamily: FB, boxShadow: `0 2px 10px ${from}55, 0 0 0 2px ${C.card}` }}>{n}</div>
         </div>
-        {/* Ícono sub decorativo */}
         <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,232,200,0.04)", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <SubIcon size={15} color={C.creamMut} strokeWidth={1.5} />
         </div>
       </div>
-
-      {/* Texto */}
       <div style={{ padding: "14px 20px 20px" }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: C.cream, fontFamily: FB, marginBottom: 8, lineHeight: 1.2 }}>{title}</div>
         <p style={{ fontSize: 12.5, color: C.creamMut, fontFamily: FB, margin: "0 0 16px", lineHeight: 1.75 }}>{desc}</p>
-
-        {/* Botones de descarga */}
-        {(endpoint || endpointVacio) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {endpointVacio && (
-              <button onClick={() => onDownload(endpointVacio)}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${from}, ${to})`, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s", boxShadow: `0 4px 16px ${from}35` }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 8px 24px ${from}55`; el.style.transform = "translateY(-1px)"; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 4px 16px ${from}35`; el.style.transform = "translateY(0)"; }}>
-                <Download size={14} strokeWidth={2.5} />
-                Plantilla vacía
-                <span style={{ fontSize: 9.5, fontWeight: 700, background: "rgba(255,255,255,0.22)", padding: "2px 8px", borderRadius: 20 }}>recomendada</span>
-              </button>
-            )}
-            {endpoint && (
-              <button onClick={() => onDownload(endpoint)}
-                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 10, border: `1px solid ${from}35`, background: `${from}08`, color: from, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s" }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${from}18`; el.style.borderColor = `${from}55`; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${from}08`; el.style.borderColor = `${from}35`; }}>
-                <FolderOpen size={13} strokeWidth={2} />
-                Con datos actuales
-                <span style={{ fontSize: 10, color: C.creamMut, fontWeight: 400 }}>· para editar</span>
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Indicador para pasos sin botón */}
+        {(endpoint || endpointVacio) && <PasoDownloadButtons endpoint={endpoint} endpointVacio={endpointVacio} from={from} to={to} onDownload={onDownload} />}
         {!endpoint && !endpointVacio && hint && (
           <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 12px", borderRadius: 9, background: `${from}08`, border: `1px solid ${from}20` }}>
             <MousePointerClick size={13} color={from} strokeWidth={2} />
@@ -481,7 +570,38 @@ function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }
   );
 }
 
-// ── ROOT ──────────────────────────────────────────────────────────────────────
+function PasoDownloadButtons({ endpoint, endpointVacio, from, to, onDownload }: {
+  endpoint: string | null; endpointVacio: string | null; from: string; to: string; onDownload: (e: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {endpointVacio && (
+        <button onClick={() => onDownload(endpointVacio)}
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${from}, ${to})`, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s", boxShadow: `0 4px 16px ${from}35` }}
+          onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 8px 24px ${from}55`; el.style.transform = "translateY(-1px)"; }}
+          onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = `0 4px 16px ${from}35`; el.style.transform = "translateY(0)"; }}>
+          <Download size={14} strokeWidth={2.5} />
+          Plantilla vacía
+          <span style={{ fontSize: 9.5, fontWeight: 700, background: "rgba(255,255,255,0.22)", padding: "2px 8px", borderRadius: 20 }}>recomendada</span>
+        </button>
+      )}
+      {endpoint && (
+        <button onClick={() => onDownload(endpoint)}
+          style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 10, border: `1px solid ${from}35`, background: `${from}08`, color: from, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FB, width: "100%", justifyContent: "center", transition: "all .18s" }}
+          onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${from}18`; el.style.borderColor = `${from}55`; }}
+          onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${from}08`; el.style.borderColor = `${from}35`; }}>
+          <FolderOpen size={13} strokeWidth={2} />
+          Con datos actuales
+          <span style={{ fontSize: 10, color: C.creamMut, fontWeight: 400 }}>· para editar</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROOT
+   ═══════════════════════════════════════════════════════════════════════════ */
 export default function AdminImportar() {
   const navigate      = useNavigate();
   const { showToast } = useToast();
@@ -489,7 +609,7 @@ export default function AdminImportar() {
   const [tipo,      setTipo]      = useState<TipoReg>("obras");
   const [file,      setFile]      = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
-  const [resumen,   setResumen]   = useState<Resumen | null>(null);
+  const [resumen,   setResumen]   = useState<ResumenData | null>(null);
   const [detalle,   setDetalle]   = useState<FilaRes[]>([]);
 
   const handleExportPlantilla = async (endpoint: string) => {

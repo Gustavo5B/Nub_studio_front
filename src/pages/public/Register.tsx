@@ -145,6 +145,23 @@ export default function Register() {
     }
   };
 
+  const passInputType = mostrarPass ? "text" : "password";
+  const eyeToggleColor = mostrarPass ? C.orange : C.muted;
+  const passInputBorder = mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)";
+  const eyeIcon = mostrarPass ? <EyeOff size={18} /> : <Eye size={18} />;
+  const checkboxBorderColor = aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)";
+  const checkboxBg = aceptoTerminos ? C.orange : "transparent";
+  const msgBg = isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)";
+  const msgBorderColor = isError ? C.pink : "#4ADE80";
+  const msgTextColor = isError ? C.pink : "#4ADE80";
+  const msgIcon = isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />;
+  const btnBg = aceptoTerminos ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.06)";
+  const btnColor = aceptoTerminos ? "white" : "rgba(255,255,255,0.3)";
+  const btnCursor = isLoading || !aceptoTerminos ? "not-allowed" : "pointer";
+  const btnShadow = aceptoTerminos ? "0 8px 24px rgba(255,132,14,0.3)" : "none";
+  const btnOpacity = isLoading ? 0.8 : 1;
+  const btnLabel = aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar";
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -494,7 +511,7 @@ export default function Register() {
                 <label style={labelStyle}><Lock size={14} /> Contraseña</label>
                 <div style={{ position: "relative" }}>
                   <input
-                    type={mostrarPass ? "text" : "password"}
+                    type={passInputType}
                     name="contrasena"
                     value={formData.contrasena}
                     onChange={handleChange}
@@ -504,7 +521,7 @@ export default function Register() {
                     style={{
                       ...inputStyle,
                       paddingRight: 44,
-                      border: mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)",
+                      border: passInputBorder,
                     }}
                   />
                   <button
@@ -519,7 +536,7 @@ export default function Register() {
                       border: "none",
                       borderRadius: 6,
                       cursor: "pointer",
-                      color: mostrarPass ? C.orange : C.muted,
+                      color: eyeToggleColor,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -532,10 +549,10 @@ export default function Register() {
                     }}
                     onMouseLeave={e => {
                       e.currentTarget.style.background = "rgba(0,0,0,0.3)";
-                      e.currentTarget.style.color = mostrarPass ? C.orange : C.muted;
+                      e.currentTarget.style.color = eyeToggleColor;
                     }}
                   >
-                    {mostrarPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {eyeIcon}
                   </button>
                 </div>
 
@@ -602,8 +619,8 @@ export default function Register() {
                   onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setAceptoTerminos(p => !p); }}
                   style={{
                     width: 20, height: 20, borderRadius: 5,
-                    border: `1.5px solid ${aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)"}`,
-                    background: aceptoTerminos ? C.orange : "transparent",
+                    border: `1.5px solid ${checkboxBorderColor}`,
+                    background: checkboxBg,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0, marginTop: 2,
                     transition: "all .15s", cursor: "pointer",
@@ -629,13 +646,13 @@ export default function Register() {
                   padding: "12px 16px",
                   borderRadius: 10,
                   fontSize: 13,
-                  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)",
-                  border: `1px solid ${isError ? C.pink : "#4ADE80"}`,
-                  color: isError ? C.pink : "#4ADE80",
+                  background: msgBg,
+                  border: `1px solid ${msgBorderColor}`,
+                  color: msgTextColor,
                   textAlign: "center",
                   marginTop: 8,
                 }}>
-                  {isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
+                  {msgIcon}
                   {mensaje}
                 </div>
               )}
@@ -647,22 +664,20 @@ export default function Register() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   width: "100%", padding: "14px 20px", borderRadius: 12, marginTop: 8,
-                  background: aceptoTerminos
-                    ? `linear-gradient(135deg, ${C.orange}, ${C.pink})`
-                    : "rgba(255,255,255,0.06)",
+                  background: btnBg,
                   border: "none",
-                  color: aceptoTerminos ? "white" : "rgba(255,255,255,0.3)",
+                  color: btnColor,
                   fontSize: 15, fontWeight: 700,
-                  cursor: isLoading || !aceptoTerminos ? "not-allowed" : "pointer",
+                  cursor: btnCursor,
                   fontFamily: "'DM Sans', 'Outfit', sans-serif",
-                  boxShadow: aceptoTerminos ? "0 8px 24px rgba(255,132,14,0.3)" : "none",
-                  opacity: isLoading ? 0.8 : 1,
+                  boxShadow: btnShadow,
+                  opacity: btnOpacity,
                   transition: "all .2s",
                 }}
               >
                 {isLoading
                   ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Registrando...</>
-                  : <><UserPlus size={16} /> {aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar"}</>
+                  : <><UserPlus size={16} /> {btnLabel}</>
                 }
               </button>
             </form>
