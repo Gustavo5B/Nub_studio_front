@@ -79,10 +79,33 @@ interface IndicesState { usados:Indice[]; sin_uso:Indice[]; posibles_faltantes:T
 type Tab = "resumen"|"alertas"|"tablas"|"queries"|"indices"|"conexiones"|"bloqueos"|"configuracion"|"herramientas"|"historial";
 
 // ═══════════════════════════════════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════════════════════════════════
+function TooltipInfo({ texto }: { texto: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div style={{ position:"relative", display:"inline-flex", alignItems:"center" }}>
+      <div
+        onMouseEnter={()=>setVisible(true)}
+        onMouseLeave={()=>setVisible(false)}
+        style={{ width:14, height:14, borderRadius:"50%", background:"rgba(0,0,0,0.07)", border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"help", flexShrink:0 }}>
+        <span style={{ fontSize:9, fontWeight:800, color:C.creamMut, lineHeight:1, fontFamily:FB }}>?</span>
+      </div>
+      {visible && (
+        <div style={{ position:"absolute", top:"calc(100% + 6px)", left:"50%", transform:"translateX(-50%)", background:C.cream, color:"#fff", fontSize:12, fontFamily:FB, lineHeight:1.6, padding:"9px 13px", borderRadius:9, width:210, whiteSpace:"normal", zIndex:999, boxShadow:"0 6px 20px rgba(0,0,0,0.22)", pointerEvents:"none" }}>
+          <div style={{ position:"absolute", bottom:"100%", left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"5px solid transparent", borderRight:"5px solid transparent", borderBottom:`5px solid ${C.cream}` }} />
+          {texto}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // KPI CARD
 // ═══════════════════════════════════════════════════════════════════════════
-function KpiCard({ label, value, sub, accent, icon:Icon }:{
-  label:string; value:string|number; sub?:string; accent:string; icon:React.ElementType; gauge?:number;
+function KpiCard({ label, value, sub, accent, icon:Icon, tooltip }:{
+  label:string; value:string|number; sub?:string; accent:string; icon:React.ElementType; gauge?:number; tooltip?:string;
 }) {
   return (
     <div style={{ background:C.card, border:`1px solid ${C.border}`, borderLeft:`3px solid ${accent}`, borderRadius:10, padding:"14px 16px", boxShadow:CS, transition:"box-shadow .2s" }}
@@ -94,6 +117,7 @@ function KpiCard({ label, value, sub, accent, icon:Icon }:{
           <Icon size={12} color={accent} strokeWidth={2.2} />
         </div>
         <span style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em", color:accent, fontFamily:FB }}>{label}</span>
+        {tooltip && <TooltipInfo texto={tooltip} />}
       </div>
       {/* Sub izquierda · Número derecha */}
       <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:8 }}>
@@ -258,31 +282,104 @@ function getMemSub(pct: number, total: number): string {
   return `${label} · ${total} MB total`;
 }
 
+function getEstadoGeneral(resumen: Resumen): { color: string; bg: string; bd: string; icon: React.ElementType; texto: string; sub: string } {
+  const cacheMal  = resumen.rendimiento.cache_hit_ratio < 95;
+  const ramCritica = resumen.servidor.mem_pct > 85;
+  const connAltas  = resumen.rendimiento.conexiones_activas > 20;
+  const rollbacks  = resumen.rendimiento.tx_rollbacks > 100;
+
+  if (ramCritica || cacheMal) return {
+    color: C.red, bg: "rgba(240,78,107,0.07)", bd: "rgba(240,78,107,0.25)",
+    icon: AlertCircle,
+    texto: "Se detectaron problemas críticos",
+    sub: ramCritica ? "La memoria del servidor está al límite" : "El rendimiento de lectura está degradado",
+  };
+  if (connAltas || rollbacks) return {
+    color: C.gold, bg: "rgba(255,193,16,0.07)", bd: "rgba(255,193,16,0.25)",
+    icon: AlertTriangle,
+    texto: "Hay situaciones que conviene revisar",
+    sub: connAltas ? "Hay muchas conexiones activas al mismo tiempo" : "Se registraron errores en operaciones recientes",
+  };
+  return {
+    color: C.green, bg: "rgba(34,201,122,0.07)", bd: "rgba(34,201,122,0.22)",
+    icon: CheckCircle,
+    texto: "La base de datos funciona con normalidad",
+    sub: "Sin alertas — todos los indicadores están dentro del rango esperado",
+  };
+}
+
 function TabResumen({ resumen }: { resumen:Resumen }) {
+  const [verTecnico, setVerTecnico] = useState(false);
+  const estado = getEstadoGeneral(resumen);
+  const EstadoIcon = estado.icon;
+
   return (
-    <div style={{ animation:"fadeUp .3s ease" }}>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:12 }}>
-        <KpiCard label="Tamaño de la BD" value={resumen.bd.size} accent={C.blue} icon={Database} sub="Espacio total ocupado en disco" />
-        <KpiCard label="Eficiencia de caché" value={`${resumen.rendimiento.cache_hit_ratio}%`}
-          sub={getCacheSub(resumen.rendimiento.cache_hit_ratio)}
-          accent={getCacheAccent(resumen.rendimiento.cache_hit_ratio)}
-          icon={TrendingUp} gauge={resumen.rendimiento.cache_hit_ratio} />
-        <KpiCard label="RAM del servidor" value={`${resumen.servidor.mem_usada_mb} MB`}
-          accent={getMemAccent(resumen.servidor.mem_pct)} icon={Cpu} gauge={resumen.servidor.mem_pct}
-          sub={getMemSub(resumen.servidor.mem_pct, resumen.servidor.mem_total_mb)} />
-        <KpiCard label="Tiempo en línea" value={resumen.servidor.uptime} accent={C.purple} icon={Clock} sub="Desde el último reinicio" />
+    <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
+
+      {/* Banner de estado general */}
+      <div style={{ padding:"16px 20px", borderRadius:13, background:estado.bg, border:`1px solid ${estado.bd}`, display:"flex", alignItems:"center", gap:14 }}>
+        <div style={{ width:40, height:40, borderRadius:10, background:`${estado.color}18`, border:`1px solid ${estado.color}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <EstadoIcon size={18} color={estado.color} strokeWidth={2} />
+        </div>
+        <div>
+          <div style={{ fontSize:15, fontWeight:700, color:C.cream, fontFamily:FB }}>{estado.texto}</div>
+          <div style={{ fontSize:13, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{estado.sub}</div>
+        </div>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
-        <KpiCard label="Total de tablas" value={resumen.bd.tablas} accent={C.orange} icon={Table2} sub="En schema público" />
-        <KpiCard label="Total de filas" value={fmt(resumen.bd.filas)} accent={C.blue} icon={HardDrive} sub="Filas activas en todas las tablas" />
+
+      {/* KPIs principales — los 3 más útiles */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+        <KpiCard label="Tamaño de la BD"   value={resumen.bd.size}               accent={C.blue}   icon={Database} sub="Espacio total en disco"
+          tooltip="Cuánto espacio ocupa toda la información de la plataforma (obras, usuarios, ventas) en el servidor." />
+        <KpiCard label="Tiempo en línea"   value={resumen.servidor.uptime}       accent={C.purple} icon={Clock}    sub="Desde el último reinicio"
+          tooltip="Cuánto tiempo lleva el servidor funcionando sin interrupciones. Un valor alto indica estabilidad." />
         <KpiCard label="Conexiones activas" value={resumen.rendimiento.conexiones_activas}
           accent={resumen.rendimiento.conexiones_activas>20?C.gold:C.green} icon={Users}
-          sub={`${resumen.rendimiento.conexiones_total} total · ${resumen.rendimiento.conexiones_activas>20?"⚠ Alta demanda":"Normal"}`} />
-        <KpiCard label="Índices inactivos" value={resumen.indices.sin_uso}
-          accent={resumen.indices.sin_uso>5?C.gold:C.green} icon={Zap}
-          sub={resumen.indices.sin_uso>0?"Sin uso — candidatos a eliminar":"Sin índices innecesarios"} />
+          sub={resumen.rendimiento.conexiones_activas>20?"⚠ Alta demanda":"Dentro del rango normal"}
+          tooltip="Cuántos usuarios o procesos están usando la base de datos en este momento. Más de 20 simultáneas puede indicar alta carga." />
       </div>
-      <TxStats rendimiento={resumen.rendimiento} />
+
+      {/* Detalles técnicos colapsados */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <button onClick={()=>setVerTecnico(v=>!v)}
+          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 18px", background:verTecnico?"rgba(0,0,0,0.02)":C.card, border:"none", cursor:"pointer", fontFamily:FB, transition:"background .15s" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Activity size={13} color={C.creamMut} />
+            <span style={{ fontSize:13.5, fontWeight:700, color:C.creamSub, fontFamily:FB }}>Métricas técnicas detalladas</span>
+            <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>caché, RAM, tablas, índices, transacciones</span>
+          </div>
+          {verTecnico ? <ChevronUp size={14} color={C.creamMut}/> : <ChevronDown size={14} color={C.creamMut}/>}
+        </button>
+
+        {verTecnico && (
+          <div style={{ borderTop:`1px solid ${C.border}`, padding:"14px", display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+              <KpiCard label="Eficiencia de caché" value={`${resumen.rendimiento.cache_hit_ratio}%`}
+                sub={getCacheSub(resumen.rendimiento.cache_hit_ratio)}
+                accent={getCacheAccent(resumen.rendimiento.cache_hit_ratio)} icon={TrendingUp}
+                tooltip="Porcentaje de datos que se leen desde la memoria RAM en lugar del disco. Idealmente debe estar por encima del 99%." />
+              <KpiCard label="RAM del servidor" value={`${resumen.servidor.mem_usada_mb} MB`}
+                accent={getMemAccent(resumen.servidor.mem_pct)} icon={Cpu}
+                sub={getMemSub(resumen.servidor.mem_pct, resumen.servidor.mem_total_mb)}
+                tooltip="Memoria RAM que está usando el servidor en este momento. Si supera el 85% puede volverse lento." />
+              <KpiCard label="Total de tablas" value={resumen.bd.tablas} accent={C.orange} icon={Table2} sub="En schema público"
+                tooltip="Número de tablas que existen en la base de datos (usuarios, obras, ventas, etc.)." />
+              <KpiCard label="Total de filas"  value={fmt(resumen.bd.filas)} accent={C.blue} icon={HardDrive} sub="Filas activas"
+                tooltip="Cantidad total de registros almacenados en todas las tablas de la base de datos." />
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
+              <KpiCard label="Índices inactivos" value={resumen.indices.sin_uso}
+                accent={resumen.indices.sin_uso>5?C.gold:C.green} icon={Zap}
+                sub={resumen.indices.sin_uso>0?"Sin uso — candidatos a eliminar":"Sin índices innecesarios"}
+                tooltip="Los índices aceleran las búsquedas. Si hay índices que nunca se usan, ocupan espacio innecesario y se pueden eliminar." />
+              <KpiCard label="Conexiones totales" value={resumen.rendimiento.conexiones_total}
+                accent={C.blue} icon={Users} sub={`${resumen.rendimiento.conexiones_inactivas} inactivas`}
+                tooltip="Total de conexiones abiertas con la base de datos, incluyendo las que están en espera." />
+            </div>
+            <TxStats rendimiento={resumen.rendimiento} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -460,23 +557,64 @@ function QueryCard({ q, index }: { q:QueryLenta; index:number }) {
 }
 
 function TabQueries({ queries, conexiones }: { queries:QueryLenta[]; conexiones:ConexionesState|null }) {
+  const [verConsultas, setVerConsultas] = useState(false);
   const activeConns = conexiones ? (conexiones.conexiones as ConexionData[]).filter(c=>c.query&&c.state==="active") : [];
+  const totalActivas = activeConns.length;
+  const tieneLentas  = queries.length > 0;
 
   return (
-    <div style={{ animation:"fadeUp .3s ease" }}>
-      <div style={{ background:C.card, borderRadius:13, overflow:"hidden", boxShadow:CS }}>
-        <div style={{ padding:"13px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-          <Search size={13} color={C.orange} />
-          <span style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FB }}>Consultas más lentas</span>
-          <span style={{ fontSize:12, color:C.creamMut, fontFamily:FB }}>Top 10 por tiempo promedio de ejecución</span>
+    <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
+
+      {/* Estado resumido */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+        <div style={{ padding:"16px 20px", borderRadius:12, background:tieneLentas?"rgba(255,193,16,0.07)":"rgba(34,201,122,0.07)", border:`1px solid ${tieneLentas?"rgba(255,193,16,0.25)":"rgba(34,201,122,0.22)"}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.creamSub, fontFamily:FB, marginBottom:4 }}>Consultas lentas detectadas</div>
+            <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>
+              {tieneLentas ? "Revisa los detalles técnicos para optimizarlas" : "No se encontraron consultas lentas"}
+            </div>
+          </div>
+          <div style={{ fontSize:28, fontWeight:700, color:tieneLentas?C.gold:C.green, fontFamily:FM, letterSpacing:"-0.02em" }}>{queries.length}</div>
         </div>
-        <div style={{ padding:"8px 10px" }}>
-          {queries.length===0 ? (
-            <QueriesFallback activeConns={activeConns} />
-          ) : queries.map((q,i)=>(
-            <QueryCard key={`q-${i}`} q={q} index={i} />
-          ))}
+        <div style={{ padding:"16px 20px", borderRadius:12, background:totalActivas>0?"rgba(34,201,122,0.07)":"rgba(0,0,0,0.02)", border:`1px solid ${totalActivas>0?"rgba(34,201,122,0.22)":C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.creamSub, fontFamily:FB, marginBottom:4 }}>Consultas en ejecución ahora</div>
+            <div style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>
+              {totalActivas > 0 ? "Hay operaciones activas en este momento" : "Sin actividad en este momento"}
+            </div>
+          </div>
+          <div style={{ fontSize:28, fontWeight:700, color:totalActivas>0?C.green:C.creamMut, fontFamily:FM, letterSpacing:"-0.02em" }}>{totalActivas}</div>
         </div>
+      </div>
+
+      {/* Detalle técnico colapsado */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <button onClick={()=>setVerConsultas(v=>!v)}
+          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 18px", background:verConsultas?"rgba(0,0,0,0.02)":C.card, border:"none", cursor:"pointer", fontFamily:FB, transition:"background .15s" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Search size={13} color={C.creamMut} />
+            <span style={{ fontSize:13.5, fontWeight:700, color:C.creamSub, fontFamily:FB }}>Detalle de consultas SQL</span>
+            <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>tiempos de ejecución y consultas activas</span>
+          </div>
+          {verConsultas ? <ChevronUp size={14} color={C.creamMut}/> : <ChevronDown size={14} color={C.creamMut}/>}
+        </button>
+
+        {verConsultas && (
+          <div style={{ borderTop:`1px solid ${C.border}` }}>
+            <div style={{ padding:"10px 10px 4px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8, paddingLeft:16 }}>
+              <Search size={12} color={C.orange} />
+              <span style={{ fontSize:14, fontWeight:700, color:C.cream, fontFamily:FB }}>Consultas más lentas</span>
+              <span style={{ fontSize:12, color:C.creamMut, fontFamily:FB }}>Top 10 por tiempo promedio</span>
+            </div>
+            <div style={{ padding:"8px 10px" }}>
+              {queries.length===0 ? (
+                <QueriesFallback activeConns={activeConns} />
+              ) : queries.map((q,i)=>(
+                <QueryCard key={`q-${i}`} q={q} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -484,14 +622,11 @@ function TabQueries({ queries, conexiones }: { queries:QueryLenta[]; conexiones:
 
 function QueriesFallback({ activeConns }: { activeConns:ConexionData[] }) {
   return (
-    <div style={{ padding:"20px" }}>
-      <div style={{ padding:"14px 16px", borderRadius:10, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:14, display:"flex", alignItems:"flex-start", gap:10 }}>
+    <div style={{ padding:"16px" }}>
+      <div style={{ padding:"12px 16px", borderRadius:10, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:12, display:"flex", alignItems:"flex-start", gap:10 }}>
         <Info size={14} color={C.blue} style={{ flexShrink:0, marginTop:1 }} />
-        <div>
-          <div style={{ fontSize:14, fontWeight:700, color:C.cream, fontFamily:FB, marginBottom:2 }}>pg_stat_statements no disponible</div>
-          <div style={{ fontSize:13, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
-            Requiere activación por el proveedor. Mostrando consultas activas en tiempo real desde <span style={{ color:C.blue, fontFamily:FM }}>pg_stat_activity</span>.
-          </div>
+        <div style={{ fontSize:13, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
+          El historial de consultas lentas no está habilitado en este servidor. Se muestran las consultas que están corriendo en este momento.
         </div>
       </div>
       {activeConns.length > 0 ? (
@@ -826,33 +961,102 @@ function EventosEspera({ eventos }: { eventos:{ wait_event_type:string; wait_eve
 // TAB: CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════════════════
 function TabConfiguracion({ config }: { config:ConfigState }) {
+  const [verTecnico, setVerTecnico] = useState(false);
+
+  const paramsConProblema = config.parametros.filter(p => {
+    const ev = config.evaluaciones[p.name];
+    return ev && ev.estado !== "ok";
+  });
+  const paramsOk = config.parametros.filter(p => {
+    const ev = config.evaluaciones[p.name];
+    return !ev || ev.estado === "ok";
+  });
+
+  const totalCriticos   = paramsConProblema.filter(p => config.evaluaciones[p.name]?.estado === "critico").length;
+  const totalAdvertencias = paramsConProblema.filter(p => config.evaluaciones[p.name]?.estado === "advertencia").length;
+  const totalOk         = paramsOk.length;
+
   return (
     <div style={{ animation:"fadeUp .3s ease", display:"flex", flexDirection:"column", gap:12 }}>
-      <div style={{ background:C.card, borderRadius:13, boxShadow:CS, padding:"14px 18px" }}>
-        <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, marginBottom:6 }}>Versión del motor de base de datos</div>
-        <div style={{ fontSize:14, color:C.green, fontFamily:FM, fontWeight:600 }}>{config.version}</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
-          {config.extensiones.map(e=>(
-            <span key={e.name} style={{ fontSize:11.5, padding:"2px 8px", borderRadius:20, background:"rgba(34,201,122,0.10)", border:"1px solid rgba(34,201,122,0.22)", color:C.green, fontFamily:FM }}>
-              {e.name} {e.installed_version}
-            </span>
-          ))}
-        </div>
+
+      {/* Resumen de estado */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+        {[
+          { label:"Sin problemas", value:totalOk,          color:C.green,   bg:"rgba(34,201,122,0.07)",  bd:"rgba(34,201,122,0.20)"  },
+          { label:"Advertencias",  value:totalAdvertencias, color:C.gold,    bg:"rgba(255,193,16,0.07)",  bd:"rgba(255,193,16,0.20)"  },
+          { label:"Críticos",      value:totalCriticos,     color:totalCriticos>0?C.red:C.creamMut, bg:totalCriticos>0?"rgba(240,78,107,0.07)":"rgba(0,0,0,0.02)", bd:totalCriticos>0?"rgba(240,78,107,0.22)":C.border },
+        ].map(({ label,value,color,bg,bd })=>(
+          <div key={label} style={{ background:bg, border:`1px solid ${bd}`, borderRadius:12, padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ fontSize:13, color, fontFamily:FB, fontWeight:600 }}>{label}</div>
+            <div style={{ fontSize:26, fontWeight:700, color, fontFamily:FM, letterSpacing:"-0.02em" }}>{value}</div>
+          </div>
+        ))}
       </div>
-      <div style={{ background:C.card, borderRadius:13, overflow:"hidden", boxShadow:CS }}>
-        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
-          <Settings size={13} color={C.orange} />
-          <span style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FB }}>Parámetros clave de PostgreSQL</span>
+
+      {/* Parámetros con advertencia o crítico — siempre visibles */}
+      {paramsConProblema.length > 0 && (
+        <div style={{ background:C.card, borderRadius:13, overflow:"hidden", boxShadow:CS }}>
+          <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:8 }}>
+            <AlertTriangle size={13} color={C.gold} />
+            <span style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FB }}>Parámetros que requieren atención</span>
+          </div>
+          <div style={{ padding:"8px 10px" }}>
+            {paramsConProblema.map((p,i)=><ParamRow key={p.name} param={p} eval={config.evaluaciones[p.name]} index={i} soloRecomendacion />)}
+          </div>
         </div>
-        <div style={{ padding:"8px 10px" }}>
-          {config.parametros.map((p,i)=><ParamRow key={p.name} param={p} eval={config.evaluaciones[p.name]} index={i} />)}
+      )}
+
+      {paramsConProblema.length === 0 && (
+        <div style={{ padding:"16px 20px", borderRadius:12, background:"rgba(34,201,122,0.07)", border:"1px solid rgba(34,201,122,0.20)", display:"flex", alignItems:"center", gap:10 }}>
+          <CheckCircle size={16} color={C.green} />
+          <span style={{ fontSize:14, fontWeight:600, color:C.green, fontFamily:FB }}>Todo en orden — no hay parámetros con problemas</span>
         </div>
+      )}
+
+      {/* Detalles técnicos — colapsados por defecto */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <button onClick={()=>setVerTecnico(v=>!v)}
+          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 18px", background:verTecnico?"rgba(0,0,0,0.02)":C.card, border:"none", cursor:"pointer", fontFamily:FB, transition:"background .15s" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Settings size={13} color={C.creamMut} />
+            <span style={{ fontSize:13.5, fontWeight:700, color:C.creamSub, fontFamily:FB }}>Detalles técnicos</span>
+            <span style={{ fontSize:11.5, color:C.creamMut, fontFamily:FB }}>versión, extensiones y todos los parámetros</span>
+          </div>
+          {verTecnico ? <ChevronUp size={14} color={C.creamMut}/> : <ChevronDown size={14} color={C.creamMut}/>}
+        </button>
+
+        {verTecnico && (
+          <div style={{ borderTop:`1px solid ${C.border}`, display:"flex", flexDirection:"column", gap:12, padding:"14px 14px" }}>
+            {/* Versión y extensiones */}
+            <div style={{ background:C.bg, borderRadius:10, padding:"14px 18px" }}>
+              <div style={{ fontSize:12, color:C.creamMut, fontFamily:FB, marginBottom:5 }}>Versión del motor de base de datos</div>
+              <div style={{ fontSize:13.5, color:C.green, fontFamily:FM, fontWeight:600, marginBottom:10 }}>{config.version}</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {config.extensiones.map(e=>(
+                  <span key={e.name} style={{ fontSize:11.5, padding:"2px 8px", borderRadius:20, background:"rgba(34,201,122,0.10)", border:"1px solid rgba(34,201,122,0.22)", color:C.green, fontFamily:FM }}>
+                    {e.name} {e.installed_version}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Todos los parámetros */}
+            <div style={{ background:C.card, borderRadius:10, overflow:"hidden", border:`1px solid ${C.border}` }}>
+              <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.borderBr}`, display:"flex", alignItems:"center", gap:7 }}>
+                <Settings size={12} color={C.orange} />
+                <span style={{ fontSize:13.5, fontWeight:700, color:C.cream, fontFamily:FB }}>Todos los parámetros de PostgreSQL</span>
+              </div>
+              <div style={{ padding:"6px 8px" }}>
+                {config.parametros.map((p,i)=><ParamRow key={p.name} param={p} eval={config.evaluaciones[p.name]} index={i} />)}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ParamRow({ param, eval: ev, index }: { param:ParamPG; eval?:{estado:string;recomendacion:string|null}; index:number }) {
+function ParamRow({ param, eval: ev, index, soloRecomendacion }: { param:ParamPG; eval?:{estado:string;recomendacion:string|null}; index:number; soloRecomendacion?:boolean }) {
   const color = ev?.estado==="critico"?C.red:ev?.estado==="advertencia"?C.gold:ev?.estado==="info"?C.blue:C.green;
   return (
     <div style={{ padding:"10px 14px", borderRadius:9, marginBottom:4, background:index%2===0?"rgba(0,0,0,0.015)":"transparent", border:`1px solid ${ev?.estado!=="ok"&&ev?.estado?`${color}20`:C.border}` }}>
@@ -862,12 +1066,12 @@ function ParamRow({ param, eval: ev, index }: { param:ParamPG; eval?:{estado:str
             <span style={{ fontSize:14, fontWeight:700, color:C.cream, fontFamily:FM }}>{param.name}</span>
             <span style={{ fontSize:10.5, padding:"1px 6px", borderRadius:20, background:`${color}18`, color, fontWeight:700, border:`1px solid ${color}25` }}>{ev?.estado??'ok'}</span>
           </div>
-          <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, lineHeight:1.5 }}>{param.short_desc}</div>
+          {!soloRecomendacion && <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, lineHeight:1.5 }}>{param.short_desc}</div>}
           {ev?.recomendacion&&<div style={{ fontSize:12.5, color, fontFamily:FB, marginTop:4, fontStyle:"italic" }}>💡 {ev.recomendacion}</div>}
         </div>
         <div style={{ textAlign:"right", flexShrink:0 }}>
           <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FM }}>{param.setting}<span style={{ fontSize:11, color:C.creamMut, fontWeight:400 }}> {param.unit}</span></div>
-          <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{param.category}</div>
+          {!soloRecomendacion && <div style={{ fontSize:11, color:C.creamMut, fontFamily:FB, marginTop:2 }}>{param.category}</div>}
         </div>
       </div>
     </div>
@@ -939,6 +1143,7 @@ function HerramientaDetalle({ h }: { h:Herramienta }) {
 
 function TabHerramientas({ herramientas }: { herramientas:Herramienta[] }) {
   const [expandedHerr, setExpandedHerr] = useState<string|null>(null);
+  const [verDocumentacion, setVerDocumentacion] = useState(false);
   const grouped = herramientas.reduce((acc, h) => {
     if (!acc[h.categoria]) acc[h.categoria] = [];
     acc[h.categoria].push(h);
@@ -947,25 +1152,42 @@ function TabHerramientas({ herramientas }: { herramientas:Herramienta[] }) {
 
   return (
     <div style={{ animation:"fadeUp .3s ease" }}>
-      <div style={{ padding:"14px 18px", borderRadius:12, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:16, display:"flex", alignItems:"flex-start", gap:12 }}>
-        <BookOpen size={18} color={C.blue} style={{ flexShrink:0, marginTop:2 }} />
-        <div>
-          <div style={{ fontSize:15, fontWeight:800, color:C.cream, fontFamily:FB, marginBottom:4 }}>Herramientas de Monitoreo del SGBD</div>
-          <div style={{ fontSize:13.5, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
-            PostgreSQL incluye un conjunto de <strong style={{ color:C.blue }}>vistas del sistema, extensiones y comandos</strong> que permiten supervisar el rendimiento en tiempo real.
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:13, overflow:"hidden" }}>
+        <button onClick={()=>setVerDocumentacion(v=>!v)}
+          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", background:verDocumentacion?"rgba(121,170,245,0.06)":C.card, border:"none", cursor:"pointer", fontFamily:FB, transition:"background .15s" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:34, height:34, borderRadius:9, background:"rgba(121,170,245,0.12)", border:"1px solid rgba(121,170,245,0.22)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <BookOpen size={15} color={C.blue} />
+            </div>
+            <div style={{ textAlign:"left" }}>
+              <div style={{ fontSize:14, fontWeight:700, color:C.cream, fontFamily:FB }}>Documentación técnica avanzada</div>
+              <div style={{ fontSize:12.5, color:C.creamMut, fontFamily:FB, marginTop:2 }}>Vistas del sistema, extensiones y comandos de PostgreSQL</div>
+            </div>
           </div>
-        </div>
-      </div>
-      {Object.entries(grouped).map(([categoria, items])=>(
-        <div key={categoria} style={{ marginBottom:14 }}>
-          <div style={{ fontSize:12, fontWeight:800, color:C.creamMut, letterSpacing:"0.10em", textTransform:"uppercase", fontFamily:FB, marginBottom:8, paddingLeft:4 }}>{categoria}</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-            {items.map(h=>(
-              <HerramientaCard key={h.nombre} h={h} expanded={expandedHerr===h.nombre} onToggle={()=>setExpandedHerr(expandedHerr===h.nombre?null:h.nombre)} />
+          {verDocumentacion ? <ChevronUp size={14} color={C.creamMut}/> : <ChevronDown size={14} color={C.creamMut}/>}
+        </button>
+
+        {verDocumentacion && (
+          <div style={{ borderTop:`1px solid ${C.border}`, padding:"16px 16px", display:"flex", flexDirection:"column", gap:0 }}>
+            <div style={{ padding:"12px 14px", borderRadius:10, background:"rgba(121,170,245,0.07)", border:`1px solid rgba(121,170,245,0.20)`, marginBottom:16, display:"flex", alignItems:"flex-start", gap:10 }}>
+              <Info size={14} color={C.blue} style={{ flexShrink:0, marginTop:2 }} />
+              <div style={{ fontSize:13, color:C.creamMut, fontFamily:FB, lineHeight:1.6 }}>
+                PostgreSQL incluye <strong style={{ color:C.blue }}>vistas del sistema, extensiones y comandos</strong> que permiten supervisar el rendimiento en tiempo real.
+              </div>
+            </div>
+            {Object.entries(grouped).map(([categoria, items])=>(
+              <div key={categoria} style={{ marginBottom:14 }}>
+                <div style={{ fontSize:12, fontWeight:800, color:C.creamMut, letterSpacing:"0.10em", textTransform:"uppercase", fontFamily:FB, marginBottom:8, paddingLeft:4 }}>{categoria}</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {items.map(h=>(
+                    <HerramientaCard key={h.nombre} h={h} expanded={expandedHerr===h.nombre} onToggle={()=>setExpandedHerr(expandedHerr===h.nombre?null:h.nombre)} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      ))}
+        )}
+      </div>
     </div>
   );
 }
