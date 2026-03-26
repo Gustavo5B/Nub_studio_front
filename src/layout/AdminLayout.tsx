@@ -17,9 +17,9 @@ export default function AdminLayout() {
     <div style={{
       display: "flex",
       minHeight: "100vh",
-      background: "#0C0812",
+      background: "#EDEEF3",
       fontFamily: "'Outfit', sans-serif",
-      color: "#FFF8EE",
+      color: "#14122A",
     }}>
       <AdminSidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -30,12 +30,12 @@ export default function AdminLayout() {
         @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes modalIn { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
         * { box-sizing: border-box; }
-        input::placeholder, textarea::placeholder { color: rgba(255,232,200,0.20); }
-        select option { background: #100D1C; color: #FFF8EE; }
+        input::placeholder, textarea::placeholder { color: rgba(20,18,42,0.30); }
+        select option { background: #FFFFFF; color: #14122A; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,200,150,0.10); border-radius: 8px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,200,150,0.18); }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.20); }
       `}</style>
     </div>
   );

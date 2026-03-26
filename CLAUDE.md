@@ -50,6 +50,67 @@ Route guards (`PrivateRoute`, `AdminRoute`, `ArtistaRoute`) read auth state from
 - `src/services/obraService.ts` — artwork CRUD + categories/techniques/artists
 - `src/utils/handleApiError.ts` — error translation to Spanish
 
+## Design System — Admin Panel (tema claro)
+
+El panel de admin usa un **tema claro** con la paleta de marca NU★B. Aplicar en cualquier vista nueva bajo `/admin/*`.
+
+### Paleta de colores (`C`)
+```ts
+const C = {
+  orange:"#E8640C", pink:"#A83B90", purple:"#6028AA",
+  blue:"#2D6FBE",   gold:"#A87006", green:"#0E8A50",
+  cream:"#14121E",  creamSub:"#5A5870",
+  creamMut:"#9896A8",
+  bgDeep:"#FFFFFF", bg:"#F9F8FC",
+  card:"#FFFFFF",
+  border:"#E6E4EF",
+  borderBr:"rgba(0,0,0,0.05)",
+  borderHi:"rgba(0,0,0,0.10)",
+  red:"#C4304A",
+};
+const CS = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.055)"; // sombra de tarjeta
+```
+
+### Tipografía
+```ts
+const FB = "'Outfit', sans-serif";       // texto, labels, títulos
+const FM = "'JetBrains Mono', 'Fira Code', monospace"; // números y datos
+```
+- **Outfit** → todo texto: labels, descripciones, títulos de sección, botones
+- **JetBrains Mono** → exclusivo para números, métricas, IDs, código SQL
+- Importar ambas fuentes vía `@import` en el `<style>` del componente:
+  ```css
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+  ```
+
+### Reglas de diseño
+- Fondo de página: `C.bg` (`#F9F8FC`), fondo de tarjeta: `C.card` (`#FFFFFF`)
+- Todas las tarjetas llevan `boxShadow: CS` — nunca solo borde sin sombra
+- Tarjetas KPI — dos variantes aceptadas según el contexto:
+  - **`border-left: 3px solid <accent>`** — estándar para grids densos de datos (ej. `AdminMonitoreo`)
+  - **Tira de color superior (`height: 2.5px`, `borderRadius: 2px`)** — para grids bento donde las tarjetas son más cuadradas (ej. `AdminDashboard`)
+  - Ambas usan `boxShadow: CS` y el mismo sistema de colores de acento
+- Texto principal: `C.cream` — subtexto: `C.creamSub` (`#5A5870`, weight 500) — nunca usar `#9896A8` para texto legible
+- Cajas de código / SQL: `background: "#F3F2F8"` con `border: 1px solid C.border`
+- Nunca usar `rgba(0,0,0,0.2+)` como fondo en tema claro — se ve como bloque oscuro
+
+### Escala tipográfica
+| Uso | Tamaño |
+|-----|--------|
+| Label uppercase en KPI | 10px, weight 700 |
+| Subtexto secundario | 11.5px, weight 500 |
+| Texto de cuerpo / descripciones | 13px |
+| Títulos de sección | 15px, weight 700–800 |
+| Mini-números en tarjetas | 20px, FM, weight 700 |
+| Números TxStats | 24px, FM, weight 700 |
+| Números KPI grandes | 30px, FM, weight 700, letter-spacing -0.02em |
+| Título de página (h1) | 28px, weight 600 |
+
+### Referencia
+Ver implementación completa en `src/pages/private/admin/AdminMonitoreo.tsx`.
+
+---
+
 ## Coding Conventions — Always Follow
 
 ### Styles
