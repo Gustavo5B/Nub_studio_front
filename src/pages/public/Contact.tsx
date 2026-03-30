@@ -22,15 +22,15 @@ const FacebookIcon = ({ size }: { readonly size: number }) => (
 import { useNavigate } from "react-router-dom";
 
 const C = {
-  orange: "#FF840E",
-  pink: "#CC59AD",
-  purple: "#8D4CCD",
-  gold: "#FFC110",
-  bg: "#0f0c1a",
-  border: "rgba(255,255,255,0.1)",
-  text: "#ffffff",
-  muted: "rgba(255,255,255,0.5)",
-  card: "rgba(255,255,255,0.03)",
+  orange: "#E8640C",
+  pink: "#A83B90",
+  purple: "#6028AA",
+  gold: "#A87006",
+  bg: "#F9F8FC",
+  border: "#E6E4EF",
+  text: "#14121E",
+  muted: "#9896A8",
+  card: "#FFFFFF",
 };
 
 const inputStyle: React.CSSProperties = {
@@ -38,9 +38,9 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   padding: "12px 16px",
   borderRadius: 12,
-  border: "1.5px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#ffffff",
+  border: "1.5px solid #E6E4EF",
+  background: "#FFFFFF",
+  color: "#14121E",
   fontSize: 14,
   fontFamily: "'Outfit', sans-serif",
   outline: "none",
@@ -53,7 +53,7 @@ const labelStyle: React.CSSProperties = {
   gap: 6,
   fontSize: 13,
   fontWeight: 600,
-  color: "rgba(255,255,255,0.75)",
+  color: "#5A5870",
   marginBottom: 8,
 };
 
@@ -85,11 +85,11 @@ export default function Contact() {
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     e.currentTarget.style.borderColor = C.orange;
-    e.currentTarget.style.background = "rgba(255,132,14,0.06)";
+    e.currentTarget.style.background = "rgba(232,100,12,0.04)";
   };
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+    e.currentTarget.style.borderColor = "#E6E4EF";
+    e.currentTarget.style.background = "#FFFFFF";
   };
 
   return (
@@ -103,10 +103,10 @@ export default function Contact() {
     }}>
 
       {/* ── Rainbow line top ── */}
-      <div style={{ position:"fixed", top:0, left:0, right:0, height:3, background:"linear-gradient(90deg,#FF840E,#CC59AD,#8D4CCD,#FFC110)", zIndex:200, pointerEvents:"none" }} />
+      <div style={{ position:"fixed", top:0, left:0, right:0, height:3, background:"linear-gradient(90deg,#E8640C,#A83B90,#6028AA,#A87006)", zIndex:200, pointerEvents:"none" }} />
 
       {/* ── Grid texture overlay ── */}
-      <div style={{ position:"fixed", inset:0, backgroundImage:"url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.4'%3E%3Cpath d='M0 0h40v40H0z'/%3E%3C/g%3E%3C/svg%3E\")", opacity:0.04, pointerEvents:"none", zIndex:0 }} />
+      <div style={{ position:"fixed", inset:0, backgroundImage:"url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23000000' stroke-width='0.4'%3E%3Cpath d='M0 0h40v40H0z'/%3E%3C/g%3E%3C/svg%3E\")", opacity:0.04, pointerEvents:"none", zIndex:0 }} />
 
       {/* ── Orbs de fondo ── */}
       <div style={{ position: "fixed", top: -150, left: -150, width: 500, height: 500, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}18, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
@@ -120,27 +120,27 @@ export default function Contact() {
           position: "fixed", top: 20, left: 20, zIndex: 100,
           display: "flex", alignItems: "center", gap: 8,
           padding: "10px 18px", borderRadius: 100,
-          background: "rgba(15,12,26,0.85)",
+          background: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600,
+          border: "1px solid #E6E4EF",
+          color: "#5A5870", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
           transition: "all .22s ease",
         }}
         onMouseEnter={e => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(255,132,14,0.15)";
-          el.style.borderColor = `${C.orange}50`;
+          el.style.background = "rgba(232,100,12,0.08)";
+          el.style.borderColor = `rgba(232,100,12,0.30)`;
           el.style.color = C.orange;
           el.style.transform = "translateX(-2px)";
         }}
         onMouseLeave={e => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(15,12,26,0.85)";
-          el.style.borderColor = "rgba(255,255,255,0.12)";
-          el.style.color = "rgba(255,255,255,0.7)";
+          el.style.background = "rgba(255,255,255,0.97)";
+          el.style.borderColor = "#E6E4EF";
+          el.style.color = "#5A5870";
           el.style.transform = "translateX(0)";
         }}
       >
@@ -195,9 +195,9 @@ export default function Contact() {
               <div key={label} style={{
                 display: "flex", alignItems: "center", gap: 7,
                 padding: "8px 16px", borderRadius: 100,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.09)",
-                fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)",
+                background: "rgba(0,0,0,0.03)",
+                border: "1px solid #E6E4EF",
+                fontSize: 13, fontWeight: 600, color: "#5A5870",
               }}>
                 <span style={{ color: C.orange }}>{icon}</span>
                 {label}
@@ -252,8 +252,7 @@ export default function Contact() {
                 display: "flex", alignItems: "center", gap: 16,
                 padding: "18px 20px", borderRadius: 16,
                 background: C.card,
-                border: "1px solid rgba(255,255,255,0.07)",
-                backdropFilter: "blur(20px)",
+                border: "1px solid #E6E4EF",
                 cursor: "default",
               }}
               >
@@ -330,9 +329,9 @@ export default function Contact() {
                   <button key={label} style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "9px 14px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.09)",
-                    color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: 500,
+                    background: "rgba(0,0,0,0.03)",
+                    border: "1px solid #E6E4EF",
+                    color: "#5A5870", fontSize: 13, fontWeight: 500,
                     cursor: "pointer", fontFamily: "'Outfit', sans-serif",
                     transition: "all .15s",
                   }}
@@ -342,9 +341,9 @@ export default function Contact() {
                       (e.currentTarget as HTMLElement).style.background = `${C.orange}10`;
                     }}
                     onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.09)";
-                      (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.75)";
-                      (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "#E6E4EF";
+                      (e.currentTarget as HTMLElement).style.color = "#5A5870";
+                      (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.03)";
                     }}
                   >
                     {icon}
@@ -360,13 +359,11 @@ export default function Contact() {
 
             {/* Form card */}
             <div style={{
-              background: "rgba(18,12,32,0.97)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "#FFFFFF",
+              border: "1px solid #E6E4EF",
               borderRadius: 24,
               padding: "36px 32px",
-              backdropFilter: "blur(40px)",
-              WebkitBackdropFilter: "blur(40px)",
-              boxShadow: "0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
+              boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
               position: "relative",
               overflow: "hidden",
             }}>
@@ -503,15 +500,15 @@ export default function Contact() {
             <div style={{
               borderRadius: 24,
               overflow: "hidden",
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(18,12,32,0.97)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+              border: "1px solid #E6E4EF",
+              background: "#FFFFFF",
+              boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
               position: "relative",
             }}>
               {/* Map header */}
               <div style={{
                 padding: "20px 24px",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                borderBottom: "1px solid #E6E4EF",
                 display: "flex", alignItems: "center", gap: 14,
               }}>
                 <div style={{
@@ -560,14 +557,14 @@ export default function Contact() {
                 {/* Gradient vignette over map */}
                 <div style={{
                   position: "absolute", inset: 0, pointerEvents: "none",
-                  background: `linear-gradient(to bottom, rgba(18,12,32,0.15), transparent 30%, transparent 70%, rgba(18,12,32,0.3))`,
+                  background: `linear-gradient(to bottom, rgba(255,255,255,0.10), transparent 30%, transparent 70%, rgba(255,255,255,0.15))`,
                 }} />
               </div>
 
               {/* Quick info row */}
               <div style={{
                 display: "flex",
-                borderTop: "1px solid rgba(255,255,255,0.07)",
+                borderTop: "1px solid #E6E4EF",
               }}>
                 {[
                   { icon: <Clock size={14} />, text: "Abierto ahora" },
@@ -579,8 +576,8 @@ export default function Contact() {
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                     padding: "14px 8px",
                     fontSize: 12, fontWeight: 600,
-                    color: "rgba(255,255,255,0.6)",
-                    borderRight: i < 2 ? "1px solid rgba(255,255,255,0.07)" : "none",
+                    color: "#5A5870",
+                    borderRight: i < 2 ? "1px solid #E6E4EF" : "none",
                   }}>
                     <span style={{ color: C.orange }}>{icon}</span>
                     {text}
@@ -594,7 +591,7 @@ export default function Contact() {
 
       {/* ── FAQ Section (estática) ── */}
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 24px 80px", position:"relative", zIndex:1 }}>
-        <div style={{ height:1, background:"linear-gradient(90deg,transparent,rgba(255,200,150,0.18),transparent)", marginBottom:64 }} />
+        <div style={{ height:1, background:"linear-gradient(90deg,transparent,rgba(0,0,0,0.08),transparent)", marginBottom:64 }} />
         <div style={{ textAlign:"center", marginBottom:48 }}>
           <div style={{ fontSize:11, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:12, fontFamily:"'Outfit',sans-serif" }}>Preguntas frecuentes</div>
           <h2 style={{ fontSize:"clamp(24px,3vw,38px)", fontWeight:900, color:C.text, margin:0, fontFamily:"'Outfit',sans-serif" }}>
@@ -638,8 +635,8 @@ export default function Contact() {
             },
           ].map(({ q, a, color }) => (
             <div key={q} style={{
-              background:"rgba(255,255,255,0.025)",
-              border:`1px solid rgba(255,255,255,0.07)`,
+              background:"#FFFFFF",
+              border:`1px solid #E6E4EF`,
               borderRadius:18,
               padding:"24px 22px",
               backdropFilter:"blur(20px)",
@@ -652,7 +649,7 @@ export default function Contact() {
             </div>
           ))}
         </div>
-        <div style={{ fontSize:11.5, color:"rgba(255,255,255,0.2)", fontStyle:"italic", textAlign:"center", marginTop:28, fontFamily:"'Outfit',sans-serif" }}>
+        <div style={{ fontSize:11.5, color:"#9896A8", fontStyle:"italic", textAlign:"center", marginTop:28, fontFamily:"'Outfit',sans-serif" }}>
           (FAQ estático — hacer dinámico desde /api/faq)
         </div>
       </div>
@@ -661,10 +658,10 @@ export default function Contact() {
       <div style={{
         textAlign: "center",
         padding: "24px",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
+        borderTop: "1px solid #E6E4EF",
         position: "relative", zIndex: 1,
       }}>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", margin: 0 }}>
+        <p style={{ fontSize: 12, color: "#9896A8", margin: 0 }}>
           © {new Date().getFullYear()} Altar Studio. Todos los derechos reservados.
         </p>
       </div>
@@ -673,7 +670,7 @@ export default function Contact() {
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         @keyframes msgIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } }
-        select option { background: #1a1030; color: #ffffff; }
+        select option { background: #FFFFFF; color: #14121E; }
         @media (max-width: 860px) {
           .contact-grid { grid-template-columns: 1fr !important; }
           .faq-grid { grid-template-columns: 1fr !important; }

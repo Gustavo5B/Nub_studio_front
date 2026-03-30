@@ -115,7 +115,7 @@ export default function TwoFactorVerify() {
           </div>
 
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <Shield size={48} style={{ color: '#FF6B35', margin: '0 auto' }} />
+            <Shield size={48} style={{ color: '#E8640C', margin: '0 auto' }} />
           </div>
 
           <h2 className="login-title">Verificación 2FA</h2>

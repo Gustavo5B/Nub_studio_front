@@ -6,25 +6,25 @@ import { Search,  ImageIcon, Palette, Sparkles, X, ChevronRight, Users } from "l
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.32)",
-  bg:       "#0C0812",
-  panel:    "#100D1C",
-  card:     "rgba(16,13,28,0.90)",
-  border:   "rgba(255,200,150,0.08)",
-  borderBr: "rgba(118,78,49,0.22)",
-  borderHi: "rgba(255,200,150,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  panel:    "#FFFFFF",
+  card:     "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
+  borderHi: "rgba(0,0,0,0.10)",
 };
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 const PALETTE = [C.orange, C.pink, C.purple, C.blue, C.gold];
 
 // Color dot per category index (cycles through PALETTE)
@@ -62,27 +62,27 @@ function SkeletonCard() {
       backdropFilter: "blur(20px)",
     }}>
       {/* Banner skeleton */}
-      <div style={{ height: 128, background: "rgba(255,200,150,0.04)", position: "relative", overflow: "hidden" }}>
+      <div style={{ height: 128, background: "rgba(0,0,0,0.02)", position: "relative", overflow: "hidden" }}>
         <div className="skeleton-shimmer" style={{ position: "absolute", inset: 0 }} />
       </div>
       {/* Avatar skeleton */}
       <div style={{ padding: "0 22px", marginTop: -38, marginBottom: 16, position: "relative", zIndex: 2 }}>
-        <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(255,200,150,0.07)", position: "relative", overflow: "hidden" }}>
+        <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(0,0,0,0.04)", position: "relative", overflow: "hidden" }}>
           <div className="skeleton-shimmer" style={{ position: "absolute", inset: 0 }} />
         </div>
       </div>
       {/* Text skeleton */}
       <div style={{ padding: "0 22px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ height: 16, borderRadius: 8, background: "rgba(255,200,150,0.07)", width: "65%", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 16, borderRadius: 8, background: "rgba(0,0,0,0.04)", width: "65%", position: "relative", overflow: "hidden" }}>
           <div className="skeleton-shimmer" style={{ position: "absolute", inset: 0 }} />
         </div>
-        <div style={{ height: 12, borderRadius: 8, background: "rgba(255,200,150,0.05)", width: "45%", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 12, borderRadius: 8, background: "rgba(0,0,0,0.03)", width: "45%", position: "relative", overflow: "hidden" }}>
           <div className="skeleton-shimmer" style={{ position: "absolute", inset: 0 }} />
         </div>
-        <div style={{ height: 12, borderRadius: 8, background: "rgba(255,200,150,0.04)", width: "90%", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 12, borderRadius: 8, background: "rgba(0,0,0,0.02)", width: "90%", position: "relative", overflow: "hidden" }}>
           <div className="skeleton-shimmer" style={{ position: "absolute", inset: 0 }} />
         </div>
-        <div style={{ height: 12, borderRadius: 8, background: "rgba(255,200,150,0.04)", width: "75%", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 12, borderRadius: 8, background: "rgba(0,0,0,0.02)", width: "75%", position: "relative", overflow: "hidden" }}>
           <div className="skeleton-shimmer" style={{ position: "absolute", inset: 0 }} />
         </div>
       </div>
@@ -214,7 +214,7 @@ function ArtistaCard({ artista, index }: { readonly artista: Artista; readonly i
             color: hov ? color : C.creamSub,
             fontWeight: 700, fontFamily: FB,
             transition: "color .2s",
-            background: hov ? `${color}14` : "rgba(255,200,150,0.04)",
+            background: hov ? `${color}14` : "rgba(0,0,0,0.02)",
             border: `1px solid ${hov ? color + "40" : C.borderBr}`,
             borderRadius: 8,
             padding: "5px 12px",
@@ -277,7 +277,7 @@ export default function Artistas() {
         {/* Grid texture */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: `linear-gradient(rgba(118,78,49,0.24) 1px, transparent 1px), linear-gradient(90deg, rgba(118,78,49,0.24) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)`,
           backgroundSize: "80px 80px",
           opacity: 0.2,
         }} />
@@ -308,7 +308,7 @@ export default function Artistas() {
             </p>
 
             {/* Buscador */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,200,150,0.04)", border: `1.5px solid ${C.borderBr}`, borderRadius: 13, padding: "11px 16px", maxWidth: 440, backdropFilter: "blur(12px)", opacity: visible ? 1 : 0, transition: "opacity .8s .45s" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(0,0,0,0.02)", border: `1.5px solid ${C.borderBr}`, borderRadius: 13, padding: "11px 16px", maxWidth: 440, backdropFilter: "blur(12px)", opacity: visible ? 1 : 0, transition: "opacity .8s .45s" }}>
               <Search size={15} color={C.creamMut} strokeWidth={1.8} />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar artistas…"
                 style={{ border: "none", outline: "none", background: "transparent", color: C.cream, fontSize: 14, flex: 1, fontFamily: FB }} />
@@ -355,7 +355,7 @@ export default function Artistas() {
                   style={{
                     padding: "7px 18px", borderRadius: 100,
                     border: `1px solid ${active ? catColor + "70" : C.borderBr}`,
-                    background: active ? `${catColor}18` : "rgba(255,200,150,0.04)",
+                    background: active ? `${catColor}18` : "rgba(0,0,0,0.02)",
                     color: active ? C.cream : C.creamSub,
                     fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: FB,
                     transition: "all .15s",
@@ -400,17 +400,17 @@ export default function Artistas() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
         * { box-sizing: border-box; }
-        input::placeholder { color: rgba(255,232,200,0.28); }
+        input::placeholder { color: #9896A8; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,200,150,0.12); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #E6E4EF; border-radius: 10px; }
         .skeleton-shimmer {
           background: linear-gradient(90deg, transparent, rgba(255,200,150,0.06), transparent);
           animation: shimmer 1.6s infinite;

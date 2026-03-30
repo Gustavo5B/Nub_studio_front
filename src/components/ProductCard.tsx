@@ -27,7 +27,7 @@ export default function ProductCard({
           src={image}
           alt={title}
           className="mp-img"
-          onError={e => { e.currentTarget.src = 'https://via.placeholder.com/300x300/1a1a2e/ff8a5b?text=Sin+imagen'; }}
+          onError={e => { e.currentTarget.src = 'https://via.placeholder.com/300x300/F9F8FC/E8640C?text=Sin+imagen'; }}
         />
         <button className="mp-wish" onClick={e => e.stopPropagation()}>
           <Heart size={16} />

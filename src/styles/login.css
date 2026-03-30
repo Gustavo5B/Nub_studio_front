@@ -3,10 +3,12 @@
 /* ============================================
    🎨 CONTENEDOR PRINCIPAL
 ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 .login-container {
   display: flex;
   min-height: 100vh;
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Outfit', sans-serif;
 }
 
 /* ============================================
@@ -14,7 +16,7 @@
 ============================================ */
 .login-banner {
   flex: 0 0 40%;
-  background: linear-gradient(135deg, #8D4CCD 0%, #CC4EA1 100%);
+  background: linear-gradient(135deg, #6028AA 0%, #A83B90 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,9 +251,9 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #FF840E;
+  border-color: #E8640C;
   background: white;
-  box-shadow: 0 0 0 3px rgba(255, 132, 14, 0.1);
+  box-shadow: 0 0 0 3px rgba(232, 100, 12, 0.08);
 }
 
 .form-group input:disabled {
@@ -344,7 +346,7 @@
 .btn-login {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #FF840E 0%, #FF6B00 100%);
+  background: linear-gradient(135deg, #E8640C 0%, #A83B90 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -352,7 +354,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(255, 132, 14, 0.3);
+  box-shadow: 0 4px 15px rgba(232, 100, 12, 0.20);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,7 +363,7 @@
 
 .btn-login:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 132, 14, 0.4);
+  box-shadow: 0 6px 20px rgba(232, 100, 12, 0.28);
 }
 
 .btn-login:active:not(:disabled) {
@@ -403,7 +405,7 @@
 }
 
 .forgot-link {
-  color: #8D4CCD;
+  color: #6028AA;
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.2s;
@@ -411,7 +413,7 @@
 }
 
 .forgot-link:hover {
-  color: #CC4EA1;
+  color: #A83B90;
   text-decoration: underline;
 }
 
@@ -445,7 +447,7 @@
 }
 
 .register-link a {
-  color: #FF840E;
+  color: #E8640C;
   text-decoration: none;
   font-weight: 600;
   cursor: pointer;
@@ -453,7 +455,7 @@
 }
 
 .register-link a:hover {
-  color: #FF6B00;
+  color: #C85209;
   text-decoration: underline;
 }
 
@@ -581,7 +583,7 @@
   .login-form-section {
     flex: 1;
     padding: 20px;
-    background: linear-gradient(135deg, #8D4CCD 0%, #CC4EA1 100%);
+    background: linear-gradient(135deg, #6028AA 0%, #A83B90 100%);
   }
 
   .login-card {

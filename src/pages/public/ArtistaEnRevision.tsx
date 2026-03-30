@@ -5,10 +5,10 @@ import { Clock, Mail, LogOut, Palette, CheckCircle2, Circle } from "lucide-react
 import logoImg from "../../assets/images/logo.png";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#0f0c1a",
-  border: "rgba(255,255,255,0.1)", text: "#ffffff",
-  muted: "rgba(255,255,255,0.5)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  gold: "#A87006", bg: "#F9F8FC",
+  border: "#E6E4EF", text: "#14121E",
+  muted: "#9896A8",
 };
 
 export default function ArtistaEnRevision() {
@@ -56,8 +56,8 @@ export default function ArtistaEnRevision() {
       {/* Card principal */}
       <div style={{
         width: "100%", maxWidth: 520,
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "#FFFFFF",
+        border: "1px solid #E6E4EF",
         borderRadius: 24, padding: "44px 40px",
         backdropFilter: "blur(20px)",
         textAlign: "center",
@@ -66,11 +66,11 @@ export default function ArtistaEnRevision() {
         {/* Ícono animado */}
         <div style={{
           width: 88, height: 88, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${C.gold}25, ${C.orange}15)`,
-          border: `2px solid ${C.gold}40`,
+          background: `linear-gradient(135deg, rgba(168,112,6,0.10), rgba(232,100,12,0.06))`,
+          border: `2px solid rgba(168,112,6,0.30)`,
           display: "flex", alignItems: "center", justifyContent: "center",
           margin: "0 auto 28px",
-          boxShadow: `0 0 40px ${C.gold}20`,
+          boxShadow: `0 0 40px rgba(168,112,6,0.12)`,
           animation: "pulse 2.5s ease-in-out infinite",
         }}>
           <Clock size={38} color={C.gold} strokeWidth={1.5} />
@@ -103,18 +103,18 @@ export default function ArtistaEnRevision() {
                 </div>
               );
             } else {
-              stepIcon = <Circle size={22} color="rgba(255,255,255,0.2)" />;
+              stepIcon = <Circle size={22} color="rgba(0,0,0,0.15)" />;
             }
             let stepColor: string;
             if (paso.done) stepColor = "#4ADE80";
             else if (paso.active) stepColor = C.gold;
-            else stepColor = "rgba(255,255,255,0.3)";
+            else stepColor = "#9896A8";
             return (
               <div key={paso.label} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 0 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   {stepIcon}
                   {i < pasos.length - 1 && (
-                    <div style={{ width: 2, height: 28, background: paso.done ? "#4ADE8040" : "rgba(255,255,255,0.08)", margin: "4px 0" }} />
+                    <div style={{ width: 2, height: 28, background: paso.done ? "rgba(14,138,80,0.25)" : "#E6E4EF", margin: "4px 0" }} />
                   )}
                 </div>
                 <span style={{
@@ -131,8 +131,8 @@ export default function ArtistaEnRevision() {
 
         {/* Info correo */}
         <div style={{
-          background: "rgba(255,193,16,0.06)",
-          border: `1px solid ${C.gold}25`,
+          background: "rgba(168,112,6,0.06)",
+          border: `1px solid rgba(168,112,6,0.22)`,
           borderRadius: 12, padding: "16px 20px",
           display: "flex", alignItems: "flex-start", gap: 12,
           textAlign: "left", marginBottom: 32,
@@ -143,20 +143,20 @@ export default function ArtistaEnRevision() {
               Te notificaremos por correo
             </p>
             <p style={{ fontSize: 12.5, color: C.muted, margin: 0, lineHeight: 1.6 }}>
-              Enviaremos la resolución a <strong style={{ color: "rgba(255,255,255,0.7)" }}>{correo}</strong>.<br />
-              El proceso suele tardar entre <strong style={{ color: "rgba(255,255,255,0.7)" }}>1 y 3 días hábiles</strong>.
+              Enviaremos la resolución a <strong style={{ color: "#14121E" }}>{correo}</strong>.<br />
+              El proceso suele tardar entre <strong style={{ color: "#14121E" }}>1 y 3 días hábiles</strong>.
             </p>
           </div>
         </div>
 
         {/* Qué pasa después */}
         <div style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "#F9F8FC",
+          border: "1px solid #E6E4EF",
           borderRadius: 12, padding: "16px 20px",
           textAlign: "left", marginBottom: 32,
         }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 8 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#14121E", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 8 }}>
             <Palette size={15} color={C.pink} /> ¿Qué pasa después?
           </p>
           {[
@@ -177,30 +177,30 @@ export default function ArtistaEnRevision() {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             width: "100%", padding: "13px 20px", borderRadius: 12,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 600,
+            background: "rgba(0,0,0,0.04)",
+            border: "1px solid #E6E4EF",
+            color: "#5A5870", fontSize: 14, fontWeight: 600,
             cursor: "pointer", fontFamily: "'Outfit', sans-serif",
             transition: "all .2s ease",
           }}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = "rgba(204,89,173,0.1)";
-            el.style.borderColor = `${C.pink}40`;
+            el.style.background = "rgba(168,59,144,0.08)";
+            el.style.borderColor = `rgba(168,59,144,0.30)`;
             el.style.color = C.pink;
           }}
           onMouseLeave={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = "rgba(255,255,255,0.05)";
-            el.style.borderColor = "rgba(255,255,255,0.1)";
-            el.style.color = "rgba(255,255,255,0.6)";
+            el.style.background = "rgba(0,0,0,0.04)";
+            el.style.borderColor = "#E6E4EF";
+            el.style.color = "#5A5870";
           }}
         >
           <LogOut size={15} /> Cerrar sesión
         </button>
       </div>
 
-      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 24 }}>
+      <p style={{ fontSize: 11, color: "#9896A8", marginTop: 24 }}>
         © {new Date().getFullYear()} Nu-B Studio · Galería de Arte Huasteco
       </p>
 

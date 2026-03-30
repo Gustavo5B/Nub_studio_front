@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD",
-  purple: "#8D4CCD", violet: "#D363FF", blue: "#79AAF5",
-  cream: "#FFF8EE", creamSub: "#D8CABC",
-  bg: "#0C0812", bgDeep: "#070510", panel: "#100D1C",
-  card: "rgba(20,15,34,0.90)", border: "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
+  orange: "#E8640C", pink: "#A83B90",
+  purple: "#6028AA", violet: "#6028AA", blue: "#2D6FBE",
+  cream: "#14121E", creamSub: "#5A5870",
+  bg: "#F9F8FC", bgDeep: "#FFFFFF", panel: "#FFFFFF",
+  card: "#FFFFFF", border: "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
 };
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function NotFound() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -148,7 +148,7 @@ export default function NotFound() {
             fontSize: 56,
             animation: "float 4s ease-in-out infinite",
             marginBottom: 20,
-            filter: "drop-shadow(0 0 18px rgba(211,99,255,0.4))",
+            filter: "drop-shadow(0 0 18px rgba(96,40,170,0.20))",
           }}>
             🎨
           </div>
@@ -189,7 +189,7 @@ export default function NotFound() {
                 padding: "11px 26px",
                 borderRadius: 10,
                 border: `1.5px solid ${hoverBack ? C.orange : C.borderBr}`,
-                background: hoverBack ? "rgba(255,132,14,0.10)" : "transparent",
+                background: hoverBack ? "rgba(232,100,12,0.08)" : "transparent",
                 color: hoverBack ? C.orange : C.creamSub,
                 fontFamily: FB,
                 fontSize: 14,
@@ -220,8 +220,8 @@ export default function NotFound() {
                 cursor: "pointer",
                 transition: "all 0.2s ease",
                 boxShadow: hoverHome
-                  ? `0 6px 24px rgba(211,99,255,0.45)`
-                  : `0 4px 16px rgba(141,76,205,0.30)`,
+                  ? `0 6px 24px rgba(96,40,170,0.25)`
+                  : `0 4px 16px rgba(96,40,170,0.15)`,
                 letterSpacing: "0.2px",
               }}
             >

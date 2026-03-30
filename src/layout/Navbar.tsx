@@ -10,25 +10,25 @@ import logoImg from "../assets/images/logo.png";
 import { authService } from "../services/authService";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.38)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  border:   "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
-  borderHi: "rgba(255,200,150,0.20)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  border:   "rgba(0,0,0,0.06)",
+  borderBr: "#E6E4EF",
+  borderHi: "rgba(232,100,12,0.20)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 const LINKS = [
   { to: "/catalogo",       icon: Palette,   label: "Galería"        },
@@ -85,11 +85,11 @@ export default function Navbar() {
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         height: 68,
-        background: "rgba(7,5,16,0.97)",
+        background: "rgba(255,255,255,0.97)",
         backdropFilter: "blur(28px)",
         WebkitBackdropFilter: "blur(28px)",
         borderBottom: `1px solid ${C.borderBr}`,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
         
         fontFamily: FB,
       }}>
@@ -169,7 +169,7 @@ export default function Navbar() {
                     fontSize: 14, fontWeight: active ? 700 : 500,
                     color: active ? C.cream : C.creamSub,
                     textDecoration: "none",
-                    background: active ? `rgba(255,200,150,0.07)` : "transparent",
+                    background: active ? `rgba(232,100,12,0.06)` : "transparent",
                     border: `1px solid ${active ? C.borderHi : "transparent"}`,
                     transition: "all .15s",
                     fontFamily: FB,
@@ -177,7 +177,7 @@ export default function Navbar() {
                     onMouseEnter={e => {
                       if (!active) {
                         (e.currentTarget as HTMLElement).style.color = C.cream;
-                        (e.currentTarget as HTMLElement).style.background = "rgba(255,200,150,0.05)";
+                        (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.03)";
                       }
                     }}
                     onMouseLeave={e => {
@@ -204,14 +204,14 @@ export default function Navbar() {
                 <Link to="/registro-artista" style={{
                   display: "flex", alignItems: "center", gap: 7,
                   padding: "8px 16px", borderRadius: 10,
-                  background: "rgba(255,200,150,0.05)",
+                  background: "rgba(0,0,0,0.03)",
                   border: `1px solid ${C.borderHi}`,
                   color: C.creamSub, fontSize: 13.5, fontWeight: 600,
                   textDecoration: "none", fontFamily: FB,
                   transition: "all .15s",
                 }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = C.cream; (e.currentTarget as HTMLElement).style.background = "rgba(255,200,150,0.09)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = C.creamSub; (e.currentTarget as HTMLElement).style.background = "rgba(255,200,150,0.05)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = C.cream; (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.05)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = C.creamSub; (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.03)"; }}
                 >
                   <Sparkles size={14} color={C.gold} strokeWidth={2} />
                   Ser artista
@@ -242,7 +242,7 @@ export default function Navbar() {
                   onClick={() => setDropOpen(p => !p)}
                   style={{
                     display: "flex", alignItems: "center", gap: 9,
-                    background: dropOpen ? "rgba(255,200,150,0.10)" : "rgba(255,200,150,0.05)",
+                    background: dropOpen ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.03)",
                     border: `1px solid ${dropOpen ? C.borderHi : C.borderBr}`,
                     borderRadius: 12, padding: "7px 12px 7px 8px",
                     cursor: "pointer", fontFamily: FB, transition: "all .2s",
@@ -263,10 +263,9 @@ export default function Navbar() {
                   <div style={{
                     position: "absolute", top: "calc(100% + 10px)", right: 0,
                     width: 230, borderRadius: 16,
-                    background: "rgba(10,7,20,0.98)",
+                    background: "#FFFFFF",
                     border: `1px solid ${C.borderBr}`,
-                    backdropFilter: "blur(32px)",
-                    boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                     zIndex: 200, overflow: "hidden",
                     animation: "dropIn .2s cubic-bezier(0.16,1,0.3,1)",
                   }}>
@@ -313,7 +312,7 @@ export default function Navbar() {
           <button
             onClick={() => setOpen(!open)}
             className="nav-hamburger"
-            style={{ display: "none", background: "rgba(255,200,150,0.06)", border: `1px solid ${C.border}`, borderRadius: 10, padding: 8, cursor: "pointer", color: C.creamSub, marginLeft: 12, transition: "all .15s" }}
+            style={{ display: "none", background: "rgba(0,0,0,0.04)", border: `1px solid ${C.borderBr}`, borderRadius: 10, padding: 8, cursor: "pointer", color: C.creamSub, marginLeft: 12, transition: "all .15s" }}
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -333,7 +332,7 @@ export default function Navbar() {
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ position: "absolute", top: 0, right: 0, width: 290, height: "100%", background: "rgba(10,7,20,0.98)", borderLeft: `1px solid ${C.borderBr}`, backdropFilter: "blur(40px)", display: "flex", flexDirection: "column", animation: "slideIn .25s cubic-bezier(0.16,1,0.3,1)" }}
+            style={{ position: "absolute", top: 0, right: 0, width: 290, height: "100%", background: "#FFFFFF", borderLeft: `1px solid ${C.borderBr}`, display: "flex", flexDirection: "column", animation: "slideIn .25s cubic-bezier(0.16,1,0.3,1)" }}
           >
             {/* Header mobile */}
             <div style={{ height: 3, background: `linear-gradient(90deg, ${C.orange}, ${C.gold}, ${C.pink}, ${C.purple}, ${C.blue})` }} />
@@ -343,7 +342,7 @@ export default function Navbar() {
                 <div style={{ fontSize: 14, fontWeight: 900, color: C.cream, fontFamily: FD }}>Nu-B Studio</div>
                 <div style={{ fontSize: 9, color: C.orange, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: FB }}>Arte Huasteco</div>
               </div>
-              <button onClick={() => setOpen(false)} style={{ marginLeft: "auto", background: "rgba(255,200,150,0.06)", border: `1px solid ${C.border}`, borderRadius: 8, padding: 6, cursor: "pointer", color: C.creamMut }}>
+              <button onClick={() => setOpen(false)} style={{ marginLeft: "auto", background: "rgba(0,0,0,0.04)", border: `1px solid ${C.borderBr}`, borderRadius: 8, padding: 6, cursor: "pointer", color: C.creamMut }}>
                 <X size={18} />
               </button>
             </div>
@@ -368,12 +367,12 @@ export default function Navbar() {
                     display: "flex", alignItems: "center", gap: 12,
                     padding: "12px 14px", borderRadius: 12, marginBottom: 3,
                     color: active ? C.cream : C.creamSub,
-                    background: active ? `rgba(255,200,150,0.07)` : "transparent",
+                    background: active ? `rgba(232,100,12,0.06)` : "transparent",
                     border: `1px solid ${active ? C.borderHi : "transparent"}`,
                     textDecoration: "none", fontSize: 14.5, fontWeight: active ? 700 : 500,
                     fontFamily: FB, transition: "all .15s",
                   }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: active ? `${C.orange}20` : "rgba(255,200,150,0.06)", border: `1px solid ${active ? C.orange + "35" : "transparent"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: active ? `${C.orange}15` : "rgba(0,0,0,0.04)", border: `1px solid ${active ? C.orange + "35" : "transparent"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Icon size={16} color={active ? C.orange : C.creamMut} strokeWidth={active ? 2.2 : 1.8} />
                     </div>
                     {label}
@@ -400,7 +399,7 @@ export default function Navbar() {
 
               {!isLoggedIn && (
                 <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <Link to="/registro-artista" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", borderRadius: 12, background: "rgba(255,200,150,0.05)", border: `1px solid ${C.borderHi}`, color: C.creamSub, textDecoration: "none", fontSize: 14, fontWeight: 600, fontFamily: FB }}>
+                  <Link to="/registro-artista" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: `1px solid ${C.borderHi}`, color: C.creamSub, textDecoration: "none", fontSize: 14, fontWeight: 600, fontFamily: FB }}>
                     <Sparkles size={15} color={C.gold} /> Ser artista
                   </Link>
                   <Link to="/login" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", borderRadius: 12, background: `linear-gradient(135deg, ${C.orange}, ${C.magenta})`, color: "white", textDecoration: "none", fontSize: 14, fontWeight: 800, fontFamily: FB, boxShadow: `0 6px 20px ${C.orange}40` }}>
@@ -414,7 +413,7 @@ export default function Navbar() {
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes dropIn  { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
         .nav-hamburger { display: none !important; }
@@ -432,10 +431,10 @@ function DropItem({ icon, label, onClick, color = "" }: {
   readonly icon: React.ReactNode; readonly label: string; readonly onClick: () => void; readonly color?: string;
 }) {
   const [hov, setHov] = useState(false);
-  const C2 = { cream: "#FFF8EE", creamSub: "#D8CABC", border: "rgba(255,200,150,0.09)" };
+  const C2 = { cream: "#14121E", creamSub: "#5A5870" };
   return (
     <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 18px", background: hov ? "rgba(255,232,200,0.05)" : "none", border: "none", cursor: "pointer", color: color || (hov ? C2.cream : C2.creamSub), fontSize: 13.5, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", transition: "all .15s", textAlign: "left" }}>
+      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 18px", background: hov ? "rgba(0,0,0,0.03)" : "none", border: "none", cursor: "pointer", color: color || (hov ? C2.cream : C2.creamSub), fontSize: 13.5, fontWeight: 500, fontFamily: "'Outfit', sans-serif", transition: "all .15s", textAlign: "left" }}>
       {icon}{label}
     </button>
   );
@@ -444,10 +443,10 @@ function DropItem({ icon, label, onClick, color = "" }: {
 function MobileItem({ icon, label, onClick, color = "" }: {
   readonly icon: React.ReactNode; readonly label: string; readonly onClick: () => void; readonly color?: string;
 }) {
-  const C2 = { creamSub: "#D8CABC" };
+  const C2 = { creamSub: "#5A5870" };
   return (
     <button onClick={onClick}
-      style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 14px", borderRadius: 10, background: "none", border: "none", cursor: "pointer", color: color || C2.creamSub, fontSize: 14, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", marginBottom: 2, textAlign: "left", transition: "all .15s" }}>
+      style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 14px", borderRadius: 10, background: "none", border: "none", cursor: "pointer", color: color || C2.creamSub, fontSize: 14, fontWeight: 500, fontFamily: "'Outfit', sans-serif", marginBottom: 2, textAlign: "left", transition: "all .15s" }}>
       {icon}{label}
     </button>
   );

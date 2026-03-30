@@ -23,9 +23,9 @@ import obraImg2 from "../../assets/images/cuadro.png";
 
 // ── Paleta idéntica al sistema ────────────────────────────
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#0f0c1a",
-  text: "#ffffff", muted: "rgba(255,255,255,0.5)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  gold: "#A87006", bg: "#F9F8FC",
+  text: "#14121E", muted: "#9896A8",
 };
 
 // ── Sanitización y validación frontend (RASP) ────────────────
@@ -147,18 +147,18 @@ export default function Register() {
 
   const passInputType = mostrarPass ? "text" : "password";
   const eyeToggleColor = mostrarPass ? C.orange : C.muted;
-  const passInputBorder = mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.2)";
+  const passInputBorder = mostrarPass ? `1.5px solid ${C.orange}` : "1.5px solid #E6E4EF";
   const eyeIcon = mostrarPass ? <EyeOff size={18} /> : <Eye size={18} />;
-  const checkboxBorderColor = aceptoTerminos ? C.orange : "rgba(255,255,255,0.2)";
+  const checkboxBorderColor = aceptoTerminos ? C.orange : "#E6E4EF";
   const checkboxBg = aceptoTerminos ? C.orange : "transparent";
-  const msgBg = isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)";
-  const msgBorderColor = isError ? C.pink : "#4ADE80";
-  const msgTextColor = isError ? C.pink : "#4ADE80";
+  const msgBg = isError ? "rgba(168,59,144,0.08)" : "rgba(14,138,80,0.06)";
+  const msgBorderColor = isError ? "rgba(168,59,144,0.30)" : "rgba(14,138,80,0.25)";
+  const msgTextColor = isError ? C.pink : "#0E8A50";
   const msgIcon = isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />;
-  const btnBg = aceptoTerminos ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.06)";
-  const btnColor = aceptoTerminos ? "white" : "rgba(255,255,255,0.3)";
+  const btnBg = aceptoTerminos ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(0,0,0,0.05)";
+  const btnColor = aceptoTerminos ? "white" : "#9896A8";
   const btnCursor = isLoading || !aceptoTerminos ? "not-allowed" : "pointer";
-  const btnShadow = aceptoTerminos ? "0 8px 24px rgba(255,132,14,0.3)" : "none";
+  const btnShadow = aceptoTerminos ? "0 8px 24px rgba(232,100,12,0.20)" : "none";
   const btnOpacity = isLoading ? 0.8 : 1;
   const btnLabel = aceptoTerminos ? "Crear cuenta" : "Acepta los términos para continuar";
 
@@ -166,7 +166,7 @@ export default function Register() {
     <div style={{
       minHeight: "100vh",
       background: C.bg,
-      fontFamily: "'DM Sans', 'Outfit', sans-serif",
+      fontFamily: "'Outfit', sans-serif",
       display: "flex",
       position: "relative",
       overflow: "hidden",
@@ -184,26 +184,26 @@ export default function Register() {
           position: "fixed", top: 20, left: 20, zIndex: 100,
           display: "flex", alignItems: "center", gap: 8,
           padding: "10px 18px", borderRadius: 100,
-          background: "rgba(15, 12, 26, 0.85)",
+          background: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600,
-          cursor: "pointer", fontFamily: "'DM Sans', 'Outfit', sans-serif",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          border: "1px solid #E6E4EF",
+          color: "#5A5870", fontSize: 13, fontWeight: 600,
+          cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+          boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
           transition: "all .22s ease",
         }}
         onMouseEnter={e => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(255,132,14,0.15)";
-          el.style.borderColor = `${C.orange}50`;
+          el.style.background = "rgba(232,100,12,0.08)";
+          el.style.borderColor = "rgba(232,100,12,0.30)";
           el.style.color = C.orange;
           el.style.transform = "translateX(-2px)";
         }}
         onMouseLeave={e => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(15,12,26,0.85)";
-          el.style.borderColor = "rgba(255,255,255,0.12)";
-          el.style.color = "rgba(255,255,255,0.7)";
+          el.style.background = "rgba(255,255,255,0.97)";
+          el.style.borderColor = "#E6E4EF";
+          el.style.color = "#5A5870";
           el.style.transform = "translateX(0)";
         }}
       >
@@ -225,8 +225,8 @@ export default function Register() {
           alignItems: "center",
           justifyContent: "center",
           padding: "80px 48px 60px",
-          background: "#0a0714",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 0 L40 40 M40 0 L0 40' stroke='rgba(255,255,255,0.03)' stroke-width='0.5'/%3E%3C/svg%3E")`,
+          background: C.bg,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 0 L40 40 M40 0 L0 40' stroke='rgba(0,0,0,0.04)' stroke-width='0.5'/%3E%3C/svg%3E")`,
         }}
       >
         {/* Rainbow top line */}
@@ -245,11 +245,9 @@ export default function Register() {
           width: 160,
           borderRadius: 16,
           overflow: "hidden",
-          background: "rgba(255,255,255,0.07)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.14)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+          background: "#FFFFFF",
+          border: "1px solid #E6E4EF",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
           animation: "floatA 6s ease-in-out infinite",
           zIndex: 2,
         }}>
@@ -260,10 +258,10 @@ export default function Register() {
           />
           <div style={{ padding: "8px 10px" }}>
             <span style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Outfit', sans-serif",
               fontSize: 11,
               fontWeight: 700,
-              color: "rgba(255,255,255,0.85)",
+              color: "#14121E",
               letterSpacing: 0.3,
             }}>
               Artesanía Huasteca
@@ -279,11 +277,9 @@ export default function Register() {
           width: 152,
           borderRadius: 16,
           overflow: "hidden",
-          background: "rgba(255,255,255,0.07)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.14)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+          background: "#FFFFFF",
+          border: "1px solid #E6E4EF",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
           animation: "floatB 8s ease-in-out infinite",
           zIndex: 2,
         }}>
@@ -294,10 +290,10 @@ export default function Register() {
           />
           <div style={{ padding: "8px 10px" }}>
             <span style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Outfit', sans-serif",
               fontSize: 11,
               fontWeight: 700,
-              color: "rgba(255,255,255,0.85)",
+              color: "#14121E",
               letterSpacing: 0.3,
             }}>
               Pintura Original
@@ -315,11 +311,11 @@ export default function Register() {
             color: C.text,
             lineHeight: 1.15,
             margin: "0 0 16px",
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Outfit', sans-serif",
           }}>
             Únete a nuestra{" "}
             <span style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Outfit', sans-serif",
               fontStyle: "italic",
               background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
               WebkitBackgroundClip: "text",
@@ -349,13 +345,13 @@ export default function Register() {
                 padding: "10px 14px",
                 borderRadius: 12,
                 borderLeft: `3px solid ${accent}`,
-                background: "rgba(255,255,255,0.03)",
+                background: "rgba(0,0,0,0.02)",
               }}
             >
               <div style={{
                 width: 38, height: 38, borderRadius: 10,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(0,0,0,0.03)",
+                border: "1px solid #E6E4EF",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
               }}>
@@ -388,8 +384,8 @@ export default function Register() {
                   alignItems: "center",
                   padding: "8px 16px",
                   borderRadius: 100,
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(0,0,0,0.02)",
+                  border: "1px solid #E6E4EF",
                 }}
               >
                 <span style={{
@@ -398,7 +394,7 @@ export default function Register() {
                   background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
-                  fontFamily: "'DM Sans', sans-serif",
+                  fontFamily: "'Outfit', sans-serif",
                 }}>
                   {value}
                 </span>
@@ -432,14 +428,13 @@ export default function Register() {
 
           {/* ── Form Card ── */}
           <div style={{
-            background: "rgba(14,11,26,0.88)",
-            border: "1px solid rgba(255,200,150,0.12)",
+            background: "#FFFFFF",
+            border: "1px solid #E6E4EF",
             borderRadius: 24,
             padding: "36px 32px",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
             position: "relative",
             overflow: "hidden",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
           }}>
 
             {/* Rainbow top line on card */}
@@ -457,7 +452,7 @@ export default function Register() {
               color: C.text,
               margin: "8px 0 4px",
               textAlign: "center",
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Outfit', sans-serif",
             }}>
               Crear cuenta
             </h2>
@@ -482,10 +477,10 @@ export default function Register() {
                   placeholder="Ej: Juan Pérez"
                   disabled={isLoading}
                   required
-                  style={{ ...inputStyle, borderColor: nombreError ? "#FF4D6A" : "rgba(255,255,255,0.2)" }}
+                  style={{ ...inputStyle, borderColor: nombreError ? "#C4304A" : "#E6E4EF" }}
                 />
                 {nombreError && (
-                  <span style={{ fontSize: 11.5, color: "#FF4D6A", fontWeight: 600, marginTop: 4, display: "block" }}>
+                  <span style={{ fontSize: 11.5, color: "#C4304A", fontWeight: 600, marginTop: 4, display: "block" }}>
                     ⚠ {nombreError}
                   </span>
                 )}
@@ -532,7 +527,7 @@ export default function Register() {
                       right: 12,
                       top: "50%",
                       transform: "translateY(-50%)",
-                      background: "rgba(0,0,0,0.3)",
+                      background: "rgba(0,0,0,0.04)",
                       border: "none",
                       borderRadius: 6,
                       cursor: "pointer",
@@ -544,11 +539,11 @@ export default function Register() {
                       transition: "all 0.2s ease",
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(255,132,14,0.2)";
+                      e.currentTarget.style.background = "rgba(232,100,12,0.10)";
                       e.currentTarget.style.color = C.orange;
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.background = "rgba(0,0,0,0.3)";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.04)";
                       e.currentTarget.style.color = eyeToggleColor;
                     }}
                   >
@@ -565,7 +560,7 @@ export default function Register() {
                           key={n}
                           style={{
                             flex: 1, height: 4, borderRadius: 2,
-                            background: n <= metCount ? strengthColor : "rgba(255,255,255,0.08)",
+                            background: n <= metCount ? strengthColor : "rgba(0,0,0,0.08)",
                             transition: "background .2s",
                           }}
                         />
@@ -585,8 +580,8 @@ export default function Register() {
                     marginTop: 12,
                     padding: "14px 16px",
                     borderRadius: 10,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "#F9F8FC",
+                    border: "1px solid #E6E4EF",
                   }}>
                     {passReqs.map((req, i) => (
                       <div
@@ -595,13 +590,13 @@ export default function Register() {
                           display: "flex", alignItems: "center", gap: 8,
                           marginBottom: i < 4 ? 8 : 0,
                           fontSize: 12,
-                          color: req.met ? "#4ADE80" : C.muted,
+                          color: req.met ? "#0E8A50" : C.muted,
                           transition: "color .2s",
                         }}
                       >
                         {req.met
-                          ? <CheckCircle2 size={13} color="#4ADE80" />
-                          : <AlertCircle  size={13} color="rgba(255,255,255,0.3)" />
+                          ? <CheckCircle2 size={13} color="#0E8A50" />
+                          : <AlertCircle  size={13} color="#9896A8" />
                         }
                         {req.text}
                       </div>
@@ -684,9 +679,9 @@ export default function Register() {
 
             {/* Divider */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0 18px" }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
               <span style={{ fontSize: 12, color: C.muted }}>o</span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
             </div>
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
@@ -731,7 +726,7 @@ export default function Register() {
                 }}>
                   <span style={{
                     fontSize: 18,
-                    color: active ? C.orange : "rgba(255,255,255,0.2)",
+                    color: active ? C.orange : "#9896A8",
                     fontWeight: active ? 800 : 400,
                     transition: "color .2s",
                   }}>
@@ -739,7 +734,7 @@ export default function Register() {
                   </span>
                   <span style={{
                     fontSize: 11,
-                    color: active ? C.orange : "rgba(255,255,255,0.25)",
+                    color: active ? C.orange : "#9896A8",
                     fontWeight: active ? 700 : 400,
                     whiteSpace: "nowrap",
                   }}>
@@ -750,7 +745,7 @@ export default function Register() {
                   <div style={{
                     width: 36,
                     height: 1,
-                    background: "rgba(255,255,255,0.12)",
+                    background: "#E6E4EF",
                     margin: "0 8px",
                     marginBottom: 18,
                   }} />
@@ -760,14 +755,14 @@ export default function Register() {
           </div>
 
           {/* Footer */}
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 16 }}>
+          <p style={{ fontSize: 11, color: "#9896A8", textAlign: "center", marginTop: 16 }}>
             © {currentYear} Nu-B Studio. Todos los derechos reservados.
           </p>
         </div>
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -797,7 +792,7 @@ export default function Register() {
 const labelStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 6,
   fontSize: 13, fontWeight: 600,
-  color: "rgba(255,255,255,0.75)",
+  color: "#5A5870",
   marginBottom: 8,
 };
 
@@ -806,11 +801,11 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   padding: "12px 16px",
   borderRadius: 10,
-  border: "1.5px solid rgba(255,255,255,0.2)",
-  background: "rgba(0,0,0,0.3)",
-  color: "#ffffff",
+  border: "1.5px solid #E6E4EF",
+  background: "#FFFFFF",
+  color: "#14121E",
   fontSize: 14,
-  fontFamily: "'DM Sans', 'Outfit', sans-serif",
+  fontFamily: "'Outfit', sans-serif",
   outline: "none",
   transition: "border .15s, background .15s",
 };

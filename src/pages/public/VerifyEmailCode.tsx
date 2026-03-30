@@ -6,9 +6,9 @@ import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#0f0c1a",
-  text: "#ffffff", muted: "rgba(255,255,255,0.5)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  gold: "#A87006", bg: "#F9F8FC",
+  text: "#14121E", muted: "#9896A8",
 };
 
 export default function VerifyEmailCode() {
@@ -99,14 +99,14 @@ export default function VerifyEmailCode() {
           position: "fixed", top: 20, left: 20, zIndex: 100,
           display: "flex", alignItems: "center", gap: 8,
           padding: "10px 18px", borderRadius: 100,
-          background: "rgba(15,12,26,0.85)", backdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600,
+          background: "rgba(255,255,255,0.97)", backdropFilter: "blur(16px)",
+          border: "1px solid #E6E4EF",
+          color: "#5A5870", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)", transition: "all .22s ease",
+          boxShadow: "0 1px 8px rgba(0,0,0,0.08)", transition: "all .22s ease",
         }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,132,14,0.15)"; el.style.borderColor = `${C.orange}50`; el.style.color = C.orange; }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(15,12,26,0.85)"; el.style.borderColor = "rgba(255,255,255,0.12)"; el.style.color = "rgba(255,255,255,0.7)"; }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(232,100,12,0.08)"; el.style.borderColor = "rgba(232,100,12,0.30)"; el.style.color = C.orange; }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.97)"; el.style.borderColor = "#E6E4EF"; el.style.color = "#5A5870"; }}
       >
         <ArrowLeft size={14} strokeWidth={2.5} />
         Volver al login
@@ -132,7 +132,7 @@ export default function VerifyEmailCode() {
             { icon: <CheckCircle2 size={18} color={C.gold} />, title: "Una vez verificado", desc: "Podrás acceder a toda la galería" },
           ].map(({ icon, title, desc }) => (
             <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(0,0,0,0.03)", border: "1px solid #E6E4EF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {icon}
               </div>
               <div>
@@ -154,7 +154,7 @@ export default function VerifyEmailCode() {
           </div>
 
           {/* Card */}
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "36px 32px", backdropFilter: "blur(20px)" }}>
+          <div style={{ background: "#FFFFFF", border: "1px solid #E6E4EF", borderRadius: 20, padding: "36px 32px" }}>
 
             {/* Icono central */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
@@ -173,7 +173,7 @@ export default function VerifyEmailCode() {
 
               {/* Input código */}
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5870", marginBottom: 8 }}>
                   <Mail size={14} /> Código de verificación
                 </label>
                 <input
@@ -187,9 +187,9 @@ export default function VerifyEmailCode() {
                   style={{
                     width: "100%", boxSizing: "border-box",
                     padding: "14px", borderRadius: 10,
-                    border: `1.5px solid ${codigo.length === 6 ? C.orange : "rgba(255,255,255,0.1)"}`,
-                    background: "rgba(255,255,255,0.05)",
-                    color: "#ffffff", fontSize: 28,
+                    border: `1.5px solid ${codigo.length === 6 ? C.orange : "#E6E4EF"}`,
+                    background: "#FFFFFF",
+                    color: "#14121E", fontSize: 28,
                     fontFamily: "'Outfit', sans-serif",
                     outline: "none", textAlign: "center",
                     letterSpacing: "12px", fontWeight: 700,
@@ -199,14 +199,14 @@ export default function VerifyEmailCode() {
                 {/* Indicador de dígitos */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 8 }}>
                   {[0,1,2,3,4,5].map(n => (
-                    <div key={n} style={{ width: 8, height: 8, borderRadius: "50%", background: n < codigo.length ? C.orange : "rgba(255,255,255,0.15)", transition: "background .15s" }} />
+                    <div key={n} style={{ width: 8, height: 8, borderRadius: "50%", background: n < codigo.length ? C.orange : "#E6E4EF", transition: "background .15s" }} />
                   ))}
                 </div>
               </div>
 
               {/* Mensaje */}
               {mensaje && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, fontSize: 13, background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", border: `1px solid ${isError ? C.pink : "#4ADE80"}`, color: isError ? C.pink : "#4ADE80" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, fontSize: 13, background: isError ? "rgba(168,59,144,0.08)" : "rgba(14,138,80,0.06)", border: `1px solid ${isError ? "rgba(168,59,144,0.30)" : "rgba(14,138,80,0.25)"}`, color: isError ? C.pink : "#0E8A50" }}>
                   {isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
                   {mensaje}
                 </div>
@@ -219,11 +219,11 @@ export default function VerifyEmailCode() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   width: "100%", padding: "13px 20px", borderRadius: 12,
-                  background: codigo.length === 6 ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.06)",
-                  border: "none", color: codigo.length === 6 ? "white" : "rgba(255,255,255,0.3)",
+                  background: codigo.length === 6 ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(0,0,0,0.05)",
+                  border: "none", color: codigo.length === 6 ? "white" : "#9896A8",
                   fontSize: 15, fontWeight: 700, cursor: isLoading || codigo.length !== 6 ? "not-allowed" : "pointer",
                   fontFamily: "'Outfit', sans-serif",
-                  boxShadow: codigo.length === 6 ? "0 8px 24px rgba(255,132,14,0.3)" : "none",
+                  boxShadow: codigo.length === 6 ? "0 8px 24px rgba(232,100,12,0.20)" : "none",
                   transition: "all .2s",
                 }}
               >
@@ -236,9 +236,9 @@ export default function VerifyEmailCode() {
 
             {/* Divider */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0" }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
               <span style={{ fontSize: 12, color: C.muted }}>o</span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
             </div>
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
@@ -249,7 +249,7 @@ export default function VerifyEmailCode() {
             </p>
           </div>
 
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 16 }}>
+          <p style={{ fontSize: 11, color: "#9896A8", textAlign: "center", marginTop: 16 }}>
             © {new Date().getFullYear()} Altar Studio. Todos los derechos reservados.
           </p>
         </div>

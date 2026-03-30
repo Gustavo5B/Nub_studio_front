@@ -7,9 +7,9 @@ import logoImg from "../../assets/images/logo.png";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  blue: "#79AAF5", bg: "#0f0c1a", text: "#ffffff",
-  muted: "rgba(255,255,255,0.5)", border: "rgba(255,255,255,0.08)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  blue: "#2D6FBE", bg: "#F9F8FC", text: "#14121E",
+  muted: "#9896A8", border: "#E6E4EF",
 };
 
 type Estado = "cargando" | "exitoso" | "error" | "expirado";
@@ -96,17 +96,16 @@ export default function VerificarEmail() {
 
         {/* card */}
         <div style={{
-          background: "rgba(255,255,255,0.03)",
+          background: "#FFFFFF",
           border: `1px solid ${C.border}`,
           borderRadius: 20, padding: "40px 36px",
-          backdropFilter: "blur(20px)",
           textAlign: "center",
         }}>
 
           {/* ── CARGANDO ── */}
           {estado === "cargando" && (
             <>
-              <div style={iconWrap("#8D4CCD")}>
+              <div style={iconWrap("#6028AA")}>
                 <Loader2 size={32} color="white" style={{ animation: "spin 1s linear infinite" }} />
               </div>
               <h2 style={titleStyle}>Verificando tu correo...</h2>
@@ -117,7 +116,7 @@ export default function VerificarEmail() {
           {/* ── EXITOSO ── */}
           {estado === "exitoso" && (
             <>
-              <div style={iconWrap("#22C97A", `0 0 40px rgba(34,201,122,0.35)`)}>
+              <div style={iconWrap("#0E8A50", `0 0 40px rgba(14,138,80,0.20)`)}>
                 <CheckCircle2 size={32} color="white" strokeWidth={2} />
               </div>
               <h2 style={titleStyle}>¡Correo verificado!</h2>
@@ -128,8 +127,8 @@ export default function VerificarEmail() {
               </p>
 
               <div style={{
-                background: "rgba(34,201,122,0.06)",
-                border: "1px solid rgba(34,201,122,0.2)",
+                background: "rgba(14,138,80,0.05)",
+                border: "1px solid rgba(14,138,80,0.18)",
                 borderRadius: 12, padding: "14px 18px",
                 margin: "24px 0", textAlign: "left",
               }}>
@@ -138,8 +137,8 @@ export default function VerificarEmail() {
                   "Recibirás un correo cuando seas aprobado",
                   "Una vez aprobado podrás subir tus obras",
                 ].map((t, i) => (
-                  <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 2 ? 8 : 0, fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C97A", flexShrink: 0 }} />
+                  <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 2 ? 8 : 0, fontSize: 13, color: "#5A5870" }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0E8A50", flexShrink: 0 }} />
                     {t}
                   </div>
                 ))}
@@ -154,7 +153,7 @@ export default function VerificarEmail() {
           {/* ── EXPIRADO ── */}
           {estado === "expirado" && (
             <>
-              <div style={iconWrap(C.orange, `0 0 40px rgba(255,132,14,0.3)`)}>
+              <div style={iconWrap(C.orange, `0 0 40px rgba(232,100,12,0.20)`)}>
                 <RefreshCw size={32} color="white" strokeWidth={2} />
               </div>
               <h2 style={titleStyle}>Enlace expirado</h2>
@@ -164,11 +163,11 @@ export default function VerificarEmail() {
 
               {reenvioExitoso ? (
                 <div style={{
-                  background: "rgba(34,201,122,0.08)",
-                  border: "1px solid rgba(34,201,122,0.2)",
+                  background: "rgba(14,138,80,0.06)",
+                  border: "1px solid rgba(14,138,80,0.18)",
                   borderRadius: 12, padding: "16px",
                   marginTop: 20, fontSize: 14,
-                  color: "#22C97A",
+                  color: "#0E8A50",
                 }}>
                   <CheckCircle2 size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />
                   Enlace enviado. Revisa tu correo.
@@ -177,11 +176,11 @@ export default function VerificarEmail() {
                 <>
                   {correoReenvio && (
                     <div style={{
-                      background: "rgba(255,255,255,0.04)",
+                      background: "rgba(0,0,0,0.03)",
                       border: `1px solid ${C.border}`,
                       borderRadius: 10, padding: "12px 16px",
                       margin: "20px 0", fontSize: 14,
-                      color: "rgba(255,255,255,0.6)",
+                      color: "#5A5870",
                       display: "flex", alignItems: "center", gap: 8,
                     }}>
                       <Mail size={15} color={C.orange} />
@@ -202,7 +201,7 @@ export default function VerificarEmail() {
           {/* ── ERROR ── */}
           {estado === "error" && (
             <>
-              <div style={iconWrap(C.pink, `0 0 40px rgba(204,89,173,0.3)`)}>
+              <div style={iconWrap(C.pink, `0 0 40px rgba(168,59,144,0.20)`)}>
                 <XCircle size={32} color="white" strokeWidth={2} />
               </div>
               <h2 style={titleStyle}>No se pudo verificar</h2>
@@ -244,29 +243,29 @@ const iconWrap = (color: string, shadow?: string): React.CSSProperties => ({
 });
 
 const titleStyle: React.CSSProperties = {
-  fontSize: 22, fontWeight: 800, color: "#ffffff",
+  fontSize: 22, fontWeight: 800, color: "#14121E",
   margin: "0 0 10px", fontFamily: "'Outfit', sans-serif",
 };
 
 const subtitleStyle: React.CSSProperties = {
-  fontSize: 14, color: "rgba(255,255,255,0.55)",
+  fontSize: 14, color: "#9896A8",
   lineHeight: 1.7, margin: "0 0 4px",
 };
 
 const btnPrimary: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
   width: "100%", padding: "13px 20px", borderRadius: 12,
-  background: "linear-gradient(135deg, #FF840E, #CC59AD)",
+  background: "linear-gradient(135deg, #E8640C, #A83B90)",
   border: "none", color: "white", fontSize: 15, fontWeight: 700,
   cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-  boxShadow: "0 8px 24px rgba(255,132,14,0.3)", marginTop: 8,
+  boxShadow: "0 8px 24px rgba(232,100,12,0.20)", marginTop: 8,
 };
 
 const btnSecondary: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
   width: "100%", padding: "13px 20px", borderRadius: 12,
-  background: "rgba(255,255,255,0.06)",
-  border: "1.5px solid rgba(255,255,255,0.1)",
-  color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600,
+  background: "rgba(0,0,0,0.04)",
+  border: "1.5px solid #E6E4EF",
+  color: "#5A5870", fontSize: 14, fontWeight: 600,
   cursor: "pointer", fontFamily: "'Outfit', sans-serif", marginTop: 8,
 };

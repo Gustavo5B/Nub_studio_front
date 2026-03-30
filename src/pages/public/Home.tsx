@@ -12,26 +12,26 @@ import heroMain  from "../../assets/images/trabajo.jpg";
 import obraImg2  from "../../assets/images/cuadro.png";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.38)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  panel:    "#100D1C",
-  border:   "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
-  borderHi: "rgba(255,200,150,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  panel:    "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
+  borderHi: "rgba(0,0,0,0.10)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 function useInView(threshold = 0.12) {
@@ -105,7 +105,7 @@ function CatCard({
         position: "relative", borderRadius: 24, overflow: "hidden",
         cursor: "pointer", height: "100%",
         border: `1px solid ${hov ? color + "55" : C.borderBr}`,
-        boxShadow: hov ? `0 32px 80px ${color}28, 0 0 0 1px ${color}18` : `0 4px 24px rgba(0,0,0,0.42)`,
+        boxShadow: hov ? `0 32px 80px ${color}28, 0 0 0 1px ${color}18` : `0 4px 24px rgba(0,0,0,0.10)`,
         transform: hov ? "translateY(-5px)" : "translateY(0)",
         transition: "border-color 0.3s, box-shadow 0.3s, transform 0.35s cubic-bezier(0.16,1,0.3,1)",
         ...gridStyle,
@@ -346,7 +346,7 @@ export default function Home() {
           position: "absolute", top: 130, left: 60,
           display: "inline-flex", alignItems: "center", gap: 8,
           padding: "6px 16px 6px 7px", borderRadius: 100,
-          background: "rgba(7,5,16,0.80)", backdropFilter: "blur(16px)",
+          background: "rgba(255,255,255,0.90)", backdropFilter: "blur(16px)",
           border: `1px solid ${C.orange}30`,
           fontSize: 11, fontWeight: 700, color: C.orange, fontFamily: FB, letterSpacing: "0.1em",
           opacity: heroVisible ? 1 : 0, transition: "opacity 0.7s ease 0.24s",
@@ -362,7 +362,7 @@ export default function Home() {
           position: "absolute", top: 187, left: 60,
           display: "inline-flex", alignItems: "center", gap: 10,
           padding: "8px 15px", borderRadius: 12,
-          background: "rgba(7,5,16,0.80)", backdropFilter: "blur(16px)",
+          background: "rgba(255,255,255,0.90)", backdropFilter: "blur(16px)",
           border: `1px solid ${C.borderBr}`,
           opacity: heroVisible ? 1 : 0, transition: "opacity 0.7s ease 0.4s",
         }}>
@@ -445,7 +445,7 @@ export default function Home() {
             {STATS.map(({ num, label }) => (
               <div key={label} style={{
                 padding: "16px 20px", borderRadius: 16, textAlign: "center",
-                background: "rgba(16,13,28,0.88)", backdropFilter: "blur(14px)",
+                background: "rgba(255,255,255,0.88)", backdropFilter: "blur(14px)",
                 border: `1px solid ${C.borderBr}`,
               }}>
                 <div style={{
@@ -554,7 +554,7 @@ export default function Home() {
             <div key={title} className="valor-cell" style={{
               padding: "50px 28px 46px",
               borderRight: i < 3 ? `1px solid ${C.border}` : "none",
-              background: `linear-gradient(145deg, ${C.panel}, rgba(14,11,26,0.96))`,
+              background: `linear-gradient(145deg, ${C.panel}, #F9F8FC)`,
               position: "relative", textAlign: "center",
             }}>
               {/* Number watermark */}
@@ -595,7 +595,7 @@ export default function Home() {
       <section ref={ctaSection.ref} style={{
         position: "relative", overflow: "hidden",
         padding: "140px 60px",
-        background: `linear-gradient(145deg, ${C.bgDeep} 0%, rgba(80,28,130,0.22) 38%, rgba(200,65,10,0.11) 68%, ${C.bgDeep} 100%)`,
+        background: `linear-gradient(145deg, ${C.bgDeep} 0%, rgba(96,40,170,0.06) 38%, rgba(232,100,12,0.04) 68%, ${C.bgDeep} 100%)`,
       }}>
         {/* Background texture from local image */}
         <div style={{
@@ -652,7 +652,7 @@ export default function Home() {
       </section>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
         * { box-sizing: border-box; }
 
@@ -670,26 +670,26 @@ export default function Home() {
         .btn-ghost {
           display: inline-flex; align-items: center; gap: 9px;
           padding: 13px 28px; border-radius: 12px;
-          background: rgba(255,232,200,0.05);
+          background: rgba(0,0,0,0.03);
           border: 1.5px solid ${C.borderHi};
           color: ${C.creamSub}; font-size: 14.5px; font-weight: 600;
           cursor: pointer; font-family: ${FB};
           transition: background .15s, border-color .15s, color .15s;
         }
-        .btn-ghost:hover { background: rgba(255,232,200,0.09); border-color: rgba(255,200,150,0.32); color: ${C.cream}; }
+        .btn-ghost:hover { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.18); color: ${C.cream}; }
 
         .btn-ghost-sm {
           display: inline-flex; align-items: center; gap: 7px;
           padding: 9px 20px; border-radius: 10px;
-          background: rgba(255,232,200,0.05);
+          background: rgba(0,0,0,0.03);
           border: 1px solid ${C.borderHi};
           color: ${C.creamSub}; font-size: 13px; font-weight: 700;
           cursor: pointer; font-family: ${FB};
           transition: all .15s; white-space: nowrap;
         }
-        .btn-ghost-sm:hover { background: rgba(255,232,200,0.09); color: ${C.cream}; }
+        .btn-ghost-sm:hover { background: rgba(0,0,0,0.06); color: ${C.cream}; }
 
-        .valor-cell:hover { background: rgba(255,200,150,0.022) !important; }
+        .valor-cell:hover { background: rgba(0,0,0,0.02) !important; }
 
         @keyframes floatA       { 0%,100%{transform:translateY(0) rotate(-2deg)}  50%{transform:translateY(-14px) rotate(-1deg)} }
         @keyframes floatB       { 0%,100%{transform:translateY(0) rotate(2deg)}   50%{transform:translateY(-11px) rotate(1deg)}  }
@@ -699,8 +699,8 @@ export default function Home() {
 
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,200,150,0.12); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,200,150,0.22); }
+        ::-webkit-scrollbar-thumb { background: #E6E4EF; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9896A8; }
 
         @media (max-width: 1100px) {
           .bento-grid { grid-template-columns: 1fr 1fr !important; grid-template-rows: auto !important; }
@@ -709,7 +709,7 @@ export default function Home() {
           .bento-grid > *:not(:first-child):not(:last-child) { height: 240px; }
           .valores-strip { grid-template-columns: repeat(2, 1fr) !important; border-radius: 0; }
           .valores-strip > *:nth-child(2) { border-right: none !important; }
-          .valores-strip > *:nth-child(3) { border-top: 1px solid rgba(255,200,150,0.09); }
+          .valores-strip > *:nth-child(3) { border-top: 1px solid #E6E4EF; }
         }
         @media (max-width: 860px) {
           .hero-bottom { grid-template-columns: 1fr !important; }
@@ -720,7 +720,7 @@ export default function Home() {
           .bento-grid { grid-template-columns: 1fr !important; }
           .bento-grid > * { height: 220px !important; grid-column: auto !important; grid-row: auto !important; }
           .valores-strip { grid-template-columns: 1fr !important; }
-          .valores-strip > * { border-right: none !important; border-top: 1px solid rgba(255,200,150,0.09); }
+          .valores-strip > * { border-right: none !important; border-top: 1px solid #E6E4EF; }
           .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
           .mp-grid { grid-template-columns: 1fr !important; }
         }

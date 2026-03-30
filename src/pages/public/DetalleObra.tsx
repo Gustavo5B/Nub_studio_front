@@ -10,26 +10,26 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.32)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  panel:    "#100D1C",
-  card:     "rgba(16,13,28,0.92)",
-  border:   "rgba(255,200,150,0.08)",
-  borderBr: "rgba(118,78,49,0.22)",
-  borderHi: "rgba(255,200,150,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  panel:    "#FFFFFF",
+  card:     "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
+  borderHi: "rgba(0,0,0,0.10)",
 };
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(p);
@@ -93,7 +93,7 @@ export default function DetalleObra() {
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FB }}>
 
       {/* ── Breadcrumb ── */}
-      <div style={{ background:"rgba(7,5,16,0.85)", backdropFilter:"blur(20px)", borderBottom:`1px solid ${C.borderBr}` }}>
+      <div style={{ background:"rgba(255,255,255,0.97)", backdropFilter:"blur(20px)", borderBottom:`1px solid ${C.borderBr}` }}>
         <div style={{ maxWidth:1320, margin:"0 auto", padding:"10px 48px", display:"flex", alignItems:"center", gap:6, fontSize:12.5, color:C.creamMut, flexWrap:"wrap" }}>
           {[
             { label:"Inicio",              action:() => navigate("/")                                         },
@@ -116,7 +116,7 @@ export default function DetalleObra() {
       <div style={{ maxWidth:1320, margin:"0 auto", padding:"40px 48px 100px" }}>
 
         {/* Volver */}
-        <button onClick={() => navigate(-1 as any)} style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:14, padding:"7px 15px", borderRadius:10, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}`, color:C.creamMut, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
+        <button onClick={() => navigate(-1 as any)} style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:14, padding:"7px 15px", borderRadius:10, background:"rgba(0,0,0,0.02)", border:`1px solid ${C.borderBr}`, color:C.creamMut, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
           onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.creamSub; el.style.borderColor=C.borderHi; }}
           onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.creamMut; el.style.borderColor=C.borderBr; }}
         >
@@ -208,7 +208,7 @@ export default function DetalleObra() {
               </div>
 
               {obra.etiquetas?.length > 0 && (
-                <div style={{ marginTop:22, paddingTop:20, borderTop:`1px solid rgba(255,200,150,0.08)` }}>
+                <div style={{ marginTop:22, paddingTop:20, borderTop:`1px solid #E6E4EF` }}>
                   <div style={{ fontSize:10.5, color:C.creamMut, textTransform:"uppercase", letterSpacing:"0.1em", fontWeight:700, marginBottom:10, fontFamily:FB }}>Etiquetas</div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
                     {obra.etiquetas.map((e: any) => (
@@ -317,7 +317,7 @@ export default function DetalleObra() {
                     const sel = tamSel?.id_obra_tamaño === t.id_obra_tamaño;
                     return (
                       <button key={t.id_obra_tamaño} onClick={() => setTamSel(t)}
-                        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 16px", borderRadius:13, border:`1.5px solid ${sel ? C.orange+"55" : C.borderBr}`, background: sel ? "rgba(255,132,14,0.06)" : "rgba(16,13,28,0.7)", cursor:"pointer", fontFamily:FB, transition:"all .18s" }}
+                        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 16px", borderRadius:13, border:`1.5px solid ${sel ? C.orange+"55" : C.borderBr}`, background: sel ? "rgba(255,132,14,0.06)" : "#FFFFFF", cursor:"pointer", fontFamily:FB, transition:"all .18s" }}
                         onMouseEnter={e => { if (!sel) (e.currentTarget as HTMLElement).style.borderColor=C.borderHi; }}
                         onMouseLeave={e => { if (!sel) (e.currentTarget as HTMLElement).style.borderColor=C.borderBr; }}
                       >
@@ -344,9 +344,9 @@ export default function DetalleObra() {
               >
                 <ShoppingBag size={17} strokeWidth={2.5} /> Adquirir esta obra
               </button>
-              <button style={{ padding:"14px", borderRadius:14, border:`1.5px solid ${C.borderHi}`, background:"rgba(255,232,200,0.03)", color:C.creamSub, fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
-                onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.background="rgba(255,232,200,0.07)"; el.style.color=C.cream; }}
-                onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.background="rgba(255,232,200,0.03)"; el.style.color=C.creamSub; }}
+              <button style={{ padding:"14px", borderRadius:14, border:`1.5px solid ${C.borderHi}`, background:"rgba(0,0,0,0.02)", color:C.creamSub, fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
+                onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.background="rgba(0,0,0,0.04)"; el.style.color=C.cream; }}
+                onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.background="rgba(0,0,0,0.02)"; el.style.color=C.creamSub; }}
               >
                 Solicitar información
               </button>
@@ -409,7 +409,7 @@ export default function DetalleObra() {
                   Obras <span style={{ background:`linear-gradient(135deg,${C.gold},${C.orange})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>relacionadas</span>
                 </h2>
               </div>
-              <button onClick={() => navigate("/catalogo")} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", borderRadius:10, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderHi}`, color:C.creamMut, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FB }}>
+              <button onClick={() => navigate("/catalogo")} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", borderRadius:10, background:"rgba(0,0,0,0.02)", border:`1px solid ${C.borderHi}`, color:C.creamMut, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FB }}>
                 Ver catálogo <ChevronRight size={14} strokeWidth={2.5} />
               </button>
             </div>
@@ -449,9 +449,9 @@ export default function DetalleObra() {
                   Obras <span style={{ background:`linear-gradient(135deg,${C.gold},${C.orange})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>relacionadas</span>
                 </h2>
               </div>
-              <button onClick={() => navigate("/catalogo")} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", borderRadius:10, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderHi}`, color:C.creamMut, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
-                onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.cream; el.style.background="rgba(255,200,150,0.08)"; }}
-                onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.creamMut; el.style.background="rgba(255,200,150,0.04)"; }}
+              <button onClick={() => navigate("/catalogo")} style={{ display:"flex", alignItems:"center", gap:7, padding:"9px 20px", borderRadius:10, background:"rgba(0,0,0,0.02)", border:`1px solid ${C.borderHi}`, color:C.creamMut, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
+                onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.cream; el.style.background="#E6E4EF"; }}
+                onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.creamMut; el.style.background="rgba(0,0,0,0.02)"; }}
               >
                 Ver todas <ChevronRight size={14} strokeWidth={2.5} />
               </button>
@@ -495,12 +495,12 @@ export default function DetalleObra() {
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(255,200,150,0.12); border-radius:10px; }
+        ::-webkit-scrollbar-thumb { background:#E6E4EF; border-radius:10px; }
         @media (max-width: 960px) {
           .detalle-grid { grid-template-columns:1fr !important; gap:32px !important; }
           .detalle-grid > div:last-child { position:static !important; }
@@ -520,10 +520,10 @@ function InfoPanel({ label, accentColor, children }: {
   readonly label: string; readonly accentColor: string; readonly children: React.ReactNode;
 }) {
   return (
-    <div style={{ background:"rgba(16,13,28,0.92)", borderRadius:20, border:"1px solid rgba(255,200,150,0.08)", overflow:"hidden", backdropFilter:"blur(20px)" }}>
+    <div style={{ background:"rgba(16,13,28,0.92)", borderRadius:20, border:"1px solid #E6E4EF", overflow:"hidden", backdropFilter:"blur(20px)" }}>
       <div style={{ height:2, background:`linear-gradient(90deg,${accentColor},transparent)` }} />
       <div style={{ padding:"26px 28px" }}>
-        <div style={{ fontSize:10.5, fontWeight:800, color:accentColor, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:18, fontFamily:"'DM Sans', sans-serif" }}>{label}</div>
+        <div style={{ fontSize:10.5, fontWeight:800, color:accentColor, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:18, fontFamily:"'Outfit', sans-serif" }}>{label}</div>
         {children}
       </div>
     </div>

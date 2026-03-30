@@ -10,26 +10,26 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.38)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  panel:    "#100D1C",
-  border:   "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
-  borderHi: "rgba(255,200,150,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  panel:    "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
+  borderHi: "rgba(0,0,0,0.10)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 interface Obra {
   id_obra: number; titulo: string; slug: string;
@@ -504,7 +504,7 @@ export default function Catalogo() {
         {/* Grid texture */}
         <div style={{
           position: "absolute", inset: 0,
-          backgroundImage: `linear-gradient(rgba(118,78,49,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(118,78,49,0.12) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)`,
           backgroundSize: "72px 72px", opacity: 0.35, pointerEvents: "none",
         }} />
 
@@ -539,9 +539,9 @@ export default function Catalogo() {
             <div style={{ flex: 1, maxWidth: 440, minWidth: 260 }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 10,
-                background: "rgba(255,232,200,0.05)", border: `1.5px solid ${C.borderHi}`,
+                background: "rgba(0,0,0,0.03)", border: `1.5px solid ${C.borderHi}`,
                 borderRadius: 14, padding: "13px 18px", backdropFilter: "blur(12px)",
-                boxShadow: "0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,232,200,0.06)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(0,0,0,0.03)",
               }}>
                 <Search size={16} color={C.creamMut} strokeWidth={1.8} />
                 <input
@@ -568,7 +568,7 @@ export default function Catalogo() {
           <button onClick={() => handleCat(null)} style={{
             padding: "8px 20px", borderRadius: 50,
             border: `1.5px solid ${catActiva === null ? C.orange : C.borderHi}`,
-            background: catActiva === null ? `linear-gradient(135deg, ${C.orange}, ${C.magenta})` : "rgba(255,232,200,0.04)",
+            background: catActiva === null ? `linear-gradient(135deg, ${C.orange}, ${C.magenta})` : "rgba(0,0,0,0.02)",
             color: catActiva === null ? "white" : C.creamSub,
             fontWeight: catActiva === null ? 700 : 500,
             fontSize: 13, cursor: "pointer", fontFamily: FB, transition: "all .18s",
@@ -585,7 +585,7 @@ export default function Catalogo() {
               <button key={c.id_categoria} onClick={() => handleCat(c.id_categoria)} style={{
                 padding: "8px 20px", borderRadius: 50,
                 border: `1.5px solid ${activa ? color : C.borderHi}`,
-                background: activa ? color : "rgba(255,232,200,0.04)",
+                background: activa ? color : "rgba(0,0,0,0.02)",
                 color: activa ? "white" : C.creamSub,
                 fontWeight: activa ? 700 : 500,
                 fontSize: 13, cursor: "pointer", fontFamily: FB, transition: "all .18s",
@@ -635,7 +635,7 @@ export default function Catalogo() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 64 }}>
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="page-btn" style={{
               width: 42, height: 42, borderRadius: 12, border: `1px solid ${C.borderHi}`,
-              background: "rgba(255,232,200,0.04)", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center",
               cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.3 : 1, color: C.creamSub, transition: "all .18s",
             }}>
               <ChevronLeft size={17} strokeWidth={2} />
@@ -647,7 +647,7 @@ export default function Catalogo() {
                 <button key={p} onClick={() => setPage(p)} className="page-btn" style={{
                   width: 42, height: 42, borderRadius: 12,
                   border: `1.5px solid ${p === page ? C.orange : C.borderHi}`,
-                  background: p === page ? `linear-gradient(135deg, ${C.orange}, ${C.magenta})` : "rgba(255,232,200,0.04)",
+                  background: p === page ? `linear-gradient(135deg, ${C.orange}, ${C.magenta})` : "rgba(0,0,0,0.02)",
                   color: p === page ? "white" : C.creamSub,
                   fontWeight: p === page ? 800 : 500,
                   fontSize: 14, cursor: "pointer", fontFamily: FB, transition: "all .15s",
@@ -660,7 +660,7 @@ export default function Catalogo() {
 
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="page-btn" style={{
               width: 42, height: 42, borderRadius: 12, border: `1px solid ${C.borderHi}`,
-              background: "rgba(255,232,200,0.04)", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center",
               cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.3 : 1, color: C.creamSub, transition: "all .18s",
             }}>
               <ChevronRight size={17} strokeWidth={2} />
@@ -670,9 +670,9 @@ export default function Catalogo() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
-        input::placeholder { color: rgba(255,232,200,0.28); }
+        input::placeholder { color: #9896A8; }
 
         .obras-grid {
           display: grid;
@@ -688,15 +688,15 @@ export default function Catalogo() {
           color: ${C.pink} !important;
         }
         .featured-card:hover img { transform: scale(1.06) !important; }
-        .page-btn:hover { background: rgba(255,232,200,0.09) !important; color: ${C.cream} !important; }
+        .page-btn:hover { background: rgba(0,0,0,0.05) !important; color: ${C.cream} !important; }
         .skeleton-shimmer { animation: shimmer 1.5s ease-in-out infinite; }
         @keyframes shimmer { 0%,100%{opacity:0.35} 50%{opacity:0.65} }
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,200,150,0.12); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,200,150,0.22); }
+        ::-webkit-scrollbar-thumb { background: #E6E4EF; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9896A8; }
 
         @media (max-width: 1100px) {
           .obras-grid { grid-template-columns: repeat(2, 1fr) !important; }

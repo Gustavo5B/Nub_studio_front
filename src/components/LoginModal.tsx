@@ -14,8 +14,8 @@ import logoImg from "../assets/images/logo.png";
 
 /* ── Constantes ─────────────────────────────────────────────── */
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  text: "#ffffff", muted: "rgba(255,255,255,0.5)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  text: "#14121E", muted: "#9896A8",
 };
 
 /* ── Tipos ───────────────────────────────────────────────────── */
@@ -169,13 +169,13 @@ function CloseButton({ onClose }: { readonly onClose: () => void }) {
       onClick={onClose}
       style={{
         position: "absolute", top: 16, right: 16, width: 32, height: 32,
-        borderRadius: "50%", background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.1)", color: C.muted,
+        borderRadius: "50%", background: "rgba(0,0,0,0.04)",
+        border: "1px solid #E6E4EF", color: C.muted,
         cursor: "pointer", display: "flex", alignItems: "center",
         justifyContent: "center", transition: "all .15s",
       }}
-      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.12)"; el.style.color = "#fff"; }}
-      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.06)"; el.style.color = C.muted; }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(0,0,0,0.08)"; el.style.color = "#14121E"; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(0,0,0,0.04)"; el.style.color = C.muted; }}
     >
       <X size={15} />
     </button>
@@ -202,9 +202,9 @@ function StatusMessage({ mensaje, isError }: { readonly mensaje: string; readonl
     <div style={{
       display: "flex", alignItems: "center", gap: 8,
       padding: "10px 14px", borderRadius: 10, fontSize: 13,
-      background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)",
-      border: `1px solid ${isError ? C.pink : "#4ADE80"}`,
-      color: isError ? C.pink : "#4ADE80",
+      background: isError ? "rgba(168,59,144,0.08)" : "rgba(14,138,80,0.06)",
+      border: `1px solid ${isError ? "rgba(168,59,144,0.30)" : "rgba(14,138,80,0.25)"}`,
+      color: isError ? C.pink : "#0E8A50",
       animation: "msgIn 0.2s ease",
     }}>
       {isError ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
@@ -221,16 +221,16 @@ function SubmitButton({ isLoading }: { readonly isLoading: boolean }) {
       style={{
         display: "flex", alignItems: "center", justifyContent: "center",
         gap: 8, width: "100%", padding: "13px 20px", borderRadius: 12, marginTop: 4,
-        background: "linear-gradient(135deg, #FF840E, #CC59AD)",
+        background: "linear-gradient(135deg, #E8640C, #A83B90)",
         border: "none", color: "white", fontSize: 15, fontWeight: 700,
         cursor: isLoading ? "not-allowed" : "pointer",
         fontFamily: "'Outfit', sans-serif",
-        boxShadow: "0 8px 24px rgba(255,132,14,0.3)",
+        boxShadow: "0 8px 24px rgba(232,100,12,0.20)",
         opacity: isLoading ? 0.8 : 1,
         transition: "opacity .15s, transform .15s, box-shadow .15s",
       }}
-      onMouseEnter={e => { if (!isLoading) { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-1px)"; el.style.boxShadow = "0 12px 32px rgba(255,132,14,0.45)"; } }}
-      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(0)"; el.style.boxShadow = "0 8px 24px rgba(255,132,14,0.3)"; }}
+      onMouseEnter={e => { if (!isLoading) { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-1px)"; el.style.boxShadow = "0 12px 32px rgba(232,100,12,0.32)"; } }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(0)"; el.style.boxShadow = "0 8px 24px rgba(232,100,12,0.20)"; }}
     >
       {isLoading
         ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Verificando...</>
@@ -251,9 +251,9 @@ function ModalFooter({ onClose }: { readonly onClose: () => void }) {
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0" }}>
-        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
         <span style={{ fontSize: 12, color: C.muted }}>o</span>
-        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
       </div>
 
       <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -343,7 +343,7 @@ function ModalContent({ isOpen, onClose }: LoginModalProps) {
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "20px",
-        background: visible ? "rgba(8, 5, 18, 0.85)" : "rgba(8, 5, 18, 0)",
+        background: visible ? "rgba(0, 0, 0, 0.40)" : "rgba(0, 0, 0, 0)",
         backdropFilter: visible ? "blur(6px)" : "blur(0px)",
         opacity: visible ? 1 : 0,
         transition: "background 0.3s ease, backdrop-filter 0.3s ease, opacity 0.3s ease",
@@ -351,15 +351,13 @@ function ModalContent({ isOpen, onClose }: LoginModalProps) {
     >
       <div style={{
         width: "100%", maxWidth: 460, position: "relative",
-        background: "rgba(18, 12, 32, 0.97)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        background: "#FFFFFF",
+        border: "1px solid #E6E4EF",
         borderRadius: 24, padding: "40px 36px",
-        boxShadow: "0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,132,14,0.07), inset 0 1px 0 rgba(255,255,255,0.05)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(232,100,12,0.05)",
         opacity: visible ? 1 : 0,
         transform: visible ? "scale(1)" : "scale(0.88)",
         transition: "opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)",
-        backdropFilter: "blur(40px)",
-        WebkitBackdropFilter: "blur(40px)",
       }}>
 
         {/* Decoraciones de fondo */}
@@ -425,14 +423,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 /* ── Estilos compartidos ─────────────────────────────────────── */
 const labelStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 6,
-  fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 8,
+  fontSize: 13, fontWeight: 600, color: "#5A5870", marginBottom: 8,
 };
 const inputStyle: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
   padding: "11px 14px", borderRadius: 10,
-  border: "1.5px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#ffffff", fontSize: 14,
+  border: "1.5px solid #E6E4EF",
+  background: "#FFFFFF",
+  color: "#14121E", fontSize: 14,
   fontFamily: "'Outfit', sans-serif",
   outline: "none", transition: "border .15s",
 };

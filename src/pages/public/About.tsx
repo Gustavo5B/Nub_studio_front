@@ -6,22 +6,22 @@ import { getSobreNosotros, getTrayectoria } from "../../services/sobreNosotrosSe
 import { getMunicipiosHidalgo } from "../../services/municipiosService";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.35)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  borderBr: "rgba(118,78,49,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  borderBr: "rgba(0,0,0,0.05)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 const TRAYECTORIA_COLORS = [C.orange, C.gold, C.pink, C.purple, C.green];
 
@@ -215,7 +215,7 @@ export default function About() {
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(7,5,16,0.5) 0%, transparent 50%)" }} />
             <div style={{ position: "absolute", bottom: 16, left: 16, display: "flex", alignItems: "center", gap: 6 }}>
               <MapPin size={12} color={C.gold} strokeWidth={2} />
-              <span style={{ fontSize: 12, color: C.cream, fontWeight: 600 }}>Huasteca Hidalguense · Hidalgo, México</span>
+              <span style={{ fontSize: 12, color: "#FFFFFF", fontWeight: 600 }}>Huasteca Hidalguense · Hidalgo, México</span>
             </div>
           </div>
           <div>
@@ -262,13 +262,13 @@ export default function About() {
       </section>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
         @media (max-width: 1000px) {
           .about-hero-grid  { grid-template-columns: 1fr !important; gap: 28px !important; }
           .about-hist-grid  { grid-template-columns: 1fr !important; gap: 40px !important; }
           .about-mv-grid    { grid-template-columns: 1fr !important; }
-          .about-mv-grid > *:first-child { border-right: none !important; border-bottom: 1px solid rgba(118,78,49,0.18) !important; }
+          .about-mv-grid > *:first-child { border-right: none !important; border-bottom: 1px solid rgba(0,0,0,0.05) !important; }
           .about-val-grid   { grid-template-columns: repeat(2, 1fr) !important; }
           .about-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .about-huest-grid { grid-template-columns: 1fr !important; gap: 48px !important; }

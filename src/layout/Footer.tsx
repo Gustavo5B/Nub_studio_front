@@ -4,24 +4,24 @@ import { Globe, Share2, X, Mail, MapPin, Phone, Sparkles } from "lucide-react";
 import logoImg from "../assets/images/logo.png";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.38)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  border:   "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
-  borderHi: "rgba(255,200,150,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "#E6E4EF",
+  borderHi: "rgba(232,100,12,0.20)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 const CATALOGO = [
   { label: "Artesanía",  to: "/catalogo?categoria=artesania"  },
@@ -99,13 +99,13 @@ export default function Footer() {
               {SOCIAL.map(({ Icon, href, color, label }) => (
                 <a key={label} href={href} aria-label={label} style={{
                   width: 36, height: 36, borderRadius: 10,
-                  background: "rgba(255,200,150,0.04)",
+                  background: "rgba(0,0,0,0.03)",
                   border: `1px solid ${C.border}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   color, textDecoration: "none", transition: "all .15s",
                 }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${color}15`; (e.currentTarget as HTMLElement).style.borderColor = `${color}50`; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,200,150,0.04)"; (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.03)"; (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
                 >
                   <Icon size={15} strokeWidth={1.8} />
                 </a>
@@ -180,6 +180,7 @@ export default function Footer() {
       </div>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @media (max-width: 1024px) {
           .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 32px !important; }
         }

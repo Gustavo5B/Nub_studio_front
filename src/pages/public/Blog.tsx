@@ -4,25 +4,25 @@ import { useToast } from "../../context/ToastContext";
 import { BookOpen, Clock, ArrowRight, Star, Mail, Rss } from "lucide-react";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.38)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  panel:    "#100D1C",
-  border:   "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  panel:    "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 interface Post {
   id:       number;
@@ -107,7 +107,7 @@ function PostCard({ post, delay, onLeer }: { readonly post: Post; readonly delay
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement;
         el.style.transform    = "translateY(-5px)";
-        el.style.boxShadow    = "0 24px 55px rgba(0,0,0,0.5)";
+        el.style.boxShadow    = "0 8px 24px rgba(0,0,0,0.10)";
         el.style.borderColor  = `${post.color}32`;
       }}
       onMouseLeave={e => {
@@ -205,7 +205,7 @@ export default function Blog() {
           0%, 100% { background-position: 0%   50%; }
           50%       { background-position: 100% 50%; }
         }
-        input::placeholder { color: rgba(255,232,200,0.22); }
+        input::placeholder { color: #9896A8; }
       `}</style>
 
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
@@ -221,7 +221,7 @@ export default function Blog() {
         <div style={{
           position: "absolute", bottom: -10, right: "1%",
           fontSize: "clamp(120px, 22vw, 260px)", fontWeight: 900, fontFamily: FD,
-          color: "rgba(255,248,238,0.022)", lineHeight: 1, pointerEvents: "none",
+          color: "rgba(0,0,0,0.03)", lineHeight: 1, pointerEvents: "none",
           userSelect: "none", letterSpacing: "-0.04em",
         }}>
           BLOG
@@ -231,7 +231,7 @@ export default function Blog() {
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 7,
           padding: "5px 14px 5px 8px", borderRadius: 100,
-          background: "rgba(255,232,200,0.04)", border: `1px solid ${C.borderBr}`,
+          background: "rgba(0,0,0,0.02)", border: `1px solid ${C.borderBr}`,
           marginBottom: 22, animation: "fadeUp .4s ease both",
         }}>
           <div style={{ width: 22, height: 22, borderRadius: 7, background: `linear-gradient(135deg, ${C.pink}, ${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -284,7 +284,7 @@ export default function Blog() {
               <button key={key} onClick={() => setFiltro(key)}
                 style={{
                   padding: "7px 18px", borderRadius: 100, flexShrink: 0,
-                  border: `1.5px solid ${on ? color : "rgba(255,200,150,0.10)"}`,
+                  border: `1.5px solid ${on ? color : "#E6E4EF"}`,
                   background: on ? `${color}16` : "transparent",
                   color: on ? color : C.creamMut,
                   fontWeight: on ? 700 : 400,
@@ -327,7 +327,7 @@ export default function Blog() {
                 onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement;
                   el.style.transform  = "translateY(-4px)";
-                  el.style.boxShadow  = `0 28px 65px rgba(0,0,0,0.55), 0 0 0 1px ${featured.color}30`;
+                  el.style.boxShadow  = `0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px ${featured.color}30`;
                 }}
                 onMouseLeave={e => {
                   const el = e.currentTarget as HTMLElement;
@@ -438,7 +438,7 @@ export default function Blog() {
               placeholder="tu@correo.com"
               style={{
                 flex: 1, padding: "12px 16px", borderRadius: 12,
-                border: `1.5px solid ${C.border}`, background: "rgba(255,232,200,0.04)",
+                border: `1.5px solid ${C.border}`, background: "#FFFFFF",
                 color: C.cream, fontSize: 14, fontFamily: FB, outline: "none",
                 transition: "border-color .2s",
               }}

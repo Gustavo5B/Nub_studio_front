@@ -4,16 +4,16 @@ import { useState } from "react";
 import { authService } from "../../services/authService";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", magenta: "#CC4EA1",
-  purple: "#8D4CCD", violet: "#D363FF", blue: "#79AAF5",
-  cream: "#FFF8EE", creamSub: "#D8CABC",
-  bg: "#0C0812", bgDeep: "#070510",
-  red: "#E53535", redDark: "#B01E1E", redGlow: "rgba(229,53,53,0.18)",
-  redBorder: "rgba(229,53,53,0.30)", redSoft: "rgba(229,53,53,0.08)",
-  borderBr: "rgba(118,78,49,0.24)",
+  orange: "#E8640C", pink: "#A83B90", magenta: "#A83B90",
+  purple: "#6028AA", violet: "#6028AA", blue: "#2D6FBE",
+  cream: "#14121E", creamSub: "#5A5870",
+  bg: "#F9F8FC", bgDeep: "#FFFFFF",
+  red: "#C4304A", redDark: "#9C1F37", redGlow: "rgba(196,48,74,0.12)",
+  redBorder: "rgba(196,48,74,0.28)", redSoft: "rgba(196,48,74,0.06)",
+  borderBr: "rgba(0,0,0,0.05)",
 };
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 
 export default function Unauthorized() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function Unauthorized() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -50,8 +50,8 @@ export default function Unauthorized() {
           80%       { transform: translateX(4px) rotate(1deg); }
         }
         @keyframes pulseRed {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(229,53,53,0.5); }
-          50%       { box-shadow: 0 0 0 16px rgba(229,53,53,0); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(196,48,74,0.4); }
+          50%       { box-shadow: 0 0 0 16px rgba(196,48,74,0); }
         }
         @keyframes scanline {
           0%   { transform: translateY(-100%); opacity: 0.06; }
@@ -62,8 +62,8 @@ export default function Unauthorized() {
           50%       { opacity: 0.3; }
         }
         @keyframes borderPulse {
-          0%, 100% { border-color: rgba(229,53,53,0.30); }
-          50%       { border-color: rgba(229,53,53,0.65); }
+          0%, 100% { border-color: rgba(196,48,74,0.28); }
+          50%       { border-color: rgba(196,48,74,0.55); }
         }
         .ua-card {
           animation: fadeUp 0.65s ease both, borderPulse 2.5s ease-in-out infinite;
@@ -98,7 +98,7 @@ export default function Unauthorized() {
           position: "absolute", top: "10%", left: "50%",
           transform: "translateX(-50%)",
           width: 500, height: 500, borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(229,53,53,0.14) 0%, transparent 65%)`,
+          background: `radial-gradient(circle, rgba(196,48,74,0.08) 0%, transparent 65%)`,
           animation: "orbRed 10s ease-in-out infinite",
           pointerEvents: "none",
         }} />
@@ -106,7 +106,7 @@ export default function Unauthorized() {
         <div style={{
           position: "absolute", bottom: "5%", right: "5%",
           width: 280, height: 280, borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(229,53,53,0.10) 0%, transparent 70%)`,
+          background: `radial-gradient(circle, rgba(196,48,74,0.06) 0%, transparent 70%)`,
           animation: "orbRed 13s ease-in-out infinite reverse",
           pointerEvents: "none",
         }} />
@@ -114,7 +114,7 @@ export default function Unauthorized() {
         <div style={{
           position: "absolute", bottom: "20%", left: "5%",
           width: 220, height: 220, borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(204,78,161,0.10) 0%, transparent 70%)`,
+          background: `radial-gradient(circle, rgba(168,59,144,0.06) 0%, transparent 70%)`,
           animation: "orbRed 16s ease-in-out infinite",
           pointerEvents: "none",
         }} />
@@ -125,11 +125,10 @@ export default function Unauthorized() {
           textAlign: "center", zIndex: 1,
           padding: "40px 36px 36px",
           maxWidth: 500, width: "100%",
-          background: "rgba(20,8,8,0.82)",
+          background: "#FFFFFF",
           border: `1.5px solid ${C.redBorder}`,
           borderRadius: 20,
-          backdropFilter: "blur(12px)",
-          boxShadow: `0 0 60px rgba(229,53,53,0.10), 0 8px 40px rgba(0,0,0,0.5)`,
+          boxShadow: `0 0 40px rgba(196,48,74,0.06), 0 1px 8px rgba(0,0,0,0.08)`,
           margin: "0 20px",
         }}>
 
@@ -163,8 +162,8 @@ export default function Unauthorized() {
           {/* Ícono candado */}
           <div className="ua-lock" style={{
             width: 90, height: 90, borderRadius: "50%",
-            background: `radial-gradient(circle, rgba(229,53,53,0.18) 0%, rgba(176,30,30,0.08) 100%)`,
-            border: `2px solid rgba(229,53,53,0.40)`,
+            background: `radial-gradient(circle, rgba(196,48,74,0.10) 0%, rgba(156,31,55,0.05) 100%)`,
+            border: `2px solid rgba(196,48,74,0.35)`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 42, marginBottom: 22,
           }}>
@@ -253,8 +252,8 @@ export default function Unauthorized() {
               onMouseLeave={() => setHoverBack(false)}
               style={{
                 padding: "10px 24px", borderRadius: 9,
-                border: `1.5px solid ${hoverBack ? C.red : "rgba(229,53,53,0.20)"}`,
-                background: hoverBack ? "rgba(229,53,53,0.10)" : "transparent",
+                border: `1.5px solid ${hoverBack ? C.red : "rgba(196,48,74,0.20)"}`,
+                background: hoverBack ? "rgba(196,48,74,0.08)" : "transparent",
                 color: hoverBack ? C.red : C.creamSub,
                 fontFamily: FB, fontSize: 13, fontWeight: 500,
                 cursor: "pointer", transition: "all 0.2s ease",
@@ -271,13 +270,13 @@ export default function Unauthorized() {
                 padding: "10px 24px", borderRadius: 9, border: "none",
                 background: hoverLogin
                   ? `linear-gradient(135deg, ${C.red}, ${C.redDark})`
-                  : `linear-gradient(135deg, rgba(229,53,53,0.9), ${C.redDark})`,
+                  : `linear-gradient(135deg, ${C.red}, ${C.redDark})`,
                 color: "#fff",
                 fontFamily: FB, fontSize: 13, fontWeight: 600,
                 cursor: "pointer", transition: "all 0.2s ease",
                 boxShadow: hoverLogin
-                  ? `0 6px 22px rgba(229,53,53,0.45)`
-                  : `0 3px 14px rgba(229,53,53,0.25)`,
+                  ? `0 6px 22px rgba(196,48,74,0.35)`
+                  : `0 3px 14px rgba(196,48,74,0.18)`,
               }}
             >
               {isLoggedIn ? "Cambiar cuenta" : "Iniciar sesión"}

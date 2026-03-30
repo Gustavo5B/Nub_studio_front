@@ -10,27 +10,27 @@ import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, Loader, ShieldCheck, Arrow
 // import { authService } from "../../services/authService";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.38)",
-  bg:       "#0C0812",
-  bgDeep:   "#070510",
-  panel:    "#100D1C",
-  card:     "rgba(20,15,34,0.95)",
-  border:   "rgba(255,200,150,0.09)",
-  borderBr: "rgba(118,78,49,0.24)",
-  borderHi: "rgba(255,200,150,0.20)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  bgDeep:   "#FFFFFF",
+  panel:    "#FFFFFF",
+  card:     "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
+  borderHi: "rgba(0,0,0,0.10)",
 };
 
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 // ── Requisitos de contraseña ───────────────────────────────────
@@ -77,7 +77,7 @@ function FuerzaPassword({ password }: { readonly password: string }) {
         {niveles.map((n, i) => (
           <div key={n.label} style={{
             flex: 1, height: 3, borderRadius: 2,
-            background: i < score ? n.color : "rgba(255,232,200,0.1)",
+            background: i < score ? n.color : "rgba(0,0,0,0.08)",
             transition: "background .3s",
           }} />
         ))}
@@ -105,7 +105,7 @@ function InputPassword({
       <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, fontFamily: FB }}>{label}</label>
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
-        background: "rgba(255,232,200,0.04)",
+        background: "#FFFFFF",
         border: `1px solid ${borderColor}`,
         borderRadius: 12, padding: "0 14px",
         transition: "border-color .2s, box-shadow .2s",
@@ -301,7 +301,7 @@ export default function ActivarCuenta() {
                 const ok = r.test(password);
                 return (
                   <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: ok ? C.green : C.creamMut, fontFamily: FB, transition: "color .2s" }}>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: ok ? `${C.green}22` : "rgba(255,232,200,0.06)", border: `1px solid ${ok ? C.green + "50" : "rgba(255,232,200,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .2s" }}>
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: ok ? "rgba(14,138,80,0.08)" : "rgba(0,0,0,0.04)", border: `1px solid ${ok ? "rgba(14,138,80,0.35)" : "#E6E4EF"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .2s" }}>
                       {ok && <CheckCircle size={9} color={C.green} strokeWidth={3} />}
                     </div>
                     {r.label}
@@ -328,16 +328,16 @@ export default function ActivarCuenta() {
             width: "100%", padding: "15px", borderRadius: 13, border: "none",
             background: puedeEnviar
               ? `linear-gradient(135deg, ${C.orange}, ${C.magenta})`
-              : "rgba(255,232,200,0.06)",
+              : "rgba(0,0,0,0.05)",
             color: puedeEnviar ? "white" : C.creamMut,
             fontWeight: 800, fontSize: 15, cursor: puedeEnviar ? "pointer" : "not-allowed",
             fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            boxShadow: puedeEnviar ? `0 8px 28px ${C.orange}38` : "none",
+            boxShadow: puedeEnviar ? `0 8px 28px rgba(232,100,12,0.25)` : "none",
             transition: "all .2s", marginTop: 6,
             opacity: !puedeEnviar && !loading ? 0.5 : 1,
           }}
-          onMouseEnter={e => { if (puedeEnviar) { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 14px 36px ${C.orange}50`; } }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = puedeEnviar ? `0 8px 28px ${C.orange}38` : "none"; }}
+          onMouseEnter={e => { if (puedeEnviar) { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow = `0 14px 36px rgba(232,100,12,0.35)`; } }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = puedeEnviar ? `0 8px 28px rgba(232,100,12,0.25)` : "none"; }}
         >
           {loading
             ? <><Loader size={17} strokeWidth={2.5} style={{ animation: "spin 1s linear infinite" }} /> Activando cuenta…</>
@@ -374,14 +374,14 @@ function Wrapper({ children }: { readonly children: React.ReactNode }) {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes pulse  { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.4);opacity:1} }
         * { box-sizing: border-box; }
-        input::placeholder { color: rgba(255,232,200,0.22); }
+        input::placeholder { color: #9896A8; }
         ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,200,150,0.12); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #E6E4EF; border-radius: 10px; }
       `}</style>
     </div>
   );

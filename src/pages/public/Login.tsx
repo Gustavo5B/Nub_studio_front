@@ -13,10 +13,10 @@ import logoImg from "../../assets/images/logo.png";
 import heroImg from "../../assets/images/trabajo.jpg";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#0f0c1a",
-  border: "rgba(255,255,255,0.1)", text: "#ffffff",
-  muted: "rgba(255,255,255,0.5)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  gold: "#A87006", bg: "#F9F8FC",
+  border: "#E6E4EF", text: "#14121E",
+  muted: "#9896A8",
 };
 
 // ── Sanitización y validación frontend (RASP) ────────────────
@@ -155,18 +155,18 @@ export default function Login() {
           position: "fixed", top: 20, left: 20, zIndex: 100,
           display: "flex", alignItems: "center", gap: 8,
           padding: "10px 18px", borderRadius: 100,
-          background: "rgba(15, 12, 26, 0.85)",
+          background: "rgba(255,255,255,0.90)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600,
+          border: "1px solid rgba(0,0,0,0.08)",
+          color: "#5A5870", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "'Outfit', sans-serif",
           boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
           transition: "all .22s ease",
         }}
         onMouseEnter={e => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(255,132,14,0.15)";
+          el.style.background = "rgba(232,100,12,0.08)";
           el.style.borderColor = `${C.orange}50`;
           el.style.color = C.orange;
           el.style.transform = "translateX(-2px)";
@@ -174,9 +174,9 @@ export default function Login() {
         }}
         onMouseLeave={e => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(15, 12, 26, 0.85)";
-          el.style.borderColor = "rgba(255,255,255,0.12)";
-          el.style.color = "rgba(255,255,255,0.7)";
+          el.style.background = "rgba(255,255,255,0.90)";
+          el.style.borderColor = "rgba(0,0,0,0.08)";
+          el.style.color = "#5A5870";
           el.style.transform = "translateX(0)";
           el.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)";
         }}
@@ -207,7 +207,7 @@ export default function Login() {
         {/* Gradient overlay */}
         <div style={{
           position: "absolute", inset: 0,
-          background: `linear-gradient(145deg, rgba(80,28,130,0.22) 0%, rgba(200,65,10,0.14) 60%, rgba(7,5,16,0.96) 100%)`,
+          background: `linear-gradient(145deg, rgba(96,40,170,0.08) 0%, rgba(232,100,12,0.06) 60%, rgba(255,255,255,0.96) 100%)`,
           zIndex: 0,
         }} />
 
@@ -235,9 +235,9 @@ export default function Login() {
           </p>
 
           {[
-            { icon: <Palette size={18} color={C.orange} />, title: "Galería de artistas locales", desc: "Obras originales de la Huasteca Hidalguense", accentColor: C.orange, bg: "rgba(255,132,14,0.12)", brd: "rgba(255,132,14,0.25)" },
-            { icon: <Camera size={18} color={C.pink} />, title: "Obras originales y editables", desc: "Personaliza el tamaño y formato de tu obra", accentColor: C.pink, bg: "rgba(204,89,173,0.12)", brd: "rgba(204,89,173,0.25)" },
-            { icon: <Frame size={18} color={C.gold} />, title: "Entrega con marco personalizado", desc: "Enmarcado profesional incluido en tu pedido", accentColor: C.gold, bg: "rgba(255,193,16,0.12)", brd: "rgba(255,193,16,0.25)" },
+            { icon: <Palette size={18} color={C.orange} />, title: "Galería de artistas locales", desc: "Obras originales de la Huasteca Hidalguense", accentColor: C.orange, bg: "rgba(232,100,12,0.08)", brd: "rgba(232,100,12,0.20)" },
+            { icon: <Camera size={18} color={C.pink} />, title: "Obras originales y editables", desc: "Personaliza el tamaño y formato de tu obra", accentColor: C.pink, bg: "rgba(168,59,144,0.08)", brd: "rgba(168,59,144,0.20)" },
+            { icon: <Frame size={18} color={C.gold} />, title: "Entrega con marco personalizado", desc: "Enmarcado profesional incluido en tu pedido", accentColor: C.gold, bg: "rgba(168,112,6,0.08)", brd: "rgba(168,112,6,0.22)" },
           ].map(({ icon, title, desc, accentColor, bg, brd }) => (
             <div key={title} style={{
               display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20,
@@ -263,7 +263,7 @@ export default function Login() {
           <div style={{ display: "flex", gap: 24, marginTop: 32 }}>
             {[{ n: "500+", l: "Obras" }, { n: "50+", l: "Artistas" }, { n: "98%", l: "Satisfacción" }].map(({ n, l }) => (
               <div key={l} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: C.orange, fontFamily: "'Playfair Display',serif" }}>{n}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: C.orange, fontFamily: "'Outfit', sans-serif" }}>{n}</div>
                 <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>{l}</div>
               </div>
             ))}
@@ -290,8 +290,8 @@ export default function Login() {
           </div>
 
           <div style={{
-            background: "rgba(14,11,26,0.88)",
-            border: "1px solid rgba(255,200,150,0.12)",
+            background: "#FFFFFF",
+            border: "1px solid #E6E4EF",
             borderRadius: 20,
             padding: "32px 28px",
             backdropFilter: "blur(20px)"
@@ -302,7 +302,7 @@ export default function Login() {
               color: C.text,
               margin: "0 0 4px",
               textAlign: "center",
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Outfit', sans-serif",
             }}>Iniciar sesión</h2>
             <p style={{
               fontSize: 13,
@@ -313,7 +313,7 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 6 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5870", marginBottom: 6 }}>
                   <Mail size={15} /> Correo electrónico
                 </label>
                 <input
@@ -329,7 +329,7 @@ export default function Login() {
               </div>
 
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 6 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5870", marginBottom: 6 }}>
                   <Lock size={15} /> Contraseña
                 </label>
                 <div style={{ position: "relative" }}>
@@ -344,7 +344,7 @@ export default function Login() {
                     style={{
                       ...inputStyle,
                       paddingRight: 44,
-                      border: mostrarContrasena ? `1.5px solid ${C.orange}` : "1.5px solid rgba(255,200,150,0.18)"
+                      border: mostrarContrasena ? `1.5px solid ${C.orange}` : "1.5px solid #E6E4EF"
                     }}
                   />
                   <button
@@ -355,7 +355,7 @@ export default function Login() {
                       right: 12,
                       top: "50%",
                       transform: "translateY(-50%)",
-                      background: "rgba(0,0,0,0.3)",
+                      background: "rgba(0,0,0,0.05)",
                       border: "none",
                       borderRadius: 6,
                       cursor: "pointer",
@@ -367,7 +367,7 @@ export default function Login() {
                       transition: "all 0.2s ease"
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(255,132,14,0.2)";
+                      e.currentTarget.style.background = "rgba(232,100,12,0.10)";
                       e.currentTarget.style.color = C.orange;
                     }}
                     onMouseLeave={e => {
@@ -397,7 +397,7 @@ export default function Login() {
                   gap: 8,
                   padding: "10px 14px",
                   borderRadius: 10,
-                  background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)",
+                  background: isError ? "rgba(168,59,144,0.08)" : "rgba(14,138,80,0.08)",
                   border: `1px solid ${isError ? C.pink : "#4ADE80"}`,
                   fontSize: 13,
                   color: isError ? C.pink : "#4ADE80",
@@ -418,9 +418,9 @@ export default function Login() {
             </form>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px" }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
               <span style={{ fontSize: 12, color: C.muted }}>o</span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
             </div>
 
             <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
@@ -434,15 +434,15 @@ export default function Login() {
           </div>
 
           <div style={{ textAlign: "center", marginTop: 16 }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "0 0 6px" }}>
+            <p style={{ fontSize: 12, color: "#9896A8", margin: "0 0 6px" }}>
               Al iniciar sesión aceptas nuestros
             </p>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.muted, cursor: "pointer" }}><FileText size={12} /> Términos y Condiciones</span>
-              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>•</span>
+              <span style={{ color: "#9896A8", fontSize: 12 }}>•</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.muted, cursor: "pointer" }}><Shield size={12} /> Política de Privacidad</span>
             </div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 8 }}>
+            <p style={{ fontSize: 11, color: "#9896A8", marginTop: 8 }}>
               © {currentYear} Altar Studio. Todos los derechos reservados.
             </p>
           </div>
@@ -450,7 +450,7 @@ export default function Login() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-1.5deg)} 50%{transform:translateY(-14px) rotate(-0.5deg)} }
         @keyframes floatB { 0%,100%{transform:translateY(0) rotate(1.5deg)} 50%{transform:translateY(-11px) rotate(0.5deg)} }
@@ -470,9 +470,9 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   padding: "11px 14px",
   borderRadius: 10,
-  border: "1.5px solid rgba(255,200,150,0.18)",
-  background: "rgba(0,0,0,0.4)",
-  color: "#ffffff",
+  border: "1.5px solid #E6E4EF",
+  background: "#FFFFFF",
+  color: "#14121E",
   fontSize: 14,
   fontFamily: "'Outfit', sans-serif",
   outline: "none",
@@ -482,8 +482,8 @@ const inputStyle: React.CSSProperties = {
 const btnPrimary: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
   width: "100%", padding: "13px 20px", borderRadius: 12,
-  background: "linear-gradient(135deg, #FF840E, #CC59AD)",
+  background: "linear-gradient(135deg, #E8640C, #A83B90)",
   border: "none", color: "white", fontSize: 15, fontWeight: 700,
   cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-  boxShadow: "0 8px 24px rgba(255,132,14,0.3)",
+  boxShadow: "0 8px 24px rgba(232,100,12,0.25)",
 };

@@ -10,25 +10,25 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
-  orange:   "#FF840E",
-  pink:     "#CC59AD",
-  magenta:  "#CC4EA1",
-  purple:   "#8D4CCD",
-  blue:     "#79AAF5",
-  gold:     "#FFC110",
-  green:    "#22C97A",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.32)",
-  bg:       "#0C0812",
-  panel:    "#100D1C",
-  card:     "rgba(16,13,28,0.92)",
-  border:   "rgba(255,200,150,0.08)",
-  borderBr: "rgba(118,78,49,0.22)",
-  borderHi: "rgba(255,200,150,0.18)",
+  orange:   "#E8640C",
+  pink:     "#A83B90",
+  magenta:  "#A83B90",
+  purple:   "#6028AA",
+  blue:     "#2D6FBE",
+  gold:     "#A87006",
+  green:    "#0E8A50",
+  cream:    "#14121E",
+  creamSub: "#5A5870",
+  creamMut: "#9896A8",
+  bg:       "#F9F8FC",
+  panel:    "#FFFFFF",
+  card:     "#FFFFFF",
+  border:   "#E6E4EF",
+  borderBr: "rgba(0,0,0,0.05)",
+  borderHi: "rgba(0,0,0,0.10)",
 };
-const FD = "'Playfair Display', serif";
-const FB = "'DM Sans', sans-serif";
+const FD = "'Outfit', sans-serif";
+const FB = "'Outfit', sans-serif";
 const PALETTE = [C.orange, C.pink, C.purple, C.blue, C.gold];
 
 const fmt = (p: number) =>
@@ -80,7 +80,7 @@ export default function DetalleArtistaPublico() {
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FB }}>
 
       {/* ── Breadcrumb ── */}
-      <div style={{ background:"rgba(7,5,16,0.85)", backdropFilter:"blur(20px)", borderBottom:`1px solid ${C.borderBr}` }}>
+      <div style={{ background:"rgba(255,255,255,0.97)", backdropFilter:"blur(20px)", borderBottom:`1px solid ${C.borderBr}` }}>
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"12px 48px", display:"flex", alignItems:"center", gap:6, fontSize:12.5, color:C.creamMut }}>
           {[{ label:"Inicio", action:() => navigate("/") }, { label:"Artistas", action:() => navigate("/artistas") }].map((item) => (
             <span key={item.label} style={{ display:"flex", alignItems:"center", gap:6 }}>
@@ -104,7 +104,7 @@ export default function DetalleArtistaPublico() {
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"40px 48px 36px" }}>
 
           {/* Volver */}
-          <button onClick={() => navigate("/artistas")} style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:28, padding:"7px 16px", borderRadius:10, background:"rgba(255,200,150,0.04)", border:`1px solid ${C.borderBr}`, color:C.creamMut, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
+          <button onClick={() => navigate("/artistas")} style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:28, padding:"7px 16px", borderRadius:10, background:"rgba(0,0,0,0.02)", border:`1px solid ${C.borderBr}`, color:C.creamMut, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FB, transition:"all .15s" }}
             onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.creamSub; el.style.borderColor=C.borderHi; }}
             onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.color=C.creamMut; el.style.borderColor=C.borderBr; }}
           >
@@ -265,7 +265,7 @@ export default function DetalleArtistaPublico() {
                         }
                         <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 55%,rgba(7,5,16,0.55) 100%)", pointerEvents:"none" }} />
                         <div style={{ position:"absolute", top:10, right:10 }}>
-                          <span style={{ fontSize:10, padding:"3px 10px", borderRadius:100, background: disponible ? "rgba(34,201,122,0.15)" : "rgba(255,200,150,0.1)", border:`1px solid ${disponible ? "rgba(34,201,122,0.35)" : C.borderBr}`, color: disponible ? C.green : C.creamMut, fontWeight:700, fontFamily:FB }}>
+                          <span style={{ fontSize:10, padding:"3px 10px", borderRadius:100, background: disponible ? "rgba(14,138,80,0.12)" : "rgba(0,0,0,0.04)", border:`1px solid ${disponible ? "rgba(14,138,80,0.30)" : C.borderBr}`, color: disponible ? C.green : C.creamMut, fontWeight:700, fontFamily:FB }}>
                             {disponible ? "Disponible" : "Próximamente"}
                           </span>
                         </div>
@@ -289,12 +289,12 @@ export default function DetalleArtistaPublico() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(255,200,150,0.12); border-radius:10px; }
+        ::-webkit-scrollbar-thumb { background:#E6E4EF; border-radius:10px; }
         @media (max-width: 900px) {
           .artista-hero-row { flex-direction: column !important; align-items: flex-start !important; }
           .artista-content-grid { grid-template-columns: 1fr !important; }

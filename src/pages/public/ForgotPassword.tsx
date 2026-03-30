@@ -10,9 +10,9 @@ import {
 import logoImg from "../../assets/images/logo.png";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", purple: "#8D4CCD",
-  gold: "#FFC110", bg: "#0f0c1a",
-  text: "#ffffff", muted: "rgba(255,255,255,0.5)",
+  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
+  gold: "#A87006", bg: "#F9F8FC",
+  text: "#14121E", muted: "#9896A8",
 };
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -196,7 +196,7 @@ export default function ForgotPassword() {
     return s;
   };
   const strength = getStrength(nuevaContrasena);
-  const strengthColor = ["#444", C.pink, "#f97316", C.gold, "#4ade80", "#4ade80"][strength];
+  const strengthColor = ["#C0BEC8", C.pink, "#f97316", C.gold, "#0E8A50", "#0E8A50"][strength];
   const strengthLabel = ["", "Muy débil", "Débil", "Regular", "Fuerte", "Muy fuerte"][strength];
 
   const steps = [{ id: "email", label: "Correo" }, { id: "code", label: "Código" }, { id: "password", label: "Nueva clave" }];
@@ -210,14 +210,14 @@ export default function ForgotPassword() {
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         .fp-input {
           width: 100%; box-sizing: border-box; padding: 11px 14px;
-          border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.05); color: #ffffff; font-size: 14px;
+          border-radius: 10px; border: 1.5px solid #E6E4EF;
+          background: #FFFFFF; color: #14121E; font-size: 14px;
           font-family: 'Outfit', sans-serif; outline: none;
           transition: border 0.15s, box-shadow 0.15s; margin-bottom: 16px;
         }
         .fp-input:focus {
-          border-color: rgba(255,132,14,0.6);
-          box-shadow: 0 0 0 3px rgba(255,132,14,0.1);
+          border-color: rgba(232,100,12,0.6);
+          box-shadow: 0 0 0 3px rgba(232,100,12,0.08);
         }
         .fp-code-input {
           width: 46px; height: 54px; text-align: center; font-size: 20px;
@@ -227,9 +227,9 @@ export default function ForgotPassword() {
           text-transform: uppercase; letter-spacing: 0;
         }
         .fp-code-input:focus {
-          border-color: #FF840E !important;
-          box-shadow: 0 0 0 3px rgba(255,132,14,0.25) !important;
-          background: rgba(255,132,14,0.12) !important;
+          border-color: #E8640C !important;
+          box-shadow: 0 0 0 3px rgba(232,100,12,0.15) !important;
+          background: rgba(232,100,12,0.08) !important;
         }
       `}</style>
 
@@ -246,9 +246,9 @@ export default function ForgotPassword() {
           else if (step === "password") { setStep("code"); clearMsg(); }
           else navigate("/login");
         }}
-        style={{ position: "fixed", top: 20, left: 20, zIndex: 100, display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 100, background: "rgba(15,12,26,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif", boxShadow: "0 4px 20px rgba(0,0,0,0.3)", transition: "all .22s ease" }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,132,14,0.15)"; el.style.borderColor = `${C.orange}50`; el.style.color = C.orange; }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(15,12,26,0.85)"; el.style.borderColor = "rgba(255,255,255,0.12)"; el.style.color = "rgba(255,255,255,0.7)"; }}
+        style={{ position: "fixed", top: 20, left: 20, zIndex: 100, display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(16px)", border: "1px solid #E6E4EF", color: "#5A5870", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif", boxShadow: "0 1px 8px rgba(0,0,0,0.08)", transition: "all .22s ease" }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(232,100,12,0.08)"; el.style.borderColor = "rgba(232,100,12,0.30)"; el.style.color = C.orange; }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.97)"; el.style.borderColor = "#E6E4EF"; el.style.color = "#5A5870"; }}
       >
         <ArrowLeft size={14} strokeWidth={2.5} />
         {step === "email" ? "Volver al login" : "Paso anterior"}
@@ -267,13 +267,13 @@ export default function ForgotPassword() {
             {steps.map((s, i) => (
               <div key={s.id} style={{ display: "flex", alignItems: "center" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, background: i <= stepIdx ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.07)", border: i <= stepIdx ? "none" : "1.5px solid rgba(255,255,255,0.12)", color: i <= stepIdx ? "#fff" : C.muted, boxShadow: i === stepIdx ? `0 0 20px ${C.orange}40` : "none" }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, background: i <= stepIdx ? `linear-gradient(135deg, ${C.orange}, ${C.pink})` : "rgba(0,0,0,0.04)", border: i <= stepIdx ? "none" : "1.5px solid #E6E4EF", color: i <= stepIdx ? "#fff" : C.muted, boxShadow: i === stepIdx ? `0 0 20px ${C.orange}40` : "none" }}>
                     {i < stepIdx ? <CheckCheck size={15} /> : i + 1}
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: i === stepIdx ? C.orange : C.muted }}>{s.label}</span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div style={{ width: 60, height: 2, margin: "0 4px", marginBottom: 20, background: i < stepIdx ? `linear-gradient(90deg, ${C.orange}, ${C.pink})` : "rgba(255,255,255,0.08)" }} />
+                  <div style={{ width: 60, height: 2, margin: "0 4px", marginBottom: 20, background: i < stepIdx ? `linear-gradient(90deg, ${C.orange}, ${C.pink})` : "#E6E4EF" }} />
                 )}
               </div>
             ))}
@@ -281,7 +281,7 @@ export default function ForgotPassword() {
         )}
 
         {/* Card */}
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "36px 32px", backdropFilter: "blur(20px)" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #E6E4EF", borderRadius: 20, padding: "36px 32px", boxShadow: "0 4px 24px rgba(0,0,0,0.07)" }}>
 
           {/* ── PASO 1: Email ── */}
           {step === "email" && (
@@ -339,8 +339,8 @@ export default function ForgotPassword() {
                     autoCorrect="off"
                     spellCheck={false}
                     style={{
-                      border: d ? `2px solid ${C.orange}` : "1.5px solid rgba(255,255,255,0.12)",
-                      background: d ? `${C.orange}15` : "rgba(255,255,255,0.05)",
+                      border: d ? `2px solid ${C.orange}` : "1.5px solid #E6E4EF",
+                      background: d ? `${C.orange}15` : "#F9F8FC",
                       color: C.text,
                       boxShadow: d ? `0 0 12px ${C.orange}25` : "none",
                     }}
@@ -395,7 +395,7 @@ export default function ForgotPassword() {
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
                     {[1, 2, 3, 4, 5].map(n => (
-                      <div key={n} style={{ flex: 1, height: 3, borderRadius: 10, background: n <= strength ? strengthColor : "rgba(255,255,255,0.08)", transition: "background .3s" }} />
+                      <div key={n} style={{ flex: 1, height: 3, borderRadius: 10, background: n <= strength ? strengthColor : "rgba(0,0,0,0.08)", transition: "background .3s" }} />
                     ))}
                   </div>
                   <span style={{ fontSize: 11, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</span>
@@ -431,8 +431,8 @@ export default function ForgotPassword() {
           {/* ── PASO 4: Éxito ── */}
           {step === "success" && (
             <div style={{ textAlign: "center", padding: "8px 0" }}>
-              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(74,222,128,0.12)", border: "2px solid rgba(74,222,128,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-                <CheckCircle2 size={36} color="#4ade80" />
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(14,138,80,0.08)", border: "2px solid rgba(14,138,80,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                <CheckCircle2 size={36} color="#0E8A50" />
               </div>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 10px" }}>¡Contraseña actualizada!</h2>
               <p style={{ fontSize: 14, color: C.muted, margin: "0 0 30px", lineHeight: 1.6 }}>
@@ -446,7 +446,7 @@ export default function ForgotPassword() {
 
         </div>
 
-        <p style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.2)", marginTop: 20 }}>
+        <p style={{ textAlign: "center", fontSize: 12, color: "#9896A8", marginTop: 20 }}>
           © {new Date().getFullYear()} Altar Studio. Todos los derechos reservados.
         </p>
       </div>
@@ -455,7 +455,7 @@ export default function ForgotPassword() {
 }
 
 const MsgBox = ({ msg, isError }: { msg: string; isError: boolean }) => (
-  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", borderRadius: 10, marginTop: 12, background: isError ? "rgba(204,89,173,0.12)" : "rgba(74,222,128,0.12)", border: `1px solid ${isError ? "#CC59AD" : "#4ADE80"}`, fontSize: 13, color: isError ? "#CC59AD" : "#4ADE80", lineHeight: 1.5 }}>
+  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", borderRadius: 10, marginTop: 12, background: isError ? "rgba(168,59,144,0.08)" : "rgba(14,138,80,0.06)", border: `1px solid ${isError ? "rgba(168,59,144,0.30)" : "rgba(14,138,80,0.25)"}`, fontSize: 13, color: isError ? "#A83B90" : "#0E8A50", lineHeight: 1.5 }}>
     {isError ? <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} /> : <CheckCircle2 size={15} style={{ flexShrink: 0, marginTop: 1 }} />}
     {msg}
   </div>
@@ -463,22 +463,22 @@ const MsgBox = ({ msg, isError }: { msg: string; isError: boolean }) => (
 
 const labelStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 6,
-  fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)",
+  fontSize: 13, fontWeight: 600, color: "#5A5870",
   marginBottom: 8,
 };
 
 const btnPrimary: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
   width: "100%", padding: "13px 20px", borderRadius: 12,
-  background: "linear-gradient(135deg, #FF840E, #CC59AD)",
+  background: "linear-gradient(135deg, #E8640C, #A83B90)",
   border: "none", color: "white", fontSize: 15, fontWeight: 700,
   cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-  boxShadow: "0 8px 24px rgba(255,132,14,0.3)", transition: "opacity .2s",
+  boxShadow: "0 8px 24px rgba(232,100,12,0.20)", transition: "opacity .2s",
 };
 
 const eyeBtn: React.CSSProperties = {
   position: "absolute", right: 12, top: "50%",
   transform: "translateY(-60%)",
   background: "none", border: "none", cursor: "pointer",
-  color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center",
+  color: "#9896A8", display: "flex", alignItems: "center",
 };
