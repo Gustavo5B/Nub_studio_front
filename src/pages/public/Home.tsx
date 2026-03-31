@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginModal from "../../components/LoginModal";
-import ProductCard from "../../components/ProductCard";
 import {
   ArrowRight, Star, Sparkles, Palette, Camera,
   Frame, Gem, ShieldCheck, Users, Award, ChevronDown,
@@ -23,8 +22,8 @@ const C = {
   creamSub: "#5A5870",
   creamMut: "#9896A8",
   bg:       "#F9F8FC",
-  bgDeep:   "#FFFFFF",
-  panel:    "#FFFFFF",
+  bgDeep:   "#FFECD4",
+  panel:    "#FFffff",
   border:   "#E6E4EF",
   borderBr: "rgba(0,0,0,0.05)",
   borderHi: "rgba(0,0,0,0.10)",
@@ -213,7 +212,7 @@ function ObraCardHorizontal({
       style={{
         cursor: "pointer", minWidth: "280px", flexShrink: 0,
         borderRadius: 12, overflow: "hidden",
-        background: "#FFFFFF", border: `1px solid ${C.border}`,
+        background: "#FFECD4", border: `1px solid ${C.border}`,
         boxShadow: hov ? "0 12px 36px rgba(0,0,0,0.12)" : "0 2px 8px rgba(0,0,0,0.06)",
         transition: "box-shadow 0.3s ease, border-color 0.3s ease",
       }}
@@ -538,7 +537,7 @@ export default function Home() {
             <div style={{ marginBottom: "clamp(20px, 3vh, 32px)" }}>
               <h1 style={{
                 fontSize: "clamp(40px, 6.5vw, 86px)",
-                fontWeight: 900, color: "#FFFFFF",
+                fontWeight: 900, color: "#FFECD4",
                 lineHeight: 1.0, margin: "0 0 4px",
                 fontFamily: FD, letterSpacing: "-0.035em",
                 ...heroAnim(heroVisible, "0.28s"),
@@ -557,7 +556,7 @@ export default function Home() {
               </h1>
               <h1 style={{
                 fontSize: "clamp(40px, 6.5vw, 86px)",
-                fontWeight: 900, color: "#FFFFFF",
+                fontWeight: 900, color: "#FFECD4",
                 lineHeight: 1.0, margin: 0,
                 fontFamily: FD, letterSpacing: "-0.035em",
                 position: "relative", display: "inline-block",
