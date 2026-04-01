@@ -1,970 +1,863 @@
 // src/pages/public/Home.tsx
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import LoginModal from "../../components/LoginModal";
-import {
-  ArrowRight, Star, Sparkles, Palette, Camera,
-  Frame, Gem, ShieldCheck, Users, Award, ChevronDown,
-} from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../services/authService";
 
-import heroMain from "../../assets/images/trabajo.jpg"
-import obraImg2 from "../../assets/images/cuadro.png";
-
-const C = {
-  orange:   "#E8640C",
-  pink:     "#A83B90",
-  magenta:  "#A83B90",
-  purple:   "#6028AA",
-  blue:     "#2D6FBE",
-  gold:     "#A87006",
-  green:    "#0E8A50",
-  cream:    "#14121E",
-  creamSub: "#5A5870",
-  creamMut: "#9896A8",
-  bg:       "#F9F8FC",
-  bgDeep:   "#FFECD4",
-  panel:    "#FFffff",
-  border:   "#E6E4EF",
-  borderBr: "rgba(0,0,0,0.05)",
-  borderHi: "rgba(0,0,0,0.10)",
-};
-
-const FD = "'Outfit', sans-serif";
-const FB = "'Outfit', sans-serif";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-function useInView(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setInView(true); },
-      { threshold }
-    );
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, inView };
-}
+// ── Paleta ────────────────────────────────────────────────────────────────
+const C = {
+  orange: "#E8640C",
+  pink:   "#A83B90",
+  ink:    "#14121E",
+  sub:    "#9896A8",
+  dark:   "#0D0B14",
+};
 
-const STATS = [
-  { num: "500+", label: "Obras"        },
-  { num: "50+",  label: "Artistas"     },
-  { num: "98%",  label: "Satisfacción" },
-  { num: "5",    label: "Años"         },
-];
+// ── Tipografías ───────────────────────────────────────────────────────────
+const SERIF = "'Playfair Display', serif";
+const SANS  = "'Outfit', sans-serif";
 
-const VALORES = [
-  { num: "01", icon: ShieldCheck, color: C.green,  title: "100% Auténtico", desc: "Certificado oficial en cada obra"  },
-  { num: "02", icon: Award,       color: C.gold,   title: "Artistas Elite", desc: "Selección curada por expertos"    },
-  { num: "03", icon: Users,       color: C.blue,   title: "Comunidad Viva", desc: "Artistas locales de la Huasteca"  },
-  { num: "04", icon: Star,        color: C.orange, title: "5.0 Valoración", desc: "1,247 reseñas verificadas"        },
-];
-
+// ── Categorías (estático — datos editoriales fijos) ───────────────────────
 const CATS = [
-  { slug: "artesania",  label: "Artesanía",  count: "200+", color: C.gold,   icon: Gem,     img: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=900&q=80" },
-  { slug: "pintura",    label: "Pintura",    count: "120+", color: C.orange, icon: Palette, img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=900&q=80" },
-  { slug: "fotografia", label: "Fotografía", count: "85+",  color: C.pink,   icon: Camera,  img: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=900&q=80" },
-  { slug: "escultura",  label: "Escultura",  count: "60+",  color: C.purple, icon: Frame,   img: "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?w=900&q=80" },
+  { slug: "pintura",    label: "Pintura",    count: "120", img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=300&q=80" },
+  { slug: "artesania",  label: "Artesanía",  count: "200", img: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=300&q=80" },
+  { slug: "fotografia", label: "Fotografía", count: "85",  img: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=300&q=80" },
+  { slug: "escultura",  label: "Escultura",  count: "60",  img: "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?w=300&q=80" },
 ];
 
-const MARQUEE_ITEMS = ["ARTESANÍA", "PINTURA", "FOTOGRAFÍA", "ESCULTURA", "ARTE HUASTECO", "NU-B STUDIO"];
+// ── Stats (estático) ──────────────────────────────────────────────────────
+const STATS = [
+  { val: "500+", label: "Obras en galería" },
+  { val: "50+",  label: "Artistas activos"  },
+  { val: "5",    label: "Disciplinas"       },
+  { val: "98%",  label: "Satisfacción"      },
+];
 
+// ── Tipos ─────────────────────────────────────────────────────────────────
 interface Obra {
   id_obra:          number;
   titulo:           string;
   slug:             string;
   imagen_principal: string;
-  precio_base:      number;
-  precio_minimo:    number;
   categoria_nombre: string;
   artista_nombre:   string;
-  artista_alias:    string;
-  estado:           string;
+  artista_alias?:   string;
 }
 
-// ── CatCard ─────────────────────────────────────────────────────────────
-function CatCard({
-  label, count, color, icon: Icon, img, gridStyle = {}, onClick,
-}: {
-  readonly label: string; readonly count: string; readonly color: string;
-  readonly icon: React.ElementType; readonly img: string;
-  readonly gridStyle?: React.CSSProperties; readonly onClick: () => void;
-}) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={e => { if (e.key === "Enter") onClick(); }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        position: "relative", borderRadius: 24, overflow: "hidden",
-        cursor: "pointer", height: "100%",
-        border: `1px solid ${hov ? color + "55" : C.borderBr}`,
-        boxShadow: hov ? `0 32px 80px ${color}28, 0 0 0 1px ${color}18` : `0 4px 24px rgba(0,0,0,0.10)`,
-        transform: hov ? "translateY(-5px)" : "translateY(0)",
-        transition: "border-color 0.3s, box-shadow 0.3s, transform 0.35s cubic-bezier(0.16,1,0.3,1)",
-        ...gridStyle,
-      }}
-    >
-      <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: `url(${img})`,
-        backgroundSize: "cover", backgroundPosition: "center",
-        transform: hov ? "scale(1.08)" : "scale(1)",
-        transition: "transform 0.65s cubic-bezier(0.16,1,0.3,1)",
-        filter: "saturate(0.65) brightness(0.82)",
-      }} />
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(170deg, rgba(7,5,16,0.18) 0%, rgba(7,5,16,0.52) 55%, rgba(7,5,16,0.95) 100%)` }} />
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(140deg, ${color}18 0%, transparent 60%)`, opacity: hov ? 1 : 0.4, transition: "opacity 0.3s" }} />
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, ${color}25, transparent)` }} />
-
-      <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "24px 24px 28px" }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 15,
-          background: `${color}22`, border: `1px solid ${color}55`,
-          backdropFilter: "blur(10px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 6px 20px ${color}28`,
-          transform: hov ? "scale(1.08) rotate(-5deg)" : "scale(1) rotate(0deg)",
-          transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
-        }}>
-          <Icon size={20} color={color} strokeWidth={1.8} />
-        </div>
-
-        <div>
-          <div style={{ fontSize: 10.5, color: `${color}CC`, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8, fontFamily: FB }}>{count} obras</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#F4F0FF", fontFamily: FD, letterSpacing: "-0.02em", lineHeight: 1 }}>{label}</div>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 4,
-              fontSize: 12, fontWeight: 700, color, flexShrink: 0,
-              opacity: hov ? 1 : 0, transform: hov ? "translateX(0)" : "translateX(-10px)",
-              transition: "opacity 0.22s, transform 0.28s",
-            }}>
-              Ver <ArrowRight size={12} strokeWidth={2.5} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+interface Artista {
+  id_artista:     number;
+  nombre_completo:string;
+  alias?:         string;
+  especialidad?:  string;
+  foto_perfil?:   string;
 }
 
-function heroAnim(visible: boolean, delay: string) {
-  return {
-    opacity: visible ? 1 : 0,
-    transform: visible ? "translateY(0)" : "translateY(28px)",
-    transition: `opacity 0.85s ease ${delay}, transform 0.85s ease ${delay}`,
-  };
-}
-
-function sectionFade(inView: boolean, delay = "0s") {
-  return {
-    opacity: inView ? 1 : 0,
-    transform: inView ? "translateY(0)" : "translateY(24px)",
-    transition: `opacity 0.7s ease ${delay}, transform 0.7s ease ${delay}`,
-  };
-}
-
-function MarqueeStrip() {
-  return (
-    <div style={{
-      background: C.bgDeep, overflow: "hidden",
-      borderTop: `1px solid ${C.borderBr}`, borderBottom: `1px solid ${C.borderBr}`,
-      padding: "14px 0",
-    }}>
-      <div style={{ display: "flex", animation: "marqueeScroll 30s linear infinite", width: "max-content" }}>
-        {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-          <span key={`mq-${i}`} style={{
-            display: "inline-flex", alignItems: "center", gap: 20,
-            padding: "0 28px",
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.16em",
-            textTransform: "uppercase", fontFamily: FB,
-            color: i % 3 === 1 ? `${C.orange}85` : C.creamMut,
-          }}>
-            {item}
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: C.orange, display: "inline-block", opacity: 0.55, flexShrink: 0 }} />
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── ObraCardHorizontal ────────────────────────────────────────────────
-function ObraCardHorizontal({
-  title, price, image, artistName, onClick,
-}: {
-  readonly id: string; readonly title: string; readonly price: number;
-  readonly image: string; readonly artistName: string; readonly onClick: () => void;
-}) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={e => { if (e.key === "Enter") onClick(); }}
-      style={{
-        cursor: "pointer", minWidth: "280px", flexShrink: 0,
-        borderRadius: 12, overflow: "hidden",
-        background: "#FFECD4", border: `1px solid ${C.border}`,
-        boxShadow: hov ? "0 12px 36px rgba(0,0,0,0.12)" : "0 2px 8px rgba(0,0,0,0.06)",
-        transition: "box-shadow 0.3s ease, border-color 0.3s ease",
-      }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-    >
-      <div style={{ position: "relative", width: "100%", height: 240, overflow: "hidden", background: "#F5F5F5" }}>
-        <img
-          src={image}
-          alt={title}
-          style={{
-            width: "100%", height: "100%", objectFit: "cover",
-            transform: hov ? "scale(1.08)" : "scale(1)",
-            transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
-        />
-      </div>
-      <div style={{ padding: "16px 16px" }}>
-        <h3 style={{
-          fontSize: 14, fontWeight: 700, color: C.cream, margin: "0 0 6px",
-          fontFamily: FD, letterSpacing: "-0.01em", lineHeight: 1.3,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {title}
-        </h3>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.orange, marginBottom: 8, fontFamily: FB }}>
-          ${price.toLocaleString()}
-        </div>
-        <div style={{ fontSize: 12, color: C.creamSub, fontFamily: FB, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {artistName}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Carrusel Horizontal ───────────────────────────────────────────────
-function HorizontalCarousel({
-  obras, onView, loading,
-}: {
-  readonly obras: Obra[];
-  readonly onView: (id: string) => void;
-  readonly loading: boolean;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  if (loading) {
-    return (
-      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 12 }}>
-        {[...new Array(4)].map((_, i) => (
-          <div key={`sk-${i}`} style={{ minWidth: "280px", height: 340, borderRadius: 12, background: "#F0F0F0", animation: "shimmer 1.5s ease-in-out infinite" }} />
-        ))}
-      </div>
-    );
-  }
-
-  if (obras.length === 0) {
-    return (
-      <div style={{ textAlign: "center", padding: "60px 20px", color: C.creamSub, fontSize: 15, fontFamily: FB }}>
-        Pronto habrá obras disponibles aquí.
-      </div>
-    );
-  }
-
-  return (
-    <div ref={scrollRef} style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 12, scrollBehavior: "smooth" }} className="horizontal-carousel">
-      {obras.map(obra => (
-        <ObraCardHorizontal
-          key={obra.id_obra}
-          id={String(obra.id_obra)}
-          title={obra.titulo}
-          price={Number(obra.precio_minimo || obra.precio_base) || 0}
-          image={obra.imagen_principal || ""}
-          artistName={obra.artista_alias || obra.artista_nombre}
-          onClick={() => onView(String(obra.id_obra))}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ObrasRecientesSection({ obras, obrasLoad, navigate, onView }: {
-  readonly obras: Obra[];
-  readonly obrasLoad: boolean;
-  readonly navigate: ReturnType<typeof useNavigate>;
-  readonly onView: (id: string) => void;
-}) {
-  const { ref, inView } = useInView(0.08);
-  return (
-    <section ref={ref} style={{
-      padding: "80px 60px 100px", maxWidth: 1400, margin: "0 auto",
-      background: "#FAFAFA",
-      opacity: inView ? 1 : 0,
-      transform: inView ? "translateY(0)" : "translateY(32px)",
-      transition: "opacity 0.8s ease, transform 0.8s ease",
-    }}>
-      <div style={{ height: 1, background: C.border, marginBottom: 64 }} />
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 48 }}>
-        <div>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 7,
-            padding: "5px 14px", borderRadius: 100,
-            background: "rgba(232, 100, 12, 0.1)", border: `1px solid rgba(232, 100, 12, 0.3)`,
-            fontSize: 11, fontWeight: 800, color: C.orange,
-            letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, fontFamily: FB,
-          }}>
-            <Star size={11} fill={C.orange} color={C.orange} /> Recién llegadas
-          </div>
-          <h2 style={{ fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 900, color: C.cream, margin: 0, fontFamily: FD, letterSpacing: "-0.025em" }}>
-            Obras <span style={{ color: C.orange }}>recientes</span>
-          </h2>
-          <p style={{ fontSize: 14.5, color: C.creamSub, margin: "10px 0 0", fontFamily: FB }}>Las últimas incorporaciones a nuestra galería</p>
-        </div>
-        <button className="btn-ghost-sm-light" onClick={() => navigate("/catalogo")}>
-          Ver colección <ArrowRight size={14} strokeWidth={2.5} />
-        </button>
-      </div>
-      <HorizontalCarousel obras={obras} onView={onView} loading={obrasLoad} />
-      <div style={{ textAlign: "center", marginTop: 52 }}>
-        <button className="btn-primary-light" onClick={() => navigate("/catalogo")}>
-          Ver colección completa <ArrowRight size={17} strokeWidth={2.5} />
-        </button>
-      </div>
-    </section>
-  );
-}
-
-// ── Home ──────────────────────────────────────────────────────────────
-export default function Home() {
-  const navigate = useNavigate();
-  const [loginOpen,   setLoginOpen]   = useState(false);
-  const [heroVisible, setHeroVisible] = useState(false);
-  const [obras,       setObras]       = useState<Obra[]>([]);
-  const [obrasLoad,   setObrasLoad]   = useState(true);
-
-  const catSection = useInView();
-  const valSection = useInView();
-  const ctaSection = useInView();
-
-  useEffect(() => { const t = setTimeout(() => setHeroVisible(true), 120); return () => clearTimeout(t); }, []);
+// ── Hook IntersectionObserver ─────────────────────────────────────────────
+function useReveal(threshold = 0.10) {
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/obras?limit=4&ordenar=recientes`)
-      .then(r => r.json())
-      .then(j => setObras(j.data || []))
-      .catch(() => {})
-      .finally(() => setObrasLoad(false));
+    const container = containerRef.current;
+    if (!container) return;
+
+    const targets = container.querySelectorAll<HTMLElement>("[data-rv],[data-clip],[data-clip-h],[data-num]");
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          el.classList.add("rv-in");
+
+          // Contador animado para data-num
+          if (el.dataset.num) {
+            const raw    = el.dataset.num;
+            const suffix = raw.replace(/[\d.]/g, "");
+            const target = Number.parseFloat(raw);
+            const dur    = 1200;
+            const start  = performance.now();
+            const tick = (now: number) => {
+              const p    = Math.min((now - start) / dur, 1);
+              const ease = 1 - Math.pow(1 - p, 4);
+              el.textContent = Math.round(ease * target) + suffix;
+              if (p < 1) requestAnimationFrame(tick);
+              else el.textContent = raw;
+            };
+            requestAnimationFrame(tick);
+          }
+
+          io.unobserve(el);
+        }
+      });
+    }, { threshold });
+
+    targets.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, [threshold]);
+
+  return containerRef;
+}
+
+// ── Componente principal ──────────────────────────────────────────────────
+export default function Home() {
+  const navigate   = useNavigate();
+  const isLoggedIn = authService.isAuthenticated();
+  const userRol    = localStorage.getItem("userRol") || "";
+
+  // Estado de puertas de entrada
+  const [doorOpen, setDoorOpen] = useState(false);
+  const [doorGone, setDoorGone] = useState(false);
+
+  // Datos de API
+  const [obras,    setObras]    = useState<Obra[]>([]);
+  const [artistas, setArtistas] = useState<Artista[]>([]);
+
+  // Refs cursor
+  const dotRef  = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+
+  // Ref parallax expo
+  const expoFrameRef   = useRef<HTMLDivElement>(null);
+  const expoSectionRef = useRef<HTMLElement>(null);
+
+  // Ref hover categorías
+  const [hovCat, setHovCat] = useState<number | null>(null);
+
+  // Reveal hook — aplica IntersectionObserver a todos los elementos animados
+  const pageRef = useReveal(0.10);
+
+  // ── Efecto puertas ────────────────────────────────────────────────────
+  useEffect(() => {
+    const t1 = setTimeout(() => setDoorOpen(true),  1400);
+    const t2 = setTimeout(() => setDoorGone(true),  2700);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  const handleVerObra = (id: string) => {
-    const obra = obras.find(o => String(o.id_obra) === id);
-    if (obra?.slug) navigate(`/obras/${obra.slug}`);
-  };
+  // ── Cursor personalizado ──────────────────────────────────────────────
+  useEffect(() => {
+    document.body.style.cursor = "none";
+    let rx = 0, ry = 0;
+    let rafId: number;
+
+    const onMove = (e: MouseEvent) => {
+      const { clientX: mx, clientY: my } = e;
+      if (dotRef.current) {
+        dotRef.current.style.left = `${mx}px`;
+        dotRef.current.style.top  = `${my}px`;
+      }
+      // Detectar sección oscura (expo)
+      const el     = document.elementFromPoint(mx, my);
+      const inDark = el?.closest(".home-expo") !== null;
+      dotRef.current?.classList.toggle("cur-dark", inDark);
+      ringRef.current?.classList.toggle("cur-dark", inDark);
+      // Animar ring con lag
+      const animate = () => {
+        rx += (mx - rx) * 0.15;
+        ry += (my - ry) * 0.15;
+        if (ringRef.current) {
+          ringRef.current.style.left = `${rx}px`;
+          ringRef.current.style.top  = `${ry}px`;
+        }
+        rafId = requestAnimationFrame(animate);
+      };
+      cancelAnimationFrame(rafId);
+      animate();
+    };
+
+    document.addEventListener("mousemove", onMove);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(rafId);
+      document.body.style.cursor = "";
+    };
+  }, []);
+
+  // ── Cursor hover en interactivos ──────────────────────────────────────
+  const cursorOn  = useCallback(() => {
+    dotRef.current?.classList.add("cur-over");
+    ringRef.current?.classList.add("cur-over");
+  }, []);
+  const cursorOff = useCallback(() => {
+    dotRef.current?.classList.remove("cur-over");
+    ringRef.current?.classList.remove("cur-over");
+  }, []);
+
+  // ── Parallax expo ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const onScroll = () => {
+      const sec = expoSectionRef.current;
+      const frm = expoFrameRef.current;
+      if (!sec || !frm) return;
+      const rect     = sec.getBoundingClientRect();
+      const vh       = window.innerHeight;
+      const progress = 1 - (rect.top + rect.height / 2) / (vh / 2 + rect.height / 2);
+      frm.style.transform = `translateY(${progress * 38}px)`;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // ── Fetch obras ───────────────────────────────────────────────────────
+  useEffect(() => {
+    fetch(`${API_URL}/api/obras?limit=6&ordenar=recientes`)
+      .then(r => r.json())
+      .then(j => setObras(j.data || []))
+      .catch(() => {});
+  }, []);
+
+  // ── Fetch artistas ────────────────────────────────────────────────────
+  useEffect(() => {
+    fetch(`${API_URL}/api/artistas?limit=5`)
+      .then(r => r.json())
+      .then(j => setArtistas(j.data || j || []))
+      .catch(() => {});
+  }, []);
+
+  // ── Tamaños de retrato (cíclico) ──────────────────────────────────────
+  const portraitSizes: { w: number; h: number; cls: string }[] = [
+    { w: 210, h: 290, cls: "grande"  },
+    { w: 165, h: 230, cls: "mediano" },
+    { w: 142, h: 192, cls: "chico"   },
+    { w: 210, h: 290, cls: "grande"  },
+    { w: 165, h: 230, cls: "mediano" },
+  ];
 
   return (
-    <div style={{
-      minHeight: "100vh", background: C.bg, fontFamily: FB, overflowX: "hidden",
-      transform: loginOpen ? "scale(0.97)" : "scale(1)",
-      filter: loginOpen ? "brightness(0.45)" : "brightness(1)",
-      transition: "transform 0.4s cubic-bezier(0.16,1,0.3,1), filter 0.4s ease",
-    }}>
-      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+    <div ref={pageRef} style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh" }}>
 
-      {/* ══════════════════════════════════════════════════
-          HERO — EDITORIAL IZQUIERDA + FLOTANTES
-      ══════════════════════════════════════════════════ */}
-      <section style={{
-        position: "relative",
-        minHeight: "100vh",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-      }}>
-        {/* Imagen de fondo */}
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: `url(${heroMain})`,
-          backgroundSize: "cover", backgroundPosition: "center 38%",
-          transform: heroVisible ? "scale(1.0)" : "scale(1.06)",
-          transition: "transform 8s cubic-bezier(0.0, 0.0, 0.2, 1)",
-        }} />
+      {/* ═══════════════════════════════════
+          CSS GLOBAL DEL COMPONENTE
+      ═══════════════════════════════════ */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
 
-        {/* Overlay: más opaco a la izquierda para legibilidad del texto */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(105deg, rgba(7,5,16,0.92) 0%, rgba(7,5,16,0.78) 38%, rgba(7,5,16,0.30) 65%, rgba(7,5,16,0.10) 100%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse 70% 80% at 0% 100%, ${C.orange}22, transparent 60%)` }} />
+        /* ── Grano de película ── */
+        .home-grain {
+          position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+          background-size: 160px 160px; mix-blend-mode: multiply;
+        }
 
-        {/* ── Elementos decorativos flotantes (derecha) ── */}
+        /* ── Cursor ── */
+        .home-cursor-dot {
+          position: fixed; width: 6px; height: 6px; border-radius: 50%;
+          background: #14121E; pointer-events: none; z-index: 99999;
+          transform: translate(-50%, -50%);
+          transition: width .22s, height .22s, background .22s;
+        }
+        .home-cursor-ring {
+          position: fixed; width: 32px; height: 32px; border-radius: 50%;
+          border: 1px solid rgba(20,18,30,.22); pointer-events: none; z-index: 99998;
+          transform: translate(-50%, -50%);
+          transition: width .3s, height .3s, border-color .25s;
+        }
+        .home-cursor-dot.cur-over  { width: 4px; height: 4px; background: #E8640C; }
+        .home-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
+        .home-cursor-dot.cur-dark  { background: #fff; }
+        .home-cursor-ring.cur-dark { border-color: rgba(255,255,255,.3); }
 
-        {/* Stat card 1 — Obras */}
-        <div style={{
-          position: "absolute", right: "clamp(180px,18vw,280px)", top: "22%",
-          transform: heroVisible ? "rotate(-6deg) translateY(0)" : "rotate(-6deg) translateY(30px)",
-          opacity: heroVisible ? 1 : 0,
-          transition: "opacity 0.8s ease 0.9s, transform 0.8s ease 0.9s",
-          animation: heroVisible ? "floatA 5s ease-in-out infinite 1s" : "none",
-        }}>
-          <div style={{
-            padding: "14px 20px", borderRadius: 16,
-            background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)",
-            border: `2px solid ${C.orange}40`,
-            textAlign: "center", minWidth: 90,
-          }}>
-            <div style={{ fontSize: 26, fontWeight: 900, color: C.orange, fontFamily: FD, lineHeight: 1 }}>500+</div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: C.creamSub, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 4, fontFamily: FB }}>Obras</div>
+        /* ── Puertas ── */
+        .home-door-wrap {
+          position: fixed; inset: 0; z-index: 99990;
+          display: flex; pointer-events: none;
+        }
+        .home-door {
+          flex: 1; background: #0D0B14;
+          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
+        }
+        .home-door.izq  { transform-origin: left  center; }
+        .home-door.der  { transform-origin: right center; }
+        .home-door-wrap.open .home-door.izq { transform: translateX(-100%); }
+        .home-door-wrap.open .home-door.der { transform: translateX(100%);  }
+        .home-door-logo {
+          position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          z-index: 99991; font-family: 'Playfair Display', serif;
+          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
+          letter-spacing: -.03em; pointer-events: none;
+          transition: opacity .35s ease .8s;
+        }
+        .home-door-logo.open { opacity: 0; }
+        .home-door-sub {
+          position: fixed; top: calc(50% + clamp(48px, 8vw, 104px)); left: 50%;
+          transform: translateX(-50%);
+          z-index: 99991; font-size: 9px; font-weight: 700; letter-spacing: .44em;
+          text-transform: uppercase; color: rgba(255,255,255,.35);
+          pointer-events: none; transition: opacity .3s ease .7s;
+        }
+        .home-door-sub.open { opacity: 0; }
+        .home-door-line {
+          position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
+          pointer-events: none; transition: opacity .25s ease .75s;
+        }
+        .home-door-line.open { opacity: 0; }
+
+        /* ── Animaciones hero ── */
+        @keyframes barIn    { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
+        @keyframes fadeL    { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes fadeR    { from{opacity:0;transform:translateX(16px)}  to{opacity:1;transform:translateX(0)} }
+        @keyframes fadeI    { from{opacity:0} to{opacity:1} }
+        @keyframes pulse    { 0%,100%{box-shadow:0 0 10px rgba(232,100,12,.5);transform:scale(1)} 50%{box-shadow:0 0 22px rgba(232,100,12,.85);transform:scale(1.38)} }
+        @keyframes scrollDn { from{top:-100%} to{top:200%} }
+        @keyframes marquee  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+        .altar-letter {
+          display: inline-block; opacity: 0;
+          transform: translateY(60px) skewY(4deg);
+          animation: letterUp 1.1s cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes letterUp { to{opacity:1;transform:translateY(0) skewY(0)} }
+        .altar-letter:nth-child(1){animation-delay:.18s}
+        .altar-letter:nth-child(2){animation-delay:.26s}
+        .altar-letter:nth-child(3){animation-delay:.34s}
+        .altar-letter:nth-child(4){animation-delay:.42s}
+        .altar-letter:nth-child(5){animation-delay:.50s}
+
+        .hero-corner { position: absolute; width: 38px; height: 38px; pointer-events: none; opacity: 0; animation: fadeI 1s ease 1.1s both; }
+        .hero-corner::before, .hero-corner::after { content: ''; position: absolute; background: rgba(0,0,0,.09); }
+        .hero-corner::before { width: 1px; height: 38px; }
+        .hero-corner::after  { width: 38px; height: 1px; }
+        .hero-corner.tl { top:22px; left:26px; }
+        .hero-corner.tr { top:22px; right:26px; }
+        .hero-corner.tr::before { right:0; left:auto; }
+        .hero-corner.tr::after  { right:0; left:auto; }
+        .hero-corner.bl { bottom:22px; left:26px; }
+        .hero-corner.bl::before { bottom:0; top:auto; }
+        .hero-corner.bl::after  { bottom:0; top:auto; }
+        .hero-corner.br { bottom:22px; right:26px; }
+        .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
+        .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
+
+        /* ── Scroll reveals ── */
+        [data-rv]   { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
+        [data-clip] { clip-path:inset(100% 0 0 0); transition:clip-path 1.3s cubic-bezier(.16,1,.3,1); }
+        [data-clip-h] { clip-path:inset(0 100% 0 0); transition:clip-path 1.5s cubic-bezier(.16,1,.3,1); }
+        [data-rv].rv-in   { opacity:1; transform:translateY(0); }
+        [data-clip].rv-in { clip-path:inset(0% 0 0 0); }
+        [data-clip-h].rv-in { clip-path:inset(0 0% 0 0); }
+
+        /* delays para grupos */
+        [data-rv][data-d="1"]{transition-delay:.06s}
+        [data-rv][data-d="2"]{transition-delay:.14s}
+        [data-rv][data-d="3"]{transition-delay:.22s}
+        [data-rv][data-d="4"]{transition-delay:.30s}
+        [data-rv][data-d="5"]{transition-delay:.38s}
+        [data-clip][data-d="1"]{transition-delay:.05s}
+        [data-clip][data-d="2"]{transition-delay:.20s}
+        [data-clip][data-d="3"]{transition-delay:.35s}
+        [data-clip][data-d="4"]{transition-delay:.50s}
+        [data-clip][data-d="5"]{transition-delay:.65s}
+
+        /* ── Marco de obra ── */
+        .home-marco {
+          position: relative; border-radius: 2px; overflow: hidden;
+          transform: perspective(1000px) rotateX(2deg) rotateY(-1.2deg);
+          transition: transform .9s cubic-bezier(.16,1,.3,1), box-shadow .9s;
+          box-shadow: 0 0 0 1px rgba(0,0,0,.06), -2px 4px 12px rgba(0,0,0,.07),
+            2px 12px 32px rgba(0,0,0,.09), 0 28px 60px rgba(0,0,0,.08);
+        }
+        .home-marco::after {
+          content: ''; position: absolute; inset: 0; pointer-events: none;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), inset 0 2px 8px rgba(255,255,255,.06);
+        }
+        .home-pieza:hover .home-marco {
+          transform: perspective(1000px) rotateX(0) rotateY(0) translateY(-10px);
+          box-shadow: 0 0 0 1px rgba(0,0,0,.08), -1px 8px 22px rgba(0,0,0,.10),
+            1px 20px 50px rgba(0,0,0,.14), 0 40px 80px rgba(0,0,0,.12);
+        }
+        .home-marco img { width: 100%; display: block; height: auto; filter: saturate(.80) contrast(1.01); transition: filter .8s, transform 1s; }
+        .home-pieza:hover .home-marco img { filter: saturate(.98) contrast(1.02); transform: scale(1.03); }
+
+        /* ── Categorías ── */
+        .home-cat-item { transition: padding-left .4s cubic-bezier(.16,1,.3,1); }
+        .home-cat-item:hover { padding-left: 10px; }
+        .home-cat-name  { transition: color .28s, letter-spacing .4s cubic-bezier(.16,1,.3,1); }
+        .home-cat-item:hover .home-cat-name { color: #E8640C !important; letter-spacing: .005em !important; }
+        .home-cat-img   { opacity: 0; transform: translateY(-50%) translateX(14px) scale(.94); transition: opacity .38s, transform .48s cubic-bezier(.16,1,.3,1); }
+        .home-cat-item:hover .home-cat-img { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+        .home-cat-count { transition: color .25s; }
+        .home-cat-item:hover .home-cat-count { color: #E8640C !important; }
+        .home-cat-arrow { transition: transform .32s, color .25s; }
+        .home-cat-item:hover .home-cat-arrow { transform: translateX(8px); color: #E8640C !important; }
+
+        /* ── Artistas ── */
+        .home-retrato { transition: transform .5s cubic-bezier(.16,1,.3,1); }
+        .home-retrato:hover { transform: translateY(-10px); }
+        .home-retrato-foto { border-radius: 2px; overflow: hidden; position: relative;
+          box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.08), 0 18px 50px rgba(0,0,0,.08);
+          transition: box-shadow .55s;
+        }
+        .home-retrato:hover .home-retrato-foto { box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 12px 30px rgba(0,0,0,.12), 0 30px 70px rgba(0,0,0,.12); }
+        .home-retrato-foto img { display: block; object-fit: cover; filter: saturate(.65) contrast(1.02); transition: filter .65s, transform .8s; }
+        .home-retrato:hover .home-retrato-foto img { filter: saturate(.90) contrast(1.03); transform: scale(1.04); }
+        .home-retrato-foto::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(232,100,12,.12) 0%, transparent 50%); opacity: 0; transition: opacity .45s; pointer-events: none; }
+        .home-retrato:hover .home-retrato-foto::after { opacity: 1; }
+        .home-retrato-nombre { transition: color .28s; }
+        .home-retrato:hover .home-retrato-nombre { color: #14121E !important; }
+
+        /* ── Expo destacada ── */
+        .home-expo-frame {
+          position: relative; border-radius: 2px; overflow: hidden;
+          transform: perspective(1200px) rotateX(1.5deg) rotateY(1.8deg);
+          transition: transform 1s cubic-bezier(.16,1,.3,1), box-shadow 1s;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.06), -4px 8px 24px rgba(0,0,0,.50),
+            4px 20px 56px rgba(0,0,0,.55), 0 40px 90px rgba(0,0,0,.60),
+            0 70px 140px rgba(0,0,0,.40);
+        }
+        .home-expo-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), inset 0 3px 12px rgba(255,255,255,.04);
+        }
+        .home-expo-frame-wrap:hover .home-expo-frame {
+          transform: perspective(1200px) rotateX(0) rotateY(0) translateY(-8px);
+          box-shadow: 0 0 0 1px rgba(255,255,255,.08), -2px 14px 36px rgba(0,0,0,.55),
+            2px 28px 70px rgba(0,0,0,.60), 0 56px 110px rgba(0,0,0,.65);
+        }
+        .home-expo-frame img { display: block; width: 340px; height: auto; filter: saturate(.75) contrast(1.05) brightness(.95); transition: filter .8s, transform 1s; }
+        .home-expo-frame-wrap:hover .home-expo-frame img { filter: saturate(.92) contrast(1.06) brightness(1.0); transform: scale(1.02); }
+
+        /* ── CTA obras ── */
+        .home-cta-obra { position: absolute; border-radius: 2px; overflow: hidden; transition: box-shadow .5s, transform .5s; }
+        .home-cta-obra img { display: block; object-fit: cover; filter: saturate(.80); transition: filter .5s; }
+        .home-cta-obra:hover img { filter: saturate(.96); }
+
+        /* ── Footer links ── */
+        .home-footer-link { font-size: 13px; color: rgba(0,0,0,.42); text-decoration: none; transition: color .2s; }
+        .home-footer-link:hover { color: #14121E; }
+        .home-footer-social { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(0,0,0,.09); display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,.30); font-size: 11px; text-decoration: none; transition: all .2s; }
+        .home-footer-social:hover { border-color: #E8640C; color: #E8640C; }
+
+        /* ── Nav links hero ── */
+        .home-nav-link { display: flex; align-items: center; gap: 9px; font-size: 9.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: #9896A8; text-decoration: none; transition: color .25s; }
+        .home-nav-link::before { content: ''; display: block; width: 12px; height: 1px; background: currentColor; flex-shrink: 0; transition: width .28s; }
+        .home-nav-link:hover { color: #14121E; }
+        .home-nav-link:hover::before { width: 22px; }
+
+        /* ── Marquee ── */
+        .home-marquee-track { display: inline-flex; animation: marquee 28s linear infinite; }
+        .home-marquee-wrap:hover .home-marquee-track { animation-play-state: paused; }
+
+        /* ── Scroll indicator ── */
+        .home-scroll-ln::after { content: ''; position: absolute; top: -100%; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, #E8640C, transparent); animation: scrollDn 2.4s ease-in-out 2.2s infinite; }
+      `}</style>
+
+      {/* Grano */}
+      <div className="home-grain" />
+
+      {/* Cursor */}
+      <div ref={dotRef}  className="home-cursor-dot"  />
+      <div ref={ringRef} className="home-cursor-ring" />
+
+      {/* ═══ PUERTAS DE ENTRADA ═══ */}
+      {!doorGone && (
+        <>
+          <div className={`home-door-wrap${doorOpen ? " open" : ""}`}>
+            <div className="home-door izq" />
+            <div className="home-door der" />
           </div>
+          <div className={`home-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
+          <div className={`home-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
+          <div className={`home-door-line${doorOpen ? " open" : ""}`} />
+        </>
+      )}
+
+      {/* ═══════════════════════════════════
+          I · HERO
+      ═══════════════════════════════════ */}
+      <section style={{ position: "relative", height: "100vh", minHeight: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", overflow: "hidden" }}>
+
+        {/* Barra superior */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`, animation: "barIn 2s cubic-bezier(.16,1,.3,1) both" }} />
+
+        {/* Esquinas decorativas */}
+        <div className="hero-corner tl" />
+        <div className="hero-corner tr" />
+        <div className="hero-corner bl" />
+        <div className="hero-corner br" />
+
+        {/* Texto ambiental */}
+        <div style={{ position: "absolute", bottom: 70, left: "50%", transform: "translateX(-50%)", fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(60px,8vw,110px)", fontWeight: 900, color: "rgba(0,0,0,.020)", whiteSpace: "nowrap", letterSpacing: "-.02em", userSelect: "none", pointerEvents: "none", animation: "fadeI 2s ease 2s both" }}>galería</div>
+
+        {/* Nav top-left */}
+        <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both" }}>
+          <Link to="/catalogo"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
+          <Link to="/artistas"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
+          <Link to="/blog"           className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
+          <Link to="/contacto"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
+        </nav>
+
+        {/* Nav top-right */}
+        <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both" }}>
+          {!isLoggedIn ? (
+            <>
+              <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Ingresar</Link>
+              <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "7px 16px", borderRadius: 100, background: C.orange, boxShadow: "0 4px 16px rgba(232,100,12,.30)", transition: "all .22s" }}>Ser artista</Link>
+            </>
+          ) : (
+            <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)" }}>Mi cuenta</Link>
+          )}
         </div>
 
-        {/* Stat card 2 — Artistas */}
-        <div style={{
-          position: "absolute", right: "clamp(60px,6vw,100px)", top: "18%",
-          transform: heroVisible ? "rotate(5deg) translateY(0)" : "rotate(5deg) translateY(30px)",
-          opacity: heroVisible ? 1 : 0,
-          transition: "opacity 0.8s ease 1.05s, transform 0.8s ease 1.05s",
-          animation: heroVisible ? "floatB 6s ease-in-out infinite 1.2s" : "none",
-        }}>
-          <div style={{
-            padding: "14px 20px", borderRadius: 16,
-            background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)",
-            border: `2px solid ${C.purple}40`,
-            textAlign: "center", minWidth: 90,
-          }}>
-            <div style={{ fontSize: 26, fontWeight: 900, color: C.purple, fontFamily: FD, lineHeight: 1 }}>50+</div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: C.creamSub, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 4, fontFamily: FB }}>Artistas</div>
+        {/* Centro — ALTAR */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: .88, display: "flex", userSelect: "none", margin: 0 }}>
+            {"ALTAR".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
+          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, margin: "26px 0 20px", animation: "fadeI 1s ease .8s both" }}>
+            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.orange, boxShadow: "0 0 10px rgba(232,100,12,.5)", animation: "pulse 3.2s ease-in-out 1.5s infinite" }} />
+            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
           </div>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".44em", textTransform: "uppercase", color: C.sub, fontFamily: SANS, margin: 0, animation: "fadeI 1s ease 1s both" }}>Galería de Arte</p>
         </div>
 
-        {/* Rating badge flotante */}
-        <div style={{
-          position: "absolute", right: "clamp(100px,10vw,160px)", top: "54%",
-          transform: heroVisible ? "rotate(-3deg) translateY(0)" : "rotate(-3deg) translateY(30px)",
-          opacity: heroVisible ? 1 : 0,
-          transition: "opacity 0.8s ease 1.2s, transform 0.8s ease 1.2s",
-          animation: heroVisible ? "floatA 7s ease-in-out infinite 0.5s" : "none",
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 16px", borderRadius: 50,
-            background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)",
-            border: `1px solid ${C.gold}40`,
-            whiteSpace: "nowrap",
-          }}>
-            <div style={{ display: "flex", gap: 2 }}>
-              {[...new Array(5)].map((_, i) => <Star key={i} size={12} fill={C.gold} color={C.gold} />)}
-            </div>
-            <span style={{ fontSize: 13, fontWeight: 900, color: C.cream, fontFamily: FB }}>5.0</span>
-            <span style={{ fontSize: 11, color: C.creamMut, fontFamily: FB }}>1,247 reseñas</span>
-          </div>
+        {/* Stats laterales */}
+        <div style={{ position: "absolute", bottom: 44, left: 52, fontFamily: SERIF, fontSize: 10.5, fontStyle: "italic", color: "rgba(0,0,0,.12)", letterSpacing: ".05em", display: "flex", alignItems: "center", gap: 10, animation: "fadeI 1.5s ease 1.4s both" }}>
+          <span style={{ display: "block", width: 22, height: 1, background: "rgba(0,0,0,.08)" }} />
+          500 · obras
+        </div>
+        <div style={{ position: "absolute", bottom: 44, right: 52, fontFamily: SERIF, fontSize: 10.5, fontStyle: "italic", color: "rgba(0,0,0,.12)", letterSpacing: ".05em", display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse", animation: "fadeI 1.5s ease 1.4s both" }}>
+          <span style={{ display: "block", width: 22, height: 1, background: "rgba(0,0,0,.08)" }} />
+          50 · artistas
         </div>
 
-        {/* Badge "98% satisfacción" */}
-        <div style={{
-          position: "absolute", right: "clamp(55px,5vw,90px)", top: "66%",
-          transform: heroVisible ? "rotate(4deg) translateY(0)" : "rotate(4deg) translateY(30px)",
-          opacity: heroVisible ? 1 : 0,
-          transition: "opacity 0.8s ease 1.35s, transform 0.8s ease 1.35s",
-          animation: heroVisible ? "floatB 5.5s ease-in-out infinite 0.8s" : "none",
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 16px", borderRadius: 12,
-            background: `${C.green}E8`, backdropFilter: "blur(12px)",
-            border: `1px solid ${C.green}60`,
-          }}>
-            <ShieldCheck size={14} color="white" strokeWidth={2} />
-            <span style={{ fontSize: 12, fontWeight: 800, color: "white", fontFamily: FB }}>Certificado oficial</span>
-          </div>
+        {/* Scroll indicator */}
+        <div style={{ position: "absolute", bottom: 34, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: "fadeI 1s ease 1.8s both" }}>
+          <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: ".32em", textTransform: "uppercase", color: "rgba(0,0,0,.14)", fontFamily: SANS }}>Explorar</div>
+          <div style={{ width: 1, height: 36, background: "linear-gradient(to bottom, rgba(0,0,0,.12), transparent)", position: "relative", overflow: "hidden" }} className="home-scroll-ln" />
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════
+          MANIFIESTO
+      ═══════════════════════════════════ */}
+      <section style={{ padding: "80px 72px 90px", borderTop: "1px solid rgba(0,0,0,.05)", display: "flex", alignItems: "center", gap: 72, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", left: -12, top: "50%", transform: "translateY(-50%)", fontFamily: SERIF, fontSize: 280, fontWeight: 900, fontStyle: "italic", color: "rgba(0,0,0,.025)", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>I</div>
+        <div data-rv style={{ fontFamily: SERIF, fontSize: 10, fontStyle: "italic", color: "rgba(0,0,0,.18)", letterSpacing: ".04em", writingMode: "vertical-rl", transform: "rotate(180deg)", flexShrink: 0 }}>Manifiesto</div>
+        <div data-rv data-d="1" style={{ fontFamily: SERIF, fontSize: "clamp(20px,2.8vw,34px)", fontStyle: "italic", fontWeight: 400, color: C.ink, lineHeight: 1.5, letterSpacing: "-.01em", maxWidth: 680 }}>
+          "El arte de la Huasteca no se <em style={{ fontStyle: "normal", fontWeight: 700, color: C.orange }}>exhibe</em> —<br />
+          se <em style={{ fontStyle: "normal", fontWeight: 700, color: C.orange }}>encuentra</em>."
+        </div>
+        <div data-rv data-d="2" style={{ flex: 1, height: 1, background: "rgba(0,0,0,.05)", flexShrink: 0 }} />
+      </section>
+
+      {/* ═══ MARQUEE ═══ */}
+      <div className="home-marquee-wrap" style={{ borderTop: "1px solid rgba(0,0,0,.05)", borderBottom: "1px solid rgba(0,0,0,.05)", padding: "16px 0", overflow: "hidden", whiteSpace: "nowrap" }}>
+        <div className="home-marquee-track">
+          {["Pintura", "Fotografía", "Cerámica", "Escultura", "Artesanía", "Arte Digital", "Grabado", "Textil",
+            "Pintura", "Fotografía", "Cerámica", "Escultura", "Artesanía", "Arte Digital", "Grabado", "Textil"].map((item, i) => (
+            <div key={i} style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.20)", padding: "0 28px", display: "inline-flex", alignItems: "center", gap: 28, fontFamily: SANS }}>
+              {item}
+              <span style={{ fontSize: 7, color: C.orange, opacity: .7 }}>★</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════
+          II · COLECCIÓN (masonry — API)
+      ═══════════════════════════════════ */}
+      <section style={{ padding: "80px 72px 100px" }}>
+        {/* Etiqueta de sala */}
+        <div data-rv style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 64 }}>
+          <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
+          <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.16)", whiteSpace: "nowrap", fontFamily: SANS }}>I · Colección</div>
+          <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
+          <Link to="/catalogo" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: C.orange, whiteSpace: "nowrap", textDecoration: "none", fontFamily: SANS }}>
+            Ver todo →
+          </Link>
         </div>
 
-        {/* Círculo decorativo grande — fondo derecho */}
-        <div style={{
-          position: "absolute", right: "-60px", top: "50%",
-          transform: "translateY(-50%)",
-          width: "clamp(300px,35vw,500px)", height: "clamp(300px,35vw,500px)",
-          borderRadius: "50%",
-          border: `1px solid rgba(255,255,255,0.06)`,
-          pointerEvents: "none",
-        }} />
-        <div style={{
-          position: "absolute", right: "20px", top: "50%",
-          transform: "translateY(-50%)",
-          width: "clamp(200px,25vw,360px)", height: "clamp(200px,25vw,360px)",
-          borderRadius: "50%",
-          border: `1px solid ${C.orange}20`,
-          pointerEvents: "none",
-        }} />
-
-        {/* ── Contenido principal — IZQUIERDA ── */}
-        <div className="hero-bottom" style={{
-          position: "relative",
-          maxWidth: 1320,
-          margin: "0 auto",
-          padding: "0 clamp(24px, 5vw, 72px)",
-          width: "100%",
-          zIndex: 2,
-          paddingTop: "clamp(80px, 10vh, 120px)",
-          paddingBottom: "clamp(80px, 10vh, 120px)",
-        }}>
-          <div style={{ maxWidth: "clamp(320px, 52%, 620px)" }}>
-
-            {/* Badge certificada */}
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "6px 16px 6px 8px", borderRadius: 100,
-              background: "rgba(255,255,255,0.10)", backdropFilter: "blur(10px)",
-              border: `1px solid rgba(255,255,255,0.22)`,
-              fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.88)",
-              fontFamily: FB, letterSpacing: "0.06em",
-              marginBottom: 28,
-              opacity: heroVisible ? 1 : 0, transition: "opacity 0.7s ease 0.2s",
-            }}>
-              <div style={{
-                width: 22, height: 22, borderRadius: 7,
-                background: C.orange,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                <Sparkles size={11} color="white" />
-              </div>
-              Galería Certificada · Huasteca Hidalguense
-            </div>
-
-            {/* H1 — izquierda, grande, respirado */}
-            <div style={{ marginBottom: "clamp(20px, 3vh, 32px)" }}>
-              <h1 style={{
-                fontSize: "clamp(40px, 6.5vw, 86px)",
-                fontWeight: 900, color: "#FFECD4",
-                lineHeight: 1.0, margin: "0 0 4px",
-                fontFamily: FD, letterSpacing: "-0.035em",
-                ...heroAnim(heroVisible, "0.28s"),
-              }}>
-                El Arte
-              </h1>
-              <h1 style={{
-                fontSize: "clamp(40px, 6.5vw, 86px)",
-                fontWeight: 900, lineHeight: 1.0,
-                margin: "0 0 4px", fontFamily: FD, letterSpacing: "-0.035em",
-                background: `linear-gradient(135deg, ${C.orange} 0%, ${C.pink} 55%, ${C.purple} 100%)`,
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                ...heroAnim(heroVisible, "0.42s"),
-              }}>
-                Huasteco
-              </h1>
-              <h1 style={{
-                fontSize: "clamp(40px, 6.5vw, 86px)",
-                fontWeight: 900, color: "#FFECD4",
-                lineHeight: 1.0, margin: 0,
-                fontFamily: FD, letterSpacing: "-0.035em",
-                position: "relative", display: "inline-block",
-                ...heroAnim(heroVisible, "0.56s"),
-              }}>
-                que{" "}
-                <span style={{ position: "relative", display: "inline-block" }}>
-                  transforma
-                  <svg style={{ position: "absolute", bottom: "-8px", left: 0, width: "100%", overflow: "visible" }} height="10" viewBox="0 0 220 10" preserveAspectRatio="none">
-                    <path d="M2,8 Q55,2 110,6 Q165,10 218,4" stroke={C.orange} strokeWidth="3" fill="none" strokeLinecap="round" />
-                  </svg>
-                </span>
-              </h1>
-            </div>
-
-            {/* Descripción */}
-            <p style={{
-              fontSize: "clamp(14px, 1.8vw, 17px)",
-              color: "rgba(200,196,224,0.85)",
-              lineHeight: 1.78,
-              margin: "0 0 clamp(28px, 4vh, 40px)",
-              maxWidth: 480,
-              fontFamily: FB,
-              opacity: heroVisible ? 1 : 0,
-              transition: "opacity 0.8s ease 0.7s",
-            }}>
-              Conecta con la tradición vibrante y el talento extraordinario de artistas locales. Cada obra, un certificado de autenticidad garantizado.
-            </p>
-
-            {/* Botones */}
-            <div style={{
-              display: "flex", gap: 14, flexWrap: "wrap",
-              opacity: heroVisible ? 1 : 0, transition: "opacity 0.8s ease 0.84s",
-            }}>
-              <button onClick={() => navigate("/catalogo")} className="btn-primary">
-                Explorar galería <ArrowRight size={17} strokeWidth={2.5} />
-              </button>
-              <button onClick={() => setLoginOpen(true)} className="btn-ghost-hero">
-                Iniciar sesión
-              </button>
-            </div>
-
-            {/* Línea de stats horizontal — compacta, bajo los botones */}
-            <div style={{
-              display: "flex", gap: 28, marginTop: "clamp(28px, 4vh, 44px)",
-              opacity: heroVisible ? 1 : 0, transition: "opacity 0.8s ease 1.0s",
-            }}>
-              {STATS.map(({ num, label }) => (
-                <div key={label}>
-                  <div style={{
-                    fontSize: "clamp(18px, 2.8vw, 28px)", fontWeight: 900,
-                    color: C.orange, fontFamily: FD, lineHeight: 1, marginBottom: 3,
-                  }}>{num}</div>
-                  <div style={{
-                    fontSize: 10, fontWeight: 700, color: "rgba(200,196,224,0.55)",
-                    letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: FB,
-                  }}>{label}</div>
+        {/* Masonry 3 columnas */}
+        <div style={{ columnCount: 3, columnGap: 36 }}>
+          {obras.slice(0, 6).map((obra, i) => (
+            <div
+              key={obra.id_obra}
+              className="home-pieza"
+              style={{ breakInside: "avoid", marginBottom: 44, display: "block", cursor: "pointer" }}
+              onClick={() => navigate(`/obras/${obra.slug}`)}
+              onMouseEnter={cursorOn}
+              onMouseLeave={cursorOff}
+            >
+              <div style={{ position: "relative" }}>
+                {/* Haz de luz de techo */}
+                <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: "75%", height: "calc(100% + 60px)", background: "linear-gradient(to bottom, rgba(255,252,246,.72) 0%, rgba(255,252,246,.18) 35%, transparent 65%)", pointerEvents: "none", zIndex: 1 }} />
+                <div data-clip data-d={String((i % 3) + 1)} className="home-marco">
+                  <img
+                    src={obra.imagen_principal}
+                    alt={obra.titulo}
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=700&q=80"; }}
+                  />
                 </div>
-              ))}
-            </div>
-
-          </div>
-        </div>
-
-        {/* Scroll cue */}
-        <div style={{
-          position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-          opacity: heroVisible ? 0.4 : 0, transition: "opacity 1.2s ease 1.8s",
-          pointerEvents: "none", zIndex: 3,
-        }}>
-          <span style={{ fontSize: 9, color: "rgba(200,196,224,0.6)", letterSpacing: "0.22em", fontFamily: FB, fontWeight: 700, textTransform: "uppercase" }}>Explorar</span>
-          <ChevronDown size={16} color="rgba(200,196,224,0.6)" strokeWidth={1.5} style={{ animation: "scrollBounce 2.2s ease-in-out infinite" }} />
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
-          MARQUEE STRIP
-      ══════════════════════════════════════════════════ */}
-      <MarqueeStrip />
-
-      {/* ══════════════════════════════════════════════════
-          CATEGORÍAS — Bento asimétrico
-      ══════════════════════════════════════════════════ */}
-      <section ref={catSection.ref} style={{ padding: "100px 60px", maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 52,
-          ...sectionFade(catSection.inView),
-        }}>
-          <div>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              padding: "5px 14px", borderRadius: 100,
-              background: `${C.purple}15`, border: `1px solid ${C.purple}32`,
-              fontSize: 11, fontWeight: 800, color: C.purple,
-              letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, fontFamily: FB,
-            }}>
-              <Sparkles size={11} /> Explora por disciplina
-            </div>
-            <h2 style={{ fontSize: "clamp(30px, 3.5vw, 50px)", fontWeight: 900, color: C.cream, margin: 0, fontFamily: FD, letterSpacing: "-0.025em" }}>
-              Cada obra cuenta{" "}
-              <span style={{ background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                una historia
-              </span>
-            </h2>
-          </div>
-          <button className="btn-ghost-sm" onClick={() => navigate("/catalogo")}>
-            Ver todo el catálogo <ArrowRight size={14} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1.55fr 1fr 1fr",
-          gridTemplateRows: "310px 250px",
-          gap: 14,
-          opacity: catSection.inView ? 1 : 0,
-          transition: "opacity 0.7s ease 0.12s",
-        }} className="bento-grid">
-          <CatCard {...CATS[0]} gridStyle={{ gridRow: "1 / 3" }} onClick={() => navigate(`/catalogo?categoria=${CATS[0].slug}`)} />
-          <CatCard {...CATS[1]} onClick={() => navigate(`/catalogo?categoria=${CATS[1].slug}`)} />
-          <CatCard {...CATS[2]} onClick={() => navigate(`/catalogo?categoria=${CATS[2].slug}`)} />
-          <CatCard {...CATS[3]} gridStyle={{ gridColumn: "2 / 4" }} onClick={() => navigate(`/catalogo?categoria=${CATS[3].slug}`)} />
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
-          VALORES
-      ══════════════════════════════════════════════════ */}
-      <section ref={valSection.ref} style={{ padding: "0 0 100px" }}>
-        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${C.borderBr}, transparent)`, marginBottom: 80 }} />
-
-        <div style={{
-          maxWidth: 1320, margin: "0 auto", padding: "0 60px",
-          textAlign: "center", marginBottom: 52,
-          opacity: valSection.inView ? 1 : 0,
-          transform: valSection.inView ? "translateY(0)" : "translateY(20px)",
-          transition: "opacity 0.7s ease, transform 0.7s ease",
-        }}>
-          <h2 style={{ fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 900, color: C.cream, margin: "0 0 12px", fontFamily: FD, letterSpacing: "-0.02em" }}>
-            Por qué elegir{" "}
-            <span style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              Nu-B Studio
-            </span>
-          </h2>
-          <p style={{ fontSize: 15, color: C.creamSub, margin: 0, fontFamily: FB }}>
-            Arte con respaldo, comunidad y autenticidad garantizada
-          </p>
-        </div>
-
-        <div style={{
-          maxWidth: 1320, margin: "0 auto", padding: "0 60px",
-          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-          borderRadius: 24, overflow: "hidden",
-          border: `1px solid ${C.borderBr}`,
-          opacity: valSection.inView ? 1 : 0,
-          transform: valSection.inView ? "translateY(0)" : "translateY(24px)",
-          transition: "opacity 0.7s ease 0.15s, transform 0.7s ease 0.15s",
-        }} className="valores-strip">
-          {VALORES.map(({ num, icon: Icon, color, title, desc }, i) => (
-            <div key={title} className="valor-cell" style={{
-              padding: "50px 28px 46px",
-              borderRight: i < 3 ? `1px solid ${C.border}` : "none",
-              background: `linear-gradient(145deg, ${C.panel}, #F9F8FC)`,
-              position: "relative", textAlign: "center",
-            }}>
-              <div style={{
-                position: "absolute", top: 12, right: 18,
-                fontSize: 56, fontWeight: 900, fontFamily: FD,
-                color: `${color}12`, lineHeight: 1, userSelect: "none",
-                letterSpacing: "-0.04em",
-              }}>{num}</div>
-              <div style={{ position: "absolute", top: 0, left: "18%", right: "18%", height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)`, borderRadius: 2 }} />
-              <div style={{
-                width: 60, height: 60, borderRadius: 19,
-                background: `${color}16`, border: `1px solid ${color}40`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 24px",
-                boxShadow: `0 10px 32px ${color}20`,
-              }}>
-                <Icon size={25} color={color} strokeWidth={1.8} />
               </div>
-              <div style={{ fontSize: 15.5, fontWeight: 800, color: C.cream, marginBottom: 10, fontFamily: FB }}>{title}</div>
-              <div style={{ fontSize: 13.5, color: C.creamSub, lineHeight: 1.76, fontFamily: FB }}>{desc}</div>
+              {/* Sombra suelo */}
+              <div style={{ height: 18, background: "radial-gradient(ellipse 70% 100% at 50% 0%, rgba(0,0,0,.13) 0%, transparent 70%)", filter: "blur(5px)", transform: "scaleY(.45)" }} />
+              {/* Cédula */}
+              <div data-rv data-d={String((i % 3) + 1)} style={{ marginTop: 13, paddingLeft: 8, borderLeft: "1.5px solid rgba(0,0,0,.06)" }}>
+                <div style={{ fontFamily: SERIF, fontSize: 11, fontStyle: "italic", color: "rgba(0,0,0,.55)" }}>{obra.titulo}</div>
+                <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: ".16em", textTransform: "uppercase", color: "rgba(0,0,0,.20)", marginTop: 3, fontFamily: SANS }}>{obra.categoria_nombre} · {obra.artista_alias || obra.artista_nombre}</div>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          OBRAS RECIENTES
-      ══════════════════════════════════════════════════ */}
-      <ObrasRecientesSection
-        obras={obras}
-        obrasLoad={obrasLoad}
-        navigate={navigate}
-        onView={handleVerObra}
-      />
+      {/* ═══════════════════════════════════
+          EXPOSICIÓN DESTACADA (estático)
+          ──────────────────────────────────
+          NOTA: Esta sección es contenido
+          estático. Requiere un endpoint
+          /api/obras/destacada en el futuro.
+      ═══════════════════════════════════ */}
+      <section ref={expoSectionRef} className="home-expo" style={{ background: C.dark, display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "90vh", position: "relative", overflow: "hidden" }}>
+        {/* Textura pared */}
+        <div style={{ position: "absolute", inset: 0, background: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E\")", backgroundSize: "200px 200px", opacity: .04, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -20, left: 50, fontFamily: SERIF, fontSize: 280, fontWeight: 900, fontStyle: "italic", color: "rgba(255,255,255,.028)", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>II</div>
 
-      {/* ══════════════════════════════════════════════════
-          CTA FINAL
-      ══════════════════════════════════════════════════ */}
-      <section ref={ctaSection.ref} style={{
-        position: "relative", overflow: "hidden",
-        padding: "140px 60px",
-        background: `linear-gradient(145deg, ${C.bgDeep} 0%, rgba(96,40,170,0.06) 38%, rgba(232,100,12,0.04) 68%, ${C.bgDeep} 100%)`,
-      }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: `url(${obraImg2})`,
-          backgroundSize: "cover", backgroundPosition: "center",
-          opacity: 0.04, filter: "saturate(0) blur(2px)",
-        }} />
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 820, height: 820, borderRadius: "50%", border: `1px solid ${C.orange}07`, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 580, height: 580, borderRadius: "50%", border: `1px solid ${C.orange}11`, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 350, height: 350, borderRadius: "50%", border: `1px solid ${C.orange}20`, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${C.orange}30, ${C.pink}18, transparent)` }} />
-
-        <div style={{
-          maxWidth: 740, margin: "0 auto", textAlign: "center", position: "relative",
-          opacity: ctaSection.inView ? 1 : 0,
-          transform: ctaSection.inView ? "translateY(0)" : "translateY(28px)",
-          transition: "opacity 0.8s ease, transform 0.8s ease",
-        }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "7px 20px", borderRadius: 100,
-            background: `${C.orange}14`, border: `1px solid ${C.orange}32`,
-            fontSize: 11, fontWeight: 800, color: C.orange,
-            letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 32, fontFamily: FB,
-          }}>
-            <ShieldCheck size={13} /> Certificado de autenticidad
+        {/* Texto izquierdo */}
+        <div style={{ padding: "80px 64px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, borderRight: "1px solid rgba(255,255,255,.05)" }}>
+          <div data-rv style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 8, fontWeight: 800, letterSpacing: ".35em", textTransform: "uppercase", color: C.orange, marginBottom: 40, fontFamily: SANS }}>
+            <span style={{ display: "block", width: 32, height: 1, background: C.orange }} />
+            Ahora en sala
           </div>
-
-          <h2 style={{
-            fontSize: "clamp(28px, 4.5vw, 62px)", fontWeight: 900, color: C.cream,
-            margin: "0 0 22px", fontFamily: FD, letterSpacing: "-0.03em", lineHeight: 1.02,
-          }}>
-            Arte auténtico,{" "}
-            <span style={{ background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              garantizado
-            </span>
+          <h2 data-rv data-d="1" style={{ fontFamily: SERIF, fontSize: "clamp(36px,5vw,72px)", fontWeight: 900, color: "#fff", letterSpacing: "-.03em", lineHeight: 1, marginBottom: 28, margin: "0 0 28px" }}>
+            <span style={{ display: "block", fontStyle: "italic", fontWeight: 400, fontSize: ".55em", color: "rgba(255,255,255,.45)", marginBottom: 10 }}>Obra destacada</span>
+            Tierra y color
           </h2>
-
-          <p style={{ fontSize: 16, color: C.creamSub, lineHeight: 1.85, margin: "0 auto 44px", maxWidth: 560, fontFamily: FB }}>
-            Cada obra viene con certificado de autenticidad y soporte completo. Invierte con confianza en el arte de la Huasteca Hidalguense.
+          <p data-rv data-d="2" style={{ fontSize: 13.5, color: "rgba(255,255,255,.40)", lineHeight: 1.8, maxWidth: 360, marginBottom: 44, fontFamily: SANS }}>
+            Una exploración de los pigmentos naturales de la Sierra Huasteca. Cada pincelada nace de la tierra que habitamos, del barro que da forma a nuestra identidad.
           </p>
+          <div data-rv data-d="3" style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 44 }}>
+            {[["Artista", "María Luisa Castillo"], ["Técnica", "Óleo sobre tela · 120×90 cm"], ["Año", "2024"], ["Sala", "Colección permanente"]].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <span style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(255,255,255,.22)", minWidth: 70, fontFamily: SANS }}>{k}</span>
+                <span style={{ fontFamily: SERIF, fontSize: 13, fontStyle: "italic", color: "rgba(255,255,255,.65)" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+          <Link data-rv data-d="4" to="/catalogo" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 9, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "11px 22px", border: "1px solid rgba(255,255,255,.18)", borderRadius: 100, alignSelf: "flex-start", fontFamily: SANS, transition: "all .28s" }}>
+            Ver obra completa →
+          </Link>
+        </div>
 
-          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="btn-primary" onClick={() => navigate("/catalogo")}>
-              Ver catálogo completo <ArrowRight size={17} strokeWidth={2.5} />
-            </button>
-            <button className="btn-ghost" onClick={() => navigate("/registro-artista")}>
-              Registrarme como artista
-            </button>
+        {/* Imagen derecha */}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 64px", zIndex: 1, overflow: "hidden" }}>
+          {/* Haz de luz doble */}
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: "55%", height: "85%", background: "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255,248,235,.13) 0%, rgba(255,248,235,.05) 35%, transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: "25%", height: "65%", background: "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255,248,235,.10) 0%, transparent 60%)", pointerEvents: "none" }} />
+
+          <div ref={expoFrameRef} className="home-expo-frame-wrap" style={{ position: "relative", zIndex: 1, willChange: "transform" }}
+            onMouseEnter={cursorOn} onMouseLeave={cursorOff}>
+            <div data-clip-h className="home-expo-frame">
+              <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=700&q=90" alt="Tierra y color" />
+            </div>
+            {/* Sombra suelo */}
+            <div style={{ height: 24, background: "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(0,0,0,.60) 0%, transparent 70%)", filter: "blur(8px)", transform: "scaleY(.4)", position: "relative", zIndex: 1 }} />
+            {/* Cédula oscura */}
+            <div data-rv data-d="3" style={{ marginTop: 18, paddingLeft: 10, borderLeft: "1px solid rgba(255,255,255,.10)" }}>
+              <div style={{ fontFamily: SERIF, fontSize: 12, fontStyle: "italic", color: "rgba(255,255,255,.50)" }}>Tierra y color, 2024</div>
+              <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: ".18em", textTransform: "uppercase", color: "rgba(255,255,255,.22)", marginTop: 4, fontFamily: SANS }}>María Luisa Castillo · Óleo</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          ESTILOS GLOBALES
-      ══════════════════════════════════════════════════ */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+      {/* ═══════════════════════════════════
+          III · CATEGORÍAS (editorial)
+      ═══════════════════════════════════ */}
+      <section style={{ padding: "0 72px 120px", borderTop: "1px solid rgba(0,0,0,.05)" }}>
+        <div style={{ padding: "80px 0 60px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+          <div data-rv>
+            <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", marginBottom: 14, fontFamily: SANS }}>III · Explorar</div>
+            <div style={{ fontFamily: SERIF, fontSize: "clamp(26px,3vw,38px)", fontWeight: 900, color: C.ink, letterSpacing: "-.02em", lineHeight: 1.1 }}>¿Qué quieres<br />descubrir hoy?</div>
+          </div>
+          <div data-rv data-d="1" style={{ fontSize: 12, color: C.sub, maxWidth: 270, lineHeight: 1.75, textAlign: "right", fontFamily: SANS }}>Cada disciplina es un mundo. Navega por la colección y encuentra la obra que te habla.</div>
+        </div>
 
-        * { box-sizing: border-box; }
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {CATS.map((cat, i) => (
+            <div
+              key={cat.slug}
+              data-rv data-d={String(i + 1)}
+              className="home-cat-item"
+              onClick={() => navigate(`/catalogo?categoria=${cat.slug}`)}
+              onMouseEnter={() => { setHovCat(i); cursorOn(); }}
+              onMouseLeave={() => { setHovCat(null); cursorOff(); }}
+              style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "26px 0", borderBottom: "1px solid rgba(0,0,0,.05)", cursor: "pointer", overflow: "hidden", borderTop: i === 0 ? "1px solid rgba(0,0,0,.05)" : undefined }}
+            >
+              {/* Imagen hover */}
+              <div className="home-cat-img" style={{ position: "absolute", right: 200, top: "50%", width: 130, height: 96, borderRadius: 2, overflow: "hidden", boxShadow: "0 8px 28px rgba(0,0,0,.18)", pointerEvents: "none", opacity: hovCat === i ? 1 : 0, transform: hovCat === i ? "translateY(-50%) translateX(0) scale(1)" : "translateY(-50%) translateX(14px) scale(.94)", transition: "opacity .38s, transform .48s cubic-bezier(.16,1,.3,1)" }}>
+                <img src={cat.img} alt={cat.label} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "saturate(.82)" }} />
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 22, zIndex: 1 }}>
+                <span style={{ fontFamily: SERIF, fontSize: 11, fontStyle: "italic", color: "rgba(0,0,0,.14)", minWidth: 22 }}>0{i + 1}</span>
+                <span className="home-cat-name" style={{ fontFamily: SERIF, fontSize: "clamp(30px,4vw,50px)", fontWeight: 900, color: C.ink, letterSpacing: "-.025em", lineHeight: 1 }}>{cat.label}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 18, zIndex: 1 }}>
+                <span className="home-cat-count" style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", fontFamily: SANS }}>{cat.count} obras</span>
+                <span className="home-cat-arrow" style={{ fontSize: 18, color: "rgba(0,0,0,.10)" }}>→</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        /* ── Botones ── */
-        .btn-primary {
-          display: inline-flex; align-items: center; gap: 9px;
-          padding: clamp(11px,1.5vh,14px) clamp(20px,2.5vw,30px);
-          border-radius: 50px;
-          background: ${C.orange};
-          border: none; color: white;
-          font-size: clamp(13px, 1.8vw, 15px); font-weight: 800;
-          cursor: pointer; font-family: ${FB};
-          box-shadow: 0 8px 28px ${C.orange}55;
-          transition: transform .2s, box-shadow .2s, background .15s;
-          white-space: nowrap; letter-spacing: 0.01em;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 36px ${C.orange}65; background: #d4560a; }
+      {/* ═══════════════════════════════════
+          IV · ARTISTAS (API)
+      ═══════════════════════════════════ */}
+      <section style={{ padding: "100px 72px", background: "#fff" }}>
+        <div data-rv style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 56 }}>
+          <div>
+            <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".28em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", marginBottom: 10, fontFamily: SANS }}>IV · Voces</div>
+            <div style={{ fontFamily: SERIF, fontSize: "clamp(26px,3vw,38px)", fontWeight: 900, color: C.ink, letterSpacing: "-.02em" }}>Los artistas</div>
+          </div>
+          <Link to="/artistas" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: C.orange, textDecoration: "none", fontFamily: SANS }}>Ver todos →</Link>
+        </div>
 
-        .btn-primary-light {
-          display: inline-flex; align-items: center; gap: 9px;
-          padding: clamp(11px,1.5vh,14px) clamp(20px,2.5vw,30px);
-          border-radius: 50px;
-          background: ${C.orange};
-          border: none; color: white;
-          font-size: clamp(13px, 1.8vw, 15px); font-weight: 800;
-          cursor: pointer; font-family: ${FB};
-          box-shadow: 0 8px 28px ${C.orange}55;
-          transition: transform .2s, box-shadow .2s, background .15s;
-          white-space: nowrap; letter-spacing: 0.01em;
-        }
-        .btn-primary-light:hover { transform: translateY(-2px); box-shadow: 0 14px 36px ${C.orange}65; background: #d4560a; }
+        <div style={{ display: "flex", gap: 20, alignItems: "flex-end" }}>
+          {artistas.slice(0, 5).map((artista, i) => {
+            const size = portraitSizes[i % portraitSizes.length];
+            return (
+              <div
+                key={artista.id_artista}
+                data-rv data-d={String(i + 1)}
+                className="home-retrato"
+                onClick={() => navigate(`/artistas/${artista.id_artista}`)}
+                onMouseEnter={cursorOn}
+                onMouseLeave={cursorOff}
+                style={{ flexShrink: 0, cursor: "pointer" }}
+              >
+                <div className="home-retrato-foto">
+                  <img
+                    src={artista.foto_perfil || `https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=85`}
+                    alt={artista.nombre_completo}
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=85"; }}
+                    style={{ width: size.w, height: size.h }}
+                  />
+                </div>
+                <div style={{ padding: "12px 4px 0" }}>
+                  <div className="home-retrato-nombre" style={{ fontFamily: SERIF, fontSize: 12, fontStyle: "italic", color: "rgba(0,0,0,.55)", marginBottom: 3 }}>{artista.alias || artista.nombre_completo}</div>
+                  <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: ".18em", textTransform: "uppercase", color: "rgba(0,0,0,.20)", fontFamily: SANS }}>{artista.especialidad || "Artista"}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-        /* Botón ghost para el hero (fondo oscuro) */
-        .btn-ghost-hero {
-          display: inline-flex; align-items: center; gap: 9px;
-          padding: clamp(11px,1.5vh,14px) clamp(20px,2.5vw,30px);
-          border-radius: 50px;
-          background: rgba(255,255,255,0.10);
-          border: 1.5px solid rgba(255,255,255,0.35);
-          color: rgba(255,255,255,0.88);
-          font-size: clamp(13px, 1.8vw, 15px); font-weight: 600;
-          cursor: pointer; font-family: ${FB};
-          transition: background .18s, border-color .18s;
-          white-space: nowrap; backdrop-filter: blur(8px);
-        }
-        .btn-ghost-hero:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.55); }
+      {/* ═══════════════════════════════════
+          V · NÚMEROS (estático, contador animado)
+      ═══════════════════════════════════ */}
+      <section style={{ padding: "90px 72px", borderTop: "1px solid rgba(0,0,0,.05)", borderBottom: "1px solid rgba(0,0,0,.05)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
+          {STATS.map((stat, i) => (
+            <div key={stat.label} data-rv data-d={String(i + 1)} style={{ padding: "36px 0", textAlign: "center", position: "relative", borderLeft: i > 0 ? "none" : undefined }}>
+              {i > 0 && <div style={{ position: "absolute", left: 0, top: "22%", height: "56%", width: 1, background: "rgba(0,0,0,.055)" }} />}
+              <div data-num={stat.val} style={{ fontFamily: SERIF, fontSize: "clamp(46px,6vw,78px)", fontWeight: 900, fontStyle: "italic", color: C.ink, letterSpacing: "-.03em", lineHeight: 1, display: "inline-block" }}>{stat.val}</div>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: ".28em", textTransform: "uppercase", color: "rgba(0,0,0,.20)", marginTop: 12, fontFamily: SANS }}>{stat.label}</div>
+              <span style={{ display: "block", width: 14, height: 1, background: C.orange, margin: "12px auto 0" }} />
+            </div>
+          ))}
+        </div>
+      </section>
 
-        .btn-ghost {
-          display: inline-flex; align-items: center; gap: 9px;
-          padding: clamp(10px,1.5vh,13px) clamp(18px,2.5vw,28px);
-          border-radius: 50px;
-          background: rgba(0,0,0,0.03);
-          border: 1.5px solid ${C.borderHi};
-          color: ${C.creamSub};
-          font-size: clamp(13px, 2vw, 14.5px); font-weight: 600;
-          cursor: pointer; font-family: ${FB};
-          transition: background .15s, border-color .15s, color .15s;
-          white-space: nowrap;
-        }
-        .btn-ghost:hover { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.18); color: ${C.cream}; }
+      {/* ═══════════════════════════════════
+          VI · CTA
+      ═══════════════════════════════════ */}
+      <section style={{ padding: "120px 72px", display: "flex", alignItems: "center", gap: 88, borderTop: "1px solid rgba(0,0,0,.05)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)", fontFamily: SERIF, fontSize: 280, fontWeight: 900, fontStyle: "italic", color: "rgba(0,0,0,.022)", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>VI</div>
+        <div data-rv style={{ flex: 1, position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: C.orange, display: "flex", alignItems: "center", gap: 12, marginBottom: 22, fontFamily: SANS }}>
+            <span style={{ display: "block", width: 18, height: 1, background: C.orange }} />
+            Para artistas
+          </div>
+          <h2 style={{ fontFamily: SERIF, fontSize: "clamp(30px,4vw,50px)", fontWeight: 900, color: C.ink, lineHeight: 1.08, letterSpacing: "-.025em", marginBottom: 18, margin: "0 0 18px" }}>
+            ¿Tu obra merece<br />un lugar aquí?
+          </h2>
+          <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.8, maxWidth: 440, fontFamily: SANS }}>Únete a los artistas de la Huasteca. Tu trabajo, certificado y visible para coleccionistas de todo el país.</p>
+          <div style={{ display: "flex", gap: 14, marginTop: 34, flexWrap: "wrap", alignItems: "center" }}>
+            <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 100, background: C.orange, color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", textDecoration: "none", boxShadow: "0 6px 20px rgba(232,100,12,.28)", fontFamily: SANS, transition: "all .25s" }}>
+              Solicitar ingreso
+            </Link>
+            <Link to="/sobre-nosotros" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 100, border: "1px solid rgba(0,0,0,.11)", color: C.sub, fontSize: 10, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", textDecoration: "none", fontFamily: SANS, transition: "all .25s" }}>
+              Saber más
+            </Link>
+          </div>
+        </div>
 
-        .btn-ghost-sm {
-          display: inline-flex; align-items: center; gap: 7px;
-          padding: 9px 20px; border-radius: 10px;
-          background: rgba(0,0,0,0.03);
-          border: 1px solid ${C.borderHi};
-          color: ${C.creamSub}; font-size: 13px; font-weight: 700;
-          cursor: pointer; font-family: ${FB};
-          transition: all .15s; white-space: nowrap;
-        }
-        .btn-ghost-sm:hover { background: rgba(0,0,0,0.06); color: ${C.cream}; }
+        {/* Collage de obras */}
+        <div data-rv data-d="2" style={{ flexShrink: 0, width: 300, position: "relative", height: 400 }}>
+          {obras.slice(0, 3).map((obra, i) => {
+            const configs = [
+              { top: 0,    left: 0,  width: 162, height: 210, rotate: -2.5 },
+              { top: 30,   right: 0, width: 126, height: 156, rotate:  3.5 },
+              { bottom: 0, left: 28, width: 144, height: 174, rotate:  1   },
+            ] as const;
+            const conf = configs[i];
+            return (
+              <div key={obra.id_obra} className="home-cta-obra" onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                style={{ ...conf, transform: `rotate(${conf.rotate}deg)`, boxShadow: "0 10px 30px rgba(0,0,0,.13), 0 30px 70px rgba(0,0,0,.10)" }}>
+                <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: conf.width, height: conf.height }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&q=80"; }} />
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-        .btn-ghost-sm-light {
-          display: inline-flex; align-items: center; gap: 7px;
-          padding: 9px 20px; border-radius: 10px;
-          background: rgba(0,0,0,0.03);
-          border: 1px solid ${C.borderHi};
-          color: ${C.creamSub}; font-size: 13px; font-weight: 700;
-          cursor: pointer; font-family: ${FB};
-          transition: all .15s; white-space: nowrap;
-        }
-        .btn-ghost-sm-light:hover { background: rgba(0,0,0,0.06); color: ${C.cream}; }
+      {/* ═══════════════════════════════════
+          FOOTER
+      ═══════════════════════════════════ */}
+      <footer style={{ background: "#fff", borderTop: "1px solid rgba(0,0,0,.07)", padding: "60px 72px 40px", fontFamily: SANS }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 48, marginBottom: 52 }}>
+          {/* Brand */}
+          <div data-rv>
+            <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: 1, marginBottom: 14 }}>
+              ALTAR<span style={{ color: C.orange }}>★</span>
+            </div>
+            <p style={{ fontSize: 11, color: C.sub, lineHeight: 1.7, maxWidth: 220, marginBottom: 22 }}>Galería de arte digital de la Huasteca Hidalguense. Arte que nace de la tierra.</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["✦", "◈", "◉"].map(s => (
+                <a key={s} href="#" className="home-footer-social">{s}</a>
+              ))}
+            </div>
+          </div>
 
-        .valor-cell:hover { background: rgba(0,0,0,0.02) !important; }
+          {/* Galería */}
+          <div data-rv data-d="1">
+            <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.22)", marginBottom: 18 }}>Galería</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Link to="/catalogo"      className="home-footer-link">Colección</Link>
+              <Link to="/catalogo"      className="home-footer-link">Exposición destacada</Link>
+              <Link to="/catalogo"      className="home-footer-link">Categorías</Link>
+              <Link to="/blog"          className="home-footer-link">Blog</Link>
+            </div>
+          </div>
 
-        /* Carrusel */
-        .horizontal-carousel {
-          scrollbar-width: thin;
-          scrollbar-color: ${C.border} transparent;
-        }
-        .horizontal-carousel::-webkit-scrollbar { height: 6px; }
-        .horizontal-carousel::-webkit-scrollbar-track { background: transparent; }
-        .horizontal-carousel::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
-        .horizontal-carousel::-webkit-scrollbar-thumb:hover { background: ${C.creamMut}; }
+          {/* Artistas */}
+          <div data-rv data-d="2">
+            <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.22)", marginBottom: 18 }}>Artistas</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Link to="/artistas"  className="home-footer-link">Directorio</Link>
+              <Link to="/register"  className="home-footer-link">Solicitar ingreso</Link>
+              <Link to="/artista/dashboard" className="home-footer-link">Panel de artista</Link>
+            </div>
+          </div>
 
-        /* Animaciones */
-        @keyframes floatA       { 0%,100%{transform:translateY(0) rotate(-2deg)}  50%{transform:translateY(-14px) rotate(-1deg)} }
-        @keyframes floatB       { 0%,100%{transform:translateY(0) rotate(2deg)}   50%{transform:translateY(-11px) rotate(1deg)}  }
-        @keyframes shimmer      { 0%,100%{opacity:0.3} 50%{opacity:0.6} }
-        @keyframes scrollBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
-        @keyframes marqueeScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+          {/* Plataforma */}
+          <div data-rv data-d="3">
+            <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.22)", marginBottom: 18 }}>Plataforma</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Link to="/sobre-nosotros" className="home-footer-link">Acerca de ALTAR</Link>
+              <Link to="/contacto"       className="home-footer-link">Contacto</Link>
+            </div>
+          </div>
+        </div>
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #E6E4EF; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9896A8; }
+        <div data-rv style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 24, borderTop: "1px solid rgba(0,0,0,.05)" }}>
+          <span style={{ fontSize: 10, color: "rgba(0,0,0,.22)", letterSpacing: ".04em" }}>© 2025 ALTAR — Todos los derechos reservados</span>
+          <span style={{ fontFamily: SERIF, fontSize: 10, fontStyle: "italic", color: "rgba(0,0,0,.16)" }}>Huasteca Hidalguense, México</span>
+        </div>
+      </footer>
 
-        /* ── Responsive ── */
-        @media (max-width: 1100px) {
-          .bento-grid { grid-template-columns: 1fr 1fr !important; grid-template-rows: auto !important; }
-          .bento-grid > *:first-child { grid-row: auto !important; grid-column: 1 / 3 !important; height: 300px; }
-          .bento-grid > *:last-child  { grid-column: 1 / 3 !important; height: 240px; }
-          .bento-grid > *:not(:first-child):not(:last-child) { height: 240px; }
-          .valores-strip { grid-template-columns: repeat(2, 1fr) !important; border-radius: 0; }
-          .valores-strip > *:nth-child(2) { border-right: none !important; }
-          .valores-strip > *:nth-child(3) { border-top: 1px solid #E6E4EF; }
-        }
-
-        @media (max-width: 768px) {
-          /* Ocultar flotantes en móvil — el texto ocupa todo el ancho */
-          .hero-bottom > div { max-width: 100% !important; }
-          /* Hero padding ya usa clamp, solo ajustamos secciones */
-          section[style*="padding: 100px 60px"] { padding: 64px 24px !important; }
-          .btn-ghost-sm, .btn-ghost-sm-light { display: none !important; }
-        }
-
-        @media (max-width: 640px) {
-          .bento-grid { grid-template-columns: 1fr !important; }
-          .bento-grid > * { height: 220px !important; grid-column: auto !important; grid-row: auto !important; }
-          .valores-strip { grid-template-columns: 1fr !important; }
-          .valores-strip > * { border-right: none !important; border-top: 1px solid #E6E4EF; }
-          .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
-        }
-
-        @media (max-width: 400px) {
-          /* En pantallas muy pequeñas, la pill de stats se pone en 2x2 */
-          .hero-stats-pill { flex-wrap: wrap; max-width: 260px; }
-          .hero-stats-pill > div { width: 50%; border-right: none !important; }
-          .hero-stats-pill > div:nth-child(1),
-          .hero-stats-pill > div:nth-child(2) { border-bottom: 1px solid rgba(255,255,255,0.10); }
-          .hero-stats-pill > div:nth-child(1) { border-right: 1px solid rgba(255,255,255,0.10) !important; }
-          .hero-stats-pill > div:nth-child(3) { border-right: 1px solid rgba(255,255,255,0.10) !important; }
-        }
-      `}</style>
     </div>
   );
 }
