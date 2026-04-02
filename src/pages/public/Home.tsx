@@ -1,7 +1,8 @@
-// src/pages/public/Home.tsx (VERSIÓN MUSEO - SIN LÍNEAS NARANJAS ANIMADAS)
+// src/pages/public/Home.tsx (COMPLETO - CON LOGO ESTRELLA ARRIBA DEL MENÚ)
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
+import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -13,7 +14,7 @@ const C = {
   dark:   "#0D0B14",
 };
 
-const SERIF = "'Playfair Display', serif";
+const SERIF = "'SolveraLorvane', serif";
 const SANS  = "'Outfit', sans-serif";
 
 const CATS = [
@@ -188,6 +189,29 @@ export default function Home() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
 
+        /* ════ SOLVERA LORVANE FONT ════ */
+        @font-face {
+          font-family: 'SolveraLorvane';
+          src: url('/src/assets/fonts/SolveraLorvane.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
+        @font-face {
+          font-family: 'SolveraLorvane';
+          src: url('/src/assets/fonts/SolveraLorvane.ttf') format('truetype');
+          font-weight: bold;
+          font-style: normal;
+          font-display: swap;
+        }
+        @font-face {
+          font-family: 'SolveraLorvane';
+          src: url('/src/assets/fonts/SolveraLorvane.ttf') format('truetype');
+          font-weight: 900;
+          font-style: normal;
+          font-display: swap;
+        }
+
         .home-grain {
           position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -225,7 +249,7 @@ export default function Home() {
         .home-door-wrap.open .home-door.der { transform: translateX(100%);  }
         .home-door-logo {
           position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-          z-index: 99991; font-family: 'Playfair Display', serif;
+          z-index: 99991; font-family: 'SolveraLorvane', serif;
           font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
           letter-spacing: -.03em; pointer-events: none;
           transition: opacity .35s ease .8s;
@@ -280,6 +304,24 @@ export default function Home() {
         .hero-corner.br { bottom:22px; right:26px; }
         .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
+
+        /* ════ LOGO ESTRELLA ════ */
+        .home-logo-estrella {
+          width: clamp(40px, 5vw, 64px);
+          height: clamp(40px, 5vw, 64px);
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 100;
+        }
+        .home-logo-estrella:hover {
+          transform: scale(1.1) rotate(5deg);
+        }
+        .home-logo-estrella img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          display: block;
+        }
 
         [data-rv]   { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
         [data-clip] { clip-path:inset(100% 0 0 0); transition:clip-path 1.3s cubic-bezier(.16,1,.3,1); }
@@ -435,8 +477,6 @@ export default function Home() {
 
         .home-marquee-track { display: inline-flex; animation: marquee 28s linear infinite; }
         .home-marquee-wrap:hover .home-marquee-track { animation-play-state: paused; }
-
-        /* Línea de scroll removida - .home-scroll-ln::after { display: none; } */
       `}</style>
 
       <div className="home-grain" />
@@ -459,8 +499,35 @@ export default function Home() {
       <section style={{ position: "relative", height: "100vh", minHeight: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`, animation: "barIn 2s cubic-bezier(.16,1,.3,1) both" }} />
         <div className="hero-corner tl" /><div className="hero-corner tr" /><div className="hero-corner bl" /><div className="hero-corner br" />
+
+        {/* ⭐ ESTRELLA ARRIBA CENTRADA */}
+        <Link 
+          to="/" 
+          onMouseEnter={cursorOn} 
+          onMouseLeave={cursorOff}
+          title="ALTAR - Galería de Arte"
+          style={{ 
+            position: "absolute",
+            top: 370,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "clamp(15px, 1vw, 15px)",
+            height: "clamp(15px, 1vw, 15px)",
+            cursor: "pointer",
+            transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1.1) rotate(5deg)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1) rotate(0deg)")}
+        >
+          <img src={estrellaImg} alt="ALTAR Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        </Link>
         <div style={{ position: "absolute", bottom: 70, left: "50%", transform: "translateX(-50%)", fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(60px,8vw,110px)", fontWeight: 900, color: "rgba(0,0,0,.020)", whiteSpace: "nowrap", letterSpacing: "-.02em", userSelect: "none", pointerEvents: "none", animation: "fadeI 2s ease 2s both" }}>galería</div>
 
+        {/* MENÚ DE NAVEGACIÓN */}
         <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both" }}>
           <Link to="/catalogo"  className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
           <Link to="/artistas"  className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
@@ -480,6 +547,7 @@ export default function Home() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+          {/* Título ALTAR */}
           <h1 style={{ fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: .88, display: "flex", userSelect: "none", margin: 0 }}>
             {"ALTAR".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
           </h1>
@@ -531,7 +599,7 @@ export default function Home() {
       <section style={{ padding: "100px 0 0", background: "#fafaf9", borderTop: "1px solid rgba(0,0,0,.04)" }}>
         <div data-rv style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32, padding: "0 72px" }}>
           <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
-          <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.16)", whiteSpace: "nowrap", fontFamily: SANS }}>Obras</div>
+          <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.16)", whiteSpace: "nowrap", fontFamily: SANS }}>II · Acervo</div>
           <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
           <Link to="/catalogo" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: C.orange, whiteSpace: "nowrap", textDecoration: "none", fontFamily: SANS }}>Explorar acervo →</Link>
         </div>
