@@ -1,6 +1,6 @@
 // src/components/artista/ArtistaSidebar.tsx
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, User, LogOut, Plus, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Image, User, LogOut, Plus, ChevronRight, FolderOpen } from "lucide-react";
 import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
@@ -12,9 +12,10 @@ const C = {
 };
 
 const NAV = [
-  { id: "dashboard", label: "Overview",  icon: LayoutDashboard, path: "/artista/dashboard" },
-  { id: "obras",     label: "Mis obras", icon: Image,           path: "/artista/mis-obras" },
-  { id: "perfil",    label: "Mi perfil", icon: User,            path: "/artista/perfil"    },
+  { id: "dashboard",   label: "Overview",        icon: LayoutDashboard, path: "/artista/dashboard"   },
+  { id: "obras",       label: "Mis obras",        icon: Image,           path: "/artista/mis-obras"   },
+  { id: "colecciones", label: "Mis colecciones",  icon: FolderOpen,      path: "/artista/colecciones" },
+  { id: "perfil",      label: "Mi perfil",        icon: User,            path: "/artista/perfil"      },
 ];
 
 interface Props {

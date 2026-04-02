@@ -22,12 +22,15 @@ import NuevaObra          from "../pages/private/artista/NuevaObra";
 import MisObras           from "../pages/private/artista/MisObras";
 import EditarObraArtista  from "../pages/private/artista/EditarObra";
 import MiPerfilPage       from "../pages/private/artista/MiPerfilPage";
+import MisColecciones    from "../pages/private/artista/MisColecciones";
+import NuevaColeccion    from "../pages/private/artista/NuevaColeccion";
 import RegistroArtista    from "../pages/public/RegistroArtista";
 import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
 import Unauthorized       from "../pages/public/Unauthorized";
 import AdminEstadisticas from "../pages/private/admin/AdminEstadisticas";
 import AdminSobreNosotros from "../pages/private/admin/sobreNosotros";
+import AdminColecciones   from "../pages/private/admin/AdminColecciones";
 
 
 export default function AppRoutes() {
@@ -43,11 +46,14 @@ export default function AppRoutes() {
       <Route path="/artista" element={
         <ArtistaRoute><ArtistaLayout /></ArtistaRoute>
       }>
-        <Route path="dashboard"       element={<ArtistaDashboard />} />
-        <Route path="nueva-obra"      element={<NuevaObra />} />
-        <Route path="mis-obras"       element={<MisObras />} />
-        <Route path="editar-obra/:id" element={<EditarObraArtista />} />
-        <Route path="perfil"          element={<MiPerfilPage />} />
+        <Route path="dashboard"                    element={<ArtistaDashboard />} />
+        <Route path="nueva-obra"                   element={<NuevaObra />} />
+        <Route path="mis-obras"                    element={<MisObras />} />
+        <Route path="editar-obra/:id"              element={<EditarObraArtista />} />
+        <Route path="perfil"                       element={<MiPerfilPage />} />
+        <Route path="colecciones"                  element={<MisColecciones />} />
+        <Route path="colecciones/nueva"            element={<NuevaColeccion />} />
+        <Route path="colecciones/:id/editar"       element={<NuevaColeccion />} />
       </Route>
 
       <Route path="/registro-artista" element={<RegistroArtista />} />
@@ -69,6 +75,7 @@ export default function AppRoutes() {
         <Route path="reportes"            element={<AdminReportes />} />
         <Route path="importar"            element={<AdminImportar />} />
         <Route path="monitoreo"           element={<AdminMonitoreo />} />  {/* ← nuevo */}
+        <Route path="colecciones"    element={<AdminColecciones />} />
         <Route path="sobre-nosotros" element={<AdminSobreNosotros />} />
       </Route>
 

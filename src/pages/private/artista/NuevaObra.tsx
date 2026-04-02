@@ -116,11 +116,12 @@ const css = `
   }
 `;
 
-interface Categoria { id_categoria: number; nombre: string; }
-interface Etiqueta  { id_etiqueta:  number; nombre: string; }
+interface Categoria  { id_categoria: number; nombre: string; }
+interface Etiqueta   { id_etiqueta:  number; nombre: string; }
+interface Coleccion  { id_coleccion: number; nombre: string; estado: string; }
 interface FormData {
-  titulo: string; descripcion: string; id_categoria: string;
-  tecnica: string; anio_creacion: string;
+  titulo: string; descripcion: string; historia: string; id_categoria: string;
+  id_coleccion: string; tecnica: string; anio_creacion: string;
   dimensiones_alto: string; dimensiones_ancho: string; dimensiones_profundidad: string;
   precio_base: string; permite_marco: boolean; con_certificado: boolean; etiquetas: number[];
 }
@@ -150,8 +151,12 @@ export default function NuevaObra() {
 
   const [categorias,      setCategorias]      = useState<Categoria[]>([]);
   const [etiquetas,       setEtiquetas]       = useState<Etiqueta[]>([]);
+  const [colecciones,     setColecciones]     = useState<Coleccion[]>([]);
+  const galeriaRef                            = useRef<HTMLInputElement>(null);
   const [preview,         setPreview]         = useState<string | null>(null);
   const [imageFile,       setImageFile]       = useState<File | null>(null);
+  const [galeriaFiles,    setGaleriaFiles]    = useState<File[]>([]);
+  const [galeriaPreviews, setGaleriaPreviews] = useState<string[]>([]);
   const [loading,         setLoading]         = useState(false);
   const [success,         setSuccess]         = useState(false);
   const [dragOver,        setDragOver]        = useState(false);
@@ -161,7 +166,7 @@ export default function NuevaObra() {
   const [fieldErrors,     setFieldErrors]     = useState<Partial<Record<keyof FormData, string>>>({});
 
   const [form, setForm] = useState<FormData>({
-    titulo: "", descripcion: "", id_categoria: "", tecnica: "",
+    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
     precio_base: "", permite_marco: false, con_certificado: false, etiquetas: [],
@@ -174,9 +179,11 @@ export default function NuevaObra() {
       fetch(`${API}/api/categorias`,               { headers: h }).then(r => r.json()),
       fetch(`${API}/api/etiquetas`,                { headers: h }).then(r => r.json()),
       fetch(`${API}/api/artista-portal/mi-perfil`, { headers: h }).then(r => r.json()),
-    ]).then(([cat, etq, perfil]) => {
+      fetch(`${API}/api/colecciones/mis-colecciones`, { headers: h }).then(r => r.json()),
+    ]).then(([cat, etq, perfil, cols]) => {
       setCategorias(Array.isArray(cat) ? cat : cat.categorias || cat.data || []);
       setEtiquetas(Array.isArray(etq)  ? etq : etq.etiquetas  || etq.data  || []);
+      setColecciones(cols.data || []);
 
       const faltantes: string[] = [];
       if (!perfil.nombre_artistico)       faltantes.push("nombre artístico");
@@ -202,7 +209,7 @@ export default function NuevaObra() {
     const newValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
 
     // Validar en tiempo real solo campos de texto sensibles
-    if (typeof newValue === "string" && ["titulo", "descripcion", "tecnica"].includes(name)) {
+    if (typeof newValue === "string" && ["titulo", "descripcion", "historia", "tecnica"].includes(name)) {
       if (hasSuspiciousContent(newValue)) {
         setFieldErrors(prev => ({ ...prev, [name]: "Contenido no permitido" }));
       } else {
@@ -229,6 +236,27 @@ export default function NuevaObra() {
     setPreview(null);
     setImageFile(null);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const addGaleriaFiles = (files: FileList) => {
+    const nuevos: File[]   = [];
+    const previews: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/"))    { showToast("Solo se permiten imágenes", "warn"); continue; }
+      if (file.size > 10 * 1024 * 1024)       { showToast("Cada imagen no puede superar 10 MB", "warn"); continue; }
+      if (galeriaFiles.length + nuevos.length >= 5) { showToast("Máximo 5 fotos adicionales", "warn"); break; }
+      nuevos.push(file);
+      previews.push(URL.createObjectURL(file));
+    }
+    setGaleriaFiles(prev => [...prev, ...nuevos]);
+    setGaleriaPreviews(prev => [...prev, ...previews]);
+    if (galeriaRef.current) galeriaRef.current.value = "";
+  };
+
+  const removeGaleriaFile = (index: number) => {
+    URL.revokeObjectURL(galeriaPreviews[index]);
+    setGaleriaFiles(prev => prev.filter((_, i) => i !== index));
+    setGaleriaPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleNext = () => {
@@ -258,7 +286,7 @@ export default function NuevaObra() {
     }
 
     // ── Validación de seguridad final antes de enviar ──
-    const camposTexto = ["titulo", "descripcion", "tecnica"] as const;
+    const camposTexto = ["titulo", "descripcion", "historia", "tecnica"] as const;
     for (const campo of camposTexto) {
       if (hasSuspiciousContent(String(form[campo]))) {
         showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
@@ -278,6 +306,7 @@ export default function NuevaObra() {
         ...form,
         titulo:      sanitizeText(form.titulo),
         descripcion: sanitizeText(form.descripcion),
+        historia:    sanitizeText(form.historia),
         tecnica:     sanitizeText(form.tecnica),
       };
 
@@ -311,6 +340,20 @@ export default function NuevaObra() {
         }
         showToast(data.message || "Error al enviar la obra", "err");
         return;
+      }
+
+      const { obra } = await res.json();
+
+      // ── Subir fotos de galería si hay ──
+      if (galeriaFiles.length > 0 && obra?.id_obra) {
+        const fdGaleria = new FormData();
+        fdGaleria.append("id_obra", String(obra.id_obra));
+        galeriaFiles.forEach(f => fdGaleria.append("imagenes", f));
+        await fetch(`${API}/api/imagenes/galeria`, {
+          method:  "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body:    fdGaleria,
+        });
       }
 
       setSuccess(true);
@@ -412,6 +455,32 @@ export default function NuevaObra() {
               </div>
 
               <div className="no-section">
+                <div className="no-section-title"><span>🖼</span> Fotos adicionales <span style={{fontWeight:400, textTransform:"none", fontSize:".75rem"}}>— opcional, máx. 5</span></div>
+                <input ref={galeriaRef} type="file" accept="image/*" multiple hidden
+                  onChange={e => { if (e.target.files) addGaleriaFiles(e.target.files); }} />
+                <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+                  {galeriaPreviews.map((src, i) => (
+                    <div key={galeriaFiles[i].name + galeriaFiles[i].size} style={{ position:"relative", width:90, height:90 }}>
+                      <img src={src} alt="" style={{ width:90, height:90, objectFit:"cover", borderRadius:10, border:"1.5px solid rgba(255,255,255,0.1)" }} />
+                      <button type="button" onClick={() => removeGaleriaFile(i)}
+                        style={{ position:"absolute", top:3, right:3, width:20, height:20, borderRadius:"50%", background:"rgba(0,0,0,0.7)", border:"none", color:"#fff", cursor:"pointer", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {galeriaFiles.length < 5 && (
+                    <button type="button" onClick={() => galeriaRef.current?.click()}
+                      style={{ width:90, height:90, borderRadius:10, border:"2px dashed rgba(255,132,14,0.3)", background:"transparent", color:"rgba(245,240,255,0.4)", cursor:"pointer", fontSize:24, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      +
+                    </button>
+                  )}
+                </div>
+                <p style={{ margin:"8px 0 0", fontSize:".72rem", color:"rgba(245,240,255,0.35)" }}>
+                  {galeriaFiles.length}/5 fotos adicionales
+                </p>
+              </div>
+
+              <div className="no-section">
                 <div className="no-section-title"><span>📝</span> Información básica</div>
                 <div className="no-field">
                   <label className="no-field-label">Título *</label>
@@ -427,6 +496,26 @@ export default function NuevaObra() {
                     placeholder="Cuéntanos sobre esta obra, su inspiración…" rows={4} />
                   {fieldErrors.descripcion && <span className="no-field-error">⚠ {fieldErrors.descripcion}</span>}
                 </div>
+                <div className="no-field">
+                  <label className="no-field-label">Historia de la obra</label>
+                  <textarea className={`no-textarea${fieldErrors.historia ? " error" : ""}`}
+                    name="historia" value={form.historia} onChange={handleChange}
+                    placeholder="Cuéntanos el contexto, el proceso o la historia detrás de esta obra…" rows={4} />
+                  {fieldErrors.historia && <span className="no-field-error">⚠ {fieldErrors.historia}</span>}
+                </div>
+                {colecciones.length > 0 && (
+                  <div className="no-field">
+                    <label className="no-field-label">Colección <span style={{ textTransform:"none", fontWeight:400, fontSize:".7rem" }}>— opcional</span></label>
+                    <select className="no-select" name="id_coleccion" value={form.id_coleccion} onChange={handleChange}>
+                      <option value="">Sin colección</option>
+                      {colecciones.map(c => (
+                        <option key={c.id_coleccion} value={c.id_coleccion}>
+                          {c.nombre}{c.estado === "borrador" ? " (borrador)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="no-grid-3">
                   <div className="no-field">
                     <label className="no-field-label">Categoría *</label>

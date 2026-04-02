@@ -14,6 +14,7 @@ interface Obra {
   motivo_rechazo: string | null; anio_creacion: number | null;
   tecnica: string | null; permite_marco: boolean; con_certificado: boolean;
   categoria: string | null;
+  nombre_coleccion: string | null;
 }
 interface Stats { total: number; publicadas: number; pendientes: number; rechazadas: number; }
 type Filtro = "todas" | "pendiente" | "publicada" | "rechazada" | "agotada";
@@ -172,8 +173,9 @@ export default function MisObras() {
 
                 <div style={{ padding: "16px" }}>
                   <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-                    {obra.categoria && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
-                    {obra.tecnica   && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
+                    {obra.categoria        && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
+                    {obra.tecnica          && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
+                    {obra.nombre_coleccion && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.pink, background: `${C.pink}12`, border: `1px solid ${C.pink}25`, padding: "2px 8px", borderRadius: 100 }}>🗂 {obra.nombre_coleccion}</span>}
                   </div>
                   <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
                   <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: "'Playfair Display',serif" }}>

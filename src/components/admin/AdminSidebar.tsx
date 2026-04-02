@@ -112,6 +112,20 @@ const IcoImportar = ({ size = 20, active }: IP) => (
   </svg>
 );
 
+const IcoColecciones = ({ size = 20, active }: IP) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <rect x="2" y="6" width="16" height="11" rx="2"
+      fill={active ? "#E8640C" : "#A87006"} fillOpacity={active ? 0.15 : 0.12}
+      stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.4"/>
+    <path d="M2 8.5 H18" stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.2"/>
+    <path d="M2 9 C2 7 3 6 5 6 L7.5 6 L9 4 H14 C15.5 4 16 5 16 6"
+      fill={active ? "#E8640C" : "#A87006"} fillOpacity={active ? 0.18 : 0.14}
+      stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.3" strokeLinejoin="round"/>
+    <line x1="6"  y1="12" x2="14" y2="12" stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="6"  y1="14.5" x2="11" y2="14.5" stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.3" strokeLinecap="round"/>
+  </svg>
+);
+
 const IcoMonitoreo = ({ size = 20, active }: IP) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <rect x="2" y="3" width="16" height="11" rx="2"
@@ -171,6 +185,7 @@ const NAV = [
   { id: "reportes",     label: "Reportes",     Icon: IcoReportes,     path: "/admin/reportes"     },
   { id: "estadisticas", label: "Estadísticas", Icon: IcoEstadisticas, path: "/admin/estadisticas" },
   { id: "importar",     label: "Importar",     Icon: IcoImportar,     path: "/admin/importar"     },
+  { id: "colecciones",  label: "Colecciones",  Icon: IcoColecciones,  path: "/admin/colecciones"  },
   { id: "monitoreo",    label: "Monitoreo",    Icon: IcoMonitoreo,    path: "/admin/monitoreo"    },
   { id: "backups",      label: "Backups",      Icon: IcoBackups,      path: "/admin/backups"      },
 ];

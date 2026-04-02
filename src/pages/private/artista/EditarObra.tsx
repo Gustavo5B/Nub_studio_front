@@ -13,14 +13,17 @@ import "../../../styles/nueva-obra.css";
 
 interface Categoria { id_categoria: number; nombre: string; }
 interface Etiqueta  { id_etiqueta: number;  nombre: string; }
+interface Coleccion { id_coleccion: number; nombre: string; estado: string; }
 
 interface FormState {
-  titulo: string; descripcion: string; id_categoria: string; tecnica: string;
+  titulo: string; descripcion: string; historia: string; id_categoria: string; id_coleccion: string; tecnica: string;
   anio_creacion: string; dimensiones_alto: string; dimensiones_ancho: string;
   dimensiones_profundidad: string; precio_base: string;
   permite_marco: boolean; con_certificado: boolean;
   imagen_principal: string; etiquetas: number[];
 }
+
+interface ImagenObra { id_imagen: number; url_imagen: string; es_principal: boolean; orden: number; }
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -55,8 +58,10 @@ export default function EditarObra() {
   const fileRef       = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
+  const galeriaRef                            = useRef<HTMLInputElement>(null);
   const [categorias,  setCategorias]  = useState<Categoria[]>([]);
   const [etiquetas,   setEtiquetas]   = useState<Etiqueta[]>([]);
+  const [colecciones, setColecciones] = useState<Coleccion[]>([]);
   const [imgFile,     setImgFile]     = useState<File | null>(null);
   const [imgPreview,  setImgPreview]  = useState<string>("");
   const [imgMode,     setImgMode]     = useState<"upload" | "url">("upload");
@@ -66,9 +71,11 @@ export default function EditarObra() {
   const [saving,      setSaving]      = useState(false);
   const [success,     setSuccess]     = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [imagenes,    setImagenes]    = useState<ImagenObra[]>([]);
+  const [uploadingGaleria, setUploadingGaleria] = useState(false);
 
   const [form, setForm] = useState<FormState>({
-    titulo: "", descripcion: "", id_categoria: "", tecnica: "",
+    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
     precio_base: "", permite_marco: false, con_certificado: false,
@@ -82,18 +89,22 @@ export default function EditarObra() {
     try {
       const token   = authService.getToken();
       const headers = { Authorization: `Bearer ${token}` };
-      const [obraRes, catRes, etqRes] = await Promise.all([
+      const [obraRes, catRes, etqRes, colsRes] = await Promise.all([
         fetch(`${API}/api/artista-portal/obra/${id}`, { headers }),
         fetch(`${API}/api/categorias`, { headers }),
         fetch(`${API}/api/etiquetas`,  { headers }),
+        fetch(`${API}/api/colecciones/mis-colecciones`, { headers }),
       ]);
       if (!obraRes.ok) { showToast(await handleApiError(obraRes), "err"); setLoading(false); return; }
       const obra = await obraRes.json();
       setObraEstado(obra.estado || "");
+      setImagenes(obra.imagenes || []);
       setForm({
         titulo:                  obra.titulo         || "",
         descripcion:             obra.descripcion    || "",
-        id_categoria:            String(obra.id_categoria || ""),
+        historia:                obra.historia       || "",
+        id_categoria:            String(obra.id_categoria  || ""),
+        id_coleccion:            String(obra.id_coleccion  || ""),
         tecnica:                 obra.tecnica        || "",
         anio_creacion:           String(obra.anio_creacion || new Date().getFullYear()),
         dimensiones_alto:        String(obra.dimensiones?.alto        ?? obra.alto_cm        ?? ""),
@@ -107,8 +118,9 @@ export default function EditarObra() {
           typeof e === "number" ? e : e.id_etiqueta ?? 0
         ),
       });
-      if (catRes.ok) { const d = await catRes.json(); setCategorias(Array.isArray(d) ? d : d.categorias || d.data || []); }
-      if (etqRes.ok) { const d = await etqRes.json(); setEtiquetas(Array.isArray(d) ? d : d.etiquetas || d.data || []); }
+      if (catRes.ok)  { const d = await catRes.json();  setCategorias(Array.isArray(d) ? d : d.categorias || d.data || []); }
+      if (etqRes.ok)  { const d = await etqRes.json();  setEtiquetas(Array.isArray(d) ? d : d.etiquetas  || d.data || []); }
+      if (colsRes.ok) { const d = await colsRes.json(); setColecciones(d.data || []); }
     } catch (err) {
       showToast(handleNetworkError(err), "err");
     } finally { setLoading(false); }
@@ -185,7 +197,7 @@ export default function EditarObra() {
     }
 
     // ── Validación de seguridad ──
-    const camposTexto = ["titulo", "descripcion", "tecnica"] as const;
+    const camposTexto = ["titulo", "descripcion", "historia", "tecnica"] as const;
     for (const campo of camposTexto) {
       if (hasSuspiciousContent(String(form[campo]))) {
         showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
@@ -205,6 +217,7 @@ export default function EditarObra() {
         ...form,
         titulo:      sanitizeText(form.titulo),
         descripcion: sanitizeText(form.descripcion),
+        historia:    sanitizeText(form.historia),
         tecnica:     sanitizeText(form.tecnica),
       };
 
@@ -241,6 +254,47 @@ export default function EditarObra() {
     } catch (err) {
       showToast(handleNetworkError(err), "err");
     } finally { setSaving(false); }
+  };
+
+  const subirFotoGaleria = async (files: FileList) => {
+    const token = authService.getToken();
+    setUploadingGaleria(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes", "warn"); continue; }
+        if (file.size > 10 * 1024 * 1024)    { showToast("Cada imagen no puede superar 10 MB", "warn"); continue; }
+        const fd = new FormData();
+        fd.append("id_obra", String(id));
+        fd.append("imagenes", file);
+        const res = await fetch(`${API}/api/imagenes/galeria`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.message || "Error al subir imagen", "err"); continue; }
+        setImagenes(prev => [...prev, data.data?.[0] ?? { id_imagen: Date.now(), url_imagen: URL.createObjectURL(file), es_principal: false, orden: prev.length }]);
+      }
+      showToast("Foto(s) agregada(s)", "ok");
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
+    } finally {
+      setUploadingGaleria(false);
+      if (galeriaRef.current) galeriaRef.current.value = "";
+    }
+  };
+
+  const eliminarFotoGaleria = async (idImagen: number) => {
+    const token = authService.getToken();
+    try {
+      const res = await fetch(`${API}/api/imagenes/${idImagen}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Error al eliminar", "err"); return; }
+      setImagenes(prev => prev.filter(img => img.id_imagen !== idImagen));
+      showToast("Foto eliminada", "ok");
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
+    }
   };
 
   const previewSrc = imgPreview || form.imagen_principal;
@@ -383,6 +437,26 @@ export default function EditarObra() {
                 className={`field-input field-textarea${fieldErrors.descripcion ? " field-input-error" : ""}`} />
               {fieldErrors.descripcion && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.descripcion}</span>}
             </div>
+            <div className="field-group">
+              <label>Historia de la obra</label>
+              <textarea name="historia" value={form.historia} onChange={handleChange}
+                placeholder="Cuéntanos el contexto, el proceso o la historia detrás de esta obra…" rows={4}
+                className={`field-input field-textarea${fieldErrors.historia ? " field-input-error" : ""}`} />
+              {fieldErrors.historia && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.historia}</span>}
+            </div>
+            {colecciones.length > 0 && (
+              <div className="field-group">
+                <label>Colección <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400 }}>— opcional</span></label>
+                <select name="id_coleccion" value={form.id_coleccion} onChange={handleChange} className="field-input field-select">
+                  <option value="">Sin colección</option>
+                  {colecciones.map(c => (
+                    <option key={c.id_coleccion} value={c.id_coleccion}>
+                      {c.nombre}{c.estado === "borrador" ? " (borrador)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="fields-row">
               <div className="field-group">
                 <label>Categoría</label>
@@ -478,6 +552,44 @@ export default function EditarObra() {
               </div>
             </div>
           )}
+
+          {/* GALERÍA */}
+          <div className="form-section">
+            <h3 className="section-title"><FileImage size={18} /> Fotos adicionales
+              <span style={{ fontSize:11, fontWeight:400, color:"rgba(245,240,255,0.4)", marginLeft:8 }}>
+                {imagenes.length}/6 fotos · máx. 6
+              </span>
+            </h3>
+            <input ref={galeriaRef} type="file" accept="image/*" multiple style={{ display:"none" }}
+              onChange={e => { if (e.target.files) subirFotoGaleria(e.target.files); }} />
+            <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:10 }}>
+              {imagenes.map(img => (
+                <div key={img.id_imagen} style={{ position:"relative", width:90, height:90 }}>
+                  <img src={img.url_imagen} alt="" style={{ width:90, height:90, objectFit:"cover", borderRadius:10, border:`1.5px solid ${img.es_principal ? "#FF840E" : "rgba(255,255,255,0.1)"}` }} />
+                  {img.es_principal && (
+                    <span style={{ position:"absolute", bottom:3, left:3, background:"rgba(255,132,14,0.85)", color:"#fff", fontSize:9, fontWeight:800, padding:"1px 5px", borderRadius:4 }}>
+                      PRINCIPAL
+                    </span>
+                  )}
+                  {!img.es_principal && (
+                    <button type="button" onClick={() => eliminarFotoGaleria(img.id_imagen)}
+                      style={{ position:"absolute", top:3, right:3, width:20, height:20, borderRadius:"50%", background:"rgba(0,0,0,0.7)", border:"none", color:"#fff", cursor:"pointer", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              {imagenes.length < 6 && (
+                <button type="button" onClick={() => galeriaRef.current?.click()} disabled={uploadingGaleria}
+                  style={{ width:90, height:90, borderRadius:10, border:"2px dashed rgba(255,132,14,0.3)", background:"transparent", color:"rgba(245,240,255,0.4)", cursor:"pointer", fontSize:uploadingGaleria ? 12 : 24, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {uploadingGaleria ? <Loader2 size={18} style={{ animation:"spin 1s linear infinite" }} /> : "+"}
+                </button>
+              )}
+            </div>
+            <p style={{ fontSize:11, color:"rgba(245,240,255,0.3)", margin:0 }}>
+              La foto principal no se puede eliminar desde aquí. Para cambiarla sube una nueva imagen arriba.
+            </p>
+          </div>
 
           {/* RESUMEN */}
           <div className="form-section obra-summary">
