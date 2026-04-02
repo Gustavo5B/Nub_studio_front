@@ -503,7 +503,6 @@ export default function Home() {
         {/* ⭐ ESTRELLA ARRIBA CENTRADA */}
         <Link 
           to="/" 
-          onMouseEnter={cursorOn} 
           onMouseLeave={cursorOff}
           title="ALTAR - Galería de Arte"
           style={{ 
@@ -521,7 +520,7 @@ export default function Home() {
             zIndex: 10
           }}
           onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1.1) rotate(5deg)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1) rotate(0deg)")}
+        
         >
           <img src={estrellaImg} alt="ALTAR Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
         </Link>
