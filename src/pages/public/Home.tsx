@@ -1,9 +1,9 @@
-// src/pages/public/Home.tsx (COMPLETO - CON LOGO ESTRELLA ARRIBA DEL MENÚ)
+// src/pages/public/Home.tsx (COMPLETO - CON LOGO ESTRELLA DENTRO DEL FLUJO)
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
-import font from '/public/fonts/SolveraLorvane.ttf';
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -190,7 +190,6 @@ export default function Home() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
 
-        /* ════ SOLVERA LORVANE FONT ════ */
         @font-face {
           font-family: 'SolveraLorvane';
           src: url('/fonts/SolveraLorvane.ttf') format('truetype');
@@ -307,17 +306,22 @@ export default function Home() {
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
 
         /* ════ LOGO ESTRELLA ════ */
-        .home-logo-estrella {
-          width: clamp(40px, 5vw, 64px);
-          height: clamp(40px, 5vw, 64px);
+        .home-logo-estrella-link {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: clamp(18px, 2vw, 26px);
+          height: clamp(18px, 2vw, 26px);
+          margin-bottom: 14px;
           cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          z-index: 100;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: fadeI 1s ease 1s both;
+          text-decoration: none;
         }
-        .home-logo-estrella:hover {
-          transform: scale(1.1) rotate(5deg);
+        .home-logo-estrella-link:hover {
+          transform: scale(1.15) rotate(6deg);
         }
-        .home-logo-estrella img {
+        .home-logo-estrella-link img {
           width: 100%;
           height: 100%;
           object-fit: contain;
@@ -501,30 +505,6 @@ export default function Home() {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`, animation: "barIn 2s cubic-bezier(.16,1,.3,1) both" }} />
         <div className="hero-corner tl" /><div className="hero-corner tr" /><div className="hero-corner bl" /><div className="hero-corner br" />
 
-        {/* ⭐ ESTRELLA ARRIBA CENTRADA */}
-        <Link 
-          to="/" 
-          onMouseLeave={cursorOff}
-          title="ALTAR - Galería de Arte"
-          style={{ 
-            position: "absolute",
-            top: 370,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "clamp(15px, 1vw, 15px)",
-            height: "clamp(15px, 1vw, 15px)",
-            cursor: "pointer",
-            transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(-50%) scale(1.1) rotate(5deg)")}
-        
-        >
-          <img src={estrellaImg} alt="ALTAR Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-        </Link>
         <div style={{ position: "absolute", bottom: 70, left: "50%", transform: "translateX(-50%)", fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(60px,8vw,110px)", fontWeight: 900, color: "rgba(0,0,0,.020)", whiteSpace: "nowrap", letterSpacing: "-.02em", userSelect: "none", pointerEvents: "none", animation: "fadeI 2s ease 2s both" }}>galería</div>
 
         {/* MENÚ DE NAVEGACIÓN */}
@@ -546,18 +526,35 @@ export default function Home() {
           )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
-          {/* Título ALTAR */}
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: .88, display: "flex", userSelect: "none", margin: 0 }}>
-            {"ALTAR".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
-          </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 18, margin: "26px 0 20px", animation: "fadeI 1s ease .8s both" }}>
-            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.orange, boxShadow: "0 0 10px rgba(232,100,12,.5)", animation: "pulse 3.2s ease-in-out 1.5s infinite" }} />
-            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
-          </div>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".44em", textTransform: "uppercase", color: C.sub, fontFamily: SANS, margin: 0, animation: "fadeI 1s ease 1s both" }}>Galería de Arte</p>
-        </div>
+       {/* ═══ CONTENIDO CENTRAL DEL HERO ═══ */}
+<div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+
+  {/* Título ALTAR */}
+  <h1 style={{ fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: .88, display: "flex", userSelect: "none", margin: 0 }}>
+    {"ALTAR".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
+  </h1>
+
+  {/* ── ⭐ ── única estrella, reemplaza el punto naranja */}
+  <div style={{ display: "flex", alignItems: "center", gap: 18, margin: "26px 0 20px", animation: "fadeI 1s ease .8s both" }}>
+    <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+    <Link
+      to="/"
+      className="home-logo-estrella-link"
+      title="ALTAR - Galería de Arte"
+      onMouseEnter={cursorOn}
+      onMouseLeave={cursorOff}
+      style={{ marginBottom: 0 }}
+    >
+      <img src={estrellaImg} alt="ALTAR Logo" />
+    </Link>
+    <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+  </div>
+
+  {/* Subtítulo */}
+  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".44em", textTransform: "uppercase", color: C.sub, fontFamily: SANS, margin: 0, animation: "fadeI 1s ease 1s both" }}>Galería de Arte</p>
+
+
+</div>
 
         <div style={{ position: "absolute", bottom: 44, left: 52, fontFamily: SERIF, fontSize: 10.5, fontStyle: "italic", color: "rgba(0,0,0,.12)", letterSpacing: ".05em", display: "flex", alignItems: "center", gap: 10, animation: "fadeI 1.5s ease 1.4s both" }}>
           <span style={{ display: "block", width: 22, height: 1, background: "rgba(0,0,0,.08)" }} />500 · obras
@@ -568,7 +565,7 @@ export default function Home() {
 
         <div style={{ position: "absolute", bottom: 34, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: "fadeI 1s ease 1.8s both" }}>
           <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: ".32em", textTransform: "uppercase", color: "rgba(0,0,0,.14)", fontFamily: SANS }}>Explorar</div>
-          <div style={{ width: 1, height: 36, background: "linear-gradient(to bottom, rgba(0,0,0,.12), transparent)", position: "relative", overflow: "hidden" }} className="home-scroll-ln" />
+          <div style={{ width: 1, height: 36, background: "linear-gradient(to bottom, rgba(0,0,0,.12), transparent)", position: "relative", overflow: "hidden" }} />
         </div>
       </section>
 
@@ -606,7 +603,7 @@ export default function Home() {
 
         <div className="scroll-horizontal" style={{ paddingTop: 60, paddingBottom: 80 }}>
           {obras.length > 0 ? (
-            obras.slice(0, 12).map((obra, i) => (
+            obras.slice(0, 12).map((obra) => (
               <div
                 key={obra.id_obra}
                 className="obra-item"
@@ -667,13 +664,13 @@ export default function Home() {
           <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: "55%", height: "85%", background: "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255,248,235,.13) 0%, rgba(255,248,235,.05) 35%, transparent 70%)", pointerEvents: "none" }} />
           <div ref={expoFrameRef} className="home-expo-frame-wrap" style={{ position: "relative", zIndex: 1, willChange: "transform" }} onMouseEnter={cursorOn} onMouseLeave={cursorOff}>
             <div className="home-expo-frame">
-              <img 
-                src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=700&q=90" 
+              <img
+                src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=700&q=90"
                 alt="Tierra y color"
-                style={{ 
-                  display: "block", 
-                  width: "100%", 
-                  height: "auto", 
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "auto",
                   maxWidth: "340px",
                   filter: "saturate(.75) contrast(1.05) brightness(.95)",
                   transition: "filter .8s, transform 1s"
@@ -738,7 +735,7 @@ export default function Home() {
 
         <div className="scroll-horizontal">
           {artistas.length > 0 ? (
-            artistas.slice(0, 10).map((artista, i) => (
+            artistas.slice(0, 10).map((artista) => (
               <div
                 key={artista.id_artista}
                 className="artista-item"
