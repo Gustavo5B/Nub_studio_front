@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
+import font from '/public/fonts/SolveraLorvane.ttf';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -192,21 +193,21 @@ export default function Home() {
         /* ════ SOLVERA LORVANE FONT ════ */
         @font-face {
           font-family: 'SolveraLorvane';
-          src: url('/src/assets/fonts/SolveraLorvane.ttf') format('truetype');
+          src: url('/fonts/SolveraLorvane.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
           font-display: swap;
         }
         @font-face {
           font-family: 'SolveraLorvane';
-          src: url('/src/assets/fonts/SolveraLorvane.ttf') format('truetype');
+          src: url('/fonts/SolveraLorvane.ttf') format('truetype');
           font-weight: bold;
           font-style: normal;
           font-display: swap;
         }
         @font-face {
           font-family: 'SolveraLorvane';
-          src: url('/src/assets/fonts/SolveraLorvane.ttf') format('truetype');
+          src: url('/fonts/SolveraLorvane.ttf') format('truetype');
           font-weight: 900;
           font-style: normal;
           font-display: swap;
