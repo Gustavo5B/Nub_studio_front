@@ -304,30 +304,28 @@ export default function Home() {
         .hero-corner.br { bottom:22px; right:26px; }
         .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
-
-        /* ════ LOGO ESTRELLA ════ */
-        .home-logo-estrella-link {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: clamp(18px, 2vw, 26px);
-          height: clamp(18px, 2vw, 26px);
-          margin-bottom: 14px;
-          cursor: pointer;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          animation: fadeI 1s ease 1s both;
-          text-decoration: none;
-        }
-        .home-logo-estrella-link:hover {
-          transform: scale(1.15) rotate(6deg);
-        }
-        .home-logo-estrella-link img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          display: block;
-        }
-
+/* ════ LOGO ESTRELLA ════ */
+.home-logo-estrella-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;   /* ← antes era clamp(18px, 2vw, 26px) */
+  height: 14px;  /* ← antes era clamp(18px, 2vw, 26px) */
+  margin-bottom: 0;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeI 1s ease 1s both;
+  text-decoration: none;
+}
+.home-logo-estrella-link:hover {
+  transform: scale(1.15) rotate(6deg);
+}
+.home-logo-estrella-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
         [data-rv]   { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
         [data-clip] { clip-path:inset(100% 0 0 0); transition:clip-path 1.3s cubic-bezier(.16,1,.3,1); }
         [data-clip-h] { clip-path:inset(0 100% 0 0); transition:clip-path 1.5s cubic-bezier(.16,1,.3,1); }
