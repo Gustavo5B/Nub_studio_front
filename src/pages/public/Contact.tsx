@@ -1,71 +1,89 @@
 // src/pages/public/Contact.tsx
-import {
-  Mail, Phone, MapPin, Clock, Send, Star, Users,
-  User, MessageSquare, CheckCircle, Palette, ArrowLeft,
-  Sparkles
-} from "lucide-react";
-import { useState } from "react";
-import type { ChangeEvent } from "react";
-
-const InstagramIcon = ({ size }: { readonly size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
-const FacebookIcon = ({ size }: { readonly size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-  </svg>
-);
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
+import { authService } from "../../services/authService";
+import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
 const C = {
   orange: "#E8640C",
   pink: "#A83B90",
-  purple: "#6028AA",
-  gold: "#A87006",
-  bg: "#F9F8FC",
-  border: "#E6E4EF",
-  text: "#14121E",
-  muted: "#9896A8",
-  card: "#FFFFFF",
+  ink: "#14121E",
+  sub: "#9896A8",
+  dark: "#0D0B14",
 };
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "12px 16px",
-  borderRadius: 12,
-  border: "1.5px solid #E6E4EF",
-  background: "#FFFFFF",
-  color: "#14121E",
-  fontSize: 14,
-  fontFamily: "'Outfit', sans-serif",
-  outline: "none",
-  transition: "border-color .2s, background .2s",
-};
+const SERIF = "'SolveraLorvane', serif";
+const SANS = "'Outfit', sans-serif";
 
-const labelStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#5A5870",
-  marginBottom: 8,
-};
-
+// Icono WhatsApp personalizado (SVG puro)
+const WhatsAppIcon = ({ size = 32 }: { size?: number }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 448 512" 
+    fill="white" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.7-30.6-38.1-3.2-5.5-.3-8.4 2.4-11.1 2.5-2.5 5.5-6.5 8.3-9.7 2.8-3.3 3.7-5.6 5.6-9.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.8 23.5 9.2 31.6 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+  </svg>
+);
 export default function Contact() {
   const navigate = useNavigate();
+  const isLoggedIn = authService.isAuthenticated();
+  const userRol = localStorage.getItem("userRol") || "";
+
   const [formData, setFormData] = useState({
-    nombre: "", email: "", telefono: "", asunto: "", mensaje: "",
+    nombre: "",
+    email: "",
+    mensaje: "",
   });
   const [enviado, setEnviado] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: { preventDefault(): void }) => {
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.body.style.cursor = "none";
+    let rx = 0, ry = 0;
+    let rafId: number;
+    const onMove = (e: MouseEvent) => {
+      const { clientX: mx, clientY: my } = e;
+      if (dotRef.current) {
+        dotRef.current.style.left = `${mx}px`;
+        dotRef.current.style.top = `${my}px`;
+      }
+      const animate = () => {
+        rx += (mx - rx) * 0.15;
+        ry += (my - ry) * 0.15;
+        if (ringRef.current) {
+          ringRef.current.style.left = `${rx}px`;
+          ringRef.current.style.top = `${ry}px`;
+        }
+        rafId = requestAnimationFrame(animate);
+      };
+      cancelAnimationFrame(rafId);
+      animate();
+    };
+    document.addEventListener("mousemove", onMove);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(rafId);
+      document.body.style.cursor = "";
+    };
+  }, []);
+
+  const cursorOn = useCallback(() => {
+    dotRef.current?.classList.add("cur-over");
+    ringRef.current?.classList.add("cur-over");
+  }, []);
+  const cursorOff = useCallback(() => {
+    dotRef.current?.classList.remove("cur-over");
+    ringRef.current?.classList.remove("cur-over");
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setTimeout(() => {
@@ -73,612 +91,314 @@ export default function Contact() {
       setEnviado(true);
       setTimeout(() => {
         setEnviado(false);
-        setFormData({ nombre: "", email: "", telefono: "", asunto: "", mensaje: "" });
+        setFormData({ nombre: "", email: "", mensaje: "" });
       }, 3500);
     }, 1200);
   };
 
-  type FormField = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-  const handleChange = (e: ChangeEvent<FormField>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.currentTarget.style.borderColor = C.orange;
-    e.currentTarget.style.background = "rgba(232,100,12,0.04)";
-  };
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.currentTarget.style.borderColor = "#E6E4EF";
-    e.currentTarget.style.background = "#FFFFFF";
-  };
-
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: C.bg,
-      fontFamily: "'Outfit', sans-serif",
-      color: C.text,
-      position: "relative",
-      overflowX: "hidden",
-    }}>
-
-      {/* ── Rainbow line top ── */}
-      <div style={{ position:"fixed", top:0, left:0, right:0, height:3, background:"linear-gradient(90deg,#E8640C,#A83B90,#6028AA,#A87006)", zIndex:200, pointerEvents:"none" }} />
-
-      {/* ── Grid texture overlay ── */}
-      <div style={{ position:"fixed", inset:0, backgroundImage:"url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23000000' stroke-width='0.4'%3E%3Cpath d='M0 0h40v40H0z'/%3E%3C/g%3E%3C/svg%3E\")", opacity:0.04, pointerEvents:"none", zIndex:0 }} />
-
-      {/* ── Orbs de fondo ── */}
-      <div style={{ position: "fixed", top: -150, left: -150, width: 500, height: 500, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}18, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
-      <div style={{ position: "fixed", bottom: -100, right: -100, width: 600, height: 600, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}15, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
-      <div style={{ position: "fixed", top: "40%", left: "50%", width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}08, transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
-
-      {/* ── Back button ── */}
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          position: "fixed", top: 20, left: 20, zIndex: 100,
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "10px 18px", borderRadius: 100,
-          background: "rgba(255,255,255,0.97)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid #E6E4EF",
-          color: "#5A5870", fontSize: 13, fontWeight: 600,
-          cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-          boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
-          transition: "all .22s ease",
-        }}
-        onMouseEnter={e => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(232,100,12,0.08)";
-          el.style.borderColor = `rgba(232,100,12,0.30)`;
-          el.style.color = C.orange;
-          el.style.transform = "translateX(-2px)";
-        }}
-        onMouseLeave={e => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(255,255,255,0.97)";
-          el.style.borderColor = "#E6E4EF";
-          el.style.color = "#5A5870";
-          el.style.transform = "translateX(0)";
-        }}
-      >
-        <ArrowLeft size={14} strokeWidth={2.5} />
-        Volver al inicio
-      </button>
-
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 24px 80px", position: "relative", zIndex: 1 }}>
-
-        {/* ── Hero header ── */}
-        <div style={{ textAlign: "center", marginBottom: 72 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "7px 18px", borderRadius: 100,
-            background: `linear-gradient(135deg, ${C.orange}18, ${C.pink}18)`,
-            border: `1px solid ${C.orange}30`,
-            fontSize: 13, fontWeight: 600, color: C.orange,
-            marginBottom: 20,
-          }}>
-            <Sparkles size={14} />
-            Galería certificada #1 en Hidalgo
-          </div>
-
-          <h1 style={{
-            fontSize: "clamp(36px, 6vw, 60px)",
-            fontWeight: 900,
-            lineHeight: 1.1,
-            margin: "0 0 16px",
-          }}>
-            Conecta con el{" "}
-            <span style={{
-              background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>
-              Arte Huasteco
-            </span>
-          </h1>
-
-          <p style={{ fontSize: 16, color: C.muted, maxWidth: 520, margin: "0 auto 36px", lineHeight: 1.7 }}>
-            Transforma tus espacios con obras auténticas de artistas locales. Estamos aquí para ayudarte.
-          </p>
-
-          {/* Stats row */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-            {[
-              { label: "100% Auténtico", icon: <CheckCircle size={14} /> },
-              { label: "50+ Artistas", icon: <Users size={14} /> },
-              { label: "1,000+ Obras", icon: <Palette size={14} /> },
-              { label: "Calificación 5.0", icon: <Star size={14} /> },
-            ].map(({ label, icon }) => (
-              <div key={label} style={{
-                display: "flex", alignItems: "center", gap: 7,
-                padding: "8px 16px", borderRadius: 100,
-                background: "rgba(0,0,0,0.03)",
-                border: "1px solid #E6E4EF",
-                fontSize: 13, fontWeight: 600, color: "#5A5870",
-              }}>
-                <span style={{ color: C.orange }}>{icon}</span>
-                {label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Main grid ── */}
-        <div className="contact-grid" style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1.4fr",
-          gap: 28,
-          alignItems: "start",
-        }}>
-
-          {/* ── Left column: info cards ── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-            {/* Contact info cards */}
-            {[
-              {
-                icon: <MapPin size={20} color={C.orange} />,
-                title: "Ubicación",
-                line1: "Universidad Tecnológica",
-                line2: "Huasteca Hidalguense",
-                color: C.orange,
-              },
-              {
-                icon: <Phone size={20} color={C.pink} />,
-                title: "Llámanos",
-                line1: "+52 771 234 5678",
-                line2: "Respuesta en minutos",
-                color: C.pink,
-              },
-              {
-                icon: <Mail size={20} color={C.purple} />,
-                title: "Escríbenos",
-                line1: "contacto@altarstudio.com",
-                line2: "Te respondemos hoy",
-                color: C.purple,
-              },
-              {
-                icon: <Clock size={20} color={C.gold} />,
-                title: "Horario",
-                line1: "Lun – Vie: 9AM – 6PM",
-                line2: "Sábado: 10AM – 2PM",
-                color: C.gold,
-              },
-            ].map(({ icon, title, line1, line2, color }) => (
-              <div key={title} style={{
-                display: "flex", alignItems: "center", gap: 16,
-                padding: "18px 20px", borderRadius: 16,
-                background: C.card,
-                border: "1px solid #E6E4EF",
-                cursor: "default",
-              }}
-              >
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                  background: `${color}15`,
-                  border: `1px solid ${color}30`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  {icon}
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: color, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{line1}</div>
-                  <div style={{ fontSize: 12, color: C.muted }}>{line2}</div>
-                </div>
-              </div>
-            ))}
-
-            {/* Artist CTA banner */}
-            <div style={{
-              padding: "24px 22px",
-              borderRadius: 18,
-              background: `linear-gradient(135deg, ${C.orange}20, ${C.pink}15)`,
-              border: `1px solid ${C.orange}30`,
-              position: "relative",
-              overflow: "hidden",
-            }}>
-              <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}25, transparent 70%)`, pointerEvents: "none" }} />
-              <Palette size={24} color={C.orange} style={{ marginBottom: 10 }} />
-              <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 6 }}>¿Eres artista?</div>
-              <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginBottom: 16 }}>
-                Únete a nuestra galería certificada y alcanza nuevos clientes en toda la región.
-              </div>
-              <button
-                onClick={() => navigate("/registro-artista")}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  padding: "10px 20px", borderRadius: 10,
-                  background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
-                  border: "none", color: "white",
-                  fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  fontFamily: "'Outfit', sans-serif",
-                  boxShadow: `0 8px 24px ${C.orange}35`,
-                  transition: "transform .15s, box-shadow .15s",
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 12px 32px ${C.orange}50`;
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${C.orange}35`;
-                }}
-              >
-                <Palette size={14} />
-                Aplica ahora
-              </button>
-            </div>
-
-            {/* Social links */}
-            <div style={{
-              padding: "18px 20px",
-              borderRadius: 16,
-              background: C.card,
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.08em" }}>Síguenos</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                {[
-                  { icon: <InstagramIcon size={16} />, label: "@altarstudio" },
-                  { icon: <FacebookIcon size={16} />, label: "Altar Studio" },
-                ].map(({ icon, label }) => (
-                  <button key={label} style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "9px 14px", borderRadius: 10,
-                    background: "rgba(0,0,0,0.03)",
-                    border: "1px solid #E6E4EF",
-                    color: "#5A5870", fontSize: 13, fontWeight: 500,
-                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                    transition: "all .15s",
-                  }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.borderColor = `${C.orange}50`;
-                      (e.currentTarget as HTMLElement).style.color = C.orange;
-                      (e.currentTarget as HTMLElement).style.background = `${C.orange}10`;
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "#E6E4EF";
-                      (e.currentTarget as HTMLElement).style.color = "#5A5870";
-                      (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.03)";
-                    }}
-                  >
-                    {icon}
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Right column: form + map ── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-
-            {/* Form card */}
-            <div style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E4EF",
-              borderRadius: 24,
-              padding: "36px 32px",
-              boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
-              position: "relative",
-              overflow: "hidden",
-            }}>
-              {/* Card ambient glows */}
-              <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}12, transparent 70%)`, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}10, transparent 70%)`, pointerEvents: "none" }} />
-
-              <div style={{ position: "relative" }}>
-                <div style={{ marginBottom: 28 }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 6px" }}>Envíanos un mensaje</h2>
-                  <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Te responderemos en menos de 24 horas</p>
-                </div>
-
-                {/* Success state */}
-                {enviado && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "16px 18px", borderRadius: 14,
-                    background: "rgba(74,222,128,0.1)",
-                    border: "1px solid rgba(74,222,128,0.3)",
-                    marginBottom: 24,
-                    animation: "msgIn .25s ease",
-                  }}>
-                    <CheckCircle size={20} color="#4ADE80" style={{ flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#4ADE80" }}>¡Mensaje enviado!</div>
-                      <div style={{ fontSize: 12, color: "rgba(74,222,128,0.7)" }}>Nos pondremos en contacto contigo pronto.</div>
-                    </div>
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  {/* Row: nombre + email */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div>
-                      <label style={labelStyle}><User size={13} /> Nombre *</label>
-                      <input
-                        type="text" name="nombre" value={formData.nombre} onChange={handleChange}
-                        placeholder="Tu nombre" required
-                        style={inputStyle} onFocus={handleFocus} onBlur={handleBlur}
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}><Mail size={13} /> Email *</label>
-                      <input
-                        type="email" name="email" value={formData.email} onChange={handleChange}
-                        placeholder="tu@correo.com" required
-                        style={inputStyle} onFocus={handleFocus} onBlur={handleBlur}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row: telefono + asunto */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div>
-                      <label style={labelStyle}><Phone size={13} /> Teléfono</label>
-                      <input
-                        type="tel" name="telefono" value={formData.telefono} onChange={handleChange}
-                        placeholder="+52 771 000 0000"
-                        style={inputStyle} onFocus={handleFocus} onBlur={handleBlur}
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}><MessageSquare size={13} /> Asunto *</label>
-                      <select
-                        name="asunto" value={formData.asunto} onChange={handleChange} required
-                        style={{ ...inputStyle, appearance: "none" as const, cursor: "pointer" }}
-                        onFocus={handleFocus} onBlur={handleBlur}
-                      >
-                        <option value="" disabled>Selecciona...</option>
-                        <option value="compra">Compra de obra</option>
-                        <option value="info">Información general</option>
-                        <option value="artista">Ser artista en Altar Studio</option>
-                        <option value="empresa">Colaboración empresarial</option>
-                        <option value="otro">Otro tema</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}><MessageSquare size={13} /> Mensaje *</label>
-                    <textarea
-                      name="mensaje" value={formData.mensaje} onChange={handleChange}
-                      placeholder="Cuéntanos en qué podemos ayudarte..." required
-                      rows={5}
-                      style={{
-                        ...inputStyle,
-                        resize: "vertical",
-                        minHeight: 120,
-                        lineHeight: 1.6,
-                      }}
-                      onFocus={handleFocus} onBlur={handleBlur}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading || enviado}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      width: "100%", padding: "13px 20px", borderRadius: 12, marginTop: 4,
-                      background: enviado
-                        ? "linear-gradient(135deg, #4ADE80, #22c55e)"
-                        : `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
-                      border: "none", color: "white",
-                      fontSize: 15, fontWeight: 700, cursor: (isLoading || enviado) ? "not-allowed" : "pointer",
-                      fontFamily: "'Outfit', sans-serif",
-                      boxShadow: `0 8px 24px ${C.orange}30`,
-                      opacity: isLoading ? 0.8 : 1,
-                      transition: "transform .15s, box-shadow .15s, background .3s",
-                    }}
-                    onMouseEnter={e => {
-                      if (!isLoading && !enviado) {
-                        (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-                        (e.currentTarget as HTMLElement).style.boxShadow = `0 12px 32px ${C.orange}45`;
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                      (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${C.orange}30`;
-                    }}
-                  >
-                    {(() => {
-                      if (isLoading) return <><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "inline-block" }} /> Enviando...</>;
-                      if (enviado) return <><CheckCircle size={16} /> ¡Enviado!</>;
-                      return <><Send size={16} /> Enviar mensaje</>;
-                    })()}
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* Map card */}
-            <div style={{
-              borderRadius: 24,
-              overflow: "hidden",
-              border: "1px solid #E6E4EF",
-              background: "#FFFFFF",
-              boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
-              position: "relative",
-            }}>
-              {/* Map header */}
-              <div style={{
-                padding: "20px 24px",
-                borderBottom: "1px solid #E6E4EF",
-                display: "flex", alignItems: "center", gap: 14,
-              }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: 12,
-                  background: `${C.orange}15`,
-                  border: `1px solid ${C.orange}30`,
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
-                  <MapPin size={20} color={C.orange} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>Visítanos</div>
-                  <div style={{ fontSize: 12, color: C.muted }}>Universidad Tecnológica Huasteca Hidalguense</div>
-                </div>
-                <a
-                  href="https://www.google.com/maps/search/Universidad+Tecnol%C3%B3gica+de+la+Huasteca+Hidalguense"
-                  target="_blank" rel="noopener noreferrer"
-                  style={{
-                    marginLeft: "auto",
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "8px 16px", borderRadius: 10,
-                    background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`,
-                    color: "white", fontSize: 12, fontWeight: 700,
-                    textDecoration: "none", fontFamily: "'Outfit', sans-serif",
-                    whiteSpace: "nowrap" as const,
-                    boxShadow: `0 4px 16px ${C.orange}30`,
-                    transition: "transform .15s",
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = "translateY(0)"}
-                >
-                  <MapPin size={12} /> Cómo llegar
-                </a>
-              </div>
-
-              {/* Iframe */}
-              <div style={{ position: "relative", height: 320 }}>
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3722.8974536185797!2d-98.38544492494915!3d21.099338180562694!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d72d6af3e1e5e7%3A0x9d8e5f5e5e5e5e5e!2sUniversidad%20Tecnol%C3%B3gica%20de%20la%20Huasteca%20Hidalguense!5e0!3m2!1ses-419!2smx!4v1234567890123!5m2!1ses-419!2smx"
-                  width="100%" height="100%"
-                  style={{ border: 0, display: "block", filter: "grayscale(30%) brightness(0.9)" }}
-                  allowFullScreen loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Mapa de ubicación"
-                />
-                {/* Gradient vignette over map */}
-                <div style={{
-                  position: "absolute", inset: 0, pointerEvents: "none",
-                  background: `linear-gradient(to bottom, rgba(255,255,255,0.10), transparent 30%, transparent 70%, rgba(255,255,255,0.15))`,
-                }} />
-              </div>
-
-              {/* Quick info row */}
-              <div style={{
-                display: "flex",
-                borderTop: "1px solid #E6E4EF",
-              }}>
-                {[
-                  { icon: <Clock size={14} />, text: "Abierto ahora" },
-                  { icon: <Star size={14} />, text: "5.0 estrellas" },
-                  { icon: <CheckCircle size={14} />, text: "Verificado" },
-                ].map(({ icon, text }, i) => (
-                  <div key={text} style={{
-                    flex: 1,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "14px 8px",
-                    fontSize: 12, fontWeight: 600,
-                    color: "#5A5870",
-                    borderRight: i < 2 ? "1px solid #E6E4EF" : "none",
-                  }}>
-                    <span style={{ color: C.orange }}>{icon}</span>
-                    {text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── FAQ Section (estática) ── */}
-      <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 24px 80px", position:"relative", zIndex:1 }}>
-        <div style={{ height:1, background:"linear-gradient(90deg,transparent,rgba(0,0,0,0.08),transparent)", marginBottom:64 }} />
-        <div style={{ textAlign:"center", marginBottom:48 }}>
-          <div style={{ fontSize:11, fontWeight:800, color:C.orange, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:12, fontFamily:"'Outfit',sans-serif" }}>Preguntas frecuentes</div>
-          <h2 style={{ fontSize:"clamp(24px,3vw,38px)", fontWeight:900, color:C.text, margin:0, fontFamily:"'Outfit',sans-serif" }}>
-            ¿Tienes dudas?{" "}
-            <span style={{ background:`linear-gradient(135deg,${C.orange},${C.pink})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
-              Aquí las resolvemos
-            </span>
-          </h2>
-        </div>
-        <div className="faq-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
-          {[
-            {
-              q:"¿Cómo compro una obra?",
-              a:"Explora nuestro catálogo, selecciona la obra que te guste y contáctanos. Te asesoramos en todo el proceso de compra y envío a tu domicilio.",
-              color:C.orange,
-            },
-            {
-              q:"¿Cómo me registro como artista?",
-              a:"Completa el formulario de registro de artista, sube tu portafolio y el equipo de NU★B Studio revisará tu solicitud en 3-5 días hábiles.",
-              color:C.pink,
-            },
-            {
-              q:"¿Las obras tienen garantía de autenticidad?",
-              a:"Sí. Cada obra vendida en NU★B Studio incluye un certificado de autenticidad firmado por el artista y avalado por nuestra galería.",
-              color:C.purple,
-            },
-            {
-              q:"¿Puedo devolver una obra?",
-              a:"Aceptamos devoluciones dentro de los 15 días posteriores a la entrega si la obra llega dañada o no coincide con la descripción.",
-              color:C.gold,
-            },
-            {
-              q:"¿Hacen envíos fuera de Hidalgo?",
-              a:"Sí, enviamos a todo México. El costo de envío se calcula según el destino y el tamaño de la obra al momento de la compra.",
-              color:C.orange,
-            },
-            {
-              q:"¿Puedo solicitar una obra personalizada?",
-              a:"Muchos de nuestros artistas aceptan encargos personalizados. Contáctanos y te ponemos en contacto directo con el artista ideal.",
-              color:C.pink,
-            },
-          ].map(({ q, a, color }) => (
-            <div key={q} style={{
-              background:"#FFFFFF",
-              border:`1px solid #E6E4EF`,
-              borderRadius:18,
-              padding:"24px 22px",
-              backdropFilter:"blur(20px)",
-              cursor:"default",
-            }}
-            >
-              <div style={{ width:8, height:8, borderRadius:"50%", background:color, marginBottom:14, boxShadow:`0 0 12px ${color}60` }} />
-              <div style={{ fontSize:15, fontWeight:800, color:C.text, marginBottom:10, lineHeight:1.35, fontFamily:"'Outfit',sans-serif" }}>{q}</div>
-              <div style={{ fontSize:13.5, color:C.muted, lineHeight:1.75, fontFamily:"'Outfit',sans-serif" }}>{a}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize:11.5, color:"#9896A8", fontStyle:"italic", textAlign:"center", marginTop:28, fontFamily:"'Outfit',sans-serif" }}>
-          (FAQ estático — hacer dinámico desde /api/faq)
-        </div>
-      </div>
-
-      {/* ── Footer note ── */}
-      <div style={{
-        textAlign: "center",
-        padding: "24px",
-        borderTop: "1px solid #E6E4EF",
-        position: "relative", zIndex: 1,
-      }}>
-        <p style={{ fontSize: 12, color: "#9896A8", margin: 0 }}>
-          © {new Date().getFullYear()} Altar Studio. Todos los derechos reservados.
-        </p>
-      </div>
+    <div style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh" }}>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
-        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        @keyframes msgIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } }
-        select option { background: #FFFFFF; color: #14121E; }
-        @media (max-width: 860px) {
-          .contact-grid { grid-template-columns: 1fr !important; }
-          .faq-grid { grid-template-columns: 1fr !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap');
+
+        @font-face {
+          font-family: 'SolveraLorvane';
+          src: url('/fonts/SolveraLorvane.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
         }
-        @media (max-width: 620px) {
-          .faq-grid { grid-template-columns: 1fr !important; }
+
+        .home-grain {
+          position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+          background-size: 160px 160px; mix-blend-mode: multiply;
+        }
+
+        .home-cursor-dot {
+          position: fixed; width: 6px; height: 6px; border-radius: 50%;
+          background: #14121E; pointer-events: none; z-index: 99999;
+          transform: translate(-50%, -50%);
+          transition: width .22s, height .22s, background .22s;
+        }
+        .home-cursor-ring {
+          position: fixed; width: 32px; height: 32px; border-radius: 50%;
+          border: 1px solid rgba(20,18,30,.22); pointer-events: none; z-index: 99998;
+          transform: translate(-50%, -50%);
+          transition: width .3s, height .3s, border-color .25s;
+        }
+        .home-cursor-dot.cur-over { width: 4px; height: 4px; background: #E8640C; }
+        .home-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
+
+        .home-nav-link {
+          display: flex; align-items: center; gap: 9px;
+          font-size: 9.5px; font-weight: 700; letter-spacing: .22em;
+          text-transform: uppercase; color: #9896A8;
+          text-decoration: none; transition: color .25s;
+        }
+        .home-nav-link::before {
+          content: ''; display: block; width: 12px; height: 1px;
+          background: currentColor; flex-shrink: 0;
+          transition: width .28s;
+        }
+        .home-nav-link:hover { color: #14121E; }
+        .home-nav-link:hover::before { width: 22px; }
+
+        @keyframes fadeL { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeR { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeI { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse {
+          0%,100% { box-shadow: 0 0 10px rgba(232,100,12,.5); transform: scale(1); }
+          50% { box-shadow: 0 0 22px rgba(232,100,12,.85); transform: scale(1.38); }
+        }
+
+        .altar-letter {
+          display: inline-block; opacity: 0;
+          transform: translateY(60px) skewY(4deg);
+          animation: letterUp 1.1s cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes letterUp { to { opacity: 1; transform: translateY(0) skewY(0); } }
+        .altar-letter:nth-child(1){animation-delay:.18s}
+        .altar-letter:nth-child(2){animation-delay:.26s}
+        .altar-letter:nth-child(3){animation-delay:.34s}
+        .altar-letter:nth-child(4){animation-delay:.42s}
+        .altar-letter:nth-child(5){animation-delay:.50s}
+        .altar-letter:nth-child(6){animation-delay:.58s}
+        .altar-letter:nth-child(7){animation-delay:.66s}
+        .altar-letter:nth-child(8){animation-delay:.74s}
+
+        .whatsapp-float {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 9999;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          background: #25D366;
+          border-radius: 50%;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .whatsapp-float:hover {
+          transform: scale(1.1);
+          box-shadow: 0 6px 16px rgba(0,0,0,0.2);
         }
       `}</style>
+
+      <div className="home-grain" />
+      <div ref={dotRef} className="home-cursor-dot" />
+      <div ref={ringRef} className="home-cursor-ring" />
+
+      
+
+      {/* MENÚ DE NAVEGACIÓN */}
+      <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both", zIndex: 11 }}>
+        <Link to="/catalogo" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
+        <Link to="/artistas" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
+        <Link to="/blog" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
+        <Link to="/contacto" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
+      </nav>
+
+      {/* BOTONES DE AUTENTICACIÓN */}
+      <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both", zIndex: 11 }}>
+        {!isLoggedIn ? (
+          <>
+            <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Ingresar</Link>
+            <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "7px 16px", borderRadius: 100, background: C.orange, transition: "all .22s" }}>Ser artista</Link>
+          </>
+        ) : (
+          <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)" }}>Mi cuenta</Link>
+        )}
+      </div>
+
+      {/* WhatsApp flotante - esquina inferior DERECHA con número 7713338453 */}
+      <a
+        href="https://wa.me/527713338453?text=Hola%2C%20me%20interesa%20saber%20m%C3%A1s%20sobre%20ALTAR%20Galer%C3%ADa"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="whatsapp-float"
+        onMouseEnter={cursorOn}
+        onMouseLeave={cursorOff}
+        style={{
+          width: 56,
+          height: 56,
+        }}
+      >
+        <WhatsAppIcon size={32} />
+      </a>
+
+      {/* Contenido principal */}
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "100px 24px 80px" }}>
+
+        {/* Título CONTACTO */}
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(48px, 6vw, 72px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", margin: "0 0 24px" }}>
+            {"CONTACTO".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
+          </h1>
+
+          {/* Estrella debajo del título */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, marginBottom: 24 }}>
+            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+            <div
+              style={{
+                width: "clamp(28px, 3.5vw, 44px)",
+                height: "clamp(28px, 3.5vw, 44px)",
+                cursor: "pointer",
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onMouseEnter={(e) => {
+                cursorOn();
+                e.currentTarget.style.transform = "scale(1.1) rotate(5deg)";
+              }}
+              onMouseLeave={(e) => {
+                cursorOff();
+                e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+              }}
+            >
+              <img src={estrellaImg} alt="ALTAR Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            </div>
+            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+          </div>
+
+          <p style={{ fontSize: 14, color: C.sub, maxWidth: 520, margin: "0 auto", lineHeight: 1.7 }}>
+            Si tienes alguna pregunta, completa este formulario y nuestro equipo se pondrá en contacto contigo lo antes posible.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
+          
+          {/* Formulario */}
+          <div>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {enviado && (
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderRadius: 12, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                  <CheckCircle size={18} color="#4ADE80" />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#4ADE80" }}>¡Mensaje enviado!</div>
+                    <div style={{ fontSize: 11, color: "rgba(74,222,128,0.7)" }}>Te responderemos pronto.</div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: C.sub, marginBottom: 8, display: "block" }}>NOMBRE</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  required
+                  onMouseEnter={cursorOn}
+                  onMouseLeave={cursorOff}
+                  style={{ width: "100%", padding: "14px 0", border: "none", borderBottom: "1px solid rgba(0,0,0,.08)", fontSize: 15, outline: "none", fontFamily: SANS, transition: "border-color .2s" }}
+                  onFocus={(e) => e.currentTarget.style.borderBottomColor = C.orange}
+                  onBlur={(e) => e.currentTarget.style.borderBottomColor = "rgba(0,0,0,.08)"}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: C.sub, marginBottom: 8, display: "block" }}>E-MAIL</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  onMouseEnter={cursorOn}
+                  onMouseLeave={cursorOff}
+                  style={{ width: "100%", padding: "14px 0", border: "none", borderBottom: "1px solid rgba(0,0,0,.08)", fontSize: 15, outline: "none", fontFamily: SANS, transition: "border-color .2s" }}
+                  onFocus={(e) => e.currentTarget.style.borderBottomColor = C.orange}
+                  onBlur={(e) => e.currentTarget.style.borderBottomColor = "rgba(0,0,0,.08)"}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: C.sub, marginBottom: 8, display: "block" }}>MENSAJE</label>
+                <textarea
+                  name="mensaje"
+                  value={formData.mensaje}
+                  onChange={handleChange}
+                  required
+                  rows={5}
+                  onMouseEnter={cursorOn}
+                  onMouseLeave={cursorOff}
+                  style={{ width: "100%", padding: "14px 0", border: "none", borderBottom: "1px solid rgba(0,0,0,.08)", fontSize: 15, resize: "vertical", outline: "none", fontFamily: SANS, transition: "border-color .2s" }}
+                  onFocus={(e) => e.currentTarget.style.borderBottomColor = C.orange}
+                  onBlur={(e) => e.currentTarget.style.borderBottomColor = "rgba(0,0,0,.08)"}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || enviado}
+                onMouseEnter={cursorOn}
+                onMouseLeave={cursorOff}
+                style={{ marginTop: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "14px 24px", borderRadius: 100, background: C.ink, color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", border: "none", cursor: (isLoading || enviado) ? "not-allowed" : "pointer", fontFamily: SANS, transition: "all .25s", opacity: isLoading ? 0.7 : 1 }}
+              >
+                {isLoading ? "Enviando..." : <><Send size={14} /> ENVIAR MENSAJE</>}
+              </button>
+            </form>
+          </div>
+
+{/* Mapa e información */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ 
+              borderRadius: 12, 
+              overflow: "hidden", 
+              border: "1px solid rgba(0,0,0,.06)", 
+              background: "#fff",
+              boxShadow: "0 10px 30px -10px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,.05)", display: "flex", alignItems: "center", gap: 12 }}>
+                <MapPin size={18} color={C.orange} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: SANS }}>Chapulhuacán, Hidalgo</div>
+                  <div style={{ fontSize: 11, color: C.sub }}>México</div>
+                </div>
+              </div>
+              
+              <div style={{ width: "100%", height: "300px", background: "#f0f0f0" }}>
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14841.564410145618!2d-98.9056345!3d21.1567439!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d6be97ff138e09%3A0x548620f428908df9!2sChapulhuac%C3%A1n%2C%20Hgo.!5e0!3m2!1ses-419!2smx!4v1712150000000!5m2!1ses-419!2smx"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: "block", filter: "grayscale(0.3) contrast(1.1)" }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingLeft: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Mail size={16} color={C.sub} />
+                <span style={{ fontSize: 13, color: C.ink, fontWeight: 500 }}>nubstudio@gmail.com</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Phone size={16} color={C.sub} />
+                <span style={{ fontSize: 13, color: C.ink, fontWeight: 500 }}>+52 771 333 8453</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer style={{ background: "#fff", borderTop: "1px solid rgba(0,0,0,.05)", padding: "32px 72px", textAlign: "center" }}>
+        <p style={{ fontSize: 10, color: C.sub, letterSpacing: ".04em", margin: 0 }}>
+          © 2025 ALTAR — Todos los derechos reservados
+        </p>
+      </footer>
     </div>
   );
 }
