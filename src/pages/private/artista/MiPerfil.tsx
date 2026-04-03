@@ -6,10 +6,14 @@ import { handleApiError, handleNetworkError } from "../../../utils/handleApiErro
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const C = { orange:"#FF840E", pink:"#CC59AD", purple:"#8D4CCD", gold:"#FFC110", text:"#f5f0ff", muted:"rgba(245,240,255,0.45)", green:"#3DDB85", red:"#FF4D6A", blue:"#4D9FFF" };
 
+export interface FotoPersonal { id_foto:number; url_foto:string; es_principal:boolean; }
+
 export interface ArtistaInfo {
   id_artista:number; nombre_completo:string; nombre_artistico?:string; biografia?:string; estado:string;
   porcentaje_comision:number; correo?:string; telefono?:string; matricula?:string; categoria_nombre?:string;
-  id_categoria_principal?:number; foto_perfil?:string; ciudad?:string; direccion_taller?:string;
+  id_categoria_principal?:number; foto_perfil?:string; foto_portada?:string; foto_logo?:string;
+  fotos_personales?:FotoPersonal[];
+  ciudad?:string; direccion_taller?:string;
   codigo_postal?:string; id_estado_base?:number; nombre_estado?:string; dias_preparacion_default?:number;
   acepta_envios?:boolean; solo_entrega_personal?:boolean; politica_envios?:string; politica_devoluciones?:string;
   email_usuario?:string;
@@ -160,24 +164,103 @@ const ToggleSwitch = ({value,onChange,label}:{value:boolean;onChange:(v:boolean)
   </div>
 );
 
-/* ═══ Section: Foto ═══ */
-function SeccionFoto({fotoPreview,fotoFile,fotoRef,hasFoto,onFileChange}:{fotoPreview:string;fotoFile:File|null;fotoRef:React.RefObject<HTMLInputElement>;hasFoto:boolean;onFileChange:(f:File)=>void}) {
+/* ═══ Section: Fotos ═══ */
+function SeccionFotos({
+  fotosPersonales, onAgregarFoto, onEliminarFoto, uploadingFoto,
+  portadaPreview, portadaRef, onPortadaChange,
+  logoPreview, logoRef, onLogoChange,
+  hasFoto,
+}:{
+  fotosPersonales:FotoPersonal[]; onAgregarFoto:(f:File)=>Promise<void>; onEliminarFoto:(id:number)=>Promise<void>; uploadingFoto:boolean;
+  portadaPreview:string; portadaRef:React.RefObject<HTMLInputElement>; onPortadaChange:(f:File)=>void;
+  logoPreview:string; logoRef:React.RefObject<HTMLInputElement>; onLogoChange:(f:File)=>void;
+  hasFoto:boolean;
+}) {
+  const fotoPersonalRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="mp-section">
-      <SectionHeader icon="📷" title="Foto de perfil"/>
-      <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-        <div className="mp-foto-wrap" onClick={()=>fotoRef.current?.click()}
-          style={{ border:fotoPreview?"2.5px solid rgba(255,132,14,0.5)":!hasFoto?"2px dashed rgba(255,77,106,0.4)":"2px dashed rgba(255,255,255,0.15)", background:fotoPreview?"transparent":"rgba(255,255,255,0.03)", boxShadow:fotoPreview?"0 0 0 5px rgba(255,132,14,0.08)":"none" }}>
-          {fotoPreview?<img src={fotoPreview} alt="Foto" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>:<span style={{ fontSize:30, opacity:0.2 }}>👤</span>}
-          <div className="mp-foto-overlay">📷</div>
+      <SectionHeader icon="📷" title="Fotos del perfil"/>
+
+      {/* ── Fotos personales ── */}
+      <div style={{ marginBottom:22 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+          <div>
+            <div className="mp-label">Fotos personales</div>
+            <p style={{ margin:"3px 0 0", fontSize:11.5, color:C.muted }}>Mínimo 1, máximo 3. La primera es la principal.</p>
+          </div>
+          {!hasFoto&&<span style={{ fontSize:11, color:C.red, fontWeight:700 }}>⚠ Requerida para subir obras</span>}
         </div>
-        <div>
-          <button type="button" className="mp-btn-foto" onClick={()=>fotoRef.current?.click()}>{fotoPreview?"Cambiar foto":"Subir foto"}</button>
-          {fotoFile&&<p style={{ margin:"8px 0 0", fontSize:12, color:C.green, fontWeight:600 }}>✓ {fotoFile.name}</p>}
-          {!fotoPreview&&<p style={{ margin:"6px 0 0", fontSize:11.5, color:C.red, fontWeight:600 }}>⚠ Requerida para subir obras</p>}
-          <p style={{ margin:"6px 0 0", fontSize:11.5, color:C.muted }}>JPG o PNG · máx. 10 MB</p>
+        <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"center" }}>
+          {fotosPersonales.map(f=>(
+            <div key={f.id_foto} style={{ position:"relative", flexShrink:0 }}>
+              <div style={{ width:90, height:90, borderRadius:"50%", overflow:"hidden", border:f.es_principal?"2.5px solid rgba(255,132,14,0.6)":"2px solid rgba(255,255,255,0.12)", boxShadow:f.es_principal?"0 0 0 4px rgba(255,132,14,0.1)":"none" }}>
+                <img src={f.url_foto} alt="Foto personal" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+              </div>
+              {f.es_principal&&<span style={{ position:"absolute", bottom:-2, left:"50%", transform:"translateX(-50%)", fontSize:9, fontWeight:800, color:C.orange, background:"rgba(8,6,18,0.85)", border:"1px solid rgba(255,132,14,0.3)", borderRadius:20, padding:"2px 7px", whiteSpace:"nowrap" }}>PRINCIPAL</span>}
+              {fotosPersonales.length>1&&(
+                <button type="button" onClick={()=>onEliminarFoto(f.id_foto)}
+                  style={{ position:"absolute", top:-2, right:-2, width:22, height:22, borderRadius:"50%", background:"rgba(10,7,20,0.85)", border:"1px solid rgba(255,77,106,0.4)", color:C.red, fontSize:11, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0 }}>
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          {fotosPersonales.length<3&&(
+            <button type="button" disabled={uploadingFoto} onClick={()=>fotoPersonalRef.current?.click()}
+              style={{ width:90, height:90, borderRadius:"50%", border:"2px dashed rgba(255,132,14,0.3)", background:"rgba(255,255,255,0.02)", color:C.muted, cursor:uploadingFoto?"not-allowed":"pointer", fontSize:uploadingFoto?11:26, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all .2s" }}>
+              {uploadingFoto?"…":"+"}
+            </button>
+          )}
         </div>
-        <input ref={fotoRef} type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{const f=e.target.files?.[0]; if(f) onFileChange(f);}}/>
+        <input ref={fotoPersonalRef} type="file" accept="image/*" style={{ display:"none" }}
+          onChange={e=>{const f=e.target.files?.[0]; if(f) onAgregarFoto(f); e.target.value="";}}/>
+      </div>
+
+      <div style={{ borderTop:"1.5px solid rgba(255,255,255,0.07)", margin:"0 0 20px" }}/>
+
+      {/* ── Foto de portada ── */}
+      <div style={{ marginBottom:20 }}>
+        <div className="mp-label" style={{ marginBottom:8 }}>Foto de portada <span style={{ textTransform:"none", fontWeight:400, fontSize:10 }}>— opcional, banner del perfil</span></div>
+        {portadaPreview?(
+          <div style={{ position:"relative", borderRadius:12, overflow:"hidden", marginBottom:10 }}>
+            <img src={portadaPreview} alt="Portada" style={{ width:"100%", height:120, objectFit:"cover", display:"block" }} onError={()=>setPortadaPreview("")}/>
+            <button type="button" onClick={()=>portadaRef.current?.click()}
+              style={{ position:"absolute", bottom:8, right:8, background:"rgba(0,0,0,0.7)", border:"1px solid rgba(255,255,255,0.2)", color:"#fff", fontSize:11.5, fontWeight:700, padding:"5px 12px", borderRadius:8, cursor:"pointer" }}>
+              Cambiar
+            </button>
+          </div>
+        ):(
+          <div onClick={()=>portadaRef.current?.click()} style={{ borderRadius:12, border:"2px dashed rgba(255,255,255,0.1)", height:80, display:"flex", alignItems:"center", justifyContent:"center", gap:8, cursor:"pointer", color:C.muted, fontSize:13, marginBottom:10, transition:"all .2s" }}
+            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.borderColor="rgba(255,132,14,0.3)"}
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.borderColor="rgba(255,255,255,0.1)"}>
+            <span style={{ fontSize:20 }}>🖼</span> Subir foto de portada
+          </div>
+        )}
+        <input ref={portadaRef} type="file" accept="image/*" style={{ display:"none" }}
+          onChange={e=>{const f=e.target.files?.[0]; if(f) onPortadaChange(f); e.target.value="";}}/>
+      </div>
+
+      <div style={{ borderTop:"1.5px solid rgba(255,255,255,0.07)", margin:"0 0 20px" }}/>
+
+      {/* ── Foto de logo ── */}
+      <div>
+        <div className="mp-label" style={{ marginBottom:8 }}>Logo <span style={{ textTransform:"none", fontWeight:400, fontSize:10 }}>— opcional, logo o firma del artista</span></div>
+        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+          <div onClick={()=>logoRef.current?.click()} style={{ width:72, height:72, borderRadius:12, overflow:"hidden", border:logoPreview?"2px solid rgba(255,132,14,0.4)":"2px dashed rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.03)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all .2s" }}
+            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.borderColor="rgba(255,132,14,0.3)"}
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.borderColor=logoPreview?"rgba(255,132,14,0.4)":"rgba(255,255,255,0.1)"}>
+            {logoPreview?<img src={logoPreview} alt="Logo" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={()=>setLogoPreview("")}/>:<span style={{ fontSize:22, opacity:.3 }}>✦</span>}
+          </div>
+          <div>
+            <button type="button" className="mp-btn-foto" onClick={()=>logoRef.current?.click()}>
+              {logoPreview?"Cambiar logo":"Subir logo"}
+            </button>
+            <p style={{ margin:"6px 0 0", fontSize:11.5, color:C.muted }}>PNG transparente recomendado</p>
+          </div>
+          <input ref={logoRef} type="file" accept="image/*" style={{ display:"none" }}
+            onChange={e=>{const f=e.target.files?.[0]; if(f) onLogoChange(f); e.target.value="";}}/>
+        </div>
       </div>
     </div>
   );
@@ -373,9 +456,14 @@ function BarraProgreso({camposActuales,progreso,perfilCompleto}:{camposActuales:
 /* ═══ ROOT ═══ */
 export default function MiPerfil({artista,token,onActualizar}:Props) {
   const { showToast } = useToast();
-  const fotoRef = useRef<HTMLInputElement>(null);
-  const [fotoFile, setFotoFile] = useState<File|null>(null);
-  const [fotoPreview, setFotoPreview] = useState<string>(artista.foto_perfil??"");
+  const portadaRef = useRef<HTMLInputElement>(null);
+  const logoRef    = useRef<HTMLInputElement>(null);
+  const [portadaFile,     setPortadaFile]     = useState<File|null>(null);
+  const [portadaPreview,  setPortadaPreview]  = useState<string>(artista.foto_portada??"");
+  const [logoFile,        setLogoFile]        = useState<File|null>(null);
+  const [logoPreview,     setLogoPreview]     = useState<string>(artista.foto_logo??"");
+  const [fotosPersonales, setFotosPersonales] = useState<FotoPersonal[]>(artista.fotos_personales??[]);
+  const [uploadingFoto,   setUploadingFoto]   = useState(false);
   const [saving, setSaving] = useState(false);
   const [estados, setEstados] = useState<Estado[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -404,7 +492,7 @@ export default function MiPerfil({artista,token,onActualizar}:Props) {
   };
 
   const camposActuales:ArtistaInfo = {
-    ...artista, foto_perfil:fotoFile?"ok":artista.foto_perfil,
+    ...artista, foto_perfil:fotosPersonales.length>0?"ok":artista.foto_perfil,
     nombre_artistico:form.nombre_artistico, biografia:form.biografia, telefono:form.telefono,
     ciudad:form.ciudad, id_estado_base:form.id_estado_base?Number(form.id_estado_base):undefined,
     codigo_postal:form.codigo_postal, direccion_taller:form.direccion_taller,
@@ -420,10 +508,41 @@ export default function MiPerfil({artista,token,onActualizar}:Props) {
     fetch(`${API}/api/artista-portal/redes-sociales`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>setRedes(d.data||[])).catch(()=>{}).finally(()=>setLoadingRedes(false));
   },[token]);
 
-  const handleFotoFile = (f:File) => {
-    if (!["image/jpeg","image/png","image/webp"].includes(f.type)){showToast("Solo JPG, PNG o WebP","warn");return;}
-    if (f.size>10*1024*1024){showToast("Máx 10 MB","warn");return;}
-    setFotoFile(f); setFotoPreview(URL.createObjectURL(f));
+  const validateImgFile = (f:File) => {
+    if (!["image/jpeg","image/png","image/webp"].includes(f.type)){showToast("Solo JPG, PNG o WebP","warn");return false;}
+    if (f.size>10*1024*1024){showToast("Máx 10 MB","warn");return false;}
+    return true;
+  };
+
+  const agregarFotoPersonal = async (f:File) => {
+    if (!validateImgFile(f)) return;
+    if (fotosPersonales.length>=3){showToast("Máximo 3 fotos personales","warn");return;}
+    setUploadingFoto(true);
+    try {
+      const fd = new FormData(); fd.append("foto",f);
+      const res = await fetch(`${API}/api/artista-portal/fotos-personales`,{method:"POST",headers:{Authorization:`Bearer ${token}`},body:fd});
+      const data = await res.json();
+      if (!res.ok){showToast(data.message||"Error al subir foto","err");return;}
+      setFotosPersonales(prev=>[...prev,data.data]);
+      if (fotosPersonales.length===0) onActualizar(data.data.url_foto);
+      showToast("Foto agregada","ok");
+    } catch(err){showToast(handleNetworkError(err),"err");}
+    finally{setUploadingFoto(false);}
+  };
+
+  const eliminarFotoPersonal = async (id:number) => {
+    if (fotosPersonales.length<=1){showToast("Debes tener al menos una foto personal","warn");return;}
+    try {
+      const res = await fetch(`${API}/api/artista-portal/fotos-personales/${id}`,{method:"DELETE",headers:{Authorization:`Bearer ${token}`}});
+      const data = await res.json();
+      if (!res.ok){showToast(data.message||"Error al eliminar","err");return;}
+      setFotosPersonales(prev=>{
+        const next = prev.filter(f=>f.id_foto!==id);
+        if (next.length>0&&!next[0].es_principal) next[0]={...next[0],es_principal:true};
+        return next;
+      });
+      showToast("Foto eliminada","ok");
+    } catch(err){showToast(handleNetworkError(err),"err");}
   };
 
   const handleSubmit = async (e:React.FormEvent) => {
@@ -438,14 +557,20 @@ export default function MiPerfil({artista,token,onActualizar}:Props) {
     try {
       const headers:Record<string,string> = { Authorization:`Bearer ${token}` };
       let body:BodyInit;
-      if (fotoFile) { const fd=new FormData(); fd.append("foto",fotoFile); Object.entries(formSanitizado).forEach(([k,v])=>fd.append(k,String(v))); body=fd; }
-      else { headers["Content-Type"]="application/json"; body=JSON.stringify(formSanitizado); }
+      if (portadaFile||logoFile) {
+        const fd=new FormData();
+        Object.entries(formSanitizado).forEach(([k,v])=>fd.append(k,String(v)));
+        if (portadaFile) fd.append("foto_portada",portadaFile);
+        if (logoFile)    fd.append("foto_logo",logoFile);
+        body=fd;
+      } else { headers["Content-Type"]="application/json"; body=JSON.stringify(formSanitizado); }
 
       const res = await fetch(`${API}/api/artista-portal/mi-perfil`,{method:"PUT",headers,body});
       if (!res.ok) { await handleSubmitError(res, showToast); return; }
       const data = await res.json();
-      if (data.foto_perfil) setFotoPreview(data.foto_perfil);
-      setFotoFile(null); setFieldErrors({});
+      if (data.foto_portada) setPortadaPreview(data.foto_portada);
+      if (data.foto_logo)    setLogoPreview(data.foto_logo);
+      setPortadaFile(null); setLogoFile(null); setFieldErrors({});
       showToast("Perfil actualizado correctamente","ok");
       onActualizar(data.foto_perfil);
     } catch (err) { showToast(handleNetworkError(err),"err"); }
@@ -470,7 +595,19 @@ export default function MiPerfil({artista,token,onActualizar}:Props) {
         </div>
         <BarraProgreso camposActuales={camposActuales} progreso={progreso} perfilCompleto={perfilCompleto}/>
         <form onSubmit={handleSubmit}>
-          <SeccionFoto fotoPreview={fotoPreview} fotoFile={fotoFile} fotoRef={fotoRef as React.RefObject<HTMLInputElement>} hasFoto={!!camposActuales.foto_perfil} onFileChange={handleFotoFile}/>
+          <SeccionFotos
+            fotosPersonales={fotosPersonales}
+            onAgregarFoto={agregarFotoPersonal}
+            onEliminarFoto={eliminarFotoPersonal}
+            uploadingFoto={uploadingFoto}
+            portadaPreview={portadaPreview}
+            portadaRef={portadaRef as React.RefObject<HTMLInputElement>}
+            onPortadaChange={f=>{if(validateImgFile(f)){setPortadaFile(f);setPortadaPreview(URL.createObjectURL(f));}}}
+            logoPreview={logoPreview}
+            logoRef={logoRef as React.RefObject<HTMLInputElement>}
+            onLogoChange={f=>{if(validateImgFile(f)){setLogoFile(f);setLogoPreview(URL.createObjectURL(f));}}}
+            hasFoto={!!camposActuales.foto_perfil}
+          />
           <SeccionInfoArtistica form={form} set={set} fieldErrors={fieldErrors} categorias={categorias}/>
           <SeccionContacto form={form} set={set} fieldErrors={fieldErrors} estados={estados}/>
           <SeccionRedes redes={redes} loadingRedes={loadingRedes} token={token} showToast={showToast}/>
