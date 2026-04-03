@@ -1,23 +1,23 @@
 // src/pages/public/Login.tsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  Mail, Lock, Eye, EyeOff, LogIn, Loader2,
-  AlertCircle, CheckCircle2, Palette, Camera,
-  Frame, Shield, FileText, ArrowLeft
+  Eye, EyeOff, Loader2,
+  AlertCircle, CheckCircle2, ArrowLeft
 } from "lucide-react";
 import { authService } from "../../services/authService";
-import logoImg from "../../assets/images/logo.png";
-
-import heroImg from "../../assets/images/trabajo.jpg";
 
 const C = {
-  orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
-  gold: "#A87006", bg: "#F9F8FC",
-  border: "#E6E4EF", text: "#14121E",
-  muted: "#9896A8",
+  orange: "#E8640C",
+  pink:   "#A83B90",
+  ink:    "#14121E",
+  sub:    "#9896A8",
 };
+
+const SERIF      = "'SolveraLorvane', serif";
+const SANS       = "'Outfit', sans-serif";
+const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
 
 // ── Sanitización y validación frontend (RASP) ────────────────
 const xssPattern  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
@@ -49,6 +49,67 @@ export default function Login() {
   const [mensaje, setMensaje] = useState("");
   const [isError, setIsError] = useState(false);
 
+  // Door animation
+  const [doorOpen, setDoorOpen] = useState(false);
+  const [doorGone, setDoorGone] = useState(false);
+
+  // Custom cursor
+  const dotRef  = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+
+  // Reveal
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setDoorOpen(true),  500);
+    const t2 = setTimeout(() => setDoorGone(true),  1800);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.cursor = "none";
+    let rx = 0, ry = 0;
+    let rafId: number;
+    const onMove = (e: MouseEvent) => {
+      const dot = dotRef.current;
+      if (dot) { dot.style.left = e.clientX + "px"; dot.style.top = e.clientY + "px"; }
+      const tick = () => {
+        rx += (e.clientX - rx) * 0.15;
+        ry += (e.clientY - ry) * 0.15;
+        const ring = ringRef.current;
+        if (ring) { ring.style.left = rx + "px"; ring.style.top = ry + "px"; }
+        rafId = requestAnimationFrame(tick);
+      };
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(rafId);
+      document.body.style.cursor = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const container = pageRef.current;
+    if (!container) return;
+    const targets = container.querySelectorAll<HTMLElement>("[data-rv]");
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          (entry.target as HTMLElement).classList.add("rv-in");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    targets.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, [doorGone]);
+
+  const cursorOn  = () => { dotRef.current?.classList.add("cur-over");  ringRef.current?.classList.add("cur-over");  };
+  const cursorOff = () => { dotRef.current?.classList.remove("cur-over"); ringRef.current?.classList.remove("cur-over"); };
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setMensaje("");
@@ -70,11 +131,11 @@ export default function Login() {
       showMessage(error.error?.message || "No se pudo conectar", true);
     } else if (error.status === 403 && error.error?.blocked) {
       const m = error.error.minutesRemaining || error.error.minutesBlocked || 5;
-      showMessage(`🔒 Cuenta bloqueada. Intenta en ${m} minuto${m > 1 ? "s" : ""}.`, true);
+      showMessage(`Cuenta bloqueada. Intenta en ${m} minuto${m > 1 ? "s" : ""}.`, true);
     } else if (error.status === 401 && error.error?.attemptsRemaining !== undefined) {
       const r = error.error.attemptsRemaining;
       const plural = r > 1 ? "s" : "";
-      const msg = r === 0 ? "🔒 Has excedido el límite de intentos." : `❌ Contraseña incorrecta. Te quedan ${r} intento${plural}.`;
+      const msg = r === 0 ? "Has excedido el límite de intentos." : `Contraseña incorrecta. Te quedan ${r} intento${plural}.`;
       showMessage(msg, true);
     } else if (error.status === 404) {
       showMessage("Usuario no encontrado", true);
@@ -95,11 +156,11 @@ export default function Login() {
 
       if (response.blocked) {
         const m = response.minutesRemaining || response.minutesBlocked || 5;
-        showMessage(`🔒 Cuenta bloqueada. Intenta en ${m} minuto${m > 1 ? "s" : ""}.`, true);
+        showMessage(`Cuenta bloqueada. Intenta en ${m} minuto${m > 1 ? "s" : ""}.`, true);
         setIsLoading(false); return;
       }
       if (response.requiresVerification) {
-        showMessage("Cuenta pendiente de verificación. Revisa tu correo 📧", true);
+        showMessage("Cuenta pendiente de verificación. Revisa tu correo.", true);
         setIsLoading(false); return;
       }
       if (response.requires2FA) {
@@ -122,7 +183,7 @@ export default function Login() {
         localStorage.setItem("userRol", response.usuario.rol || "cliente");
       }
       localStorage.setItem("isLoggedIn", "true");
-      showMessage("Inicio de sesión exitoso ✓", false);
+      showMessage("Acceso concedido", false);
       setTimeout(() => {
         const rol = response.usuario?.rol;
         const artista_estado = response.usuario?.artista_estado;
@@ -139,183 +200,173 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Outfit', sans-serif", display: "flex", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS, position: "relative", overflow: "hidden" }}>
 
-      {/* ── Orbs de fondo ── */}
-      <div style={{ position: "fixed", top: -150, left: -150, width: 560, height: 560, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}30, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: -150, right: -150, width: 660, height: 660, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}28, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", top: "45%", left: "28%", width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}18, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", top: "15%", right: "10%", width: 280, height: 280, borderRadius: "50%", background: `radial-gradient(circle, ${C.gold}14, transparent 70%)`, pointerEvents: "none" }} />
+      {/* ── Grain ── */}
+      <div className="login-grain" />
 
-      {/* ── Botón flotante fijo: Volver al inicio ── */}
+      {/* ── Custom cursor ── */}
+      <div ref={dotRef}  className="login-cursor-dot"  />
+      <div ref={ringRef} className="login-cursor-ring" />
+
+      {/* ── Door animation ── */}
+      {!doorGone && (
+        <>
+          <div className={`login-door-wrap${doorOpen ? " open" : ""}`}>
+            <div className="login-door izq" />
+            <div className="login-door der" />
+          </div>
+          <div className={`login-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
+          <div className={`login-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
+          <div className={`login-door-line${doorOpen ? " open" : ""}`} />
+        </>
+      )}
+
+      {/* ── Línea naranja→pink superior ── */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, height: 1, zIndex: 200,
+        background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`,
+      }} />
+
+      {/* ── Volver al inicio ── */}
       <button
         onClick={() => navigate("/")}
-        className="btn-back-home"
+        onMouseEnter={cursorOn}
+        onMouseLeave={cursorOff}
+        className="login-back-btn"
         style={{
-          position: "fixed", top: 20, left: 20, zIndex: 100,
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "10px 18px", borderRadius: 100,
-          background: "rgba(255,255,255,0.90)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(0,0,0,0.08)",
-          color: "#5A5870", fontSize: 13, fontWeight: 600,
-          cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-          transition: "all .22s ease",
-        }}
-        onMouseEnter={e => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(232,100,12,0.08)";
-          el.style.borderColor = `${C.orange}50`;
-          el.style.color = C.orange;
-          el.style.transform = "translateX(-2px)";
-          el.style.boxShadow = `0 4px 24px ${C.orange}25`;
-        }}
-        onMouseLeave={e => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "rgba(255,255,255,0.90)";
-          el.style.borderColor = "rgba(0,0,0,0.08)";
-          el.style.color = "#5A5870";
-          el.style.transform = "translateX(0)";
-          el.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)";
+          position: "fixed", top: 28, left: 52, zIndex: 300,
+          display: "flex", alignItems: "center", gap: 9,
+          background: "none", border: "none", cursor: "none",
+          fontFamily: SANS, fontSize: 9.5, fontWeight: 700,
+          letterSpacing: ".22em", textTransform: "uppercase",
+          color: C.sub, transition: "color .25s", padding: 0,
         }}
       >
-        <ArrowLeft size={14} strokeWidth={2.5} />
-        Volver al inicio
+        <ArrowLeft size={11} strokeWidth={2.5} />
+        Volver
       </button>
 
-      {/* ── Panel izquierdo (50%) ── */}
-      <div className="login-banner-panel" style={{
-        flex: "0 0 50%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "60px 40px",
-        position: "relative",
-        overflow: "hidden",
-      }}>
+      {/* ── Layout principal ── */}
+      <div ref={pageRef} style={{ display: "flex", minHeight: "100vh" }}>
 
-        {/* Rainbow line at top */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: 2,
-          background: `linear-gradient(90deg, ${C.purple}, ${C.pink}, ${C.orange}, ${C.gold}, ${C.pink}, ${C.purple})`,
-          zIndex: 3,
-        }} />
-
-        {/* Gradient overlay */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `linear-gradient(145deg, rgba(96,40,170,0.08) 0%, rgba(232,100,12,0.06) 60%, rgba(255,255,255,0.96) 100%)`,
-          zIndex: 0,
-        }} />
-
-        {/* Hero background image */}
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: `url(${heroImg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          opacity: 0.07,
-          zIndex: 0,
-        }} />
-
-        {/* Content */}
-        <div style={{ maxWidth: 400, position: "relative", zIndex: 2 }}>
-          <img src={logoImg} alt="Nu-B Studio" style={{ height: 52, marginBottom: 28 }} />
-          <h1 style={{ fontSize: 42, fontWeight: 900, color: C.text, lineHeight: 1.08, margin: "0 0 16px" }}>
-            Descubre el arte<br />
-            <span style={{ background: `linear-gradient(135deg, ${C.orange}, ${C.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              de la Huasteca
-            </span>
-          </h1>
-          <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, margin: "0 0 40px" }}>
-            Arte auténtico de nuestra región. Fotografías, esculturas y pinturas de artistas locales con entrega a todo México.
-          </p>
-
-          {[
-            { icon: <Palette size={18} color={C.orange} />, title: "Galería de artistas locales", desc: "Obras originales de la Huasteca Hidalguense", accentColor: C.orange, bg: "rgba(232,100,12,0.08)", brd: "rgba(232,100,12,0.20)" },
-            { icon: <Camera size={18} color={C.pink} />, title: "Obras originales y editables", desc: "Personaliza el tamaño y formato de tu obra", accentColor: C.pink, bg: "rgba(168,59,144,0.08)", brd: "rgba(168,59,144,0.20)" },
-            { icon: <Frame size={18} color={C.gold} />, title: "Entrega con marco personalizado", desc: "Enmarcado profesional incluido en tu pedido", accentColor: C.gold, bg: "rgba(168,112,6,0.08)", brd: "rgba(168,112,6,0.22)" },
-          ].map(({ icon, title, desc, accentColor, bg, brd }) => (
-            <div key={title} style={{
-              display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20,
-              borderLeft: `3px solid ${accentColor}`,
-              paddingLeft: 14,
-            }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: bg,
-                border: `1px solid ${brd}`,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                {icon}
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>{title}</div>
-                <div style={{ fontSize: 12.5, color: C.muted }}>{desc}</div>
-              </div>
-            </div>
-          ))}
-
-          {/* Stats row */}
-          <div style={{ display: "flex", gap: 24, marginTop: 32 }}>
-            {[{ n: "500+", l: "Obras" }, { n: "50+", l: "Artistas" }, { n: "98%", l: "Satisfacción" }].map(({ n, l }) => (
-              <div key={l} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: C.orange, fontFamily: "'Outfit', sans-serif" }}>{n}</div>
-                <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>{l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Panel derecho (40%) ── */}
-      <div className="login-form-panel" style={{
-        flex: "0 0 40%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 20px",
-        position: "relative"
-      }}>
-        <div style={{
-          width: "100%",
-          maxWidth: 380
+        {/* ════ PANEL IZQUIERDO ════ */}
+        <div className="login-left" style={{
+          flex: "0 0 52%",
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "80px 64px",
+          borderRight: "1px solid rgba(0,0,0,0.055)",
         }}>
 
-          <div className="login-mobile-logo" style={{ display: "none", justifyContent: "center", marginBottom: 28 }}>
-            <img src={logoImg} alt="Nu-B Studio" style={{ height: 44 }} />
+          {/* Corner decorations */}
+          <div className="lc tl" /><div className="lc tr" />
+          <div className="lc bl" /><div className="lc br" />
+
+          {/* Línea vertical naranja→pink en borde derecho */}
+          <div style={{
+            position: "absolute", top: "18%", right: -1, width: 1, height: "64%",
+            background: `linear-gradient(180deg, transparent, ${C.orange}70, ${C.pink}70, transparent)`,
+            zIndex: 2,
+          }} />
+
+          {/* ── ALTAR — marca de agua centrada ── */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}>
+            <span style={{
+              fontFamily: NEXA_HEAVY,
+              fontSize: "clamp(96px, 12vw, 160px)",
+              fontWeight: 900,
+              color: "rgba(0,0,0,0.038)",
+              letterSpacing: ".12em",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+            }}>
+              ALTAR
+            </span>
           </div>
 
-          <div style={{
-            background: "#FFFFFF",
-            border: "1px solid #E6E4EF",
-            borderRadius: 20,
-            padding: "32px 28px",
-            backdropFilter: "blur(20px)"
-          }}>
-            <h2 style={{
-              fontSize: 26,
-              fontWeight: 800,
-              color: C.text,
-              margin: "0 0 4px",
-              textAlign: "center",
-              fontFamily: "'Outfit', sans-serif",
-            }}>Iniciar sesión</h2>
-            <p style={{
-              fontSize: 13,
-              color: C.muted,
-              margin: "0 0 24px",
-              textAlign: "center"
-            }}>Ingresa tus credenciales para continuar</p>
+          {/* ── Contenido editorial centrado ── */}
+          <div style={{ width: "100%", paddingLeft: 88, position: "relative", zIndex: 2 }}>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div data-rv>
+              <p style={{
+                fontFamily: SANS, fontSize: 9.5, fontWeight: 700,
+                letterSpacing: ".28em", textTransform: "uppercase",
+                color: C.sub, margin: "0 0 28px",
+              }}>
+                ALTAR · Galería de Arte
+              </p>
+
+              <h2 style={{
+                fontFamily: SERIF, fontStyle: "italic",
+                fontSize: "clamp(30px, 3.8vw, 48px)",
+                fontWeight: 900, color: C.ink,
+                lineHeight: 1.15, margin: "0 0 22px",
+                letterSpacing: "-.02em",
+              }}>
+                Arte auténtico,<br />raíces profundas.
+              </h2>
+
+              <div style={{
+                width: 44, height: 1,
+                background: `linear-gradient(90deg, ${C.orange}, ${C.pink})`,
+                margin: "0 0 28px",
+              }} />
+
+              <p style={{
+                fontFamily: SANS, fontSize: 13,
+                color: C.sub, lineHeight: 1.75,
+                margin: "0 0 44px", maxWidth: 280,
+              }}>
+                Obras originales de artistas locales.<br />
+                Pinturas, esculturas y fotografía.<br />
+              </p>
+            </div>
+
+
+          </div>
+        </div>
+
+        {/* ════ PANEL DERECHO ════ */}
+        <div className="login-right" style={{
+          flex: "0 0 48%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "80px 64px",
+          position: "relative",
+        }}>
+
+          {/* Corner markers en el área del form */}
+          <div className="fc tl" /><div className="fc tr" />
+          <div className="fc bl" /><div className="fc br" />
+
+          <div data-rv style={{ width: "100%", maxWidth: 360 }}>
+
+            <p style={{
+              fontFamily: SANS, fontSize: 9.5, fontWeight: 700,
+              letterSpacing: ".22em", textTransform: "uppercase",
+              color: C.sub, margin: "0 0 40px",
+            }}>
+              Iniciar sesión
+            </p>
+
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+
+              {/* Correo */}
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5870", marginBottom: 6 }}>
-                  <Mail size={15} /> Correo electrónico
-                </label>
+                <label style={labelStyle}>Correo electrónico</label>
                 <input
                   type="email"
                   name="correo"
@@ -324,14 +375,15 @@ export default function Login() {
                   placeholder="tu@correo.com"
                   disabled={isLoading}
                   required
-                  style={inputStyle}
+                  onFocus={e => { e.currentTarget.style.borderBottomColor = C.orange; }}
+                  onBlur={e  => { e.currentTarget.style.borderBottomColor = "rgba(0,0,0,0.12)"; }}
+                  style={lineInput}
                 />
               </div>
 
+              {/* Contraseña */}
               <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5870", marginBottom: 6 }}>
-                  <Lock size={15} /> Contraseña
-                </label>
+                <label style={labelStyle}>Contraseña</label>
                 <div style={{ position: "relative" }}>
                   <input
                     type={mostrarContrasena ? "text" : "password"}
@@ -341,149 +393,304 @@ export default function Login() {
                     placeholder="••••••••"
                     disabled={isLoading}
                     required
-                    style={{
-                      ...inputStyle,
-                      paddingRight: 44,
-                      border: mostrarContrasena ? `1.5px solid ${C.orange}` : "1.5px solid #E6E4EF"
-                    }}
+                    onFocus={e => { e.currentTarget.style.borderBottomColor = C.orange; }}
+                    onBlur={e  => { e.currentTarget.style.borderBottomColor = "rgba(0,0,0,0.12)"; }}
+                    style={{ ...lineInput, paddingRight: 32 }}
                   />
                   <button
                     type="button"
+                    onMouseEnter={cursorOn}
+                    onMouseLeave={cursorOff}
                     onClick={() => setMostrarContrasena(p => !p)}
                     style={{
-                      position: "absolute",
-                      right: 12,
-                      top: "50%",
+                      position: "absolute", right: 0, top: "50%",
                       transform: "translateY(-50%)",
-                      background: "rgba(0,0,0,0.05)",
-                      border: "none",
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      color: mostrarContrasena ? C.orange : C.muted,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 6,
-                      transition: "all 0.2s ease"
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(232,100,12,0.10)";
-                      e.currentTarget.style.color = C.orange;
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "rgba(0,0,0,0.3)";
-                      e.currentTarget.style.color = mostrarContrasena ? C.orange : C.muted;
+                      background: "none", border: "none",
+                      cursor: "none", padding: 4,
+                      color: mostrarContrasena ? C.orange : C.sub,
+                      display: "flex", alignItems: "center",
+                      transition: "color .2s",
                     }}
                   >
-                    {mostrarContrasena ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {mostrarContrasena ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
-              <div style={{
-                textAlign: "center",
-                marginTop: -4
-              }}>
-                <Link to="/forgot-password" style={{ fontSize: 13, color: C.orange, textDecoration: "none", fontWeight: 500 }}>
+              {/* Olvidé contraseña */}
+              <div style={{ marginTop: -20 }}>
+                <Link
+                  to="/forgot-password"
+                  onMouseEnter={cursorOn}
+                  onMouseLeave={cursorOff}
+                  style={{
+                    fontFamily: SANS, fontSize: 11,
+                    color: C.orange, textDecoration: "none",
+                    letterSpacing: ".06em",
+                  }}
+                >
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
 
+              {/* Mensaje */}
               {mensaje && (
                 <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: isError ? "rgba(168,59,144,0.08)" : "rgba(14,138,80,0.08)",
-                  border: `1px solid ${isError ? C.pink : "#4ADE80"}`,
-                  fontSize: 13,
-                  color: isError ? C.pink : "#4ADE80",
-                  textAlign: "center"
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 0",
+                  borderBottom: `1px solid ${isError ? C.pink : "#4ADE80"}`,
+                  fontSize: 12, fontFamily: SANS,
+                  color: isError ? C.pink : "#16A34A",
+                  letterSpacing: ".04em",
                 }}>
-                  {isError ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
+                  {isError ? <AlertCircle size={13} /> : <CheckCircle2 size={13} />}
                   {mensaje}
                 </div>
               )}
 
-              <button type="submit" disabled={isLoading}
-                style={{ ...btnPrimary, marginTop: 2, opacity: isLoading ? 0.8 : 1 }}>
+              {/* Botón submit — pill */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                onMouseEnter={cursorOn}
+                onMouseLeave={cursorOff}
+                style={{
+                  ...pillBtn,
+                  opacity: isLoading ? 0.75 : 1,
+                  marginTop: 4,
+                }}
+              >
                 {isLoading
-                  ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Cargando...</>
-                  : <><LogIn size={16} /> Iniciar sesión</>
+                  ? <><Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> Cargando...</>
+                  : "Ingresar a la galería"
                 }
               </button>
+
             </form>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px" }}>
-              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
-              <span style={{ fontSize: 12, color: C.muted }}>o</span>
-              <div style={{ flex: 1, height: 1, background: "#E6E4EF" }} />
+            {/* Divisor */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "32px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
+              <span style={{ fontFamily: SANS, fontSize: 9.5, color: C.sub, letterSpacing: ".14em" }}>o</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
             </div>
 
-            <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: "0 0 8px" }}>
-              ¿No tienes cuenta?{" "}
-              <button onClick={() => navigate("/register")} style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 600, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}>Crear una cuenta</button>
-            </p>
-            <p style={{ fontSize: 13, color: C.muted, textAlign: "center", margin: 0 }}>
-              ¿Eres artista?{" "}
-              <button onClick={() => navigate("/registro-artista")} style={{ background: "none", border: "none", color: C.orange, cursor: "pointer", fontWeight: 600, padding: 0, fontFamily: "inherit", fontSize: "inherit" }}>Regístrate aquí</button>
-            </p>
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: 16 }}>
-            <p style={{ fontSize: 12, color: "#9896A8", margin: "0 0 6px" }}>
-              Al iniciar sesión aceptas nuestros
-            </p>
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.muted, cursor: "pointer" }}><FileText size={12} /> Términos y Condiciones</span>
-              <span style={{ color: "#9896A8", fontSize: 12 }}>•</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.muted, cursor: "pointer" }}><Shield size={12} /> Política de Privacidad</span>
+            {/* Links — pill outline */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                onClick={() => navigate("/register")}
+                onMouseEnter={cursorOn}
+                onMouseLeave={cursorOff}
+                className="login-pill-outline"
+                style={pillOutline}
+              >
+                Crear una cuenta
+              </button>
+              <button
+                onClick={() => navigate("/registro-artista")}
+                onMouseEnter={cursorOn}
+                onMouseLeave={cursorOff}
+                className="login-pill-outline"
+                style={pillOutline}
+              >
+                Registrarse como artista
+              </button>
             </div>
-            <p style={{ fontSize: 11, color: "#9896A8", marginTop: 8 }}>
-              © {currentYear} Altar Studio. Todos los derechos reservados.
+
+            {/* Footer legal */}
+            <p style={{
+              fontFamily: SANS, fontSize: 10.5,
+              color: "rgba(0,0,0,0.28)",
+              textAlign: "center",
+              marginTop: 36, letterSpacing: ".04em",
+            }}>
+              © {currentYear} ALTAR Galería de Arte
             </p>
+
           </div>
         </div>
+
       </div>
 
       <style>{`
+        @font-face {
+          font-family: 'SolveraLorvane';
+          src: url('/fonts/SolveraLorvane.ttf') format('truetype');
+          font-weight: 900; font-style: normal; font-display: swap;
+        }
+        @font-face {
+          font-family: 'Nexa-Heavy';
+          src: url('/fonts/Nexa-Heavy.ttf') format('truetype');
+          font-weight: 900; font-style: normal; font-display: swap;
+        }
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
-        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-1.5deg)} 50%{transform:translateY(-14px) rotate(-0.5deg)} }
-        @keyframes floatB { 0%,100%{transform:translateY(0) rotate(1.5deg)} 50%{transform:translateY(-11px) rotate(0.5deg)} }
+
+        @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes barIn   { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
+
+        /* ── Grain ── */
+        .login-grain {
+          position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+          background-size: 160px 160px; mix-blend-mode: multiply;
+        }
+
+        /* ── Custom cursor ── */
+        .login-cursor-dot {
+          position: fixed; width: 6px; height: 6px; border-radius: 50%;
+          background: #14121E; pointer-events: none; z-index: 99999;
+          transform: translate(-50%,-50%);
+          transition: width .22s, height .22s, background .22s;
+        }
+        .login-cursor-ring {
+          position: fixed; width: 32px; height: 32px; border-radius: 50%;
+          border: 1px solid rgba(20,18,30,.22); pointer-events: none; z-index: 99998;
+          transform: translate(-50%,-50%);
+          transition: width .3s, height .3s, border-color .25s;
+        }
+        .login-cursor-dot.cur-over  { width: 4px; height: 4px; background: #E8640C; }
+        .login-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
+
+        /* ── Door animation ── */
+        .login-door-wrap {
+          position: fixed; inset: 0; z-index: 99990;
+          display: flex; pointer-events: none;
+        }
+        .login-door {
+          flex: 1; background: #0D0B14;
+          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
+        }
+        .login-door.izq  { transform-origin: left  center; }
+        .login-door.der  { transform-origin: right center; }
+        .login-door-wrap.open .login-door.izq { transform: translateX(-100%); }
+        .login-door-wrap.open .login-door.der { transform: translateX(100%);  }
+        .login-door-logo {
+          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+          z-index: 99991; font-family: 'SolveraLorvane', serif;
+          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
+          letter-spacing: -.03em; pointer-events: none;
+          transition: opacity .35s ease .8s;
+        }
+        .login-door-logo.open { opacity: 0; }
+        .login-door-sub {
+          position: fixed; top: calc(50% + clamp(48px, 8vw, 104px)); left: 50%;
+          transform: translateX(-50%); z-index: 99991;
+          font-size: 9px; font-weight: 700; letter-spacing: .44em;
+          text-transform: uppercase; color: rgba(255,255,255,.35);
+          pointer-events: none; transition: opacity .3s ease .7s;
+          font-family: 'Outfit', sans-serif;
+        }
+        .login-door-sub.open { opacity: 0; }
+        .login-door-line {
+          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
+          pointer-events: none; transition: opacity .25s ease .75s;
+        }
+        .login-door-line.open { opacity: 0; }
+
+        /* ── Reveal animations ── */
+        [data-rv] { opacity:0; transform:translateY(24px); transition:opacity .9s ease, transform .9s ease; }
+        [data-rv].rv-in { opacity:1; transform:translateY(0); }
+        [data-rv][data-d="2"] { transition-delay: .18s; }
+
+        /* ── Corner decorations (panel izquierdo) ── */
+        .lc { position: absolute; width: 34px; height: 34px; pointer-events: none; }
+        .lc::before, .lc::after { content: ''; position: absolute; background: rgba(0,0,0,0.08); }
+        .lc::before { width: 1px; height: 34px; }
+        .lc::after  { width: 34px; height: 1px; }
+        .lc.tl { top: 24px; left: 24px; }
+        .lc.tr { top: 24px; right: 24px; }
+        .lc.tr::before { right: 0; left: auto; }
+        .lc.tr::after  { right: 0; left: auto; }
+        .lc.bl { bottom: 24px; left: 24px; }
+        .lc.bl::before { bottom: 0; top: auto; }
+        .lc.bl::after  { bottom: 0; top: auto; }
+        .lc.br { bottom: 24px; right: 24px; }
+        .lc.br::before { right: 0; left: auto; bottom: 0; top: auto; }
+        .lc.br::after  { right: 0; left: auto; bottom: 0; top: auto; }
+
+        /* ── Corner decorations (form) ── */
+        .fc { position: absolute; width: 22px; height: 22px; pointer-events: none; }
+        .fc::before, .fc::after { content: ''; position: absolute; background: rgba(232,100,12,0.30); }
+        .fc::before { width: 1px; height: 22px; }
+        .fc::after  { width: 22px; height: 1px; }
+        .fc.tl { top: 36px; left: 36px; }
+        .fc.tr { top: 36px; right: 36px; }
+        .fc.tr::before { right: 0; left: auto; }
+        .fc.tr::after  { right: 0; left: auto; }
+        .fc.bl { bottom: 36px; left: 36px; }
+        .fc.bl::before { bottom: 0; top: auto; }
+        .fc.bl::after  { bottom: 0; top: auto; }
+        .fc.br { bottom: 36px; right: 36px; }
+        .fc.br::before { right: 0; left: auto; bottom: 0; top: auto; }
+        .fc.br::after  { right: 0; left: auto; bottom: 0; top: auto; }
+
+        /* ── Back button hover ── */
+        .login-back-btn:hover { color: #14121E !important; }
+
+        /* ── Pill outline hover ── */
+        .login-pill-outline:hover {
+          border-color: rgba(0,0,0,0.22) !important;
+          color: #14121E !important;
+        }
+
+        /* ── Mobile ── */
         @media (max-width: 768px) {
-          .login-banner-panel { display: none !important; }
-          .login-form-panel { width: 100% !important; padding: 32px 20px !important; }
-          .login-mobile-logo { display: flex !important; }
-          .btn-back-home span { display: none; }
+          .login-left  { display: none !important; }
+          .login-right { flex: 1 !important; padding: 80px 32px !important; }
+          .fc { display: none; }
         }
       `}</style>
     </div>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "11px 14px",
-  borderRadius: 10,
-  border: "1.5px solid #E6E4EF",
-  background: "#FFFFFF",
-  color: "#14121E",
-  fontSize: 14,
+const labelStyle: React.CSSProperties = {
+  display: "block",
   fontFamily: "'Outfit', sans-serif",
-  outline: "none",
-  transition: "border .15s, background .15s",
+  fontSize: 9.5,
+  fontWeight: 700,
+  letterSpacing: ".20em",
+  textTransform: "uppercase",
+  color: "#9896A8",
+  marginBottom: 10,
 };
 
-const btnPrimary: React.CSSProperties = {
+const lineInput: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "10px 0",
+  border: "none",
+  borderBottom: "1.5px solid rgba(0,0,0,0.12)",
+  background: "transparent",
+  color: "#14121E",
+  fontSize: 15,
+  fontFamily: "'Outfit', sans-serif",
+  outline: "none",
+  transition: "border-color .2s",
+};
+
+const pillBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-  width: "100%", padding: "13px 20px", borderRadius: 12,
-  background: "linear-gradient(135deg, #E8640C, #A83B90)",
-  border: "none", color: "white", fontSize: 15, fontWeight: 700,
-  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-  boxShadow: "0 8px 24px rgba(232,100,12,0.25)",
+  width: "100%", padding: "13px 24px",
+  borderRadius: 100,
+  background: "#E8640C",
+  border: "none", color: "#fff",
+  fontSize: 9.5, fontWeight: 700,
+  letterSpacing: ".22em", textTransform: "uppercase",
+  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  boxShadow: "0 4px 20px rgba(232,100,12,.28)",
+  transition: "opacity .2s, box-shadow .2s",
+};
+
+const pillOutline: React.CSSProperties = {
+  width: "100%", padding: "11px 24px",
+  borderRadius: 100,
+  background: "none",
+  border: "1px solid rgba(0,0,0,0.10)",
+  color: "#9896A8",
+  fontSize: 9.5, fontWeight: 700,
+  letterSpacing: ".18em", textTransform: "uppercase",
+  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  transition: "border-color .22s, color .22s",
 };

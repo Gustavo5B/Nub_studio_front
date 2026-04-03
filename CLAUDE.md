@@ -50,6 +50,51 @@ Route guards (`PrivateRoute`, `AdminRoute`, `ArtistaRoute`) read auth state from
 - `src/services/obraService.ts` — artwork CRUD + categories/techniques/artists
 - `src/utils/handleApiError.ts` — error translation to Spanish
 
+## Design System — Public / ALTAR (tema editorial)
+
+Las vistas públicas (`PublicLayout`) siguen la estética **ALTAR**: minimalista, editorial, alto contraste.
+
+### Paleta de colores
+| Variable | Hex | Uso |
+|----------|-----|-----|
+| Naranja Altar | `#E8640C` | Acentos, botones primarios, hover, cursor |
+| Rosa Profundo | `#A83B90` | Detalles secundarios, gradientes de acento |
+| Ink (Negro) | `#14121E` | Textos principales, títulos, fondos oscuros |
+| Sub (Gris) | `#9896A8` | Textos secundarios, labels, placeholders |
+| Dark | `#0D0B14` | Fondos profundos (secciones de exposición) |
+| Off-White | `#FAFAF9` | Fondos de sección con sutil contraste |
+
+### Tipografía — 3 familias
+```ts
+const SERIF      = "'SolveraLorvane', serif";   // logotipo, títulos hero, itálicas editoriales
+const SANS       = "'Outfit', sans-serif";       // cuerpo, nav, formularios, botones
+const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";   // títulos secundarios de impacto, números
+```
+- **SolveraLorvane** → fuente local: `/public/fonts/SolveraLorvane.ttf`
+- **Nexa-Heavy** → fuente local: `/public/fonts/Nexa-Heavy.ttf`
+- **Outfit** → Google Fonts
+- Cargar fuentes locales con `@font-face` en el `<style>` del componente:
+  ```css
+  @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
+  @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+  ```
+
+### Botones (Pill Style)
+```css
+border-radius: 100px;
+text-transform: uppercase;
+letter-spacing: .22em;
+font-size: 9.5px – 11px;
+```
+
+### Efectos globales
+- **Grain:** Capa fija `position:fixed`, `opacity:0.026`, `mix-blend-mode:multiply`, `pointer-events:none`
+- **Custom cursor:** Dot 6px (naranja en hover) + Ring 32px con lerp 0.15
+- **Reveal animations:** `IntersectionObserver` con `clip-path` y `fade-up` al scroll
+
+---
+
 ## Design System — Admin Panel (tema claro)
 
 El panel de admin usa un **tema claro** con la paleta de marca NU★B. Aplicar en cualquier vista nueva bajo `/admin/*`.
