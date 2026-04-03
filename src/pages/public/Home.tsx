@@ -1,4 +1,4 @@
-// src/pages/public/Home.tsx (COMPLETO - CON LOGO ESTRELLA DENTRO DEL FLUJO)
+// src/pages/public/Home.tsx (COMPLETO - 3 FUENTES OPTIMIZADAS + BOTONES AUTH)
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
@@ -17,6 +17,7 @@ const C = {
 
 const SERIF = "'SolveraLorvane', serif";
 const SANS  = "'Outfit', sans-serif";
+const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
 
 const CATS = [
   { slug: "pintura",    label: "Pintura",    count: "120", img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=300&q=80" },
@@ -212,6 +213,15 @@ export default function Home() {
           font-display: swap;
         }
 
+        /* ════ FUENTES NEXA ════ */
+        @font-face {
+          font-family: 'Nexa-Heavy';
+          src: url('/fonts/Nexa-Heavy.ttf') format('truetype');
+          font-weight: 900;
+          font-style: normal;
+          font-display: swap;
+        }
+
         .home-grain {
           position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -304,28 +314,30 @@ export default function Home() {
         .hero-corner.br { bottom:22px; right:26px; }
         .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
-/* ════ LOGO ESTRELLA ════ */
-.home-logo-estrella-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;   /* ← antes era clamp(18px, 2vw, 26px) */
-  height: 14px;  /* ← antes era clamp(18px, 2vw, 26px) */
-  margin-bottom: 0;
-  cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: fadeI 1s ease 1s both;
-  text-decoration: none;
-}
-.home-logo-estrella-link:hover {
-  transform: scale(1.15) rotate(6deg);
-}
-.home-logo-estrella-link img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
+
+        /* ════ LOGO ESTRELLA ════ */
+        .home-logo-estrella-link {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: clamp(12px, 2vw, 26px);
+          height: clamp(12px, 2vw, 26px);
+          margin-bottom: 14px;
+          cursor: pointer;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: fadeI 1s ease 1s both;
+          text-decoration: none;
+        }
+        .home-logo-estrella-link:hover {
+          transform: scale(1.15) rotate(6deg);
+        }
+        .home-logo-estrella-link img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          display: block;
+        }
+
         [data-rv]   { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
         [data-clip] { clip-path:inset(100% 0 0 0); transition:clip-path 1.3s cubic-bezier(.16,1,.3,1); }
         [data-clip-h] { clip-path:inset(0 100% 0 0); transition:clip-path 1.5s cubic-bezier(.16,1,.3,1); }
@@ -513,6 +525,7 @@ export default function Home() {
           <Link to="/contacto"  className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
         </nav>
 
+        {/* BOTONES DE AUTENTICACIÓN - LADO DERECHO */}
         <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both" }}>
           {!isLoggedIn ? (
             <>
@@ -689,7 +702,7 @@ export default function Home() {
         <div style={{ padding: "80px 0 60px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div data-rv>
             <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", marginBottom: 14, fontFamily: SANS }}>III · Explorar</div>
-            <div style={{ fontFamily: SERIF, fontSize: "clamp(26px,3vw,38px)", fontWeight: 900, color: C.ink, letterSpacing: "-.02em", lineHeight: 1.1 }}>¿Qué quieres<br />descubrir hoy?</div>
+            <div style={{ fontFamily: NEXA_HEAVY, fontSize: "clamp(26px,3vw,38px)", fontWeight: 900, color: C.ink, letterSpacing: "-.02em", lineHeight: 1.1 }}>¿Qué quieres<br />descubrir hoy?</div>
           </div>
           <div data-rv data-d="1" style={{ fontSize: 12, color: C.sub, maxWidth: 270, lineHeight: 1.75, textAlign: "right", fontFamily: SANS }}>Cada disciplina es un mundo. Navega por la colección y encuentra la obra que te habla.</div>
         </div>
@@ -710,7 +723,7 @@ export default function Home() {
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 22, zIndex: 1 }}>
                 <span style={{ fontFamily: SERIF, fontSize: 11, fontStyle: "italic", color: "rgba(0,0,0,.14)", minWidth: 22 }}>0{i + 1}</span>
-                <span className="home-cat-name" style={{ fontFamily: SERIF, fontSize: "clamp(30px,4vw,50px)", fontWeight: 900, color: C.ink, letterSpacing: "-.025em", lineHeight: 1 }}>{cat.label}</span>
+                <span className="home-cat-name" style={{ fontFamily: NEXA_HEAVY, fontSize: "clamp(30px,4vw,50px)", fontWeight: 900, color: C.ink, letterSpacing: "-.025em", lineHeight: 1 }}>{cat.label}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 18, zIndex: 1 }}>
                 <span className="home-cat-count" style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", fontFamily: SANS }}>{cat.count} obras</span>

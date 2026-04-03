@@ -16,7 +16,7 @@ import ArtistaEnRevision      from "../pages/public/ArtistaEnRevision";
 import ActivarCuenta          from "../pages/public/ActivarCuenta";
 import VerificarEmail         from "../pages/public/VerificarEmail";
 import ForgotPassword         from "../pages/public/ForgotPassword";
-import Blog                  from "../pages/public/Blog";
+import Blog                   from "../pages/public/Blog";
 
 // Página de error
 import NotFound from "../pages/public/NotFound";
@@ -24,10 +24,10 @@ import NotFound from "../pages/public/NotFound";
 export default function PublicRoutes() {
   return (
     <Routes>
+      {/* Páginas CON layout (con navegación) */}
       <Route element={<PublicLayout />}>
         <Route path="/"                element={<Home />} />
         <Route path="/sobre-nosotros"  element={<About />} />
-        <Route path="/contacto"        element={<Contact />} />
         <Route path="/blog"            element={<Blog />} />
         <Route path="/catalogo"        element={<Catalogo />} />
         <Route path="/obras/:slug"     element={<DetalleObra />} />
@@ -35,6 +35,10 @@ export default function PublicRoutes() {
         <Route path="/artistas/:id"    element={<DetalleArtistaPublico />} />
       </Route>
 
+      {/* Contacto SIN layout (página independiente) */}
+      <Route path="/contacto" element={<Contact />} />
+
+      {/* Rutas de autenticación SIN layout */}
       <Route path="/login"              element={<Login />} />
       <Route path="/forgot-password"    element={<ForgotPassword />} />
       <Route path="/register"           element={<Register />} />
