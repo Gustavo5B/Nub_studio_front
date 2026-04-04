@@ -1,4 +1,4 @@
-// src/routes/PublicRoutes.tsx
+// src/routes/PublicRoutes.tsx (SIN NAVBAR EN ARTISTAS, CATÁLOGO, ETC.)
 import { Routes, Route } from "react-router-dom";
 import PublicLayout           from "../layout/PublicLayout";
 import Home                   from "../pages/public/Home";
@@ -24,18 +24,20 @@ import NotFound from "../pages/public/NotFound";
 export default function PublicRoutes() {
   return (
     <Routes>
-      {/* Páginas CON layout (con navegación) */}
+      {/* Páginas CON layout (HOME, BLOG, SOBRE NOSOTROS) */}
       <Route element={<PublicLayout />}>
         <Route path="/"                element={<Home />} />
         <Route path="/sobre-nosotros"  element={<About />} />
         <Route path="/blog"            element={<Blog />} />
-        <Route path="/catalogo"        element={<Catalogo />} />
-        <Route path="/obras/:slug"     element={<DetalleObra />} />
-        <Route path="/artistas"        element={<Artistas />} />
-        <Route path="/artistas/:id"    element={<DetalleArtistaPublico />} />
       </Route>
 
-      {/* Contacto SIN layout (página independiente) */}
+      {/* Páginas SIN navbar */}
+      <Route path="/catalogo"        element={<Catalogo />} />
+      <Route path="/obras/:slug"     element={<DetalleObra />} />
+      <Route path="/artistas"        element={<Artistas />} />
+      <Route path="/artistas/:id"    element={<DetalleArtistaPublico />} />
+
+      {/* Contacto SIN layout */}
       <Route path="/contacto" element={<Contact />} />
 
       {/* Rutas de autenticación SIN layout */}
