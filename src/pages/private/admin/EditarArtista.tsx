@@ -91,6 +91,7 @@ const ESTADOS = [
   { val:"suspendido", label:"Suspendido", color:C.pink },
 ];
 
+
 interface Categoria { id_categoria:number; nombre:string; }
 interface ArtistaForm {
   nombre_completo:string; nombre_artistico:string; biografia:string;
@@ -307,6 +308,12 @@ export default function EditarArtista() {
     id_categoria_principal:"", porcentaje_comision:15, estado:"pendiente",
   });
 
+  const handleFoto = (file:File) => {
+    if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes","warn"); return; }
+    if (file.size>10*1024*1024) { showToast("La foto no puede superar 10 MB","warn"); return; }
+    setFotoFile(file); setFotoPreview(URL.createObjectURL(file)); setForm(p=>({...p,foto_perfil:""}));
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -333,6 +340,13 @@ export default function EditarArtista() {
     })();
   }, [id, showToast]);
 
+  useEffect(() => {
+    const input = fileRef.current; if (!input) return;
+    const handler = () => { const f=input.files?.[0]; if(f) handleFoto(f); };
+    input.addEventListener("change", handler);
+    return () => input.removeEventListener("change", handler);
+  });
+
   if (loadingData) return (
     <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:FB }}>
       <Loader2 size={28} style={{ animation:"spin 1s linear infinite", color:C.orange }} />
@@ -347,12 +361,6 @@ export default function EditarArtista() {
     if (error) { setFieldErrors(p=>({...p,[name]:error})); }
     else { setFieldErrors(p=>{const n={...p}; delete n[name]; return n;}); }
     setForm(p=>({...p,[name]:newVal} as ArtistaForm));
-  };
-
-  const handleFoto = (file:File) => {
-    if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes","warn"); return; }
-    if (file.size>10*1024*1024) { showToast("La foto no puede superar 10 MB","warn"); return; }
-    setFotoFile(file); setFotoPreview(URL.createObjectURL(file)); setForm(p=>({...p,foto_perfil:""}));
   };
 
   const clearFoto = () => {
@@ -377,13 +385,6 @@ export default function EditarArtista() {
     } catch (err) { showToast(handleNetworkError(err),"err"); }
     finally { setLoading(false); }
   };
-
-  useEffect(() => {
-    const input = fileRef.current; if (!input) return;
-    const handler = () => { const f=input.files?.[0]; if(f) handleFoto(f); };
-    input.addEventListener("change", handler);
-    return () => input.removeEventListener("change", handler);
-  });
 
   const fi = (n:string) => ({ onFocus:()=>setFocused(n), onBlur:()=>setFocused(null) });
   const fotoSrc = fotoPreview||form.foto_perfil||"";
