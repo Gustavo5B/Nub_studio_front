@@ -19,11 +19,11 @@ const css = `
   .nc-field:last-child { margin-bottom: 0; }
   .nc-label { font-size: 12px; font-weight: 700; color: #5a5870; text-transform: uppercase; letter-spacing: .06em; }
   .nc-input, .nc-textarea, .nc-select { background: #faf9fc; border: 1.5px solid #e8e6f0; border-radius: 9px; padding: 10px 13px; color: #1a1830; font-family: 'Outfit', sans-serif; font-size: 14px; outline: none; transition: border-color .2s; width: 100%; box-sizing: border-box; }
-  .nc-input:focus, .nc-textarea:focus, .nc-select:focus { border-color: #FF840E; background: #fff; }
+  .nc-input:focus, .nc-textarea:focus, .nc-select:focus { border-color: #E8640C; background: #fff; }
   .nc-input::placeholder, .nc-textarea::placeholder { color: #c5c3d4; }
   .nc-textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
   .nc-img-drop { border: 2px dashed #e8e6f0; border-radius: 12px; padding: 28px; text-align: center; cursor: pointer; transition: all .2s; color: #9896a8; font-size: 13px; }
-  .nc-img-drop:hover, .nc-img-drop.over { border-color: #FF840E; background: #fff8f3; color: #FF840E; }
+  .nc-img-drop:hover, .nc-img-drop.over { border-color: #E8640C; background: #fff8f3; color: #E8640C; }
   .nc-img-preview { position: relative; border-radius: 12px; overflow: hidden; }
   .nc-img-preview img { width: 100%; height: 180px; object-fit: cover; display: block; }
   .nc-img-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.55); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
@@ -32,7 +32,7 @@ const css = `
   .nc-actions { display: flex; gap: 10px; margin-top: 4px; }
   .nc-btn-cancel { background: #f3f2f8; color: #5a5870; border: none; padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
   .nc-btn-cancel:hover { background: #e8e6f0; }
-  .nc-btn-save { flex: 1; background: #FF840E; color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
+  .nc-btn-save { flex: 1; background: #E8640C; color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
   .nc-btn-save:hover:not(:disabled) { background: #e07200; }
   .nc-btn-save:disabled { background: #e8e6f0; color: #9896a8; cursor: not-allowed; }
   .nc-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: nc-rotate .7s linear infinite; vertical-align: middle; margin-right: 6px; }
@@ -188,7 +188,7 @@ export default function NuevaColeccion() {
                   onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
                   onClick={() => fileRef.current?.click()}>
                   <div style={{ fontSize:28, marginBottom:6 }}>🖼</div>
-                  Arrastra una imagen o <strong style={{ color:"#FF840E" }}>haz clic aquí</strong>
+                  Arrastra una imagen o <strong style={{ color:"#E8640C" }}>haz clic aquí</strong>
                   <div style={{ fontSize:11.5, marginTop:4, color:"#c5c3d4" }}>PNG, JPG, WEBP — Máx 10 MB</div>
                 </div>
               )}

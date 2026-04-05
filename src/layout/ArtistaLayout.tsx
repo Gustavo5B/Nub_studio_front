@@ -6,7 +6,7 @@ import ArtistaSidebar from "../components/artista/ArtistaSidebar";
 import logoImg from "../assets/images/logo.png";
 
 const C = {
-  bg: "#080612", border: "rgba(255,255,255,0.07)", text: "#f5f0ff",
+  bg: "#F9F8FC", border: "#E6E4EF", text: "#14121E",
 };
 
 export default function ArtistaLayout() {
@@ -15,7 +15,7 @@ export default function ArtistaLayout() {
   return (
     <div style={{
       display: "flex", minHeight: "100vh",
-      background: C.bg, fontFamily: "'DM Sans', sans-serif", color: C.text,
+      background: C.bg, fontFamily: "'Outfit', sans-serif", color: C.text,
     }}>
       {/* Sidebar desktop */}
       <div className="artista-sidebar-desktop" style={{ width: 260, flexShrink: 0 }}>
@@ -59,13 +59,13 @@ export default function ArtistaLayout() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #D4D2DF; border-radius: 8px; }
         @media (max-width: 900px) {
           .artista-sidebar-desktop { display: none !important; }
           .artista-topbar-mobile   { display: flex !important; }

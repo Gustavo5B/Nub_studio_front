@@ -33,7 +33,7 @@ const css = `
   .mc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
   .mc-title { font-size: 22px; font-weight: 700; color: #1a1830; margin: 0; }
   .mc-subtitle { font-size: 13px; color: #7c7a8e; margin: 4px 0 0; }
-  .mc-btn-new { background: #FF840E; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
+  .mc-btn-new { background: #E8640C; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
   .mc-btn-new:hover { background: #e07200; }
   .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
   .mc-card { background: #fff; border: 1px solid #e8e6f0; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow .2s; }
@@ -58,7 +58,7 @@ const css = `
   .mc-empty-title { font-size: 16px; font-weight: 700; color: #5a5870; margin: 0 0 6px; }
   .mc-empty-sub { font-size: 13px; margin: 0 0 20px; }
   .mc-spinner { display: flex; align-items: center; justify-content: center; height: 200px; }
-  .mc-spin { width: 32px; height: 32px; border: 3px solid #e8e6f0; border-top-color: #FF840E; border-radius: 50%; animation: mc-rotate .8s linear infinite; }
+  .mc-spin { width: 32px; height: 32px; border: 3px solid #e8e6f0; border-top-color: #E8640C; border-radius: 50%; animation: mc-rotate .8s linear infinite; }
   @keyframes mc-rotate { to { transform: rotate(360deg); } }
   .mc-confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
   .mc-confirm-box { background: #fff; border-radius: 14px; padding: 28px 32px; max-width: 380px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.15); font-family: 'Outfit', sans-serif; }

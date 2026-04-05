@@ -20,11 +20,12 @@ interface Stats { total: number; publicadas: number; pendientes: number; rechaza
 type Filtro = "todas" | "pendiente" | "publicada" | "rechazada" | "agotada";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD", gold: "#FFC110",
-  card: "rgba(255,255,255,0.028)", border: "rgba(255,255,255,0.07)",
-  text: "#f5f0ff", muted: "rgba(245,240,255,0.45)", green: "#3DDB85",
+  orange: "#E8640C", pink: "#A83B90", gold: "#A87006",
+  card: "#FFFFFF", border: "#E6E4EF",
+  text: "#14121E", muted: "#9896A8", green: "#0E8A50",
 };
-const FB = "'DM Sans', sans-serif";
+const CS = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.055)";
+const FB = "'Outfit', sans-serif";
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function MisObras() {
@@ -91,11 +92,11 @@ export default function MisObras() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
         <div>
           <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
-          <h1 style={{ fontSize: 32, fontWeight: 900, color: C.text, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Mis Obras</h1>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: C.text, margin: "0 0 4px", fontFamily: FB }}>Mis Obras</h1>
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{stats.total} obra{stats.total !== 1 ? "s" : ""} en total</p>
         </div>
         <button onClick={() => navigate("/artista/nueva-obra")}
-          style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 12, background: `linear-gradient(135deg,${C.orange},${C.pink})`, border: "none", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FB, boxShadow: `0 6px 20px ${C.orange}35` }}>
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 12, background: C.orange, border: "none", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FB, boxShadow: `0 6px 20px ${C.orange}35` }}>
           + Nueva obra
         </button>
       </div>
@@ -108,9 +109,9 @@ export default function MisObras() {
           { label: "EN REVISIÓN",  value: stats.pendientes, color: C.gold   },
           { label: "RECHAZADAS",   value: stats.rechazadas, color: C.pink   },
         ].map((s) => (
-          <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden" }}>
+          <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px", position: "relative", overflow: "hidden", boxShadow: CS }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.color }} />
-            <div style={{ fontSize: 32, fontWeight: 900, color: C.text, fontFamily: "'Playfair Display',serif", marginBottom: 4 }}>{s.value}</div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: C.text, fontFamily: FB, marginBottom: 4 }}>{s.value}</div>
             <div style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
           </div>
         ))}
@@ -125,9 +126,9 @@ export default function MisObras() {
           { id: "rechazada", label: "Rechazadas",  count: stats.rechazadas },
         ] as { id: Filtro; label: string; count: number }[]).map(f => (
           <button key={f.id} onClick={() => setFiltro(f.id)}
-            style={{ padding: "8px 18px", borderRadius: 100, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", gap: 7, background: filtro === f.id ? `linear-gradient(135deg,${C.orange}30,${C.pink}20)` : "rgba(255,255,255,0.04)", border: filtro === f.id ? `1px solid ${C.orange}50` : `1px solid ${C.border}`, color: filtro === f.id ? C.orange : C.muted, transition: "all .15s" }}>
+            style={{ padding: "8px 18px", borderRadius: 100, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", gap: 7, background: filtro === f.id ? `${C.orange}12` : "#F3F2F8", border: filtro === f.id ? `1px solid ${C.orange}50` : `1px solid ${C.border}`, color: filtro === f.id ? C.orange : C.muted, transition: "all .15s" }}>
             {f.label}
-            <span style={{ background: filtro === f.id ? C.orange : "rgba(255,255,255,0.08)", borderRadius: 100, padding: "1px 8px", fontSize: 10.5, color: filtro === f.id ? "white" : C.muted, fontWeight: 800 }}>{f.count}</span>
+            <span style={{ background: filtro === f.id ? C.orange : C.border, borderRadius: 100, padding: "1px 8px", fontSize: 10.5, color: filtro === f.id ? "white" : C.muted, fontWeight: 800 }}>{f.count}</span>
           </button>
         ))}
       </div>
@@ -136,7 +137,7 @@ export default function MisObras() {
       {obrasFiltradas.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0", background: C.card, borderRadius: 20, border: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
-          <h3 style={{ fontSize: 16, color: C.text, margin: "0 0 8px", fontFamily: "'Playfair Display',serif" }}>
+          <h3 style={{ fontSize: 16, color: C.text, margin: "0 0 8px", fontFamily: FB }}>
             {filtro === "todas" ? "Aún no tienes obras" : "No hay obras en esta categoría"}
           </h3>
           <p style={{ fontSize: 13, color: C.muted, margin: "0 0 20px" }}>
@@ -144,7 +145,7 @@ export default function MisObras() {
           </p>
           {filtro === "todas" && (
             <button onClick={() => navigate("/artista/nueva-obra")}
-              style={{ padding: "10px 24px", borderRadius: 10, background: `linear-gradient(135deg,${C.orange},${C.pink})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB }}>
+              style={{ padding: "10px 24px", borderRadius: 10, background: C.orange, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB }}>
               + Subir primera obra
             </button>
           )}
@@ -155,15 +156,15 @@ export default function MisObras() {
             const badge = getBadge(obra.estado);
             return (
               <div key={obra.id_obra}
-                style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s,box-shadow .22s,border-color .22s" }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-5px)"; el.style.boxShadow = "0 20px 48px rgba(0,0,0,0.4)"; el.style.borderColor = `${C.orange}30`; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; el.style.borderColor = C.border; }}>
-                <div style={{ height: 180, background: "rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
+                style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: "hidden", transition: "transform .22s,box-shadow .22s,border-color .22s", boxShadow: CS }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-5px)"; el.style.boxShadow = "0 12px 32px rgba(0,0,0,0.12)"; el.style.borderColor = `${C.orange}30`; }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = CS; el.style.borderColor = C.border; }}>
+                <div style={{ height: 180, background: "#F3F2F8", position: "relative", overflow: "hidden" }}>
                   {obra.imagen_principal
                     ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🖼️</div>
                   }
-                  <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: badge.color, background: "rgba(8,6,18,0.85)", border: `1px solid ${badge.color}60`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", textTransform: "uppercase", whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
+                  <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5, color: badge.color, background: `${badge.color}15`, border: `1px solid ${badge.color}40`, textTransform: "uppercase", whiteSpace: "nowrap" }}>
                     {badge.label}
                   </span>
                   {obra.destacada && (
@@ -174,11 +175,11 @@ export default function MisObras() {
                 <div style={{ padding: "16px" }}>
                   <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
                     {obra.categoria        && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.orange, background: `${C.orange}12`, border: `1px solid ${C.orange}25`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
-                    {obra.tecnica          && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
+                    {obra.tecnica          && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, background: "#F3F2F8", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
                     {obra.nombre_coleccion && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.pink, background: `${C.pink}12`, border: `1px solid ${C.pink}25`, padding: "2px 8px", borderRadius: 100 }}>🗂 {obra.nombre_coleccion}</span>}
                   </div>
-                  <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: "'Playfair Display',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
-                  <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: "'Playfair Display',serif" }}>
+                  <h3 style={{ fontSize: 14.5, fontWeight: 800, color: C.text, margin: "0 0 6px", fontFamily: FB, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
+                  <p style={{ fontSize: 16, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: FB }}>
                     {formatPrecio(obra.precio_base)}
                   </p>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.muted, marginBottom: 10 }}>
@@ -196,14 +197,14 @@ export default function MisObras() {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}
-                      style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600, transition: "all .15s" }}
+                      style={{ flex: 1, padding: "8px", borderRadius: 9, background: "#F3F2F8", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontWeight: 600, transition: "all .15s" }}
                       onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}40`; }}
                       onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.muted; el.style.borderColor = C.border; }}>
                       ✏ Editar
                     </button>
                     {obra.slug && (
                       <button onClick={() => navigate(`/obras/${obra.slug}`)}
-                        style={{ padding: "8px 12px", borderRadius: 9, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14 }}>
+                        style={{ padding: "8px 12px", borderRadius: 9, background: "#F3F2F8", border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer", display: "flex", alignItems: "center", fontSize: 14 }}>
                         👁
                       </button>
                     )}

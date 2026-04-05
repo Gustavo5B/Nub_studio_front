@@ -5,10 +5,10 @@ import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
 const C = {
-  orange: "#FF840E", pink: "#CC59AD",
-  panel: "#0d0b1a", border: "rgba(255,255,255,0.07)",
-  text: "#f5f0ff", muted: "rgba(245,240,255,0.45)",
-  green: "#3DDB85",
+  orange: "#E8640C", pink: "#A83B90",
+  panel: "#FFFFFF", border: "#E6E4EF",
+  text: "#14121E", muted: "#9896A8",
+  green: "#0E8A50",
 };
 
 const NAV = [
@@ -47,7 +47,7 @@ export default function ArtistaSidebar({ onClose }: Props) {
       position: "fixed", left: 0, top: 0, zIndex: 50,
       background: C.panel, borderRight: `1px solid ${C.border}`,
       display: "flex", flexDirection: "column",
-      backdropFilter: "blur(30px)",
+      boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
     }}>
       {/* Logo */}
       <div style={{ padding: "28px 24px 20px" }}>
@@ -56,8 +56,8 @@ export default function ArtistaSidebar({ onClose }: Props) {
 
         {/* Chip usuario */}
         <div style={{
-          background: `linear-gradient(135deg,${C.orange}18,${C.pink}10)`,
-          border: `1px solid ${C.orange}25`,
+          background: "#F9F8FC",
+          border: `1px solid ${C.border}`,
           borderRadius: 16, padding: "16px",
           display: "flex", alignItems: "center", gap: 14,
         }}>
@@ -97,14 +97,14 @@ export default function ArtistaSidebar({ onClose }: Props) {
               style={{
                 display: "flex", alignItems: "center", gap: 12,
                 width: "100%", padding: "12px 14px", borderRadius: 12, marginBottom: 4,
-                background: on ? `linear-gradient(135deg,${C.orange}22,${C.pink}12)` : "transparent",
-                border: on ? `1px solid ${C.orange}35` : "1px solid transparent",
+                background: on ? `${C.orange}10` : "transparent",
+                border: on ? `1px solid ${C.orange}30` : "1px solid transparent",
                 color: on ? C.orange : C.muted,
                 fontSize: 13.5, fontWeight: on ? 700 : 500,
-                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif",
                 transition: "all .18s ease", textAlign: "left",
               }}
-              onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+              onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "#F3F2F8"; }}
               onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
               <Icon size={17} strokeWidth={on ? 2.5 : 1.8} />
               {label}
@@ -119,11 +119,11 @@ export default function ArtistaSidebar({ onClose }: Props) {
           style={{
             display: "flex", alignItems: "center", gap: 12,
             width: "100%", padding: "12px 14px", borderRadius: 12,
-            background: `linear-gradient(135deg,${C.orange},${C.pink})`,
+            background: C.orange,
             border: "none", color: "white",
             fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-            fontFamily: "'DM Sans', sans-serif",
-            boxShadow: `0 6px 20px ${C.orange}35`,
+            fontFamily: "'Outfit', sans-serif",
+            boxShadow: `0 4px 14px ${C.orange}35`,
           }}>
           <Plus size={16} /> Subir nueva obra
         </button>
@@ -137,7 +137,7 @@ export default function ArtistaSidebar({ onClose }: Props) {
             width: "100%", padding: "10px 14px", borderRadius: 10,
             background: "transparent", border: "1px solid transparent",
             color: C.muted, fontSize: 13, fontWeight: 500,
-            cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+            cursor: "pointer", fontFamily: "'Outfit', sans-serif",
             transition: "all .15s",
           }}
           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.pink; el.style.background = `${C.pink}10`; }}

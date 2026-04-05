@@ -5,7 +5,7 @@ import { authService } from "../../../services/authService";
 import MiPerfil, { type ArtistaInfo } from "./MiPerfil";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const C   = { orange: "#FF840E", muted: "rgba(245,240,255,0.45)" };
+const C   = { orange: "#E8640C", muted: "#9896A8" };
 
 export default function MiPerfilPage() {
   const navigate          = useNavigate();
