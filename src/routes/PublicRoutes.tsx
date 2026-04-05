@@ -28,7 +28,6 @@ export default function PublicRoutes() {
       <Route element={<PublicLayout />}>
         <Route path="/"                element={<Home />} />
         <Route path="/sobre-nosotros"  element={<About />} />
-        <Route path="/blog"            element={<Blog />} />
       </Route>
 
       {/* Páginas SIN navbar */}
@@ -36,6 +35,8 @@ export default function PublicRoutes() {
       <Route path="/obras/:slug"     element={<DetalleObra />} />
       <Route path="/artistas"        element={<Artistas />} />
       <Route path="/artistas/:id"    element={<DetalleArtistaPublico />} />
+      <Route path="/blog"            element={<Blog />} />
+
 
       {/* Contacto SIN layout */}
       <Route path="/contacto" element={<Contact />} />
