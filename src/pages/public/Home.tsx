@@ -522,6 +522,7 @@ export default function Home() {
           <Link to="/catalogo"  className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
           <Link to="/artistas"  className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
           <Link to="/blog"      className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
+          <Link to="/sobre-nosotros" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Sobre nosotros</Link>
           <Link to="/contacto"  className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
         </nav>
 

@@ -537,12 +537,18 @@ export default function Artistas() {
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
           <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Inicio
         </a>
-        <a href="/blog" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.orange, textDecoration: "none", transition: "color .25s" }}>
+        <a href="/artistas" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
           <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Artistas
         </a>
-        <a href="/sobre-nosotros" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Contacto
+        <a href="/blog" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
+          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Blog
         </a>
+        <a href="/sobre-nosotros" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
+          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Sobre nosotros
+        </a>
+        <a href="/contacto" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
+          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Contacto
+        </a>       
       </nav>
 
       {/* ═══ HERO VERTICAL CON BOTÓN DESCUBRE CENTRADO ═══ */}

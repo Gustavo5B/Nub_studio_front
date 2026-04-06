@@ -1,21 +1,20 @@
 // src/pages/public/Blog.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Clock, ArrowRight, Star, Mail } from "lucide-react";
+import { Clock, ArrowRight, Star, Mail, Eye } from "lucide-react";
 import { authService } from "../../services/authService";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
 const C = {
   orange: "#E8640C",
-  pink: "#A83B90",
+  orangeLight: "#F57C2E",
+  orangeDark: "#C24E08",
+  orangeMuted: "#FDE8DB",
   ink: "#14121E",
   sub: "#9896A8",
   dark: "#0D0B14",
-  gold: "#A87006",
-  blue: "#2D6FBE",
-  purple: "#6028AA",
-  green: "#0E8A50",
   border: "#E6E4EF",
+  white: "#FFFFFF",
 };
 
 const SERIF = "'SolveraLorvane', serif";
@@ -31,7 +30,6 @@ interface Post {
   id: number;
   cat: string;
   catLabel: string;
-  color: string;
   titulo: string;
   excerpt: string;
   autor: string;
@@ -41,52 +39,52 @@ interface Post {
 }
 
 const CATS = [
-  { key: "todos", label: "Todos", color: C.orange },
-  { key: "arte", label: "Arte", color: C.pink },
-  { key: "cultura", label: "Cultura", color: C.gold },
-  { key: "tecnicas", label: "Técnicas", color: C.blue },
-  { key: "artistas", label: "Artistas", color: C.purple },
-  { key: "eventos", label: "Eventos", color: C.green },
+  { key: "todos", label: "Todos" },
+  { key: "arte", label: "Arte" },
+  { key: "cultura", label: "Cultura" },
+  { key: "tecnicas", label: "Técnicas" },
+  { key: "artistas", label: "Artistas" },
+  { key: "eventos", label: "Eventos" },
 ];
 
 const POSTS: Post[] = [
   {
-    id: 1, cat: "arte", catLabel: "Arte", color: C.pink,
+    id: 1, cat: "arte", catLabel: "Arte",
     titulo: "El alma de la Huasteca en cada trazo",
     excerpt: "Descubre cómo los artistas de la región traducen siglos de historia en colores, formas y texturas que hablan al mundo entero.",
     autor: "Equipo NUB", fecha: "15 Mar 2025", lectura: "8 min",
     img: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1400&q=80",
   },
   {
-    id: 2, cat: "cultura", catLabel: "Cultura", color: C.gold,
+    id: 2, cat: "cultura", catLabel: "Cultura",
     titulo: "Los colores que nos definen",
     excerpt: "Una exploración visual de la paleta cromática Huasteca y su profundo significado cultural a través del tiempo.",
     autor: "María Sánchez", fecha: "10 Mar 2025", lectura: "5 min",
     img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=900&q=80",
   },
   {
-    id: 3, cat: "tecnicas", catLabel: "Técnicas", color: C.blue,
+    id: 3, cat: "tecnicas", catLabel: "Técnicas",
     titulo: "Tejidos que resisten el tiempo",
     excerpt: "Las técnicas ancestrales de bordado Huasteco que sobreviven de generación en generación.",
     autor: "Carlos Mendoza", fecha: "5 Mar 2025", lectura: "6 min",
     img: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=900&q=80",
   },
   {
-    id: 4, cat: "artistas", catLabel: "Artistas", color: C.purple,
+    id: 4, cat: "artistas", catLabel: "Artistas",
     titulo: "Voces emergentes de la región",
     excerpt: "Nuevos talentos que están redefiniendo el arte contemporáneo desde la Huasteca Hidalguense.",
     autor: "Lucía Torres", fecha: "28 Feb 2025", lectura: "7 min",
     img: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=900&q=80",
   },
   {
-    id: 5, cat: "arte", catLabel: "Arte", color: C.orange,
+    id: 5, cat: "arte", catLabel: "Arte",
     titulo: "La arcilla como lenguaje universal",
     excerpt: "Del barro al arte: la cerámica Huasteca como puente entre lo sagrado y lo cotidiano.",
     autor: "Ana García", fecha: "20 Feb 2025", lectura: "4 min",
     img: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=900&q=80",
   },
   {
-    id: 6, cat: "eventos", catLabel: "Eventos", color: C.green,
+    id: 6, cat: "eventos", catLabel: "Eventos",
     titulo: "Exposiciones que marcaron el año",
     excerpt: "Un recorrido por las exhibiciones más importantes que reunieron lo mejor del arte Huasteco.",
     autor: "Equipo NUB", fecha: "15 Feb 2025", lectura: "5 min",
@@ -105,7 +103,6 @@ export default function Blog() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
-  // Cursor personalizado (corregido y solo en dispositivos con mouse)
   useEffect(() => {
     if (window.matchMedia("(pointer: fine)").matches) {
       document.body.style.cursor = "none";
@@ -170,14 +167,12 @@ export default function Blog() {
           font-weight: normal; font-style: normal; font-display: swap;
         }
 
-        /* Grain texture */
         .home-grain {
           position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
           background-size: 160px 160px; mix-blend-mode: multiply;
         }
 
-        /* Cursor personalizado */
         .home-cursor-dot {
           position: fixed; width: 6px; height: 6px; border-radius: 50%;
           background: #14121E; pointer-events: none; z-index: 99999;
@@ -191,7 +186,6 @@ export default function Blog() {
         .home-cursor-dot.cur-over { width: 4px; height: 4px; background: #E8640C; }
         .home-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
 
-        /* Animaciones mejoradas */
         @keyframes fadeSlideUp {
           0% { opacity: 0; transform: translateY(36px); }
           100% { opacity: 1; transform: translateY(0); }
@@ -203,22 +197,10 @@ export default function Blog() {
           100% { opacity: 1; transform: translateY(0) skewY(0); }
         }
         
-        @keyframes starSpin {
-          0% { transform: rotate(0deg) scale(1); }
-          50% { transform: rotate(180deg) scale(1.05); }
-          100% { transform: rotate(360deg) scale(1); }
-        }
-        
         .animate-title {
           animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         
-        .animate-up {
-          opacity: 0;
-          animation: fadeSlideUp 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
-        }
-        
-        /* Tarjetas con stagger controlado por JS */
         .card {
           background: #fff;
           border-radius: 28px;
@@ -241,7 +223,6 @@ export default function Blog() {
           border-color: rgba(0,0,0,0.08);
         }
         
-        /* Overlay de brillo en imágenes */
         .img-wrapper {
           position: relative;
           overflow: hidden;
@@ -259,6 +240,25 @@ export default function Blog() {
           transform: translateX(100%);
         }
         
+        .read-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0.6);
+          backdrop-filter: blur(4px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          color: white;
+          z-index: 2;
+        }
+        .img-wrapper:hover .read-overlay {
+          opacity: 1;
+        }
+        
         .category-chip {
           display: inline-block;
           padding: 6px 16px;
@@ -268,6 +268,8 @@ export default function Blog() {
           background: rgba(255,255,255,0.92);
           backdrop-filter: blur(4px);
           transition: all 0.2s ease;
+          z-index: 1;
+          position: relative;
         }
         
         .filter-btn {
@@ -282,10 +284,10 @@ export default function Blog() {
           color: #9896A8;
         }
         .filter-btn.active {
-          background: linear-gradient(135deg, var(--active-color, #E8640C), var(--active-color-light, #E8640Ccc));
+          background: #E8640C;
           color: white;
           font-weight: 700;
-          box-shadow: 0 4px 12px var(--active-shadow, rgba(232,100,12,0.3));
+          box-shadow: 0 4px 12px rgba(232,100,12,0.3);
           transform: scale(1.02);
         }
         .filter-btn:hover:not(.active) {
@@ -303,9 +305,53 @@ export default function Blog() {
         }
         .whatsapp-float:hover { transform: scale(1.08) rotate(4deg); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
         
+        /* Menú lateral uniforme con Contact.tsx */
+        .side-nav {
+          position: absolute;
+          top: 30px;
+          left: 52px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          z-index: 11;
+        }
+        .side-nav-link {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          font-size: 9.5px;
+          font-weight: 700;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: #9896A8;
+          text-decoration: none;
+          transition: color 0.25s ease, gap 0.25s ease;
+        }
+        .side-nav-link::before {
+          content: '';
+          display: block;
+          width: 12px;
+          height: 1px;
+          background: currentColor;
+          flex-shrink: 0;
+          transition: width 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .side-nav-link:hover {
+          color: #E8640C;
+          gap: 14px;
+        }
+        .side-nav-link:hover::before {
+          width: 22px;
+        }
+        
         @media (max-width: 768px) {
           .card { border-radius: 24px; }
           .filter-btn { padding: 8px 18px; font-size: 12px; }
+          .side-nav { left: 24px; top: 20px; gap: 8px; }
+          .side-nav-link { font-size: 8px; gap: 6px; }
+          .side-nav-link::before { width: 8px; }
+          .side-nav-link:hover { gap: 10px; }
+          .side-nav-link:hover::before { width: 16px; }
         }
       `}</style>
 
@@ -313,15 +359,14 @@ export default function Blog() {
       <div ref={dotRef} className="home-cursor-dot" />
       <div ref={ringRef} className="home-cursor-ring" />
 
-      {/* Menú lateral izquierdo */}
-      <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeSlideUp 0.8s ease 0.3s both", zIndex: 11 }}>
-        <Link to="/catalogo" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
-        <Link to="/artistas" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
-        <Link to="/blog" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
-        <Link to="/contacto" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
+      <nav className="side-nav">
+        <Link to="/catalogo" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
+        <Link to="/artistas" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
+        <Link to="/blog" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
+        <Link to="/sobre-nosotros" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Sobre nosotros</Link>
+        <Link to="/contacto" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
       </nav>
 
-      {/* Botones de autenticación */}
       <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeSlideUp 0.8s ease 0.3s both", zIndex: 11 }}>
         {!isLoggedIn ? (
           <>
@@ -333,15 +378,12 @@ export default function Blog() {
         )}
       </div>
 
-      {/* WhatsApp flotante */}
       <a href="https://wa.me/527713338453?text=Hola%2C%20me%20interesa%20saber%20m%C3%A1s%20sobre%20ALTAR%20Galer%C3%ADa" target="_blank" rel="noopener noreferrer" className="whatsapp-float" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>
         <WhatsAppIcon size={32} />
       </a>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(100px, 12vw, 140px) 24px 80px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(80px, 10vw, 120px) 24px 80px" }}>
 
-        {/* Título con estrella animada - Mejorado */}
         <div className="animate-title" style={{ textAlign: "center", marginBottom: 64 }}>
           <h1 style={{ fontFamily: SERIF, fontSize: "clamp(56px, 8vw, 96px)", fontWeight: 900, color: C.ink, letterSpacing: "-0.02em", marginBottom: 32 }}>
             {"BLOG".split("").map((l, i) => (
@@ -357,10 +399,9 @@ export default function Blog() {
                 height: "clamp(32px, 4vw, 48px)",
                 transition: "transform 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                animation: "starSpin 20s infinite linear",
               }}
-              onMouseEnter={(e) => { cursorOn(); e.currentTarget.style.transform = "scale(1.15) rotate(0deg)"; e.currentTarget.style.animationPlayState = "paused"; }}
-              onMouseLeave={(e) => { cursorOff(); e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.animationPlayState = "running"; }}
+              onMouseEnter={(e) => { cursorOn(); e.currentTarget.style.transform = "scale(1.15)"; }}
+              onMouseLeave={(e) => { cursorOff(); e.currentTarget.style.transform = "scale(1)"; }}
             >
               <img src={estrellaImg} alt="ALTAR Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
             </div>
@@ -371,10 +412,9 @@ export default function Blog() {
           </p>
         </div>
 
-        {/* Filtros mejorados */}
         <div style={{ marginBottom: 70, overflowX: "auto", paddingBottom: 8 }}>
           <div style={{ display: "flex", justifyContent: "center", gap: 12, minWidth: "max-content", margin: "0 auto" }}>
-            {CATS.map(({ key, label, color }) => {
+            {CATS.map(({ key, label }) => {
               const active = filtro === key;
               return (
                 <button
@@ -383,7 +423,6 @@ export default function Blog() {
                   onMouseEnter={cursorOn}
                   onMouseLeave={cursorOff}
                   className={`filter-btn ${active ? "active" : ""}`}
-                  style={active ? { ["--active-color" as any]: color, ["--active-color-light" as any]: color + "cc", ["--active-shadow" as any]: color + "80" } : {}}
                 >
                   {label}
                 </button>
@@ -392,7 +431,6 @@ export default function Blog() {
           </div>
         </div>
 
-        {/* Artículo destacado con animación */}
         {featured && (
           <div
             onClick={handleLeer}
@@ -414,8 +452,12 @@ export default function Blog() {
                 onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)"}
                 onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"}
               />
-              <div style={{ position: "absolute", top: 20, left: 20 }}>
-                <span className="category-chip" style={{ color: featured.color, border: `1px solid ${featured.color}30` }}>
+              <div className="read-overlay">
+                <Eye size={32} strokeWidth={1.5} />
+                <span style={{ fontWeight: 600, letterSpacing: '0.5px' }}>Leer artículo</span>
+              </div>
+              <div style={{ position: "absolute", top: 20, left: 20, zIndex: 1 }}>
+                <span className="category-chip" style={{ color: C.orange, border: `1px solid ${C.orange}30` }}>
                   {featured.catLabel}
                 </span>
               </div>
@@ -427,8 +469,8 @@ export default function Blog() {
               <p style={{ fontSize: 15, color: C.sub, lineHeight: 1.65, marginBottom: 28 }}>
                 {featured.excerpt}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${featured.color}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>
                   {featured.autor[0]}
                 </div>
                 <div>
@@ -438,26 +480,10 @@ export default function Blog() {
                   </div>
                 </div>
               </div>
-              <button
-                onMouseEnter={cursorOn}
-                onMouseLeave={cursorOff}
-                style={{
-                  background: `linear-gradient(135deg, ${featured.color}, ${C.purple})`,
-                  border: "none", padding: "12px 32px", borderRadius: 40, color: "#fff",
-                  fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center",
-                  gap: 8, cursor: "pointer", transition: "all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)",
-                  boxShadow: `0 4px 14px ${featured.color}60`,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px) scale(1.02)"; e.currentTarget.style.boxShadow = `0 8px 20px ${featured.color}80`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.boxShadow = `0 4px 14px ${featured.color}60`; }}
-              >
-                Leer artículo <ArrowRight size={14} />
-              </button>
             </div>
           </div>
         )}
 
-        {/* Grid de posts con stagger reveal usando IntersectionObserver para mayor suavidad */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "clamp(28px, 4vw, 40px)" }}>
           {rest.map((post, idx) => (
             <PostCard
@@ -472,7 +498,6 @@ export default function Blog() {
         </div>
       </div>
 
-      {/* Newsletter */}
       <section style={{ background: C.dark, color: "#fff", padding: "clamp(64px, 8vw, 96px) 24px", marginTop: 40 }}>
         <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
           <div style={{ width: 64, height: 64, background: "rgba(255,255,255,0.05)", borderRadius: 32, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", transition: "transform 0.3s", animation: "fadeSlideUp 0.6s ease" }}>
@@ -496,22 +521,31 @@ export default function Blog() {
             />
             <button
               onClick={handleSubscribe}
-              onMouseEnter={cursorOn}
-              onMouseLeave={cursorOff}
-              style={{ padding: "14px 32px", background: C.orange, border: "none", borderRadius: 60, fontWeight: 700, color: "#fff", cursor: "pointer", transition: "all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(232,100,12,0.4)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
+              style={{
+                padding: "14px 32px", background: C.orange, border: "none",
+                borderRadius: 60, fontWeight: 700, color: "#fff", cursor: "pointer",
+                transition: "all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)"
+              }}
+              onMouseEnter={(e) => {
+                cursorOn();
+                e.currentTarget.style.transform = "scale(1.04)";
+                e.currentTarget.style.boxShadow = "0 6px 16px rgba(232,100,12,0.4)";
+              }}
+              onMouseLeave={(e) => {
+                cursorOff();
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
               Suscribirme
             </button>
           </div>
           <div style={{ marginTop: 28, fontSize: 12, color: C.sub, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <Star size={10} fill={C.gold} color={C.gold} /> Sin spam, solo arte
+            <Star size={10} fill={C.orange} color={C.orange} /> Sin spam, solo arte
           </div>
         </div>
       </section>
 
-      {/* Footer */}
       <footer style={{ background: "#fff", borderTop: "1px solid rgba(0,0,0,.05)", padding: "40px 24px", textAlign: "center" }}>
         <p style={{ fontSize: 11, color: C.sub, letterSpacing: ".04em", margin: 0 }}>
           © 2025 ALTAR — Todos los derechos reservados
@@ -521,7 +555,6 @@ export default function Blog() {
   );
 }
 
-// Componente PostCard con reveal mediante IntersectionObserver
 function PostCard({ post, index, cursorOn, cursorOff, handleLeer }: { post: Post; index: number; cursorOn: () => void; cursorOff: () => void; handleLeer: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -558,8 +591,12 @@ function PostCard({ post, index, cursorOn, cursorOff, handleLeer }: { post: Post
           onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1.06)"}
           onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"}
         />
-        <div style={{ position: "absolute", top: 16, left: 16 }}>
-          <span className="category-chip" style={{ color: post.color, border: `1px solid ${post.color}30` }}>
+        <div className="read-overlay">
+          <Eye size={28} strokeWidth={1.5} />
+          <span style={{ fontWeight: 600, letterSpacing: '0.5px' }}>Leer artículo</span>
+        </div>
+        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
+          <span className="category-chip" style={{ color: C.orange, border: `1px solid ${C.orange}30` }}>
             {post.catLabel}
           </span>
         </div>
@@ -573,7 +610,7 @@ function PostCard({ post, index, cursorOn, cursorOff, handleLeer }: { post: Post
         </p>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(0,0,0,0.04)", paddingTop: 18, fontSize: 12, color: C.sub }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${post.color}, ${C.pink})`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
               {post.autor[0]}
             </div>
             <span style={{ fontWeight: 500 }}>{post.autor}</span>
