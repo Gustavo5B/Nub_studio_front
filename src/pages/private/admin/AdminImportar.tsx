@@ -22,15 +22,16 @@ const C = {
   gold:     "#FFC110",
   green:    "#22C97A",
   red:      "#F04E6B",
-  cream:    "#FFF8EE",
-  creamSub: "#D8CABC",
-  creamMut: "rgba(255,232,200,0.35)",
-  bgDeep:   "#070510",
-  bg:       "#0C0812",
-  card:     "rgba(18,13,30,0.95)",
-  border:   "rgba(255,200,150,0.08)",
-  borderBr: "rgba(118,78,49,0.20)",
-  borderHi: "rgba(255,200,150,0.18)",
+  // Colores para fondo blanco
+  cream:    "#1A1A1A",      // texto principal oscuro
+  creamSub: "#4B4B4B",      // texto secundario
+  creamMut: "#6C6C6C",      // texto terciario
+  bgDeep:   "#F5F5F5",      // fondo superior gris claro
+  bg:       "#FFFFFF",      // fondo principal blanco
+  card:     "#FFFFFF",      // tarjetas blancas
+  border:   "rgba(0,0,0,0.08)",
+  borderBr: "rgba(0,0,0,0.12)",
+  borderHi: "rgba(0,0,0,0.20)",
 };
 
 const FB = "'DM Sans', sans-serif";
@@ -75,10 +76,6 @@ function parseExcelPreview(file: File, tipo: TipoReg): Promise<ExcelPreview> {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   HELPERS para reducir Cognitive Complexity de FilePreview
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 const COLS_OBRAS    = ["ID Obra", "Título", "Artista", "Categoría", "Estado", "Precio Base (MXN)"];
 const COLS_ARTISTAS = ["ID Artista", "Nombre Completo", "Nombre Artístico", "Correo", "Ciudad", "Estado"];
 
@@ -119,9 +116,6 @@ function getRowAccionIcon(accion: FilaAccion, color: string) {
   return <RefreshCw size={11} color={color} />;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Topbar
-   ═══════════════════════════════════════════════════════════════════════════ */
 function Topbar({ navigate }: { navigate: (p: string) => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", height: 56, background: C.bgDeep, borderBottom: `1px solid ${C.borderBr}`, position: "sticky", top: 0, zIndex: 30, fontFamily: FB }}>
@@ -131,18 +125,15 @@ function Topbar({ navigate }: { navigate: (p: string) => void }) {
         <span style={{ fontSize: 13, color: C.creamSub }}>Importar</span>
       </div>
       <button onClick={() => navigate("/admin")}
-        style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,232,200,0.04)", border: `1px solid ${C.border}`, borderRadius: 9, padding: "7px 14px", color: C.creamMut, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+        style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(0,0,0,0.03)", border: `1px solid ${C.border}`, borderRadius: 9, padding: "7px 14px", color: C.creamSub, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
         onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.cream; el.style.borderColor = C.borderHi; }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.creamMut; el.style.borderColor = C.border; }}>
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.creamSub; el.style.borderColor = C.border; }}>
         <Upload size={13} strokeWidth={1.8} /> Dashboard
       </button>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DropZone
-   ═══════════════════════════════════════════════════════════════════════════ */
 function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: boolean; accent: string }) {
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
@@ -163,12 +154,12 @@ function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: 
         borderRadius: 16, padding: "52px 24px",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16,
         cursor: disabled ? "not-allowed" : "pointer",
-        background: drag ? "rgba(255,132,14,0.06)" : "rgba(255,232,200,0.015)",
+        background: drag ? "rgba(255,132,14,0.06)" : "rgba(0,0,0,0.01)",
         transition: "all .25s", opacity: disabled ? 0.5 : 1,
       }}>
       <div style={{ position: "absolute", inset: 0, background: drag ? "radial-gradient(ellipse at 50% 0%, rgba(255,132,14,0.12) 0%, transparent 65%)" : "none", transition: "all .3s", pointerEvents: "none" }} />
       <div style={{ position: "relative" }}>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: drag ? "rgba(255,132,14,0.15)" : "rgba(255,232,200,0.05)", border: `1.5px solid ${drag ? C.orange + "55" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .25s", transform: drag ? "scale(1.08) translateY(-3px)" : "scale(1)", boxShadow: drag ? `0 12px 32px rgba(255,132,14,0.25)` : "none" }}>
+        <div style={{ width: 72, height: 72, borderRadius: 20, background: drag ? "rgba(255,132,14,0.15)" : "rgba(0,0,0,0.03)", border: `1.5px solid ${drag ? C.orange + "55" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .25s", transform: drag ? "scale(1.08) translateY(-3px)" : "scale(1)", boxShadow: drag ? `0 12px 32px rgba(255,132,14,0.25)` : "none" }}>
           <CloudUpload size={28} color={drag ? C.orange : C.creamMut} strokeWidth={1.5} style={{ transition: "all .25s" }} />
         </div>
         {drag && (
@@ -185,7 +176,7 @@ function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: 
       </div>
       <div style={{ display: "flex", gap: 8, zIndex: 1 }}>
         {["Excel 2007+", ".xlsx", "Hasta 10 MB"].map(tag => (
-          <span key={tag} style={{ fontSize: 10.5, padding: "3px 10px", borderRadius: 20, background: "rgba(255,232,200,0.05)", border: `1px solid ${C.border}`, color: C.creamMut, fontFamily: FB, fontWeight: 600 }}>{tag}</span>
+          <span key={tag} style={{ fontSize: 10.5, padding: "3px 10px", borderRadius: 20, background: "rgba(0,0,0,0.03)", border: `1px solid ${C.border}`, color: C.creamMut, fontFamily: FB, fontWeight: 600 }}>{tag}</span>
         ))}
       </div>
       <input ref={ref} type="file" accept=".xlsx" style={{ display: "none" }} onChange={e => handle(e.target.files?.[0])} />
@@ -193,13 +184,9 @@ function DropZone({ onFile, disabled }: { onFile: (f: File) => void; disabled?: 
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   FilePreview — sub-componentes extraídos
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 function PreviewFileHeader({ file, onCancel }: { file: File; onCancel: () => void }) {
   return (
-    <div style={{ padding: "18px 22px", background: `linear-gradient(135deg, rgba(255,132,14,0.08) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid rgba(255,132,14,0.12)`, display: "flex", alignItems: "center", gap: 14 }}>
+    <div style={{ padding: "18px 22px", background: `linear-gradient(135deg, rgba(255,132,14,0.08) 0%, rgba(0,0,0,0) 60%)`, borderBottom: `1px solid rgba(255,132,14,0.12)`, display: "flex", alignItems: "center", gap: 14 }}>
       <div style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0, background: "rgba(34,201,122,0.12)", border: `1px solid rgba(34,201,122,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 14px rgba(34,201,122,0.15)` }}>
         <FileSpreadsheet size={20} color={C.green} strokeWidth={1.7} />
       </div>
@@ -213,9 +200,9 @@ function PreviewFileHeader({ file, onCancel }: { file: File; onCancel: () => voi
         </div>
       </div>
       <button onClick={onCancel}
-        style={{ width: 32, height: 32, borderRadius: 9, border: `1px solid ${C.border}`, background: "rgba(255,232,200,0.04)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .15s" }}
+        style={{ width: 32, height: 32, borderRadius: 9, border: `1px solid ${C.border}`, background: "rgba(0,0,0,0.03)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .15s" }}
         onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(240,78,107,0.15)"; el.style.borderColor = "rgba(240,78,107,0.3)"; }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,232,200,0.04)"; el.style.borderColor = C.border; }}>
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(0,0,0,0.03)"; el.style.borderColor = C.border; }}>
         <X size={13} color={C.creamMut} />
       </button>
     </div>
@@ -279,11 +266,11 @@ function PreviewTableRow({ row, visibleCols, idField, index }: {
 }) {
   return (
     <tr
-      style={{ borderBottom: `1px solid rgba(255,200,150,0.04)`, background: index % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent", transition: "background .15s" }}
+      style={{ borderBottom: `1px solid rgba(0,0,0,0.04)`, background: index % 2 === 0 ? "rgba(0,0,0,0.01)" : "transparent", transition: "background .15s" }}
       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,132,14,0.04)"}
-      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = index % 2 === 0 ? "rgba(255,232,200,0.01)" : "transparent"}>
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = index % 2 === 0 ? "rgba(0,0,0,0.01)" : "transparent"}>
       {visibleCols.map((col, j) => (
-        <td key={col} style={{ padding: "9px 14px", fontSize: 12.5, color: C.creamSub, whiteSpace: "nowrap", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", borderRight: j < visibleCols.length - 1 ? `1px solid rgba(255,200,150,0.04)` : "none" }}>
+        <td key={col} style={{ padding: "9px 14px", fontSize: 12.5, color: C.creamSub, whiteSpace: "nowrap", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", borderRight: j < visibleCols.length - 1 ? `1px solid rgba(0,0,0,0.04)` : "none" }}>
           {col === idField ? <PreviewIdCell row={row} idField={idField} /> : String(row[col] || "—")}
         </td>
       ))}
@@ -309,17 +296,17 @@ function PreviewTable({ preview, visibleCols, tipo, showAll, setShowAll }: {
         </div>
         {preview.totalFilas > 5 && (
           <button onClick={() => setShowAll(v => !v)}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: "rgba(255,232,200,0.03)", color: C.creamMut, fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: "rgba(0,0,0,0.02)", color: C.creamMut, fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
             onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.orange; el.style.borderColor = `${C.orange}35`; el.style.background = "rgba(255,132,14,0.06)"; }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.creamMut; el.style.borderColor = C.border; el.style.background = "rgba(255,232,200,0.03)"; }}>
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = C.creamMut; el.style.borderColor = C.border; el.style.background = "rgba(0,0,0,0.02)"; }}>
             {showAll ? <><EyeOff size={11} /> Mostrar menos</> : <><Eye size={11} /> Ver todas ({preview.totalFilas})</>}
           </button>
         )}
       </div>
       <div style={{ overflowX: "auto", borderRadius: 12, border: `1px solid ${C.border}`, maxHeight: showAll ? 340 : "none", overflowY: showAll ? "auto" : "visible" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FB }}>
-          <thead style={{ position: showAll ? "sticky" : "static", top: 0, zIndex: 2 }}>
-            <tr style={{ background: "rgba(7,5,16,0.98)" }}>
+          <thead style={{ position: showAll ? "sticky" : "static", top: 0, zIndex: 2, background: C.bg }}>
+            <tr style={{ background: C.bgDeep }}>
               {visibleCols.map((col, i) => (
                 <th key={col} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10.5, fontWeight: 800, color: C.orange, whiteSpace: "nowrap", borderBottom: `1px solid ${C.border}`, letterSpacing: "0.06em", textTransform: "uppercase", borderRight: i < visibleCols.length - 1 ? `1px solid ${C.border}` : "none" }}>
                   {normalizeHeader(col)}
@@ -359,9 +346,9 @@ function PreviewActions({ onCancel, onConfirm, loading, parsing, totalFilas }: {
   return (
     <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
       <button onClick={onCancel}
-        style={{ padding: "9px 20px", borderRadius: 9, background: "transparent", border: `1px solid ${C.borderBr}`, color: C.creamMut, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.color = C.creamSub; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderBr; (e.currentTarget as HTMLElement).style.color = C.creamMut; }}>
+        style={{ padding: "9px 20px", borderRadius: 9, background: "transparent", border: `1px solid ${C.borderBr}`, color: C.creamSub, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.color = C.cream; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderBr; (e.currentTarget as HTMLElement).style.color = C.creamSub; }}>
         Cancelar
       </button>
       <button onClick={onConfirm} disabled={disabled}
@@ -397,9 +384,6 @@ function PreviewBody({ file, tipo, preview, parsing, parseErr, onCancel, onConfi
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   FilePreview — componente principal simplificado
-   ═══════════════════════════════════════════════════════════════════════════ */
 function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
   file: File; tipo: TipoReg; onCancel: () => void; onConfirm: () => void; loading: boolean;
 }) {
@@ -417,20 +401,16 @@ function FilePreview({ file, tipo, onCancel, onConfirm, loading }: {
   }, [file, tipo]);
 
   return (
-    <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid rgba(255,132,14,0.20)`, boxShadow: `0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,200,150,0.06)` }}>
+    <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid rgba(255,132,14,0.20)`, boxShadow: `0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,200,150,0.06)` }}>
       <PreviewFileHeader file={file} onCancel={onCancel} />
       <PreviewBody file={file} tipo={tipo} preview={preview} parsing={parsing} parseErr={parseErr} onCancel={onCancel} onConfirm={onConfirm} loading={loading} />
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ResultadoPanel — sub-componentes extraídos
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 function ResultadoHeader({ resumen, exitoso, onReset }: { resumen: ResumenData; exitoso: boolean; onReset: () => void }) {
   return (
-    <div style={{ padding: "20px 24px", background: exitoso ? `linear-gradient(135deg, rgba(34,201,122,0.10) 0%, rgba(18,13,30,0) 60%)` : `linear-gradient(135deg, rgba(240,78,107,0.09) 0%, rgba(18,13,30,0) 60%)`, borderBottom: `1px solid ${exitoso ? "rgba(34,201,122,0.12)" : "rgba(240,78,107,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div style={{ padding: "20px 24px", background: exitoso ? `linear-gradient(135deg, rgba(34,201,122,0.10) 0%, rgba(0,0,0,0) 60%)` : `linear-gradient(135deg, rgba(240,78,107,0.09) 0%, rgba(0,0,0,0) 60%)`, borderBottom: `1px solid ${exitoso ? "rgba(34,201,122,0.12)" : "rgba(240,78,107,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ width: 46, height: 46, borderRadius: 12, background: exitoso ? "rgba(34,201,122,0.14)" : "rgba(240,78,107,0.14)", border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {exitoso ? <CheckCircle size={20} color={C.green} strokeWidth={2} /> : <AlertCircle size={20} color={C.red} strokeWidth={2} />}
@@ -494,13 +474,13 @@ function DetalleSection({ detalle }: { detalle: FilaRes[] }) {
   return (
     <div style={{ padding: "0 22px 20px" }}>
       <button onClick={() => setShow(v => !v)}
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 16px", borderRadius: 10, background: "rgba(255,232,200,0.03)", border: `1px solid ${C.border}`, color: C.creamMut, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.05)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.background = "rgba(255,232,200,0.03)"; }}>
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 16px", borderRadius: 10, background: "rgba(0,0,0,0.02)", border: `1px solid ${C.border}`, color: C.creamMut, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHi; (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border; (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.02)"; }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           {show ? <EyeOff size={13} /> : <Eye size={13} />}
           {show ? "Ocultar" : "Ver"} detalle fila por fila
-          <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(255,200,150,0.07)", border: `1px solid ${C.border}`, color: C.creamMut }}>{detalle.length} registros</span>
+          <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(0,0,0,0.04)", border: `1px solid ${C.border}`, color: C.creamMut }}>{detalle.length} registros</span>
         </div>
         <ChevronDown size={13} style={{ transform: show ? "rotate(180deg)" : "rotate(0)", transition: "transform .2s" }} />
       </button>
@@ -516,7 +496,7 @@ function DetalleSection({ detalle }: { detalle: FilaRes[] }) {
 function ResultadoPanel({ resumen, detalle, onReset }: { resumen: ResumenData; detalle: FilaRes[]; onReset: () => void }) {
   const exitoso = resumen.errores === 0;
   return (
-    <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, boxShadow: `0 8px 40px rgba(0,0,0,0.4)` }}>
+    <div style={{ borderRadius: 16, overflow: "hidden", background: C.card, border: `1px solid ${exitoso ? "rgba(34,201,122,0.25)" : "rgba(240,78,107,0.25)"}`, boxShadow: `0 8px 40px rgba(0,0,0,0.1)` }}>
       <ResultadoHeader resumen={resumen} exitoso={exitoso} onReset={onReset} />
       <ResultadoKpis resumen={resumen} />
       <DetalleSection detalle={detalle} />
@@ -524,9 +504,6 @@ function ResultadoPanel({ resumen, detalle, onReset }: { resumen: ResumenData; d
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   PasoCard
-   ═══════════════════════════════════════════════════════════════════════════ */
 function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }: {
   n: string; title: string; desc: string;
   endpoint: string | null; endpointVacio: string | null;
@@ -541,7 +518,7 @@ function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }
 
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", animation: `fadeUp .4s ease ${index * 0.09}s both`, transition: "border-color .2s, transform .2s, box-shadow .2s" }}
-      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${from}40`; el.style.transform = "translateY(-3px)"; el.style.boxShadow = `0 16px 40px rgba(0,0,0,0.35), 0 0 0 1px ${from}18`; }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = `${from}40`; el.style.transform = "translateY(-3px)"; el.style.boxShadow = `0 16px 40px rgba(0,0,0,0.1), 0 0 0 1px ${from}18`; }}
       onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.border; el.style.transform = "translateY(0)"; el.style.boxShadow = "none"; }}>
       <div style={{ height: 3, background: `linear-gradient(90deg, ${from}, ${to}, transparent 80%)` }} />
       <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -551,7 +528,7 @@ function PasoCard({ n, title, desc, endpoint, endpointVacio, onDownload, index }
           </div>
           <div style={{ position: "absolute", top: -5, right: -5, width: 22, height: 22, borderRadius: "50%", background: `linear-gradient(135deg, ${from}, ${to})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "white", fontFamily: FB, boxShadow: `0 2px 10px ${from}55, 0 0 0 2px ${C.card}` }}>{n}</div>
         </div>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,232,200,0.04)", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(0,0,0,0.03)", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <SubIcon size={15} color={C.creamMut} strokeWidth={1.5} />
         </div>
       </div>
@@ -599,9 +576,6 @@ function PasoDownloadButtons({ endpoint, endpointVacio, from, to, onDownload }: 
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ROOT
-   ═══════════════════════════════════════════════════════════════════════════ */
 export default function AdminImportar() {
   const navigate      = useNavigate();
   const { showToast } = useToast();
@@ -674,9 +648,8 @@ export default function AdminImportar() {
       `}</style>
       <Topbar navigate={navigate} />
 
-      <main style={{ flex: 1, padding: "26px 28px 40px", overflowY: "auto", backgroundColor: C.bg, backgroundImage: `radial-gradient(ellipse at 75% 0%, rgba(255,132,14,0.08) 0%, transparent 40%), radial-gradient(ellipse at 10% 90%, rgba(204,89,173,0.06) 0%, transparent 35%)`, fontFamily: FB }}>
+      <main style={{ flex: 1, padding: "26px 28px 40px", overflowY: "auto", backgroundColor: C.bg, backgroundImage: `radial-gradient(ellipse at 75% 0%, rgba(255,132,14,0.04) 0%, transparent 40%), radial-gradient(ellipse at 10% 90%, rgba(204,89,173,0.03) 0%, transparent 35%)`, fontFamily: FB }}>
 
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 100, background: "rgba(255,132,14,0.08)", border: `1px solid rgba(255,132,14,0.20)`, fontSize: 11, color: C.orange, marginBottom: 12, fontWeight: 700, letterSpacing: "0.05em" }}>
@@ -690,8 +663,7 @@ export default function AdminImportar() {
             </p>
           </div>
 
-          {/* Selector tipo */}
-          <div style={{ display: "flex", gap: 6, background: "rgba(255,232,200,0.03)", padding: 4, borderRadius: 12, border: `1px solid ${C.border}` }}>
+          <div style={{ display: "flex", gap: 6, background: "rgba(0,0,0,0.02)", padding: 4, borderRadius: 12, border: `1px solid ${C.border}` }}>
             {(["obras", "artistas"] as TipoReg[]).map(t => {
               const accent = t === "obras" ? C.blue : C.pink;
               const on     = tipo === t;
@@ -706,7 +678,6 @@ export default function AdminImportar() {
           </div>
         </div>
 
-        {/* Contenido */}
         {resumen ? (
           <ResultadoPanel resumen={resumen} detalle={detalle} onReset={() => { setResumen(null); setDetalle([]); }} />
         ) : file ? (
