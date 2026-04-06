@@ -17,6 +17,8 @@ const SERIF = "'SolveraLorvane', serif";
 const SANS  = "'Outfit', sans-serif";
 const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
 
+const PALETTE = ["#E8640C", "#A83B90", "#6028AA", "#2D6FBE", "#0E8A50"];
+
 type ViewMode = "grid" | "list" | "compact";
 
 interface Artista {
@@ -27,6 +29,7 @@ interface Artista {
   biografia?:      string;
   foto_perfil?:    string;
   foto_portada?:   string;
+  foto_logo?:      string;
   categoria_nombre?: string;
   total_obras?:    number;
 }
@@ -83,6 +86,7 @@ function ArtistaCard({
 }) {
   const navigate = useNavigate();
   const [inView, setInView] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -94,7 +98,8 @@ function ArtistaCard({
   }, []);
 
   const seudonimo = artista.nombre_artistico || artista.alias || artista.nombre_completo.split(" ")[0];
-  const obras = artista.total_obras || 0;
+  const obras = Number(artista.total_obras) || 0;
+  const accentColor = PALETTE[artista.id_artista % PALETTE.length];
 
   // ── MODO LIST ──
   if (viewMode === "list") {
@@ -103,8 +108,8 @@ function ArtistaCard({
         ref={ref}
         data-rv data-d={String((index % 5) + 1)}
         onClick={() => navigate(`/artistas/${artista.id_artista}`)}
-        onMouseEnter={cursorOn}
-        onMouseLeave={cursorOff}
+        onMouseEnter={() => { setHovered(true); cursorOn(); }}
+        onMouseLeave={() => { setHovered(false); cursorOff(); }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -112,10 +117,12 @@ function ArtistaCard({
           padding: "20px 24px",
           background: "#fff",
           borderRadius: 8,
-          border: "1px solid rgba(0,0,0,.05)",
+          border: `1px solid ${hovered ? "rgba(232,100,12,.30)" : "rgba(0,0,0,.05)"}`,
           cursor: "pointer",
           opacity: inView ? 1 : 0.5,
-          transition: "all .4s cubic-bezier(.16,1,.3,1)",
+          transform: hovered ? "translateY(-2px)" : "translateY(0)",
+          boxShadow: hovered ? "0 6px 20px rgba(232,100,12,.12)" : "none",
+          transition: "all .35s cubic-bezier(.16,1,.3,1)",
         }}
       >
         <div style={{
@@ -131,6 +138,8 @@ function ArtistaCard({
           fontSize: 24,
           fontWeight: 900,
           color: C.orange,
+          transform: hovered ? "scale(1.06)" : "scale(1)",
+          transition: "transform .35s cubic-bezier(.16,1,.3,1)",
         }}>
           {artista.foto_perfil ? (
             <img src={artista.foto_perfil} alt={seudonimo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -172,27 +181,53 @@ function ArtistaCard({
         ref={ref}
         data-rv data-d={String((index % 5) + 1)}
         onClick={() => navigate(`/artistas/${artista.id_artista}`)}
-        onMouseEnter={cursorOn}
-        onMouseLeave={cursorOff}
+        onMouseEnter={() => { setHovered(true); cursorOn(); }}
+        onMouseLeave={() => { setHovered(false); cursorOff(); }}
         style={{
           background: "#fff",
           borderRadius: 16,
-          border: "1px solid rgba(0,0,0,.05)",
+          border: `1.5px solid ${hovered ? "rgba(232,100,12,.35)" : "rgba(0,0,0,.06)"}`,
           cursor: "pointer",
           overflow: "hidden",
           opacity: inView ? 1 : 0.5,
-          transition: "all .55s cubic-bezier(.16,1,.3,1)",
-          boxShadow: "0 4px 12px rgba(0,0,0,.06)",
+          boxShadow: hovered ? "0 8px 28px rgba(232,100,12,.18)" : "0 4px 12px rgba(0,0,0,.06)",
+          transition: "all .4s cubic-bezier(.16,1,.3,1)",
         }}
       >
         <div style={{
-          height: 100,
-          background: `linear-gradient(135deg, ${C.orange}20 0%, ${C.pink}15 100%)`,
+          height: hovered ? 118 : 100,
+          background: `linear-gradient(135deg, #0D0B14 0%, ${accentColor}55 100%)`,
           position: "relative",
           overflow: "hidden",
+          transition: "height .4s cubic-bezier(.16,1,.3,1)",
         }}>
-          {artista.foto_portada && (
-            <img src={artista.foto_portada} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
+          {artista.foto_portada ? (
+            <img src={artista.foto_portada} alt="" style={{
+              width: "100%", height: "100%", objectFit: "cover", opacity: 0.85,
+              transform: hovered ? "scale(1.05)" : "scale(1)",
+              transition: "transform .5s cubic-bezier(.2,0,0,1)",
+            }} />
+          ) : (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: `radial-gradient(ellipse 80% 80% at 70% 50%, ${accentColor}40, transparent)`,
+            }} />
+          )}
+          {/* Logo badge arriba derecha */}
+          {artista.foto_logo && (
+            <div style={{
+              position: "absolute", top: 7, right: 7, zIndex: 5,
+              width: 28, height: 28, borderRadius: 6,
+              background: "rgba(255,255,255,.90)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,.6)",
+              boxShadow: "0 2px 8px rgba(0,0,0,.14)",
+              display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+              transform: hovered ? "scale(1.15) rotate(-4deg)" : "scale(1) rotate(0deg)",
+              transition: "transform .35s cubic-bezier(.34,1.56,.64,1)",
+            }}>
+              <img src={artista.foto_logo} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 3 }} />
+            </div>
           )}
         </div>
 
@@ -218,7 +253,9 @@ function ArtistaCard({
             fontSize: 28,
             fontWeight: 900,
             color: C.orange,
-            boxShadow: "0 4px 16px rgba(0,0,0,.10)",
+            boxShadow: hovered ? "0 6px 22px rgba(232,100,12,.30)" : "0 4px 16px rgba(0,0,0,.10)",
+            transform: hovered ? "scale(1.08)" : "scale(1)",
+            transition: "transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s",
           }}>
             {artista.foto_perfil ? (
               <img src={artista.foto_perfil} alt={seudonimo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -261,153 +298,176 @@ function ArtistaCard({
     );
   }
 
-  // ── MODO GRID ──
+  // ── MODO GRID — Opción A: foto de fondo full, panel glass abajo, se expande en hover ──
   return (
     <div
       ref={ref}
       data-rv data-d={String((index % 5) + 1)}
       onClick={() => navigate(`/artistas/${artista.id_artista}`)}
-      onMouseEnter={cursorOn}
-      onMouseLeave={cursorOff}
+      onMouseEnter={() => { setHovered(true); cursorOn(); }}
+      onMouseLeave={() => { setHovered(false); cursorOff(); }}
       style={{
-        background: "#fff",
-        borderRadius: 16,
-        border: "1px solid rgba(0,0,0,.05)",
+        borderRadius: 20,
         overflow: "hidden",
         cursor: "pointer",
-        boxShadow: "0 4px 12px rgba(0,0,0,.06)",
-        opacity: inView ? 1 : 0.5,
-        transition: "all .55s cubic-bezier(.16,1,.3,1)",
+        position: "relative",
+        height: hovered ? 340 : 260,
+        boxShadow: hovered ? `0 20px 50px rgba(0,0,0,.28), 0 0 0 1.5px ${accentColor}55` : "0 4px 18px rgba(0,0,0,.12)",
+        opacity: inView ? 1 : 0,
+        transform: hovered ? "translateY(-6px) scale(1.01)" : "translateY(0) scale(1)",
+        transition: "height .5s cubic-bezier(.16,1,.3,1), box-shadow .4s, transform .4s cubic-bezier(.16,1,.3,1), opacity .6s ease",
       }}
     >
+      {/* ── Fondo: portada o gradiente oscuro ── */}
       <div style={{
-        height: 160,
-        background: `linear-gradient(135deg, ${C.orange}25 0%, ${C.pink}18 100%)`,
-        position: "relative",
+        position: "absolute", inset: 0,
+        background: `linear-gradient(135deg, #0D0B14 0%, ${accentColor}60 100%)`,
         overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
       }}>
         {artista.foto_portada ? (
           <img src={artista.foto_portada} alt="" style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "transform 0.7s cubic-bezier(0.2, 0, 0, 1)",
+            width: "100%", height: "100%", objectFit: "cover",
+            transform: hovered ? "scale(1.08)" : "scale(1)",
+            transition: "transform .7s cubic-bezier(.2,0,0,1)",
           }} />
         ) : (
-          <div style={{
-            fontSize: 64,
-            fontWeight: 900,
-            color: C.orange,
-            opacity: 0.15,
-            fontFamily: SERIF,
-          }}>
-            ★
-          </div>
+          <>
+            <div style={{
+              position: "absolute", inset: 0,
+              background: `radial-gradient(ellipse 90% 90% at 65% 40%, ${accentColor}50, transparent)`,
+            }} />
+            <span style={{
+              position: "absolute",
+              bottom: "30%", right: "8%",
+              fontFamily: SERIF, fontSize: 130, fontWeight: 900,
+              color: "white", opacity: 0.05,
+              userSelect: "none", lineHeight: 1, letterSpacing: "-.04em",
+            }}>
+              {seudonimo[0]}
+            </span>
+          </>
         )}
       </div>
 
+      {/* ── Velo oscuro permanente ── */}
       <div style={{
-        padding: "0 20px",
-        marginTop: -48,
-        position: "relative",
-        zIndex: 2,
-        marginBottom: 16,
-      }}>
+        position: "absolute", inset: 0,
+        background: "linear-gradient(180deg, rgba(13,11,20,.10) 0%, rgba(13,11,20,.55) 55%, rgba(13,11,20,.92) 100%)",
+        transition: "background .4s",
+        pointerEvents: "none",
+      }} />
+
+      {/* ── Logo arriba derecha ── */}
+      {artista.foto_logo && (
         <div style={{
-          width: 96,
-          height: 96,
-          borderRadius: 20,
-          border: "4px solid #fff",
-          overflow: "hidden",
-          background: `${C.orange}15`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 40,
-          fontWeight: 900,
-          color: C.orange,
-          boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+          position: "absolute", top: 12, right: 12, zIndex: 5,
+          width: 36, height: 36, borderRadius: 9,
+          background: "rgba(255,255,255,.88)", backdropFilter: "blur(10px)",
+          border: "1px solid rgba(255,255,255,.5)",
+          boxShadow: "0 2px 10px rgba(0,0,0,.20)",
+          display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+          transform: hovered ? "scale(1.15) rotate(-4deg)" : "scale(1)",
+          transition: "transform .4s cubic-bezier(.34,1.56,.64,1)",
         }}>
-          {artista.foto_perfil ? (
-            <img src={artista.foto_perfil} alt={seudonimo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            seudonimo[0].toUpperCase()
+          <img src={artista.foto_logo} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} />
+        </div>
+      )}
+
+      {/* ── Panel info abajo ── */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 3,
+        padding: hovered ? "20px 18px 22px" : "16px 18px 18px",
+        transition: "padding .4s cubic-bezier(.16,1,.3,1)",
+      }}>
+
+        {/* Avatar + nombre en fila */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: hovered ? 14 : 10, transition: "margin .4s" }}>
+          <div style={{
+            width: hovered ? 56 : 48, height: hovered ? 56 : 48,
+            borderRadius: "50%", flexShrink: 0,
+            border: "2.5px solid rgba(255,255,255,.35)",
+            overflow: "hidden",
+            background: `${accentColor}30`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 900, color: "white",
+            boxShadow: hovered ? `0 4px 18px ${accentColor}60` : "0 2px 10px rgba(0,0,0,.35)",
+            transition: "width .4s cubic-bezier(.16,1,.3,1), height .4s cubic-bezier(.16,1,.3,1), box-shadow .4s",
+          }}>
+            {artista.foto_perfil
+              ? <img src={artista.foto_perfil} alt={seudonimo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : seudonimo[0].toUpperCase()
+            }
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{
+              fontFamily: NEXA_HEAVY, fontSize: 18, fontWeight: 900,
+              color: "white", margin: 0, lineHeight: 1.1,
+              letterSpacing: "-.02em",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}>
+              {seudonimo}
+            </h3>
+            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.55)", marginTop: 2, fontFamily: SANS }}>
+              {artista.nombre_completo}
+            </div>
+          </div>
+        </div>
+
+        {/* Info expandida — solo visible en hover */}
+        <div style={{
+          overflow: "hidden",
+          maxHeight: hovered ? 120 : 0,
+          opacity: hovered ? 1 : 0,
+          transition: "max-height .45s cubic-bezier(.16,1,.3,1), opacity .3s ease",
+        }}>
+          {/* Separador */}
+          <div style={{ height: 1, background: "rgba(255,255,255,.12)", marginBottom: 12 }} />
+
+          {/* Chips */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: artista.biografia ? 10 : 0 }}>
+            {artista.categoria_nombre && (
+              <span style={{
+                fontSize: 9.5, fontWeight: 800, padding: "3px 10px", borderRadius: 20,
+                background: `${accentColor}35`, border: `1px solid ${accentColor}55`,
+                color: "rgba(255,255,255,.9)", letterSpacing: ".05em", textTransform: "uppercase",
+                fontFamily: SANS,
+              }}>
+                {artista.categoria_nombre}
+              </span>
+            )}
+            <span style={{
+              fontSize: 9.5, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+              background: "rgba(255,255,255,.10)", border: "1px solid rgba(255,255,255,.18)",
+              color: "rgba(255,255,255,.75)", fontFamily: SANS,
+            }}>
+              {obras} {obras === 1 ? "obra" : "obras"}
+            </span>
+          </div>
+
+          {/* Biografía recortada */}
+          {artista.biografia && (
+            <p style={{
+              fontSize: 12, color: "rgba(255,255,255,.55)", lineHeight: 1.55,
+              margin: 0, fontFamily: SANS,
+              display: "-webkit-box", WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical", overflow: "hidden",
+            }}>
+              {artista.biografia}
+            </p>
           )}
         </div>
-      </div>
 
-      <div style={{ padding: "0 20px 24px" }}>
-        <h3 style={{
-          fontFamily: NEXA_HEAVY,
-          fontSize: "clamp(24px, 5vw, 32px)",
-          fontWeight: 900,
-          color: C.ink,
-          letterSpacing: "-.03em",
-          margin: "0 0 8px",
-          lineHeight: 1.1,
-        }}>
-          {seudonimo}
-        </h3>
-
+        {/* Obras count — visible solo cuando NO hay hover */}
         <div style={{
-          fontFamily: SANS,
-          fontSize: 13,
-          color: C.sub,
-          marginBottom: 12,
+          opacity: hovered ? 0 : 1,
+          maxHeight: hovered ? 0 : 24,
+          overflow: "hidden",
+          transition: "opacity .2s, max-height .3s",
         }}>
-          {artista.nombre_completo}
-        </div>
-
-        {artista.categoria_nombre && (
-          <div style={{
-            display: "inline-block",
-            padding: "4px 12px",
-            borderRadius: 20,
-            background: `${C.orange}15`,
-            fontSize: 10,
-            fontWeight: 700,
-            color: C.orange,
-            fontFamily: SANS,
-            letterSpacing: ".5px",
-            marginBottom: 14,
-          }}>
-            {artista.categoria_nombre}
-          </div>
-        )}
-
-        {artista.biografia && (
-          <p style={{
-            fontFamily: SANS,
-            fontSize: 13,
-            color: C.sub,
-            lineHeight: 1.5,
-            margin: "0 0 16px",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}>
-            {artista.biografia}
-          </p>
-        )}
-
-        <div style={{
-          height: 1,
-          background: "rgba(0,0,0,.05)",
-          margin: "16px 0",
-        }} />
-
-        <div style={{
-          fontFamily: SERIF,
-          fontSize: 18,
-          fontWeight: 900,
-          color: C.ink,
-          fontStyle: "italic",
-        }}>
-          {obras} <span style={{ fontFamily: SANS, fontSize: 11, color: C.sub, fontWeight: 600 }}>{obras === 1 ? "obra" : "obras"}</span>
+          <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.45)", fontFamily: SANS }}>
+            {obras} {obras === 1 ? "obra" : "obras"}
+          </span>
         </div>
       </div>
     </div>
@@ -415,7 +475,6 @@ function ArtistaCard({
 }
 
 export default function Artistas() {
-  const navigate = useNavigate();
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -801,7 +860,7 @@ export default function Artistas() {
             {categorias.map(cat => (
               <button
                 key={cat}
-                onClick={() => setCatActiva(catActiva === cat ? null : cat)}
+                onClick={() => setCatActiva(catActiva === cat ? null : cat ?? null)}
                 style={{
                   padding: "8px 18px",
                   borderRadius: 40,
