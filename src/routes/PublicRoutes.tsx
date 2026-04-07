@@ -11,6 +11,7 @@ import Catalogo               from "../pages/public/Catalogo";
 import DetalleObra            from "../pages/public/DetalleObra";
 import Artistas               from "../pages/public/Artistas";
 import DetalleArtistaPublico  from "../pages/public/DetalleArtistaPublico";
+import DetalleColeccionPublico from "../pages/public/DetalleColeccionPublico"; // 👈 NUEVA IMPORTACIÓN
 import Register               from "../pages/public/Register";
 import ArtistaEnRevision      from "../pages/public/ArtistaEnRevision";
 import ActivarCuenta          from "../pages/public/ActivarCuenta";
@@ -30,14 +31,13 @@ export default function PublicRoutes() {
       </Route>
 
       {/* Páginas SIN navbar */}
-      <Route path="/catalogo"        element={<Catalogo />} />
-      <Route path="/obras/:slug"     element={<DetalleObra />} />
-      <Route path="/artistas"        element={<Artistas />} />
+      <Route path="/catalogo"           element={<Catalogo />} />
+      <Route path="/obras/:slug"        element={<DetalleObra />} />
+      <Route path="/artistas"           element={<Artistas />} />
       <Route path="/artistas/:matricula" element={<DetalleArtistaPublico />} />
-      <Route path="/blog"            element={<Blog />} />
-      <Route path="/sobre-nosotros"  element={<About />} />
-
-
+      <Route path="/colecciones/:slug"  element={<DetalleColeccionPublico />} /> {/* 👈 NUEVA RUTA */}
+      <Route path="/blog"               element={<Blog />} />
+      <Route path="/sobre-nosotros"     element={<About />} />
 
       {/* Contacto SIN layout */}
       <Route path="/contacto" element={<Contact />} />

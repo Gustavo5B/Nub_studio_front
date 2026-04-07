@@ -181,7 +181,7 @@ export default function NuevaObra() {
       fetch(`${API}/api/categorias`,               { headers: h }).then(r => r.json()),
       fetch(`${API}/api/etiquetas`,                { headers: h }).then(r => r.json()),
       fetch(`${API}/api/artista-portal/mi-perfil`, { headers: h }).then(r => r.json()),
-      fetch(`${API}/api/colecciones/mis-colecciones`, { headers: h }).then(r => r.json()),
+      fetch(`${API}/api/artista-portal/mis-colecciones`, { headers: h }).then(r => r.json()),
     ]).then(([cat, etq, perfil, cols]) => {
       setCategorias(Array.isArray(cat) ? cat : cat.categorias || cat.data || []);
       setEtiquetas(Array.isArray(etq)  ? etq : etq.etiquetas  || etq.data  || []);
