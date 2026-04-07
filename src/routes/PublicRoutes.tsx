@@ -33,7 +33,7 @@ export default function PublicRoutes() {
       <Route path="/catalogo"        element={<Catalogo />} />
       <Route path="/obras/:slug"     element={<DetalleObra />} />
       <Route path="/artistas"        element={<Artistas />} />
-      <Route path="/artistas/:id"    element={<DetalleArtistaPublico />} />
+      <Route path="/artistas/:matricula" element={<DetalleArtistaPublico />} />
       <Route path="/blog"            element={<Blog />} />
       <Route path="/sobre-nosotros"  element={<About />} />
 

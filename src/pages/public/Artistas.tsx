@@ -30,6 +30,7 @@ interface Artista {
   foto_perfil?:    string;
   foto_portada?:   string;
   foto_logo?:      string;
+  matricula?:      string;
   categoria_nombre?: string;
   total_obras?:    number;
 }
@@ -107,7 +108,7 @@ function ArtistaCard({
       <div
         ref={ref}
         data-rv data-d={String((index % 5) + 1)}
-        onClick={() => navigate(`/artistas/${artista.id_artista}`)}
+        onClick={() => navigate(`/artistas/${artista.matricula}`)}
         onMouseEnter={() => { setHovered(true); cursorOn(); }}
         onMouseLeave={() => { setHovered(false); cursorOff(); }}
         style={{
@@ -180,7 +181,7 @@ function ArtistaCard({
       <div
         ref={ref}
         data-rv data-d={String((index % 5) + 1)}
-        onClick={() => navigate(`/artistas/${artista.id_artista}`)}
+        onClick={() => navigate(`/artistas/${artista.matricula}`)}
         onMouseEnter={() => { setHovered(true); cursorOn(); }}
         onMouseLeave={() => { setHovered(false); cursorOff(); }}
         style={{
@@ -303,7 +304,7 @@ function ArtistaCard({
     <div
       ref={ref}
       data-rv data-d={String((index % 5) + 1)}
-      onClick={() => navigate(`/artistas/${artista.id_artista}`)}
+      onClick={() => navigate(`/artistas/${artista.matricula}`)}
       onMouseEnter={() => { setHovered(true); cursorOn(); }}
       onMouseLeave={() => { setHovered(false); cursorOff(); }}
       style={{
