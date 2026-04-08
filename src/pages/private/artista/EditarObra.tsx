@@ -305,7 +305,7 @@ export default function EditarObra() {
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh", flexDirection:"column", gap:16 }}>
       <Loader2 size={36} style={{ animation:"spin 1s linear infinite", color:"#FF840E" }} />
-      <p style={{ color:"rgba(245,240,255,0.45)", fontSize:14 }}>Cargando obra...</p>
+      <p style={{ color:"#666", fontSize:14 }}>Cargando obra...</p>
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </div>
   );
@@ -322,15 +322,15 @@ export default function EditarObra() {
   );
 
   return (
-    <div style={{ padding:"32px 36px", maxWidth:860 }} className="artista-main-pad">
+    <div style={{ padding:"32px 36px", maxWidth:860, background:"#fff", minHeight:"100vh" }} className="artista-main-pad">
       {/* Header */}
       <div style={{ marginBottom:28 }}>
         <button onClick={() => navigate("/artista/mis-obras")}
-          style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", color:"rgba(245,240,255,0.45)", cursor:"pointer", fontSize:13, fontFamily:"'DM Sans',sans-serif", marginBottom:16, padding:0 }}>
+          style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", color:"#666", cursor:"pointer", fontSize:13, fontFamily:"'DM Sans',sans-serif", marginBottom:16, padding:0 }}>
           <ArrowLeft size={16} /> Mis obras
         </button>
         <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-          <h1 style={{ fontSize:26, fontWeight:900, color:"#f5f0ff", margin:0, fontFamily:"'Playfair Display',serif", display:"flex", alignItems:"center", gap:8 }}>
+          <h1 style={{ fontSize:26, fontWeight:900, color:"#1a1a1a", margin:0, fontFamily:"'Playfair Display',serif", display:"flex", alignItems:"center", gap:8 }}>
             <Sparkles size={22} color="#FF840E" /> Editar Obra
           </h1>
           {obraEstado && (
@@ -343,7 +343,7 @@ export default function EditarObra() {
             </span>
           )}
         </div>
-        <p style={{ fontSize:13, color:"rgba(245,240,255,0.45)", margin:"6px 0 0" }}>{form.titulo}</p>
+        <p style={{ fontSize:13, color:"#666", margin:"6px 0 0" }}>{form.titulo}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="nueva-obra-form">
@@ -351,11 +351,11 @@ export default function EditarObra() {
 
           {/* IMAGEN */}
           <div className="form-section">
-            <h3 className="section-title"><Image size={18} /> Imagen de la obra</h3>
-            <div style={{ display:"flex", borderRadius:10, overflow:"hidden", border:"1px solid rgba(255,255,255,0.07)", marginBottom:12 }}>
+            <h3 className="section-title" style={{ color:"#333" }}><Image size={18} /> Imagen de la obra</h3>
+            <div style={{ display:"flex", borderRadius:10, overflow:"hidden", border:"1px solid #e0e0e0", marginBottom:12 }}>
               {(["upload", "url"] as const).map(tab => (
                 <button key={tab} type="button" onClick={() => setImgMode(tab)}
-                  style={{ flex:1, padding:"9px", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12.5, fontWeight:imgMode===tab?800:500, background:imgMode===tab?"linear-gradient(135deg,rgba(204,89,173,0.25),rgba(141,76,205,0.15))":"transparent", color:imgMode===tab?"#f5f0ff":"rgba(245,240,255,0.45)", borderRight:tab==="upload"?"1px solid rgba(255,255,255,0.07)":"none", transition:"all .15s" }}>
+                  style={{ flex:1, padding:"9px", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12.5, fontWeight:imgMode===tab?800:500, background:imgMode===tab?"#f0f0f0":"transparent", color:imgMode===tab?"#333":"#999", borderRight:tab==="upload"?"1px solid #e0e0e0":"none", transition:"all .15s" }}>
                   {tab === "upload"
                     ? <><UploadCloud size={12} style={{ marginRight:5, verticalAlign:"middle" }} />Subir archivo</>
                     : <><FileImage  size={12} style={{ marginRight:5, verticalAlign:"middle" }} />URL externa</>}
@@ -366,26 +366,26 @@ export default function EditarObra() {
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
             {imgMode === "upload" ? (
               imgFile ? (
-                <div style={{ position:"relative", borderRadius:12, overflow:"hidden", border:"1px solid rgba(204,89,173,0.3)" }}>
+                <div style={{ position:"relative", borderRadius:12, overflow:"hidden", border:"1px solid #ddd" }}>
                   <img src={imgPreview} alt="preview" style={{ width:"100%", height:200, objectFit:"cover", display:"block" }} />
-                  <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"10px 14px", background:"linear-gradient(to top,rgba(8,6,18,0.9),transparent)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:12, color:"#f5f0ff", fontWeight:600 }}>{imgFile.name} · {(imgFile.size/1024/1024).toFixed(1)} MB</span>
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"10px 14px", background:"linear-gradient(to top,rgba(0,0,0,0.8),transparent)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span style={{ fontSize:12, color:"#fff", fontWeight:600 }}>{imgFile.name} · {(imgFile.size/1024/1024).toFixed(1)} MB</span>
                     <button type="button" onClick={() => fileRef.current?.click()}
-                      style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, color:"#f5f0ff", fontSize:11, fontWeight:700, padding:"4px 10px", cursor:"pointer" }}>
+                      style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:6, color:"#fff", fontSize:11, fontWeight:700, padding:"4px 10px", cursor:"pointer" }}>
                       Cambiar
                     </button>
                   </div>
                   <button type="button" onClick={clearFile}
-                    style={{ position:"absolute", top:8, right:8, width:26, height:26, borderRadius:"50%", background:"rgba(10,7,20,0.8)", border:"1px solid rgba(204,89,173,0.5)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-                    <X size={14} color="#CC59AD" />
+                    style={{ position:"absolute", top:8, right:8, width:26, height:26, borderRadius:"50%", background:"rgba(0,0,0,0.7)", border:"1px solid #FF840E", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                    <X size={14} color="#FF840E" />
                   </button>
                 </div>
               ) : (
                 <div>
                   {form.imagen_principal && (
-                    <div style={{ marginBottom:10, borderRadius:12, overflow:"hidden", border:"1px solid rgba(255,255,255,0.07)", position:"relative" }}>
+                    <div style={{ marginBottom:10, borderRadius:12, overflow:"hidden", border:"1px solid #e0e0e0", position:"relative" }}>
                       <img src={form.imagen_principal} alt="actual" style={{ width:"100%", height:180, objectFit:"cover", display:"block", opacity:0.7 }} />
-                      <span style={{ position:"absolute", top:8, left:8, background:"rgba(8,6,18,0.8)", color:"rgba(245,240,255,0.55)", fontSize:10.5, fontWeight:700, padding:"3px 10px", borderRadius:100, border:"1px solid rgba(255,255,255,0.1)" }}>
+                      <span style={{ position:"absolute", top:8, left:8, background:"rgba(0,0,0,0.7)", color:"#fff", fontSize:10.5, fontWeight:700, padding:"3px 10px", borderRadius:100, border:"1px solid rgba(0,0,0,0.1)" }}>
                         Imagen actual
                       </span>
                     </div>
@@ -393,22 +393,22 @@ export default function EditarObra() {
                   <div onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)} onDrop={onDrop}
                     onClick={() => fileRef.current?.click()}
-                    style={{ borderRadius:12, border:`2px dashed ${dragOver?"#CC59AD":"rgba(255,255,255,0.12)"}`, height:110, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6, cursor:"pointer", background:dragOver?"rgba(204,89,173,0.05)":"rgba(255,255,255,0.02)", transition:"all .2s" }}>
-                    <UploadCloud size={22} color={dragOver?"#CC59AD":"rgba(245,240,255,0.35)"} strokeWidth={1.5} />
-                    <span style={{ fontSize:12.5, color:"rgba(245,240,255,0.45)", fontFamily:"'DM Sans',sans-serif" }}>
+                    style={{ borderRadius:12, border:`2px dashed ${dragOver?"#FF840E":"#ccc"}`, height:110, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6, cursor:"pointer", background:dragOver?"rgba(255,132,14,0.05)":"#fafafa", transition:"all .2s" }}>
+                    <UploadCloud size={22} color={dragOver?"#FF840E":"#999"} strokeWidth={1.5} />
+                    <span style={{ fontSize:12.5, color:"#666", fontFamily:"'DM Sans',sans-serif" }}>
                       {form.imagen_principal ? "Arrastra para reemplazar la imagen" : "Arrastra o haz clic para seleccionar"}
                     </span>
-                    <span style={{ fontSize:11, color:"rgba(245,240,255,0.25)" }}>PNG, JPG, WEBP — Máx 10 MB</span>
+                    <span style={{ fontSize:11, color:"#999" }}>PNG, JPG, WEBP — Máx 10 MB</span>
                   </div>
                 </div>
               )
             ) : (
               <div>
                 <input type="url" name="imagen_principal" value={form.imagen_principal} onChange={handleChange}
-                  placeholder="https://ejemplo.com/imagen.jpg" className="field-input" />
+                  placeholder="https://ejemplo.com/imagen.jpg" className="field-input" style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }} />
                 {form.imagen_principal && (
                   <img src={form.imagen_principal} alt="preview url"
-                    style={{ marginTop:10, width:"100%", height:170, objectFit:"cover", borderRadius:10, border:"1px solid rgba(255,255,255,0.07)" }}
+                    style={{ marginTop:10, width:"100%", height:170, objectFit:"cover", borderRadius:10, border:"1px solid #e0e0e0" }}
                     onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />
                 )}
               </div>
@@ -417,37 +417,40 @@ export default function EditarObra() {
 
           {/* INFORMACIÓN BÁSICA */}
           <div className="form-section">
-            <h3 className="section-title"><FileText size={18} /> Información básica</h3>
+            <h3 className="section-title" style={{ color:"#333" }}><FileText size={18} /> Información básica</h3>
             <div className="field-group">
-              <label>Título de la obra * <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400 }}>mínimo 3 caracteres</span></label>
+              <label style={{ color:"#333", fontWeight:600 }}>Título de la obra * <span style={{ fontSize:10.5, color:"#999", fontWeight:400 }}>mínimo 3 caracteres</span></label>
               <input type="text" name="titulo" value={form.titulo} onChange={handleChange}
                 placeholder="Ej: Atardecer en la Huasteca"
+                style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }}
                 className={`field-input${fieldErrors.titulo ? " field-input-error" : ""}`} />
-              {fieldErrors.titulo && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.titulo}</span>}
+              {fieldErrors.titulo && <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.titulo}</span>}
             </div>
             <div className="field-group">
-              <label>
+              <label style={{ color:"#333", fontWeight:600 }}>
                 Descripción
-                <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400, marginLeft:6 }}>
+                <span style={{ fontSize:10.5, color:"#999", fontWeight:400, marginLeft:6 }}>
                   {form.descripcion.length} caracteres{form.descripcion.length > 0 && form.descripcion.length < 20 ? " — mínimo 20" : ""}
                 </span>
               </label>
               <textarea name="descripcion" value={form.descripcion} onChange={handleChange}
                 placeholder="Cuéntanos sobre esta obra... (mínimo 20 caracteres si la llenas)" rows={4}
+                style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%", fontFamily:"inherit" }}
                 className={`field-input field-textarea${fieldErrors.descripcion ? " field-input-error" : ""}`} />
-              {fieldErrors.descripcion && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.descripcion}</span>}
+              {fieldErrors.descripcion && <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.descripcion}</span>}
             </div>
             <div className="field-group">
-              <label>Historia de la obra</label>
+              <label style={{ color:"#333", fontWeight:600 }}>Historia de la obra</label>
               <textarea name="historia" value={form.historia} onChange={handleChange}
                 placeholder="Cuéntanos el contexto, el proceso o la historia detrás de esta obra…" rows={4}
+                style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%", fontFamily:"inherit" }}
                 className={`field-input field-textarea${fieldErrors.historia ? " field-input-error" : ""}`} />
-              {fieldErrors.historia && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.historia}</span>}
+              {fieldErrors.historia && <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.historia}</span>}
             </div>
             {colecciones.length > 0 && (
               <div className="field-group">
-                <label>Colección <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400 }}>— opcional</span></label>
-                <select name="id_coleccion" value={form.id_coleccion} onChange={handleChange} className="field-input field-select">
+                <label style={{ color:"#333", fontWeight:600 }}>Colección <span style={{ fontSize:10.5, color:"#999", fontWeight:400 }}>— opcional</span></label>
+                <select name="id_coleccion" value={form.id_coleccion} onChange={handleChange} style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%", background:"#fff" }}>
                   <option value="">Sin colección</option>
                   {colecciones.map(c => (
                     <option key={c.id_coleccion} value={c.id_coleccion}>
@@ -457,42 +460,43 @@ export default function EditarObra() {
                 </select>
               </div>
             )}
-            <div className="fields-row">
+            <div className="fields-row" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
               <div className="field-group">
-                <label>Categoría</label>
-                <select name="id_categoria" value={form.id_categoria} onChange={handleChange} className="field-input field-select">
+                <label style={{ color:"#333", fontWeight:600 }}>Categoría</label>
+                <select name="id_categoria" value={form.id_categoria} onChange={handleChange} style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%", background:"#fff" }}>
                   <option value="">Seleccionar...</option>
                   {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
                 </select>
               </div>
               <div className="field-group">
-                <label>Técnica <span style={{ fontSize:10.5, color:"rgba(245,240,255,0.35)", fontWeight:400 }}>mínimo 3 caracteres</span></label>
+                <label style={{ color:"#333", fontWeight:600 }}>Técnica <span style={{ fontSize:10.5, color:"#999", fontWeight:400 }}>mínimo 3 caracteres</span></label>
                 <input type="text" name="tecnica" value={form.tecnica} onChange={handleChange}
                   placeholder="Ej: Óleo sobre lienzo"
+                  style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }}
                   className={`field-input${fieldErrors.tecnica ? " field-input-error" : ""}`} />
-                {fieldErrors.tecnica && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.tecnica}</span>}
+                {fieldErrors.tecnica && <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.tecnica}</span>}
               </div>
               <div className="field-group">
-                <label>Año de creación</label>
+                <label style={{ color:"#333", fontWeight:600 }}>Año de creación</label>
                 <input type="number" name="anio_creacion" value={form.anio_creacion} onChange={handleChange}
-                  min={1900} max={new Date().getFullYear()} className="field-input" />
+                  min={1900} max={new Date().getFullYear()} style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }} />
               </div>
             </div>
           </div>
 
           {/* DIMENSIONES */}
           <div className="form-section">
-            <h3 className="section-title"><Ruler size={18} /> Dimensiones (cm)</h3>
-            <div className="fields-row">
+            <h3 className="section-title" style={{ color:"#333" }}><Ruler size={18} /> Dimensiones (cm)</h3>
+            <div className="fields-row" style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
               {[
                 { name:"dimensiones_alto",        label:"Alto" },
                 { name:"dimensiones_ancho",       label:"Ancho" },
                 { name:"dimensiones_profundidad", label:"Profundidad" },
               ].map(f => (
                 <div key={f.name} className="field-group">
-                  <label>{f.label}</label>
+                  <label style={{ color:"#333", fontWeight:600 }}>{f.label}</label>
                   <input type="number" name={f.name} value={form[f.name as keyof FormState] as string}
-                    onChange={handleChange} placeholder="0" min={0} step="0.1" className="field-input" />
+                    onChange={handleChange} placeholder="0" min={0} step="0.1" style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }} />
                 </div>
               ))}
             </div>
@@ -500,23 +504,23 @@ export default function EditarObra() {
 
           {/* PRECIO */}
           <div className="form-section">
-            <h3 className="section-title"><DollarSign size={18} /> Precio</h3>
+            <h3 className="section-title" style={{ color:"#333" }}><DollarSign size={18} /> Precio</h3>
             <div className="price-field-wrap">
               <div className="field-group price-field">
-                <label>Precio base (MXN) *</label>
-                <div className="price-input-wrap">
-                  <span className="price-symbol">$</span>
+                <label style={{ color:"#333", fontWeight:600 }}>Precio base (MXN) *</label>
+                <div className="price-input-wrap" style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span className="price-symbol" style={{ fontSize:18, fontWeight:600 }}>$</span>
                   <input type="number" name="precio_base" value={form.precio_base} onChange={handleChange}
-                    placeholder="0.00" min={0} step="0.01"
-                    className={`field-input price-input${fieldErrors.precio_base ? " field-input-error" : ""}`} />
+                    placeholder="0.00" min={0} step="0.01" style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }}
+                    className={`price-input${fieldErrors.precio_base ? " field-input-error" : ""}`} />
                 </div>
-                {fieldErrors.precio_base && <span style={{ fontSize:11.5, color:"#FF4D6A", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.precio_base}</span>}
+                {fieldErrors.precio_base && <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.precio_base}</span>}
               </div>
               {form.precio_base && parseFloat(form.precio_base) > 0 && (
-                <div className="price-breakdown">
-                  <div className="breakdown-row"><span>Tu precio</span><strong>${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN</strong></div>
-                  <div className="breakdown-row commission"><span>Comisión Nu-B (15%)</span><strong>- ${(parseFloat(form.precio_base)*0.15).toLocaleString("es-MX")} MXN</strong></div>
-                  <div className="breakdown-row total"><span>Tú recibes</span><strong className="receive-amount">${(parseFloat(form.precio_base)*0.85).toLocaleString("es-MX")} MXN</strong></div>
+                <div style={{ marginTop:16, padding:12, background:"#f5f5f5", borderRadius:8 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}><span style={{ color:"#666" }}>Tu precio</span><strong style={{ color:"#333" }}>${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN</strong></div>
+                  <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0" }}><span style={{ color:"#666" }}>Comisión Nu-B (15%)</span><strong style={{ color:"#e74c3c" }}>- ${(parseFloat(form.precio_base)*0.15).toLocaleString("es-MX")} MXN</strong></div>
+                  <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0 0", borderTop:"1px solid #ddd", marginTop:4 }}><span style={{ fontWeight:600, color:"#333" }}>Tú recibes</span><strong style={{ fontSize:18, color:"#27ae60" }}>${(parseFloat(form.precio_base)*0.85).toLocaleString("es-MX")} MXN</strong></div>
                 </div>
               )}
             </div>
@@ -524,15 +528,15 @@ export default function EditarObra() {
 
           {/* EXTRAS */}
           <div className="form-section">
-            <h3 className="section-title"><Palette size={18} /> Extras</h3>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
+            <h3 className="section-title" style={{ color:"#333" }}><Palette size={18} /> Extras</h3>
+            <div className="checkbox-group" style={{ display:"flex", gap:24 }}>
+              <label className="checkbox-label" style={{ display:"flex", alignItems:"center", gap:8, color:"#333" }}>
                 <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
-                <span className="checkbox-custom" /> Permite enmarcar
+                Permite enmarcar
               </label>
-              <label className="checkbox-label">
+              <label className="checkbox-label" style={{ display:"flex", alignItems:"center", gap:8, color:"#333" }}>
                 <input type="checkbox" name="con_certificado" checked={form.con_certificado} onChange={handleChange} />
-                <span className="checkbox-custom" /> Incluye certificado de autenticidad
+                Incluye certificado de autenticidad
               </label>
             </div>
           </div>
@@ -540,11 +544,11 @@ export default function EditarObra() {
           {/* ETIQUETAS */}
           {etiquetas.length > 0 && (
             <div className="form-section">
-              <h3 className="section-title"><Tag size={18} /> Etiquetas</h3>
-              <div className="tags-grid">
+              <h3 className="section-title" style={{ color:"#333" }}><Tag size={18} /> Etiquetas</h3>
+              <div className="tags-grid" style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                 {etiquetas.map(e => (
                   <button key={e.id_etiqueta} type="button"
-                    className={`tag-btn ${form.etiquetas.includes(e.id_etiqueta) ? "selected" : ""}`}
+                    style={{ padding:"6px 14px", borderRadius:20, border:"1px solid #ddd", background:form.etiquetas.includes(e.id_etiqueta) ? "#FF840E" : "#fff", color:form.etiquetas.includes(e.id_etiqueta) ? "#fff" : "#666", cursor:"pointer", fontSize:12, transition:"all .2s" }}
                     onClick={() => toggleEtiqueta(e.id_etiqueta)}>
                     {e.nombre}
                   </button>
@@ -555,8 +559,8 @@ export default function EditarObra() {
 
           {/* GALERÍA */}
           <div className="form-section">
-            <h3 className="section-title"><FileImage size={18} /> Fotos adicionales
-              <span style={{ fontSize:11, fontWeight:400, color:"rgba(245,240,255,0.4)", marginLeft:8 }}>
+            <h3 className="section-title" style={{ color:"#333" }}><FileImage size={18} /> Fotos adicionales
+              <span style={{ fontSize:11, fontWeight:400, color:"#999", marginLeft:8 }}>
                 {imagenes.length}/6 fotos · máx. 6
               </span>
             </h3>
@@ -565,9 +569,9 @@ export default function EditarObra() {
             <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:10 }}>
               {imagenes.map(img => (
                 <div key={img.id_imagen} style={{ position:"relative", width:90, height:90 }}>
-                  <img src={img.url_imagen} alt="" style={{ width:90, height:90, objectFit:"cover", borderRadius:10, border:`1.5px solid ${img.es_principal ? "#FF840E" : "rgba(255,255,255,0.1)"}` }} />
+                  <img src={img.url_imagen} alt="" style={{ width:90, height:90, objectFit:"cover", borderRadius:10, border:`1.5px solid ${img.es_principal ? "#FF840E" : "#ddd"}` }} />
                   {img.es_principal && (
-                    <span style={{ position:"absolute", bottom:3, left:3, background:"rgba(255,132,14,0.85)", color:"#fff", fontSize:9, fontWeight:800, padding:"1px 5px", borderRadius:4 }}>
+                    <span style={{ position:"absolute", bottom:3, left:3, background:"rgba(255,132,14,0.9)", color:"#fff", fontSize:9, fontWeight:800, padding:"1px 5px", borderRadius:4 }}>
                       PRINCIPAL
                     </span>
                   )}
@@ -581,37 +585,41 @@ export default function EditarObra() {
               ))}
               {imagenes.length < 6 && (
                 <button type="button" onClick={() => galeriaRef.current?.click()} disabled={uploadingGaleria}
-                  style={{ width:90, height:90, borderRadius:10, border:"2px dashed rgba(255,132,14,0.3)", background:"transparent", color:"rgba(245,240,255,0.4)", cursor:"pointer", fontSize:uploadingGaleria ? 12 : 24, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  style={{ width:90, height:90, borderRadius:10, border:"2px dashed #ccc", background:"#fafafa", color:"#999", cursor:"pointer", fontSize:uploadingGaleria ? 12 : 24, display:"flex", alignItems:"center", justifyContent:"center" }}>
                   {uploadingGaleria ? <Loader2 size={18} style={{ animation:"spin 1s linear infinite" }} /> : "+"}
                 </button>
               )}
             </div>
-            <p style={{ fontSize:11, color:"rgba(245,240,255,0.3)", margin:0 }}>
+            <p style={{ fontSize:11, color:"#999", margin:0 }}>
               La foto principal no se puede eliminar desde aquí. Para cambiarla sube una nueva imagen arriba.
             </p>
           </div>
 
           {/* RESUMEN */}
-          <div className="form-section obra-summary">
-            <h3 className="section-title">✦ Resumen</h3>
-            <div className="summary-grid">
+          <div className="form-section obra-summary" style={{ background:"#f9f9f9", padding:16, borderRadius:12 }}>
+            <h3 className="section-title" style={{ color:"#333" }}>✦ Resumen</h3>
+            <div style={{ display:"flex", gap:16, alignItems:"center" }}>
               {previewSrc && (
-                <img src={previewSrc} alt="preview" style={{ width:100, height:100, objectFit:"cover", borderRadius:10 }}
+                <img src={previewSrc} alt="preview" style={{ width:80, height:80, objectFit:"cover", borderRadius:10 }}
                   onError={e => { (e.target as HTMLImageElement).style.display="none"; }} />
               )}
-              <div className="summary-info">
-                <p className="summary-title">{form.titulo || "Sin título"}</p>
-                <p className="summary-cat">{categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}</p>
-                {form.tecnica     && <p className="summary-tech">{form.tecnica}</p>}
-                {form.precio_base && <p className="summary-price">${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN</p>}
+              <div>
+                <p style={{ fontSize:16, fontWeight:700, color:"#333", margin:0 }}>{form.titulo || "Sin título"}</p>
+                <p style={{ fontSize:12, color:"#666", margin:"4px 0" }}>{categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}</p>
+                {form.tecnica     && <p style={{ fontSize:12, color:"#666", margin:"2px 0" }}>{form.tecnica}</p>}
+                {form.precio_base && <p style={{ fontSize:14, fontWeight:700, color:"#27ae60", margin:"4px 0 0" }}>${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN</p>}
               </div>
             </div>
           </div>
 
           {/* BOTONES */}
-          <div className="form-actions two-btns">
-            <button type="button" className="btn-back" onClick={() => navigate("/artista/mis-obras")}>← Cancelar</button>
-            <button type="submit" className="btn-submit" disabled={saving}>
+          <div className="form-actions two-btns" style={{ display:"flex", gap:16, marginTop:24 }}>
+            <button type="button" className="btn-back" onClick={() => navigate("/artista/mis-obras")}
+              style={{ flex:1, padding:"12px", border:"1px solid #ddd", background:"#fff", borderRadius:8, color:"#666", cursor:"pointer", fontWeight:600 }}>
+              ← Cancelar
+            </button>
+            <button type="submit" className="btn-submit" disabled={saving}
+              style={{ flex:1, padding:"12px", border:"none", background:"#FF840E", borderRadius:8, color:"#fff", cursor:"pointer", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
               {saving
                 ? <><Loader2 size={18} className="spin" /> Guardando...</>
                 : <><Save size={18} /> Guardar cambios</>}
