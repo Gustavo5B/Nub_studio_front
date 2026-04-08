@@ -2,10 +2,31 @@
 import { useEffect, useState } from "react";
 import { useToast, type Toast, type ToastType } from "../../context/ToastContext";
 
-const CONFIG: Record<ToastType, { color: string; bg: string; border: string; icon: string; label: string }> = {
-  ok:   { color: "#3DDB85", bg: "rgba(61,219,133,0.10)",  border: "rgba(61,219,133,0.30)",  icon: "✓", label: "Éxito"  },
-  err:  { color: "#CC59AD", bg: "rgba(204,89,173,0.10)",  border: "rgba(204,89,173,0.30)",  icon: "✕", label: "Error"  },
-  warn: { color: "#FFC110", bg: "rgba(255,193,16,0.10)",  border: "rgba(255,193,16,0.30)",  icon: "⚠", label: "Aviso"  },
+const CONFIG: Record<ToastType, { color: string; bg: string; border: string; icon: string; label: string; textColor: string }> = {
+  ok:   { 
+    color: "#3DDB85", 
+    bg: "rgba(61,219,133,0.10)",  
+    border: "rgba(61,219,133,0.30)",  
+    icon: "✓", 
+    label: "Éxito",
+    textColor: "#1B5E20"  // ← Verde oscuro (visible)
+  },
+  err:  { 
+    color: "#CC59AD", 
+    bg: "rgba(204,89,173,0.10)",  
+    border: "rgba(204,89,173,0.30)",  
+    icon: "✕", 
+    label: "Error",
+    textColor: "#B71C1C"  // ← Rojo oscuro (visible)
+  },
+  warn: { 
+    color: "#FFC110", 
+    bg: "rgba(255,193,16,0.10)",  
+    border: "rgba(255,193,16,0.30)",  
+    icon: "⚠", 
+    label: "Aviso",
+    textColor: "#E65100"  // ← Naranja oscuro (visible)
+  },
 };
 
 const css = `
@@ -28,7 +49,7 @@ const css = `
     padding: 2px 6px; border-radius: 6px; font-size: 14px;
     line-height: 1; transition: background 0.15s; flex-shrink: 0;
   }
-  .toast-close:hover { background: rgba(255,255,255,0.1); }
+  .toast-close:hover { background: rgba(0,0,0,0.08); }
 `;
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -73,7 +94,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         {cfg.icon}
       </div>
 
-      {/* Texto */}
+      {/* Texto - AHORA CON COLOR OSCURO Y VISIBLE */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 11, fontWeight: 800, color: cfg.color,
@@ -81,13 +102,26 @@ function ToastItem({ toast }: { toast: Toast }) {
         }}>
           {cfg.label}
         </div>
-        <div style={{ fontSize: 13.5, color: "#f5f0ff", lineHeight: 1.5, wordBreak: "break-word" }}>
+        <div style={{ 
+          fontSize: 13.5, 
+          color: cfg.textColor,  // ← CAMBIADO: ahora usa texto oscuro
+          lineHeight: 1.5, 
+          wordBreak: "break-word",
+          fontWeight: 500,
+        }}>
           {toast.message}
         </div>
       </div>
 
-      {/* Cerrar */}
-      <button className="toast-close" onClick={handleClose} style={{ color: "rgba(245,240,255,0.4)" }}>
+      {/* Cerrar - AHORA CON COLOR OSCURO */}
+      <button 
+        className="toast-close" 
+        onClick={handleClose} 
+        style={{ 
+          color: cfg.textColor,
+          opacity: 0.6,
+        }}
+      >
         ✕
       </button>
 
