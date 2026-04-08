@@ -1,8 +1,9 @@
 // src/pages/public/Artistas.tsx (REFACTORIZADO - LAYOUT VERTICAL)
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Search, X, Grid3x3, LayoutList, Layers } from "lucide-react";
 import { prefetchArtista } from "../../utils/apiCache";
+import { authService } from "../../services/authService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -484,6 +485,9 @@ export default function Artistas() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const artistasRef = useRef<HTMLDivElement>(null);
 
+  const isLoggedIn = authService.isAuthenticated();
+  const userRol    = localStorage.getItem("userRol") || "";
+
   const pageRef = useReveal(0.10);
 
   const cursorOn = useCallback(() => {}, []);
@@ -554,7 +558,7 @@ export default function Artistas() {
   }, 0);
 
   return (
-    <div ref={pageRef} style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh" }}>
+    <div ref={pageRef} style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh", animation: "museumIn .45s ease both" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap');
 
@@ -575,6 +579,12 @@ export default function Artistas() {
         }
 
         @keyframes fadeL    { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes museumIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+        .art-nav-link { display:flex; align-items:center; gap:9px; font-size:9.5px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(20,18,30,.35); text-decoration:none; transition:color .25s; font-family:'Nexa-Heavy',sans-serif; }
+        .art-nav-link::before { content:''; display:block; width:12px; height:1px; background:currentColor; flex-shrink:0; transition:width .28s; }
+        .art-nav-link:hover { color:#14121E; }
+        .art-nav-link:hover::before { width:22px; }
         @keyframes fadeI    { from{opacity:0} to{opacity:1} }
         @keyframes pulse    { 0%, 100% { opacity: 0.6 } 50% { opacity: 1 } }
         @keyframes slideDown { 0% { transform: translateX(-50%) translateY(0); opacity: 0.6 } 50% { transform: translateX(-50%) translateY(12px); opacity: 1 } 100% { transform: translateX(-50%) translateY(0); opacity: 0.6 } }
@@ -590,27 +600,24 @@ export default function Artistas() {
         input::placeholder { color: ${C.sub}; }
       `}</style>
 
-      {/* ═══ MENÚ NAVEGACIÓN - LADO IZQUIERDO (COMO ANTES) ═══ */}
-      <nav style={{ position: "absolute", top: 40, left: 52, display: "flex", flexDirection: "column", gap: 10, zIndex: 10 }}>
-        <a href="/catalogo" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Galería
-        </a>
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Inicio
-        </a>
-        <a href="/artistas" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Artistas
-        </a>
-        <a href="/blog" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Blog
-        </a>
-        <a href="/sobre-nosotros" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Sobre nosotros
-        </a>
-        <a href="/contacto" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: "9.5px", fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color .25s" }}>
-          <span style={{ display: "block", width: 12, height: 1, background: "currentColor", flexShrink: 0, transition: "width .28s" }} /> Contacto
-        </a>       
+      {/* ═══ MENÚ NAVEGACIÓN ═══ */}
+      <nav style={{ position:"absolute", top:40, left:52, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeL 1.1s ease .3s both" }}>
+        {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
+          <Link key={l} to={to} className="art-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>{l}</Link>
+        ))}
       </nav>
+
+      {/* Auth top-right */}
+      <div style={{ position:"absolute", top:40, right:52, display:"flex", alignItems:"center", gap:12, zIndex:10, animation:"fadeL 1.1s ease .5s both" }}>
+        {!isLoggedIn ? (
+          <>
+            <Link to="/login" style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(20,18,30,.35)", textDecoration:"none", padding:"6px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", transition:"all .22s", fontFamily:"'Nexa-Heavy',sans-serif" }}>Ingresar</Link>
+            <Link to="/register" style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"white", textDecoration:"none", padding:"6px 14px", borderRadius:100, background:"#E8640C", fontFamily:"'Nexa-Heavy',sans-serif" }}>Ser artista</Link>
+          </>
+        ) : (
+          <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(20,18,30,.35)", textDecoration:"none", padding:"6px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
+        )}
+      </div>
 
       {/* ═══ HERO VERTICAL CON BOTÓN DESCUBRE CENTRADO ═══ */}
       <section style={{

@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Heart, Share2, ZoomIn, CheckCircle, Award } from "lucide-react";
+import { Link } from "react-router-dom";
+import { authService } from "../../services/authService";
 import { cacheGet, cacheSet } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -35,6 +37,8 @@ function obraUrl(identifier: string): string {
 export default function DetalleObra() {
   const navigate  = useNavigate();
   const { slug }  = useParams<{ slug: string }>();
+  const isLoggedIn = authService.isAuthenticated();
+  const userRol    = localStorage.getItem("userRol") || "";
 
   const [obra,      setObra]      = useState<any>(null);
   const [loading,   setLoading]   = useState(true);
@@ -181,6 +185,35 @@ export default function DetalleObra() {
 
         @keyframes barIn { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
         @keyframes fadeI { from{opacity:0} to{opacity:1} }
+        @keyframes museumIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+        @keyframes heroImgReveal {
+          0%   { opacity:0; transform:scale(1.09); filter:blur(18px) saturate(0.1) brightness(0.55); }
+          60%  { filter:blur(3px) saturate(0.8) brightness(0.9); }
+          100% { opacity:1; transform:scale(1); filter:blur(0) saturate(1) brightness(1); }
+        }
+        @keyframes bounceUp {
+          0%   { opacity:0; transform:translateY(52px) scale(0.92); }
+          55%  { opacity:1; transform:translateY(-13px) scale(1.035); }
+          75%  { transform:translateY(6px) scale(0.988); }
+          100% { opacity:1; transform:translateY(0) scale(1); }
+        }
+        @keyframes popIn {
+          0%   { opacity:0; transform:scale(0.78) translateY(22px); }
+          58%  { opacity:1; transform:scale(1.08) translateY(-6px); }
+          78%  { transform:scale(0.965) translateY(3px); }
+          100% { opacity:1; transform:scale(1) translateY(0); }
+        }
+        @keyframes slideLeft {
+          0%   { opacity:0; transform:translateX(-36px); }
+          55%  { opacity:1; transform:translateX(7px); }
+          100% { opacity:1; transform:translateX(0); }
+        }
+        @keyframes slideUp {
+          0%   { opacity:0; transform:translateY(28px); }
+          60%  { opacity:1; transform:translateY(-5px); }
+          100% { opacity:1; transform:translateY(0); }
+        }
 
         .ob-nav-link { display:inline-flex; align-items:center; gap:8px; font-size:9px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:white; text-decoration:none; transition:all .25s; border:none; cursor:pointer; font-family:'Nexa-Heavy',sans-serif; background:rgba(13,11,20,.52); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); padding:7px 14px 7px 12px; border-radius:100px; border:1px solid rgba(255,255,255,.12); }
         .ob-nav-link::before { content:''; display:block; width:10px; height:1px; background:rgba(255,255,255,.5); flex-shrink:0; transition:width .28s; }
@@ -206,7 +239,7 @@ export default function DetalleObra() {
       <div ref={dotRef}  className="ob-cursor-dot"/>
       <div ref={ringRef} className="ob-cursor-ring"/>
 
-      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS }}>
+      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, animation:"museumIn .45s ease both" }}>
 
         {/* ════════════════════════════════════
              HERO SPLIT — imagen izq | detalles der
@@ -224,7 +257,7 @@ export default function DetalleObra() {
               <img
                 src={imgActiva || obra.imagen_principal}
                 alt={obra.titulo}
-                style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform .6s cubic-bezier(.2,0,0,1)" }}
+                style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform .6s cubic-bezier(.2,0,0,1)", animation:"heroImgReveal 1.9s cubic-bezier(.16,1,.3,1) both" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "scale(1.04)"}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = "scale(1)"}
               />
@@ -239,7 +272,7 @@ export default function DetalleObra() {
 
             {/* NAV */}
             <nav style={{ position:"absolute", top:30, left:44, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
-              {[{ l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Inicio", to:"/" }].map(({ l, to }) => (
+              {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
                 <button key={l} className="ob-nav-link"
                   onClick={e => { e.stopPropagation(); navigate(to); }}
                   onMouseEnter={e => { e.stopPropagation(); cursorOff(); dotRef.current?.classList.remove("cur-light"); ringRef.current?.classList.remove("cur-light"); }}
@@ -284,6 +317,18 @@ export default function DetalleObra() {
           {/* ── PANEL DERECHO: detalles ── */}
           <div style={{ background:"#fff", overflowY:"auto", overflowX:"hidden", padding:"40px 48px 48px", display:"flex", flexDirection:"column", gap:24, borderLeft:`3px solid ${color}` }}>
 
+            {/* Auth */}
+            <div style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:10 }}>
+              {!isLoggedIn ? (
+                <>
+                  <Link to="/login" style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", textDecoration:"none", padding:"5px 13px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", transition:"all .22s", fontFamily:"'Nexa-Heavy',sans-serif" }}>Ingresar</Link>
+                  <Link to="/register" style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"white", textDecoration:"none", padding:"5px 13px", borderRadius:100, background:color, fontFamily:"'Nexa-Heavy',sans-serif" }}>Ser artista</Link>
+                </>
+              ) : (
+                <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", textDecoration:"none", padding:"5px 13px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
+              )}
+            </div>
+
             {/* Volver */}
             <button onClick={() => navigate(-1 as any)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
               style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:8, background:"none", border:"none", color:"rgba(0,0,0,.28)", fontSize:9, fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"color .2s", padding:0 }}
@@ -292,7 +337,7 @@ export default function DetalleObra() {
             >← Volver</button>
 
             {/* Badges */}
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", animation:"popIn .6s cubic-bezier(.16,1,.3,1) .2s both" }}>
               {obra.categoria_nombre && (
                 <span style={{ fontSize:8, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:color, fontFamily:NEXA_HEAVY, padding:"4px 12px", borderRadius:100, background:`${color}18`, border:`1px solid ${color}30` }}>{obra.categoria_nombre}</span>
               )}
@@ -305,11 +350,11 @@ export default function DetalleObra() {
 
             {/* Título + artista */}
             <div>
-              <h1 style={{ fontFamily:SERIF, fontSize:"clamp(26px,3vw,46px)", fontWeight:900, color:C.ink, lineHeight:.95, letterSpacing:"-.02em", margin:"0 0 18px" }}>
+              <h1 style={{ fontFamily:SERIF, fontSize:"clamp(26px,3vw,46px)", fontWeight:900, color:C.ink, lineHeight:.95, letterSpacing:"-.02em", margin:"0 0 18px", animation:"bounceUp .95s cubic-bezier(.16,1,.3,1) .3s both" }}>
                 {obra.titulo}
               </h1>
               <button onClick={() => navigate(`/artistas/${obra.id_artista}`)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0 }}
+                style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0, animation:"slideLeft .65s cubic-bezier(.16,1,.3,1) .45s both" }}
               >
                 <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", border:`2px solid ${C.pink}44`, flexShrink:0 }}>
                   {obra.artista_foto
@@ -327,7 +372,7 @@ export default function DetalleObra() {
             <div style={{ height:1, background:"rgba(0,0,0,.07)" }}/>
 
             {/* Precio */}
-            <div>
+            <div style={{ animation:"bounceUp .8s cubic-bezier(.16,1,.3,1) .5s both" }}>
               <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", fontFamily:NEXA_HEAVY, marginBottom:6 }}>
                 {tamSel ? tamSel.tamaño_nombre : "Precio base"}
               </div>
@@ -366,7 +411,7 @@ export default function DetalleObra() {
             <div style={{ height:1, background:"rgba(0,0,0,.07)" }}/>
 
             {/* CTAs */}
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ display:"flex", flexDirection:"column", gap:10, animation:"slideUp .7s cubic-bezier(.16,1,.3,1) .65s both" }}>
               <button onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width:"100%", padding:"14px 24px", borderRadius:100, background:color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"opacity .22s, transform .22s" }}
                 onMouseOver={e => { (e.currentTarget as HTMLElement).style.opacity=".85"; (e.currentTarget as HTMLElement).style.transform="scale(1.015)"; }}

@@ -27,13 +27,19 @@ interface ObraResumen {
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+const SERIF      = "'SolveraLorvane', serif";
+const SANS       = "'Outfit', sans-serif";
+const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
+
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
-  .mc-wrap { padding: 36px 40px; max-width: 900px; font-family: 'Outfit', sans-serif; }
+  @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
+  @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
+  .mc-wrap { padding: 36px 40px; max-width: 900px; font-family: ${SANS}; }
   .mc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
-  .mc-title { font-size: 22px; font-weight: 700; color: #1a1830; margin: 0; }
-  .mc-subtitle { font-size: 13px; color: #7c7a8e; margin: 4px 0 0; }
-  .mc-btn-new { background: #E8640C; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
+  .mc-title { font-size: 22px; font-weight: 900; color: #1a1830; margin: 0; font-family: ${SERIF}; }
+  .mc-subtitle { font-size: 13px; color: #7c7a8e; margin: 4px 0 0; font-family: ${SANS}; }
+  .mc-btn-new { background: #E8640C; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: ${SANS}; transition: background .2s; }
   .mc-btn-new:hover { background: #e07200; }
   .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
   .mc-card { background: #fff; border: 1px solid #e8e6f0; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow .2s; }
@@ -42,31 +48,31 @@ const css = `
   .mc-card-img-placeholder { width: 100%; height: 150px; background: #f3f2f8; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #c5c3d4; }
   .mc-card-body { padding: 14px 16px; }
   .mc-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-  .mc-card-nombre { font-size: 15px; font-weight: 700; color: #1a1830; margin: 0; }
-  .mc-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .mc-card-nombre { font-size: 15px; font-weight: 700; color: #1a1830; margin: 0; font-family: ${NEXA_HEAVY}; }
+  .mc-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; font-family: ${SANS}; }
   .mc-badge-borrador { background: #f3f2f8; color: #7c7a8e; }
   .mc-badge-publicada { background: #eafaf3; color: #0e8a50; }
-  .mc-card-obras { font-size: 12px; color: #9896a8; margin-bottom: 10px; }
-  .mc-card-historia { font-size: 12.5px; color: #5a5870; margin: 0 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .mc-card-obras { font-size: 12px; color: #9896a8; margin-bottom: 10px; font-family: ${SANS}; }
+  .mc-card-historia { font-size: 12.5px; color: #5a5870; margin: 0 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: ${SANS}; }
   .mc-card-actions { display: flex; gap: 8px; }
-  .mc-btn-edit { flex: 1; background: #f3f2f8; color: #1a1830; border: none; padding: 7px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
+  .mc-btn-edit { flex: 1; background: #f3f2f8; color: #1a1830; border: none; padding: 7px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: ${SANS}; transition: background .2s; }
   .mc-btn-edit:hover { background: #e8e6f0; }
-  .mc-btn-del { background: #fff0f2; color: #c4304a; border: 1px solid #f5c6cc; padding: 7px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
+  .mc-btn-del { background: #fff0f2; color: #c4304a; border: 1px solid #f5c6cc; padding: 7px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: ${SANS}; transition: background .2s; }
   .mc-btn-del:hover { background: #fde8eb; }
   .mc-empty { text-align: center; padding: 60px 20px; color: #9896a8; }
   .mc-empty-icon { font-size: 42px; margin-bottom: 12px; }
-  .mc-empty-title { font-size: 16px; font-weight: 700; color: #5a5870; margin: 0 0 6px; }
-  .mc-empty-sub { font-size: 13px; margin: 0 0 20px; }
+  .mc-empty-title { font-size: 16px; font-weight: 900; color: #5a5870; margin: 0 0 6px; font-family: ${NEXA_HEAVY}; }
+  .mc-empty-sub { font-size: 13px; margin: 0 0 20px; font-family: ${SANS}; }
   .mc-spinner { display: flex; align-items: center; justify-content: center; height: 200px; }
   .mc-spin { width: 32px; height: 32px; border: 3px solid #e8e6f0; border-top-color: #E8640C; border-radius: 50%; animation: mc-rotate .8s linear infinite; }
   @keyframes mc-rotate { to { transform: rotate(360deg); } }
   .mc-confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-  .mc-confirm-box { background: #fff; border-radius: 14px; padding: 28px 32px; max-width: 380px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.15); font-family: 'Outfit', sans-serif; }
-  .mc-confirm-title { font-size: 16px; font-weight: 700; color: #1a1830; margin: 0 0 8px; }
-  .mc-confirm-msg { font-size: 13px; color: #5a5870; margin: 0 0 20px; }
+  .mc-confirm-box { background: #fff; border-radius: 14px; padding: 28px 32px; max-width: 380px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.15); font-family: ${SANS}; }
+  .mc-confirm-title { font-size: 16px; font-weight: 900; color: #1a1830; margin: 0 0 8px; font-family: ${NEXA_HEAVY}; }
+  .mc-confirm-msg { font-size: 13px; color: #5a5870; margin: 0 0 20px; font-family: ${SANS}; }
   .mc-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
-  .mc-confirm-cancel { background: #f3f2f8; color: #5a5870; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; }
-  .mc-confirm-del { background: #c4304a; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; }
+  .mc-confirm-cancel { background: #f3f2f8; color: #5a5870; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: ${SANS}; }
+  .mc-confirm-del { background: #c4304a; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: ${SANS}; }
   @media (max-width: 600px) { .mc-wrap { padding: 20px 16px; } }
 `;
 

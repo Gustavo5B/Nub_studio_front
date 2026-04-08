@@ -180,7 +180,7 @@ export default function DetalleArtistaPublico() {
 
   return (
     <>
-      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden" }}>
+      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden", animation:"museumIn .45s ease both" }}>
         <style>{`
           @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display:swap; }
           @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); font-display:swap; }
@@ -229,6 +229,7 @@ export default function DetalleArtistaPublico() {
           @keyframes slideCarousel { from{opacity:0;transform:translateX(32px) scale(.97)} to{opacity:1;transform:translateX(0) scale(1)} }
           @keyframes fadeI { from{opacity:0} to{opacity:1} }
           @keyframes barIn { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
+          @keyframes museumIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
           @keyframes heroImgReveal {
             0%   { opacity:0; transform:scale(1.09); filter:blur(18px) saturate(0.1) brightness(0.6); }
@@ -286,7 +287,7 @@ export default function DetalleArtistaPublico() {
           <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg, transparent, ${color} 25%, ${color} 75%, transparent)`, animation:"barIn 1.8s cubic-bezier(.16,1,.3,1) both", zIndex:10 }}/>
 
           <nav style={{ position:"absolute", top:30, left:52, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
-            {[{ l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
+            {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
               <Link key={l} to={to} className="det-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>{l}</Link>
             ))}
           </nav>

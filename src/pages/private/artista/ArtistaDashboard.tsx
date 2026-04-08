@@ -18,6 +18,10 @@ const C = {
 };
 const CS = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.055)";
 
+const SERIF      = "'SolveraLorvane', serif";
+const SANS       = "'Outfit', sans-serif";
+const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
+
 interface Obra {
   id_obra: number; titulo: string; precio_base?: number; estado: string;
   imagen_principal?: string; slug?: string; fecha_creacion?: string;
@@ -123,7 +127,7 @@ export default function ArtistaDashboard() {
                 <Sparkles size={16} color={C.gold} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: 1.5 }}>Portal del artista</span>
               </div>
-              <h1 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: "0 0 8px", lineHeight: 1.1, fontFamily: "'Outfit', sans-serif" }}>
+              <h1 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: "0 0 8px", lineHeight: 1.1, fontFamily: SERIF }}>
                 Hola, {artista?.nombre_artistico || nombre} ✦
               </h1>
               <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>
@@ -132,7 +136,7 @@ export default function ArtistaDashboard() {
               </p>
             </div>
             <button onClick={() => navigate("/artista/nueva-obra")}
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 12, background: C.orange, border: "none", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit',sans-serif", boxShadow: `0 8px 24px ${C.orange}40` }}>
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 12, background: C.orange, border: "none", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: SANS, boxShadow: `0 8px 24px ${C.orange}40` }}>
               <Plus size={16} /> Nueva obra
             </button>
           </div>
@@ -152,7 +156,7 @@ export default function ArtistaDashboard() {
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "none"; el.style.boxShadow = "none"; }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${s.grad})` }} />
               <div style={{ width: 44, height: 44, borderRadius: 12, marginBottom: 16, background: `linear-gradient(135deg,${s.grad})`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", boxShadow: `0 6px 16px ${s.shadow}35` }}>{s.icon}</div>
-              <div style={{ fontSize: 34, fontWeight: 900, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 4 }}><Counter to={s.value} /></div>
+              <div style={{ fontSize: 34, fontWeight: 900, color: C.text, fontFamily: NEXA_HEAVY, marginBottom: 4 }}><Counter to={s.value} /></div>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
             </div>
           ))}
@@ -165,10 +169,10 @@ export default function ArtistaDashboard() {
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, overflow: "hidden", boxShadow: CS }}>
             <div style={{ padding: "20px 24px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: C.text, margin: "0 0 2px", fontFamily: "'Outfit',sans-serif" }}>Obras recientes</h3>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: C.text, margin: "0 0 2px", fontFamily: SANS }}>Obras recientes</h3>
                 <p style={{ fontSize: 11.5, color: C.muted, margin: 0 }}>{obras.length} en total</p>
               </div>
-              <button onClick={() => navigate("/artista/mis-obras")} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: `1px solid ${C.border}`, borderRadius: 8, color: C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: "6px 12px", fontFamily: "'Outfit',sans-serif" }}>
+              <button onClick={() => navigate("/artista/mis-obras")} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: `1px solid ${C.border}`, borderRadius: 8, color: C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: "6px 12px", fontFamily: SANS }}>
                 Ver todas <ArrowUpRight size={13} />
               </button>
             </div>
@@ -176,7 +180,7 @@ export default function ArtistaDashboard() {
               <div style={{ padding: "48px 24px", textAlign: "center" }}>
                 <Palette size={36} color={C.border} style={{ marginBottom: 14 }} />
                 <p style={{ fontSize: 13, color: C.muted, margin: "0 0 18px" }}>Aún no tienes obras</p>
-                <button onClick={() => navigate("/artista/nueva-obra")} style={{ padding: "9px 20px", borderRadius: 10, background: C.orange, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+                <button onClick={() => navigate("/artista/nueva-obra")} style={{ padding: "9px 20px", borderRadius: 10, background: C.orange, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>
                   Subir primera obra
                 </button>
               </div>
@@ -195,7 +199,7 @@ export default function ArtistaDashboard() {
                   </div>
                   <div style={{ flex: 1, overflow: "hidden" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>{obra.titulo}</div>
-                    <div style={{ fontSize: 12, color: C.orange, fontWeight: 700 }}>{obra.precio_base ? `$${Number(obra.precio_base).toLocaleString("es-MX")} MXN` : "Sin precio"}</div>
+                    <div style={{ fontSize: 12, color: C.orange, fontWeight: 700, fontFamily: SANS }}>{obra.precio_base ? `$${Number(obra.precio_base).toLocaleString("es-MX")} MXN` : "Sin precio"}</div>
                   </div>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, color: bdg.color, background: `${bdg.color}12`, border: `1px solid ${bdg.color}40`, textTransform: "uppercase", whiteSpace: "nowrap" }}>
                     {obra.estado === "publicada" && <CheckCircle size={10} />}
@@ -227,7 +231,7 @@ export default function ArtistaDashboard() {
                 </div>
               </div>
               <button onClick={() => navigate("/artista/perfil")}
-                style={{ width: "100%", padding: "8px", borderRadius: 9, background: "#F3F2F8", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+                style={{ width: "100%", padding: "8px", borderRadius: 9, background: "#F3F2F8", border: `1px solid ${C.border}`, color: C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>
                 Editar perfil
               </button>
             </div>
@@ -243,7 +247,7 @@ export default function ArtistaDashboard() {
                   Tienes <strong style={{ color: C.pink }}>{stats.rechazadas} obra{stats.rechazadas > 1 ? "s" : ""}</strong> rechazadas.
                 </p>
                 <button onClick={() => navigate("/artista/mis-obras")}
-                  style={{ width: "100%", padding: "7px", borderRadius: 8, background: `${C.pink}12`, border: `1px solid ${C.pink}40`, color: C.pink, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+                  style={{ width: "100%", padding: "7px", borderRadius: 8, background: `${C.pink}12`, border: `1px solid ${C.pink}40`, color: C.pink, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>
                   Revisar ahora
                 </button>
               </div>
@@ -265,6 +269,8 @@ export default function ArtistaDashboard() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+        @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
+        @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin   { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
