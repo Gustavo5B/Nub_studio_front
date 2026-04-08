@@ -1,5 +1,5 @@
 // src/pages/private/admin/ListaArtistas.tsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -7,6 +7,7 @@ import {
   CheckCircle, Clock, XCircle, UserPlus, Phone, Mail,
   ChevronLeft, ChevronRight, AlertTriangle,
   Star, Check, Ban, Bell, ShieldOff, UserCheck, Users,
+  Home, ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 
@@ -106,8 +107,8 @@ function CardSkeleton() {
 }
 
 // ── Modal Eliminar ────────────────────────────────────────────────────────────
-function ModalEliminar({ artista, onConfirm, onCancel }: {
-  artista: ArtistaItem; onConfirm: () => void; onCancel: () => void;
+function ModalEliminar({ artista, onConfirm, onCancel, cursorOn, cursorOff }: {
+  artista: ArtistaItem; onConfirm: () => void; onCancel: () => void; cursorOn: () => void; cursorOff: () => void;
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,18,30,0.45)", backdropFilter: "blur(6px)" }}>
@@ -122,11 +123,11 @@ function ModalEliminar({ artista, onConfirm, onCancel }: {
         <div style={{ fontSize: 12.5, color: C.creamMut, marginBottom: 22 }}>Sus obras seguirán en el sistema.</div>
         <div style={{ height: 1, background: C.border, marginBottom: 18 }} />
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onCancel}
+          <button onClick={onCancel} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
             style={{ flex: 1, padding: "10px", borderRadius: 9, border: `1px solid ${C.border}`, background: C.bg, color: C.creamSub, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FB }}>
             Cancelar
           </button>
-          <button onClick={onConfirm}
+          <button onClick={onConfirm} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
             style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: C.red, color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FB }}>
             Sí, eliminar
           </button>
@@ -137,8 +138,8 @@ function ModalEliminar({ artista, onConfirm, onCancel }: {
 }
 
 // ── Modal Estado ──────────────────────────────────────────────────────────────
-function ModalEstado({ artista, onConfirm, onCancel }: {
-  artista: ArtistaItem; onConfirm: (estado: string, motivo?: string) => void; onCancel: () => void;
+function ModalEstado({ artista, onConfirm, onCancel, cursorOn, cursorOff }: {
+  artista: ArtistaItem; onConfirm: (estado: string, motivo?: string) => void; onCancel: () => void; cursorOn: () => void; cursorOff: () => void;
 }) {
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
@@ -158,7 +159,7 @@ function ModalEstado({ artista, onConfirm, onCancel }: {
           <div style={{ width: 44, height: 44, borderRadius: 12, background: `${estadoActual.color}12`, border: `1px solid ${estadoActual.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <EstadoActualIcon size={20} color={estadoActual.color} strokeWidth={2} />
           </div>
-          <button onClick={onCancel} style={{ width: 28, height: 28, borderRadius: 7, background: C.bg, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+          <button onClick={onCancel} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ width: 28, height: 28, borderRadius: 7, background: C.bg, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <X size={13} color={C.creamMut} />
           </button>
         </div>
@@ -199,7 +200,7 @@ function ModalEstado({ artista, onConfirm, onCancel }: {
             {opciones.map(({ estado, label, color, icon: Icon }) => {
               const sel = seleccionado === estado;
               return (
-                <button key={estado} onClick={() => { setSeleccionado(estado); setMotivo(""); }}
+                <button key={estado} onClick={() => { setSeleccionado(estado); setMotivo(""); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, cursor: "pointer", border: `1.5px solid ${sel ? `${color}45` : C.border}`, background: sel ? `${color}10` : C.bg, transition: "all .15s", textAlign: "left" }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: `${color}12`, border: `1px solid ${color}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon size={14} color={color} strokeWidth={2} />
@@ -223,13 +224,15 @@ function ModalEstado({ artista, onConfirm, onCancel }: {
         )}
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onCancel}
+          <button onClick={onCancel} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
             style={{ flex: 1, padding: "10px", borderRadius: 9, border: `1px solid ${C.border}`, background: C.bg, color: C.creamSub, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FB }}>
             Cancelar
           </button>
           <button
             onClick={() => { if (!seleccionado) return; onConfirm(seleccionado, requiereMotivo ? motivo : undefined); }}
             disabled={!seleccionado}
+            onMouseEnter={cursorOn}
+            onMouseLeave={cursorOff}
             style={{
               flex: 1.5, padding: "10px", borderRadius: 9, fontWeight: 700, fontSize: 13,
               cursor: seleccionado ? "pointer" : "not-allowed", fontFamily: FB, transition: "all .15s",
@@ -246,15 +249,36 @@ function ModalEstado({ artista, onConfirm, onCancel }: {
   );
 }
 
-// ── Artista Card ──────────────────────────────────────────────────────────────
-function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar, onCambiarEstado }: {
+// ── Artista Card (CORREGIDO: sin duplicados onMouseEnter/Leave) ─────────────────
+function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar, onCambiarEstado, cursorOn, cursorOff }: {
   artista: ArtistaItem; avatarColor: string;
   onVerDetalle: () => void; onEditar: () => void; onEliminar: () => void; onCambiarEstado: () => void;
+  cursorOn: () => void; cursorOff: () => void;
 }) {
   const estado     = ESTADOS[artista.estado] || ESTADOS.pendiente;
   const EstadoIcon = estado.icon;
   const esPend     = artista.estado === "pendiente";
   const initials   = artista.nombre_completo?.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase() || "?";
+
+  // Funciones combinadas para hover
+  const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
+    cursorOn();
+    e.currentTarget.style.background = `${estado.color}20`;
+  };
+  const handleMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
+    cursorOff();
+    e.currentTarget.style.background = `${estado.color}10`;
+  };
+  const handleActionHover = (color: string, e: React.MouseEvent<HTMLElement>) => {
+    cursorOn();
+    e.currentTarget.style.background = `${color}18`;
+    e.currentTarget.style.borderColor = `${color}40`;
+  };
+  const handleActionLeave = (color: string, e: React.MouseEvent<HTMLElement>) => {
+    cursorOff();
+    e.currentTarget.style.background = `${color}08`;
+    e.currentTarget.style.borderColor = `${color}20`;
+  };
 
   return (
     <div style={{ background: C.card, borderRadius: 14, boxShadow: esPend ? `0 0 0 1.5px ${C.gold}40, ${CS}` : CS, overflow: "hidden", transition: "all .18s", cursor: "default", display: "flex", flexDirection: "column", position: "relative" }}
@@ -267,7 +291,6 @@ function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar,
         </div>
       )}
 
-      {/* Header */}
       <div style={{ height: 60, background: `linear-gradient(135deg, ${avatarColor}18, ${avatarColor}08)`, position: "relative", borderBottom: `1px solid ${C.border}` }}>
         <div style={{ position: "absolute", bottom: -22, left: "50%", transform: "translateX(-50%)", width: 44, height: 44, borderRadius: "50%", border: `2.5px solid ${C.card}`, background: artista.foto_perfil ? "transparent" : `${avatarColor}18`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: CS, zIndex: 1 }}>
           {artista.foto_perfil
@@ -276,7 +299,6 @@ function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar,
         </div>
       </div>
 
-      {/* Body */}
       <div style={{ padding: "30px 16px 14px", display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: C.cream, fontFamily: FB, textAlign: "center", lineHeight: 1.2, marginBottom: 2 }}>
           {artista.nombre_completo}
@@ -295,7 +317,6 @@ function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar,
           : <div style={{ marginBottom: 10 }} />
         }
 
-        {/* Stats */}
         <div style={{ display: "flex", gap: 6, width: "100%", marginBottom: 10 }}>
           <div style={{ flex: 1, background: `${C.orange}08`, border: `1px solid ${C.orange}18`, borderRadius: 8, padding: "6px 8px", textAlign: "center" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.orange, fontFamily: FM, lineHeight: 1 }}>{artista.porcentaje_comision ?? 15}%</div>
@@ -307,7 +328,6 @@ function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar,
           </div>
         </div>
 
-        {/* Contacto */}
         {(artista.correo || artista.telefono) && (
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 3, marginBottom: 10, padding: "7px 9px", background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
             {artista.correo && (
@@ -326,21 +346,24 @@ function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar,
 
         <div style={{ height: 1, width: "100%", background: C.border, marginBottom: 10 }} />
 
-        {/* Footer: estado + acciones */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 6 }}>
-          <button onClick={onCambiarEstado}
-            style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 100, background: `${estado.color}10`, border: `1px solid ${estado.color}28`, color: estado.color, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FB }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${estado.color}20`}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${estado.color}10`}>
+          {/* Botón de estado */}
+          <button
+            onClick={onCambiarEstado}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 100, background: `${estado.color}10`, border: `1px solid ${estado.color}28`, color: estado.color, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FB }}>
             <EstadoIcon size={10} strokeWidth={2.5} />{estado.label}
           </button>
 
           <div style={{ display: "flex", gap: 4 }}>
             {esPend && (
-              <button onClick={onCambiarEstado} title="Revisar solicitud"
-                style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 7, background: `${C.gold}10`, border: `1px solid ${C.gold}30`, color: C.gold, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: FB }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${C.gold}20`}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${C.gold}10`}>
+              <button
+                onClick={onCambiarEstado}
+                title="Revisar solicitud"
+                onMouseEnter={(e) => { cursorOn(); e.currentTarget.style.background = `${C.gold}20`; }}
+                onMouseLeave={(e) => { cursorOff(); e.currentTarget.style.background = `${C.gold}10`; }}
+                style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 7, background: `${C.gold}10`, border: `1px solid ${C.gold}30`, color: C.gold, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: FB }}>
                 <Bell size={9} /> Revisar
               </button>
             )}
@@ -349,10 +372,13 @@ function ArtistaCard({ artista, avatarColor, onVerDetalle, onEditar, onEliminar,
               { icon: Edit2,  color: C.blue,   action: onEditar,     title: "Editar"      },
               { icon: Trash2, color: C.red,    action: onEliminar,   title: "Eliminar"    },
             ] as const).map(({ icon: Icon, color, action, title }) => (
-              <button key={title} onClick={action} title={title}
-                style={{ width: 28, height: 28, borderRadius: 7, background: `${color}08`, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all .15s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${color}18`; (e.currentTarget as HTMLElement).style.borderColor = `${color}40`; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${color}08`; (e.currentTarget as HTMLElement).style.borderColor = `${color}20`; }}>
+              <button
+                key={title}
+                onClick={action}
+                title={title}
+                onMouseEnter={(e) => handleActionHover(color, e)}
+                onMouseLeave={(e) => handleActionLeave(color, e)}
+                style={{ width: 28, height: 28, borderRadius: 7, background: `${color}08`, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all .15s" }}>
                 <Icon size={12} color={color} strokeWidth={2} />
               </button>
             ))}
@@ -378,6 +404,50 @@ export default function ListaArtistas() {
   const [pendientes,    setPendientes]    = useState(0);
   const [modalEliminar, setModalEliminar] = useState<ArtistaItem | null>(null);
   const [modalEstado,   setModalEstado]   = useState<ArtistaItem | null>(null);
+
+  // Cursor personalizado
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+    document.body.style.cursor = "none";
+    let rx = 0, ry = 0;
+    let rafId: number;
+    const onMove = (e: MouseEvent) => {
+      const { clientX: mx, clientY: my } = e;
+      if (dotRef.current) {
+        dotRef.current.style.left = `${mx}px`;
+        dotRef.current.style.top = `${my}px`;
+      }
+      const animate = () => {
+        rx += (mx - rx) * 0.15;
+        ry += (my - ry) * 0.15;
+        if (ringRef.current) {
+          ringRef.current.style.left = `${rx}px`;
+          ringRef.current.style.top = `${ry}px`;
+        }
+        rafId = requestAnimationFrame(animate);
+      };
+      cancelAnimationFrame(rafId);
+      animate();
+    };
+    document.addEventListener("mousemove", onMove);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(rafId);
+      document.body.style.cursor = "";
+    };
+  }, []);
+
+  const cursorOn = useCallback(() => {
+    dotRef.current?.classList.add("cur-over");
+    ringRef.current?.classList.add("cur-over");
+  }, []);
+  const cursorOff = useCallback(() => {
+    dotRef.current?.classList.remove("cur-over");
+    ringRef.current?.classList.remove("cur-over");
+  }, []);
 
   const cargarArtistas = useCallback(async () => {
     setLoading(true);
@@ -461,18 +531,77 @@ export default function ListaArtistas() {
         @keyframes fadeUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
-        input::placeholder { color: #C4C2D0; }
-        textarea::placeholder { color: #C4C2D0; }
+
+        .cur-dot {
+          position: fixed; width: 6px; height: 6px; border-radius: 50%;
+          background: #14121E; pointer-events: none; z-index: 99999;
+          transform: translate(-50%, -50%);
+          transition: width .22s, height .22s, background .22s;
+        }
+        .cur-ring {
+          position: fixed; width: 32px; height: 32px; border-radius: 50%;
+          border: 1px solid rgba(20,18,30,.22); pointer-events: none; z-index: 99998;
+          transform: translate(-50%, -50%);
+          transition: width .3s, height .3s, border-color .25s;
+        }
+        .cur-dot.cur-over { width: 4px; height: 4px; background: #E8640C; }
+        .cur-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
       `}</style>
+      <div ref={dotRef} className="cur-dot" />
+      <div ref={ringRef} className="cur-ring" />
 
-      {modalEliminar && <ModalEliminar artista={modalEliminar} onConfirm={handleEliminar} onCancel={() => setModalEliminar(null)} />}
-      {modalEstado   && <ModalEstado   artista={modalEstado}   onConfirm={handleCambiarEstado} onCancel={() => setModalEstado(null)} />}
+      {modalEliminar && <ModalEliminar artista={modalEliminar} onConfirm={handleEliminar} onCancel={() => setModalEliminar(null)} cursorOn={cursorOn} cursorOff={cursorOff} />}
+      {modalEstado   && <ModalEstado   artista={modalEstado}   onConfirm={handleCambiarEstado} onCancel={() => setModalEstado(null)} cursorOn={cursorOn} cursorOff={cursorOff} />}
 
-      {/* Topbar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", height: 56, background: C.card, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 30, fontFamily: FB }}>
+      {/* Topbar con breadcrumb */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 28px",
+        height: 60,
+        background: C.card,
+        borderBottom: `1px solid ${C.border}`,
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+        fontFamily: FB,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+      }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.cream }}>Artistas</span>
-          <span style={{ fontSize: 11.5, padding: "2px 9px", borderRadius: 100, background: `${C.pink}10`, border: `1px solid ${C.pink}22`, color: C.pink, fontWeight: 700, fontFamily: FM }}>
+          <button
+            onClick={() => navigate("/admin/dashboard")}
+            onMouseEnter={cursorOn}
+            onMouseLeave={cursorOff}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: C.creamMut,
+              fontSize: 12,
+              fontWeight: 500,
+              transition: "color 0.2s",
+            }}
+          >
+            <Home size={14} strokeWidth={1.8} />
+            Inicio
+          </button>
+          <ChevronRightIcon size={12} color={C.creamMut} />
+          <span style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            color: C.orange,
+            fontSize: 12,
+            fontWeight: 700,
+          }}>
+            <Users size={14} strokeWidth={1.8} />
+            Artistas
+          </span>
+          <span style={{ fontSize: 11.5, padding: "2px 9px", borderRadius: 100, background: `${C.pink}10`, border: `1px solid ${C.pink}22`, color: C.pink, fontWeight: 700, fontFamily: FM, marginLeft: 8 }}>
             {total}
           </span>
           {pendientes > 0 && (
@@ -482,11 +611,11 @@ export default function ListaArtistas() {
           )}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={cargarArtistas}
+          <button onClick={cargarArtistas} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
             style={{ width: 34, height: 34, borderRadius: 8, background: C.bg, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <RefreshCw size={13} color={C.creamMut} strokeWidth={1.8} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
           </button>
-          <button onClick={() => navigate("/admin/artistas/crear")}
+          <button onClick={() => navigate("/admin/artistas/crear")} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
             style={{ display: "flex", alignItems: "center", gap: 6, background: C.purple, border: "none", color: "white", padding: "7px 16px", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FB, boxShadow: `0 2px 8px ${C.purple}30` }}>
             <UserPlus size={14} strokeWidth={2} /> Nuevo artista
           </button>
@@ -495,7 +624,7 @@ export default function ListaArtistas() {
 
       <main style={{ flex: 1, padding: "24px 28px 32px", background: C.bg, overflowY: "auto", fontFamily: FB }}>
 
-        {/* Header */}
+        {/* Header con título y descripción */}
         <div style={{ marginBottom: 20, animation: "fadeUp .35s ease both" }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: C.cream }}>
             Gestión de artistas
@@ -525,7 +654,7 @@ export default function ListaArtistas() {
               <div style={{ fontSize: 13.5, fontWeight: 700, color: C.gold, marginBottom: 1 }}>{pendientes} solicitud{pendientes > 1 ? "es" : ""} pendiente{pendientes > 1 ? "s" : ""} de aprobación</div>
               <div style={{ fontSize: 12, color: C.creamSub }}>Haz clic en el badge de estado para aprobar o rechazar</div>
             </div>
-            <button onClick={() => setFiltroEstado("pendiente")}
+            <button onClick={() => setFiltroEstado("pendiente")} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
               style={{ padding: "6px 14px", borderRadius: 8, background: `${C.gold}15`, border: `1px solid ${C.gold}35`, color: C.gold, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
               Ver pendientes →
             </button>
@@ -536,11 +665,11 @@ export default function ListaArtistas() {
         <div style={{ background: C.card, borderRadius: 12, boxShadow: CS, padding: "12px 14px", marginBottom: 18, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", animation: "fadeUp .35s ease .08s both" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 200, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px" }}>
             <Search size={13} color={C.creamMut} strokeWidth={1.8} />
-            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
               placeholder="Buscar por nombre, alias o correo…"
               style={{ border: "none", outline: "none", fontSize: 13, color: C.cream, background: "transparent", width: "100%", fontFamily: FB }} />
             {search && (
-              <button onClick={() => setSearch("")} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+              <button onClick={() => setSearch("")} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                 <X size={12} color={C.creamMut} />
               </button>
             )}
@@ -550,7 +679,7 @@ export default function ListaArtistas() {
               const on  = filtroEstado === key;
               const cnt = key === "pendiente" ? pendientes : 0;
               return (
-                <button key={key} onClick={() => { setFiltroEstado(key); setPage(1); }}
+                <button key={key} onClick={() => { setFiltroEstado(key); setPage(1); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                   style={{ padding: "6px 13px", borderRadius: 100, display: "flex", alignItems: "center", gap: 5, border: `1.5px solid ${on ? `${color}45` : C.border}`, background: on ? `${color}10` : "transparent", color: on ? color : C.creamSub, fontWeight: on ? 700 : 500, fontSize: 12.5, cursor: "pointer", transition: "all .15s" }}>
                   {label}
                   {cnt > 0 && (
@@ -586,6 +715,8 @@ export default function ListaArtistas() {
                 onEditar={() => navigate(`/admin/artistas/editar/${artista.id_artista}`)}
                 onEliminar={() => setModalEliminar(artista)}
                 onCambiarEstado={() => setModalEstado(artista)}
+                cursorOn={cursorOn}
+                cursorOff={cursorOff}
               />
             ))}
           </div>
@@ -598,7 +729,7 @@ export default function ListaArtistas() {
               Página <span style={{ color: C.cream, fontWeight: 700 }}>{page}</span> de <span style={{ color: C.cream, fontWeight: 700 }}>{totalPages}</span>
             </div>
             <div style={{ display: "flex", gap: 5 }}>
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.35 : 1 }}>
                 <ChevronLeft size={13} color={C.creamMut} strokeWidth={2} />
               </button>
@@ -606,13 +737,13 @@ export default function ListaArtistas() {
                 const p        = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
                 const isActive = p === page;
                 return (
-                  <button key={p} onClick={() => setPage(p)}
+                  <button key={p} onClick={() => setPage(p)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                     style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${isActive ? C.purple : C.border}`, background: isActive ? C.purple : C.card, color: isActive ? "white" : C.creamSub, fontWeight: isActive ? 700 : 400, fontSize: 13, cursor: "pointer", fontFamily: FB, transition: "all .15s" }}>
                     {p}
                   </button>
                 );
               })}
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.35 : 1 }}>
                 <ChevronRight size={13} color={C.creamMut} strokeWidth={2} />
               </button>
