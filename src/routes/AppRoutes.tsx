@@ -31,7 +31,12 @@ import Unauthorized       from "../pages/public/Unauthorized";
 import AdminEstadisticas from "../pages/private/admin/AdminEstadisticas";
 import AdminSobreNosotros from "../pages/private/admin/sobreNosotros";
 import AdminColecciones   from "../pages/private/admin/AdminColecciones";
-
+import AdminClientes      from "../pages/private/admin/AdminClientes";
+import AdminVentas        from "../pages/private/admin/AdminVentas";
+import ClienteRoute       from "../components/ClienteRoute";
+import MiCuenta           from "../pages/cliente/MiCuenta";
+import Carrito            from "../pages/cliente/Carrito";
+import MisPedidos         from "../pages/cliente/MisPedidos";
 
 export default function AppRoutes() {
   return (
@@ -77,7 +82,14 @@ export default function AppRoutes() {
         <Route path="monitoreo"           element={<AdminMonitoreo />} />  {/* ← nuevo */}
         <Route path="colecciones"    element={<AdminColecciones />} />
         <Route path="sobre-nosotros" element={<AdminSobreNosotros />} />
+        <Route path="clientes"       element={<AdminClientes />} />
+        <Route path="ventas"         element={<AdminVentas />} />
       </Route>
+
+      {/* ── Cliente ── */}
+      <Route path="/mi-cuenta" element={<ClienteRoute><MiCuenta /></ClienteRoute>} />
+      <Route path="/mi-cuenta/carrito" element={<ClienteRoute><Carrito /></ClienteRoute>} />
+      <Route path="/mi-cuenta/pedidos" element={<ClienteRoute><MisPedidos /></ClienteRoute>} />
 
       {/* ── Error pages ── */}
       <Route path="/unauthorized" element={<Unauthorized />} />
