@@ -9,13 +9,15 @@ const C = {
   bg: "#F9F8FC", border: "#E6E4EF", text: "#14121E",
 };
 
+const SANS = "'Outfit', sans-serif";
+
 export default function ArtistaLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div style={{
       display: "flex", minHeight: "100vh",
-      background: C.bg, fontFamily: "'Outfit', sans-serif", color: C.text,
+      background: C.bg, fontFamily: SANS, color: C.text,
     }}>
       {/* Sidebar desktop */}
       <div className="artista-sidebar-desktop" style={{ width: 260, flexShrink: 0 }}>
@@ -60,6 +62,8 @@ export default function ArtistaLayout() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+        @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
+        @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
         @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
         * { box-sizing: border-box; }

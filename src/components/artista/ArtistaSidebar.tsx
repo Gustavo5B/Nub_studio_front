@@ -5,14 +5,18 @@ import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
 const C = {
-  orange: "#E8640C", 
+  orange: "#E8640C",
   pink: "#A83B90",
-  panel: "#FFFFFF", 
+  panel: "#FFFFFF",
   border: "#E6E4EF",
-  text: "#14121E", 
+  text: "#14121E",
   muted: "#9896A8",
   green: "#0E8A50",
 };
+
+const SERIF      = "'SolveraLorvane', serif";
+const SANS       = "'Outfit', sans-serif";
+const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
 
 const NAV = [
   { id: "dashboard",   label: "Overview",        icon: LayoutDashboard, path: "/artista/dashboard"   },
@@ -53,6 +57,9 @@ export default function ArtistaSidebar({ onClose }: Props) {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+        @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
+        @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
         * {
           margin: 0;
           padding: 0;
@@ -119,13 +126,14 @@ export default function ArtistaSidebar({ onClose }: Props) {
           object-fit: cover; 
         }
         
-        .as-name { 
-          font-size: 13px; 
-          font-weight: 800; 
-          color: ${C.text}; 
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis; 
+        .as-name {
+          font-size: 13px;
+          font-weight: 900;
+          color: ${C.text};
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-family: ${SERIF};
         }
         
         .as-status { 
@@ -166,14 +174,15 @@ export default function ArtistaSidebar({ onClose }: Props) {
           border-radius: 4px; 
         }
         
-        .as-section-label { 
-          font-size: 10px; 
-          font-weight: 800; 
-          color: ${C.muted}; 
-          text-transform: uppercase; 
-          letter-spacing: 1.5px; 
-          padding: 0 8px; 
-          margin-bottom: 8px; 
+        .as-section-label {
+          font-size: 10px;
+          font-weight: 800;
+          color: ${C.muted};
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          padding: 0 8px;
+          margin-bottom: 8px;
+          font-family: ${NEXA_HEAVY};
         }
 
         .as-nav-btn {
@@ -189,9 +198,9 @@ export default function ArtistaSidebar({ onClose }: Props) {
           color: ${C.muted}; 
           font-size: 13px; 
           font-weight: 500;
-          cursor: pointer; 
-          font-family: 'Outfit', sans-serif;
-          transition: all .18s; 
+          cursor: pointer;
+          font-family: ${SANS};
+          transition: all .18s;
           text-align: left;
         }
         
@@ -230,7 +239,7 @@ export default function ArtistaSidebar({ onClose }: Props) {
           font-size: 13px; 
           font-weight: 700; 
           cursor: pointer;
-          font-family: 'Outfit', sans-serif;
+          font-family: ${SANS};
           box-shadow: 0 4px 14px ${C.orange}35;
           transition: opacity .18s, transform .18s;
           margin-bottom: 8px;
@@ -254,8 +263,8 @@ export default function ArtistaSidebar({ onClose }: Props) {
           color: ${C.muted}; 
           font-size: 13px; 
           font-weight: 500;
-          cursor: pointer; 
-          font-family: 'Outfit', sans-serif;
+          cursor: pointer;
+          font-family: ${SANS};
           transition: all .18s;
           margin-top: 0;
         }

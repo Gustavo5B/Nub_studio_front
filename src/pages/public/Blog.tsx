@@ -360,10 +360,11 @@ export default function Blog() {
       <div ref={ringRef} className="home-cursor-ring" />
 
       <nav className="side-nav">
+        <Link to="/" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Inicio</Link>
         <Link to="/catalogo" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
         <Link to="/artistas" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
         <Link to="/blog" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
-        <Link to="/sobre-nosotros" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Sobre nosotros</Link>
+        <Link to="/sobre-nosotros" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Nosotros</Link>
         <Link to="/contacto" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
       </nav>
 

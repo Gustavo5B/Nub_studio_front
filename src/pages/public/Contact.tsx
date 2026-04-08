@@ -200,10 +200,11 @@ export default function Contact() {
 
       {/* MENÚ DE NAVEGACIÓN */}
       <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both", zIndex: 11 }}>
+        <Link to="/" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Inicio</Link>
         <Link to="/catalogo" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
         <Link to="/artistas" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
         <Link to="/blog" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Blog</Link>
-        <Link to="/sobre-nosotros" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Sobre nosotros</Link>
+        <Link to="/sobre-nosotros" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Nosotros</Link>
         <Link to="/contacto" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
       </nav>
 

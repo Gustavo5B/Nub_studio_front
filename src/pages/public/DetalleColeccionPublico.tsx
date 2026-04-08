@@ -208,6 +208,7 @@ export default function DetalleColeccionPublico() {
 
         @keyframes barIn { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
         @keyframes fadeI { from{opacity:0} to{opacity:1} }
+        @keyframes museumIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
         .col-nav-link { display:inline-flex; align-items:center; gap:8px; font-size:9px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:white; text-decoration:none; transition:all .25s; border:none; cursor:pointer; font-family:'Nexa-Heavy',sans-serif; background:rgba(13,11,20,.52); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); padding:7px 14px 7px 12px; border-radius:100px; border:1px solid rgba(255,255,255,.12); }
         .col-nav-link::before { content:''; display:block; width:10px; height:1px; background:rgba(255,255,255,.5); flex-shrink:0; transition:width .28s; }
@@ -237,7 +238,7 @@ export default function DetalleColeccionPublico() {
       <div ref={dotRef}  className="col-cursor-dot"/>
       <div ref={ringRef} className="col-cursor-ring"/>
 
-      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden" }}>
+      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden", animation:"museumIn .45s ease both" }}>
 
         {/* ════════════════════════════════════
              HERO SPLIT — imagen+nav+título | historia blanca
@@ -266,7 +267,7 @@ export default function DetalleColeccionPublico() {
 
             {/* NAV izquierda */}
             <nav style={{ position:"absolute", top:30, left:44, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
-              {[{ l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
+              {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
                 <Link key={l} to={to} className="col-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>{l}</Link>
               ))}
             </nav>

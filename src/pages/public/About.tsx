@@ -326,6 +326,14 @@ export default function About() {
       {/* Menú lateral */}
       <nav className="side-nav">
         <Link
+          to="/"
+          className="side-nav-link"
+          onMouseEnter={cursorOn}
+          onMouseLeave={cursorOff}
+        >
+          Inicio
+        </Link>
+        <Link
           to="/catalogo"
           className="side-nav-link"
           onMouseEnter={cursorOn}
@@ -355,7 +363,7 @@ export default function About() {
           onMouseEnter={cursorOn}
           onMouseLeave={cursorOff}
         >
-          Sobre nosotros
+          Nosotros
         </Link>
         <Link
           to="/contacto"
