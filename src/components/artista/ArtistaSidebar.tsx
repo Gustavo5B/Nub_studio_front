@@ -5,9 +5,12 @@ import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
 const C = {
-  orange: "#E8640C", pink: "#A83B90",
-  panel: "#FFFFFF", border: "#E6E4EF",
-  text: "#14121E", muted: "#9896A8",
+  orange: "#E8640C", 
+  pink: "#A83B90",
+  panel: "#FFFFFF", 
+  border: "#E6E4EF",
+  text: "#14121E", 
+  muted: "#9896A8",
   green: "#0E8A50",
 };
 
@@ -37,27 +40,51 @@ export default function ArtistaSidebar({ onClose }: Props) {
   };
   const active = getActive();
 
-  const go = (path: string) => { navigate(path); onClose?.(); };
-  const handleLogout = () => { authService.logout(); navigate("/login"); };
+  const go = (path: string) => { 
+    navigate(path); 
+    onClose?.(); 
+  };
+  
+  const handleLogout = () => { 
+    authService.logout(); 
+    navigate("/login"); 
+  };
 
   return (
     <>
       <style>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
         .as-sidebar {
-          width: 260px; height: 100vh;
-          position: fixed; left: 0; top: 0; z-index: 50;
-          background: ${C.panel}; border-right: 1px solid ${C.border};
-          display: flex; flex-direction: column;
+          width: 260px;
+          height: 100vh;
+          position: fixed;
+          left: 0;
+          top: 0;
+          z-index: 50;
+          background: ${C.panel};
+          border-right: 1px solid ${C.border};
+          display: flex;
+          flex-direction: column;
           box-shadow: 2px 0 8px rgba(0,0,0,0.06);
         }
+
+        /* Header - siempre visible arriba */
         .as-header { 
           padding: 24px 20px 16px; 
           flex-shrink: 0; 
+          background: ${C.panel};
         }
+        
         .as-logo { 
           height: 30px; 
           margin-bottom: 20px; 
           cursor: pointer; 
+          display: block;
         }
 
         .as-chip {
@@ -69,13 +96,14 @@ export default function ArtistaSidebar({ onClose }: Props) {
           align-items: center; 
           gap: 12px;
         }
+        
         .as-avatar {
           width: 40px; 
           height: 40px; 
           border-radius: 50%; 
           flex-shrink: 0; 
           overflow: hidden;
-          background: linear-gradient(135deg,${C.orange},${C.pink});
+          background: linear-gradient(135deg, ${C.orange}, ${C.pink});
           display: flex; 
           align-items: center; 
           justify-content: center;
@@ -84,11 +112,13 @@ export default function ArtistaSidebar({ onClose }: Props) {
           color: white;
           box-shadow: 0 4px 12px ${C.orange}35;
         }
+        
         .as-avatar img { 
           width: 100%; 
           height: 100%; 
           object-fit: cover; 
         }
+        
         .as-name { 
           font-size: 13px; 
           font-weight: 800; 
@@ -97,6 +127,7 @@ export default function ArtistaSidebar({ onClose }: Props) {
           overflow: hidden; 
           text-overflow: ellipsis; 
         }
+        
         .as-status { 
           font-size: 11px; 
           color: ${C.muted}; 
@@ -105,6 +136,7 @@ export default function ArtistaSidebar({ onClose }: Props) {
           align-items: center; 
           gap: 4px; 
         }
+        
         .as-dot { 
           width: 6px; 
           height: 6px; 
@@ -113,19 +145,27 @@ export default function ArtistaSidebar({ onClose }: Props) {
           flex-shrink: 0; 
         }
 
+        /* Nav - área scrolleable */
         .as-nav { 
           flex: 1; 
           overflow-y: auto; 
           padding: 8px 14px; 
-          min-height: 0; 
+          min-height: 0;
         }
+        
         .as-nav::-webkit-scrollbar { 
           width: 3px; 
         }
+        
+        .as-nav::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
         .as-nav::-webkit-scrollbar-thumb { 
           background: ${C.border}; 
           border-radius: 4px; 
         }
+        
         .as-section-label { 
           font-size: 10px; 
           font-weight: 800; 
@@ -154,16 +194,19 @@ export default function ArtistaSidebar({ onClose }: Props) {
           transition: all .18s; 
           text-align: left;
         }
+        
         .as-nav-btn:hover { 
           background: #F3F2F8; 
           color: ${C.text}; 
         }
+        
         .as-nav-btn.active {
           background: ${C.orange}10; 
           border-color: ${C.orange}30;
           color: ${C.orange}; 
           font-weight: 700;
         }
+        
         .as-chevron { 
           margin-left: auto; 
         }
@@ -190,87 +233,76 @@ export default function ArtistaSidebar({ onClose }: Props) {
           font-family: 'Outfit', sans-serif;
           box-shadow: 0 4px 14px ${C.orange}35;
           transition: opacity .18s, transform .18s;
+          margin-bottom: 8px;
         }
+        
         .as-new-btn:hover { 
           opacity: .88; 
           transform: translateY(-1px); 
         }
 
-        /* ─── FOOTER SIEMPRE VISIBLE ─── */
-        .as-footer { 
-          padding: 12px 14px; 
-          border-top: 1px solid ${C.border}; 
-          flex-shrink: 0; 
-          background: ${C.panel}; /* Fondo sólido para que no se transparente */
-          z-index: 1; /* Asegura que esté por encima del contenido scrolleable */
-        }
-        .as-logout {
+        /* Botón de cerrar sesión - justo debajo de subir obra */
+        .as-logout-btn {
           display: flex; 
           align-items: center; 
           gap: 10px;
           width: 100%; 
-          padding: 10px 13px; 
-          border-radius: 10px;
+          padding: 11px 14px; 
+          border-radius: 11px;
           background: transparent; 
-          border: 1px solid transparent;
+          border: 1px solid ${C.border};
           color: ${C.muted}; 
           font-size: 13px; 
           font-weight: 500;
           cursor: pointer; 
           font-family: 'Outfit', sans-serif;
-          transition: all .15s;
+          transition: all .18s;
+          margin-top: 0;
         }
-        .as-logout:hover { 
+        
+        .as-logout-btn:hover { 
           color: ${C.pink}; 
           background: ${C.pink}10; 
           border-color: ${C.pink}22; 
         }
+        
         .as-logout-label { 
           flex: 1; 
           text-align: left; 
         }
 
-        /* ─── RESPONSIVE: Mobile / Horizontal ─── */
-        @media (max-width: 900px) {
-          .as-sidebar { 
-            width: 240px; 
+        /* ============================================ */
+        /* RESPONSIVE: TABLET (vertical y horizontal)   */
+        /* ============================================ */
+        @media (max-width: 1024px) {
+          .as-sidebar {
+            width: 250px;
           }
-          .as-header { 
-            padding: 18px 16px 14px; 
+          .as-header {
+            padding: 20px 18px 14px;
           }
-          .as-logo { 
-            height: 26px; 
-            margin-bottom: 16px; 
-          }
-          .as-nav { 
-            padding: 6px 12px; 
-          }
-          .as-nav-btn { 
-            padding: 10px 12px; 
-            font-size: 13px; 
-          }
-          .as-footer { 
-            padding: 10px 12px; 
-            /* Aseguramos que el footer siempre esté visible incluso en horizontal */
-            position: relative;
-            bottom: 0;
-            width: 100%;
-          }
-          .as-logout {
-            padding: 9px 12px;
+          .as-nav {
+            padding: 6px 12px;
           }
         }
 
-        /* ─── AÚN MÁS PEQUEÑO (tablet horizontal / móvil landscape) ─── */
-        @media (max-width: 768px) and (orientation: landscape) {
+        /* ============================================ */
+        /* RESPONSIVE: MÓVIL HORIZONTAL (landscape)     */
+        /* ============================================ */
+        @media (max-width: 900px) and (orientation: landscape) {
           .as-sidebar {
             width: 220px;
           }
           .as-header {
             padding: 12px 14px 10px;
           }
+          .as-logo {
+            height: 24px;
+            margin-bottom: 12px;
+          }
           .as-chip {
             padding: 8px 10px;
+            gap: 8px;
           }
           .as-avatar {
             width: 32px;
@@ -289,30 +321,84 @@ export default function ArtistaSidebar({ onClose }: Props) {
           .as-nav-btn {
             padding: 8px 10px;
             font-size: 12px;
+            gap: 8px;
           }
           .as-new-btn {
             padding: 8px 12px;
             font-size: 12px;
           }
-          .as-footer {
-            padding: 8px 10px;
-          }
-          .as-logout {
-            padding: 7px 10px;
+          .as-logout-btn {
+            padding: 8px 12px;
             font-size: 12px;
           }
         }
 
-        /* ─── GARANTÍA EXTRA: siempre visible en cualquier viewport ─── */
+        /* ============================================ */
+        /* RESPONSIVE: MÓVIL VERTICAL                   */
+        /* ============================================ */
+        @media (max-width: 768px) {
+          .as-sidebar {
+            width: 240px;
+          }
+          .as-header {
+            padding: 16px 16px 12px;
+          }
+          .as-logo {
+            height: 26px;
+            margin-bottom: 16px;
+          }
+          .as-chip {
+            padding: 10px 12px;
+          }
+          .as-nav {
+            padding: 6px 12px;
+          }
+          .as-nav-btn {
+            padding: 10px 12px;
+            font-size: 13px;
+          }
+          .as-new-btn {
+            padding: 10px 12px;
+          }
+          .as-logout-btn {
+            padding: 10px 12px;
+          }
+        }
+
+        /* ============================================ */
+        /* GARANTÍA PARA PANTALLAS MUY PEQUEÑAS         */
+        /* ============================================ */
         @media (max-height: 500px) {
           .as-sidebar {
             overflow-y: auto;
           }
-          .as-footer {
-            position: sticky;
-            bottom: 0;
-            background: ${C.panel};
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+        }
+
+        /* ============================================ */
+        /* GARANTÍA PARA PANTALLAS MUY ANCHAS           */
+        /* ============================================ */
+        @media (min-width: 1920px) {
+          .as-sidebar {
+            width: 280px;
+          }
+          .as-header {
+            padding: 28px 24px 20px;
+          }
+          .as-logo {
+            height: 34px;
+          }
+          .as-name {
+            font-size: 14px;
+          }
+          .as-nav-btn {
+            padding: 13px 16px;
+            font-size: 14px;
+          }
+          .as-new-btn {
+            padding: 13px 16px;
+          }
+          .as-logout-btn {
+            padding: 13px 16px;
           }
         }
       `}</style>
@@ -321,13 +407,19 @@ export default function ArtistaSidebar({ onClose }: Props) {
 
         {/* ── HEADER ── */}
         <div className="as-header">
-          <img src={logoImg} alt="Nu-B Studio" className="as-logo" onClick={() => go("/")} />
+          <img 
+            src={logoImg} 
+            alt="Nu-B Studio" 
+            className="as-logo" 
+            onClick={() => go("/")}
+            style={{ cursor: "pointer" }}
+          />
 
           <div className="as-chip">
             <div className="as-avatar">
-              {foto ? <img src={foto} alt="Foto"/> : inicial}
+              {foto ? <img src={foto} alt="Foto de perfil"/> : inicial}
             </div>
-            <div style={{ overflow:"hidden", flex:1, minWidth:0 }}>
+            <div style={{ overflow: "hidden", flex: 1, minWidth: 0 }}>
               <div className="as-name">{nombre}</div>
               <div className="as-status">
                 <div className="as-dot"/>
@@ -344,7 +436,11 @@ export default function ArtistaSidebar({ onClose }: Props) {
           {NAV.map(({ id, label, icon: Icon, path }) => {
             const on = active === id;
             return (
-              <button key={id} className={`as-nav-btn${on ? " active" : ""}`} onClick={() => go(path)}>
+              <button 
+                key={id} 
+                className={`as-nav-btn${on ? " active" : ""}`} 
+                onClick={() => go(path)}
+              >
                 <Icon size={17} strokeWidth={on ? 2.5 : 1.8}/>
                 {label}
                 {on && <ChevronRight size={14} className="as-chevron"/>}
@@ -354,18 +450,21 @@ export default function ArtistaSidebar({ onClose }: Props) {
 
           <div className="as-divider"/>
 
-          <button className="as-new-btn" onClick={() => go("/artista/nueva-obra")}>
-            <Plus size={16}/> Subir nueva obra
+          {/* Botón Subir nueva obra */}
+          <button 
+            className="as-new-btn" 
+            onClick={() => go("/artista/nueva-obra")}
+          >
+            <Plus size={16}/> 
+            Subir nueva obra
           </button>
-        </nav>
 
-        {/* ── FOOTER (SIEMPRE VISIBLE) ── */}
-        <div className="as-footer">
-          <button className="as-logout" onClick={handleLogout}>
+          {/* Botón Cerrar sesión - Justo debajo de Subir nueva obra */}
+          <button className="as-logout-btn" onClick={handleLogout}>
             <LogOut size={15} strokeWidth={1.8}/>
             <span className="as-logout-label">Cerrar sesión</span>
           </button>
-        </div>
+        </nav>
 
       </aside>
     </>
