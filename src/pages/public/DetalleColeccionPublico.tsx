@@ -128,43 +128,52 @@ export default function DetalleColeccionPublico() {
   const cursorOff = useCallback(() => { dotRef.current?.classList.remove("cur-over"); ringRef.current?.classList.remove("cur-over"); }, []);
 
   // ═══ CARGAR COLECCIÓN + OBRAS ═══
-  useEffect(() => {
-    globalThis.scrollTo(0, 0);
-    (async () => {
-      setLoading(true);
-      try {
-        // 1. Cargar colección
-        const res  = await fetch(`${API_URL}/api/colecciones/slug/${slug}`);
-        const json = await res.json();
-        if (json.success) {
-          const colData = json.data;
-          setColeccion(colData);
-          
-          // 2. Cargar obras de la colección por separado
-          if (colData.id_coleccion) {
-            try {
-              const obrasRes = await fetch(`${API_URL}/api/obras?id_coleccion=${colData.id_coleccion}&limit=100`);
-              const obrasJson = await obrasRes.json();
-              if (obrasJson.success && obrasJson.data) {
-                // Actualizar colección con las obras cargadas
-                setColeccion(prev => prev ? { ...prev, obras: obrasJson.data } : null);
-              }
-            } catch (e) {
-              console.log("Error cargando obras:", e);
-            }
-          }
-          
-          // 3. Cargar colecciones recomendadas
-          if (colData.id_artista) {
+useEffect(() => {
+  globalThis.scrollTo(0, 0);
+  (async () => {
+    setLoading(true);
+    try {
+      // 1. Cargar colección (YA incluye las obras)
+      const res  = await fetch(`${API_URL}/api/colecciones/slug/${slug}`);
+      const json = await res.json();
+      
+      console.log("📦 Colección recibida:", json);
+      
+      if (json.success) {
+        const colData = json.data;
+        
+        // Asegurar que obras sea un array (por si acaso)
+        if (!colData.obras) {
+          colData.obras = [];
+        }
+        
+        console.log("📦 Obras en la colección:", colData.obras.length);
+        
+        setColeccion(colData);
+        
+        // 2. Cargar colecciones recomendadas del mismo artista
+        if (colData.id_artista) {
+          try {
             const recRes  = await fetch(`${API_URL}/api/colecciones?id_artista=${colData.id_artista}&limit=4`);
             const recJson = await recRes.json();
-            if (recJson.success) setColeccionesRecomendadas(recJson.data.filter((c: any) => c.slug !== slug).slice(0, 4));
+            if (recJson.success) {
+              setColeccionesRecomendadas(recJson.data.filter((c: any) => c.slug !== slug).slice(0, 4));
+            }
+          } catch (e) {
+            console.log("Error cargando recomendadas:", e);
           }
-        } else { setColeccion(null); }
-      } catch { setColeccion(null); }
-      finally { setLoading(false); }
-    })();
-  }, [slug]);
+        }
+      } else {
+        setColeccion(null);
+      }
+    } catch (error) {
+      console.error("Error cargando colección:", error);
+      setColeccion(null);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [slug]);
 
   // Reveal on scroll
   useEffect(() => {
