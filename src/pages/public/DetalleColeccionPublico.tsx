@@ -67,7 +67,6 @@ export default function DetalleColeccionPublico() {
 
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
-  const pageRef = useRef<HTMLDivElement>(null);
 
   // ═══ CURSOR PERSONALIZADO — FUNCIONA EN TODA LA PÁGINA ═══
   useEffect(() => {
@@ -175,19 +174,6 @@ useEffect(() => {
   })();
 }, [slug]);
 
-  // Reveal on scroll
-  useEffect(() => {
-    const container = pageRef.current;
-    if (!container) return;
-    const targets = container.querySelectorAll<HTMLElement>("[data-rv]");
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) { (entry.target as HTMLElement).classList.add("rv-in"); io.unobserve(entry.target); }
-      });
-    }, { threshold: 0.1 });
-    targets.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, [coleccion]);
 
   if (loading) return <div style={{ minHeight:"100vh", background:"#fff" }}/>;
 
@@ -201,7 +187,7 @@ useEffect(() => {
 
   const palette    = [C.orange, C.pink, C.purple, C.blue, C.gold];
   const color      = palette[(coleccion.id_artista || 0) % palette.length] || C.orange;
-  const obrasActivas  = coleccion.obras?.filter(o => o.estado === "publicada" && o.activa === true) || [];
+  const obrasActivas  = coleccion.obras?.filter(o => o.estado === "publicada" && o.activa !== false && o.activa !== 0) || [];
   const obrasMostradas = obrasActivas.slice(0, obrasVisibles);
   const hasMore    = obrasVisibles < obrasActivas.length;
   const artistaNombre = coleccion.artista_nombre || "";
@@ -235,13 +221,7 @@ useEffect(() => {
         .col-nav-link:hover { background:rgba(13,11,20,.78); border-color:rgba(255,255,255,.25); color:white; }
         .col-nav-link:hover::before { width:16px; background:white; }
 
-        [data-rv] { opacity:0; transform:translateY(24px); transition:opacity .9s ease, transform .9s ease; }
-        [data-rv].rv-in { opacity:1; transform:translateY(0); }
-        [data-rv][data-d="1"] { transition-delay:.08s; }
-        [data-rv][data-d="2"] { transition-delay:.16s; }
-        [data-rv][data-d="3"] { transition-delay:.24s; }
-
-        .col-obra-card { cursor:pointer; position:relative; overflow:hidden; background:#fff; transition:transform .5s cubic-bezier(.16,1,.3,1), box-shadow .5s; }
+.col-obra-card { cursor:pointer; position:relative; overflow:hidden; background:#fff; transition:transform .5s cubic-bezier(.16,1,.3,1), box-shadow .5s; }
         .col-obra-card:hover { transform:translateY(-6px); box-shadow:0 20px 40px rgba(0,0,0,.14); }
         .col-obra-card img { display:block; width:100%; height:100%; object-fit:cover; transition:transform .6s cubic-bezier(.2,0,0,1); }
         .col-obra-card:hover img { transform:scale(1.04); }
@@ -264,7 +244,7 @@ useEffect(() => {
       <div ref={dotRef}  className="col-cursor-dot"/>
       <div ref={ringRef} className="col-cursor-ring"/>
 
-      <div ref={pageRef} style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden" }}>
+      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden" }}>
 
         {/* ════════════════════════════════════
              HERO SPLIT — imagen+nav+título | historia blanca
@@ -410,7 +390,7 @@ useEffect(() => {
              II · OBRAS DE LA COLECCIÓN
         ════════════════════════════════════ */}
         <section id="sec-obras" style={{ padding:"80px 0 90px", background:"#fff", borderTop:"1px solid rgba(0,0,0,.04)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48, padding:"0 72px" }} data-rv>
+          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48, padding:"0 72px" }}>
             <div style={{ height:1, flex:1, background:"rgba(0,0,0,.06)" }}/>
             <div style={{ fontSize:13, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,0,0,.7)", whiteSpace:"nowrap", fontFamily:NEXA_HEAVY }}>
               II · Obras en la colección
@@ -431,12 +411,10 @@ useEffect(() => {
           ) : (
             <>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:12, padding:"0 72px" }}>
-                {obrasMostradas.map((obra, idx) => (
+                {obrasMostradas.map((obra) => (
                   <div
                     key={obra.id_obra}
                     className="col-obra-card"
-                    data-rv
-                    data-d={Math.min(idx % 3, 3) as any}
                     onClick={() => navigate(`/obras/${obra.slug || obra.id_obra}`)}
                     onMouseEnter={cursorOn}
                     onMouseLeave={cursorOff}
@@ -490,7 +468,7 @@ useEffect(() => {
         ════════════════════════════════════ */}
         {coleccionesRecomendadas.length > 0 && (
           <section style={{ padding:"80px 72px 90px", background:C.offWhite, borderTop:"1px solid rgba(0,0,0,.04)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48 }} data-rv>
+            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48 }}>
               <div style={{ height:1, flex:1, background:"rgba(0,0,0,.06)" }}/>
               <div style={{ fontSize:13, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,0,0,.7)", whiteSpace:"nowrap", fontFamily:NEXA_HEAVY }}>
                 III · Más colecciones del artista
