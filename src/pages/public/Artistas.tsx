@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X, Grid3x3, LayoutList, Layers } from "lucide-react";
+import { prefetchArtista } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -109,7 +110,7 @@ function ArtistaCard({
         ref={ref}
         data-rv data-d={String((index % 5) + 1)}
         onClick={() => navigate(`/artistas/${artista.matricula}`)}
-        onMouseEnter={() => { setHovered(true); cursorOn(); }}
+        onMouseEnter={() => { setHovered(true); cursorOn(); prefetchArtista(artista.matricula); }}
         onMouseLeave={() => { setHovered(false); cursorOff(); }}
         style={{
           display: "flex",
@@ -182,7 +183,7 @@ function ArtistaCard({
         ref={ref}
         data-rv data-d={String((index % 5) + 1)}
         onClick={() => navigate(`/artistas/${artista.matricula}`)}
-        onMouseEnter={() => { setHovered(true); cursorOn(); }}
+        onMouseEnter={() => { setHovered(true); cursorOn(); prefetchArtista(artista.matricula); }}
         onMouseLeave={() => { setHovered(false); cursorOff(); }}
         style={{
           background: "#fff",
@@ -305,7 +306,7 @@ function ArtistaCard({
       ref={ref}
       data-rv data-d={String((index % 5) + 1)}
       onClick={() => navigate(`/artistas/${artista.matricula}`)}
-      onMouseEnter={() => { setHovered(true); cursorOn(); }}
+      onMouseEnter={() => { setHovered(true); cursorOn(); prefetchArtista(artista.matricula); }}
       onMouseLeave={() => { setHovered(false); cursorOff(); }}
       style={{
         borderRadius: 20,

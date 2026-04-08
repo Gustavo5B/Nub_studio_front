@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Heart, Share2, ZoomIn, CheckCircle, Award } from "lucide-react";
+import { cacheGet, cacheSet } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -25,26 +26,10 @@ const PALETTE    = [C.orange, C.pink, C.purple, C.blue, C.gold];
 const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style:"currency", currency:"MXN", maximumFractionDigits:0 }).format(p);
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ FUNCIÓN MEJORADA: Acepta tanto ID como slug
-// ═══════════════════════════════════════════════════════════════
-async function fetchObraByIdOrSlug(identifier: string) {
-  const isNumeric = /^\d+$/.test(identifier);
-  
-  let url;
-  if (isNumeric) {
-    url = `${API_URL}/api/obras/${identifier}`;
-    console.log("🔍 Buscando obra por ID:", identifier);
-  } else {
-    url = `${API_URL}/api/obras/slug/${identifier}`;
-    console.log("🔍 Buscando obra por slug:", identifier);
-  }
-  
-  const response = await fetch(url);
-  const data = await response.json();
-  console.log("📦 Respuesta API:", data);
-  
-  return data;
+function obraUrl(identifier: string): string {
+  return /^\d+$/.test(identifier)
+    ? `${API_URL}/api/obras/${identifier}`
+    : `${API_URL}/api/obras/slug/${identifier}`;
 }
 
 export default function DetalleObra() {
@@ -121,65 +106,43 @@ export default function DetalleObra() {
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     globalThis.scrollTo(0, 0);
-    
-    if (!slug) {
-      setError("No se especificó la obra");
+    if (!slug) { setLoading(false); return; }
+
+    const url = obraUrl(slug);
+    const cached = cacheGet(url);
+    if (cached) {
+      const obraData = cached as any;
+      setObra(obraData);
+      setImgActiva(obraData.imagen_principal);
+      if (obraData.tamaños?.length > 0) setTamSel(obraData.tamaños[0]);
       setLoading(false);
       return;
     }
 
-    const loadObra = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const result = await fetchObraByIdOrSlug(slug);
-        
-        // Manejar diferentes estructuras de respuesta
-        let obraData = null;
-        
-        if (result.success && result.data) {
-          obraData = result.data;
-        } else if (result.id_obra) {
-          obraData = result;
-        } else if (result.data && result.data.id_obra) {
-          obraData = result.data;
-        }
-        
+    setLoading(true);
+    setError(null);
+    fetch(url)
+      .then(r => r.json())
+      .then(j => {
+        let obraData: any = null;
+        if (j.success && j.data) obraData = j.data;
+        else if (j.id_obra) obraData = j;
+        else if (j.data?.id_obra) obraData = j.data;
         if (obraData) {
+          cacheSet(url, obraData);
           setObra(obraData);
           setImgActiva(obraData.imagen_principal);
-          if (obraData.tamaños?.length > 0) {
-            setTamSel(obraData.tamaños[0]);
-          }
+          if (obraData.tamaños?.length > 0) setTamSel(obraData.tamaños[0]);
         } else {
           setError("Obra no encontrada");
         }
-      } catch (err) {
-        console.error("Error cargando obra:", err);
-        setError("Error al cargar la obra");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadObra();
+      })
+      .catch(() => setError("Error al cargar la obra"))
+      .finally(() => setLoading(false));
   }, [slug]);
 
   // ── PANTALLA DE CARGA
-  if (loading) return (
-    <div style={{ position:"fixed", inset:0, background:C.dark, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
-      <style>{`
-        @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); }
-        @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
-        @keyframes loadPulse { 0%,100%{opacity:.15} 50%{opacity:.5} }
-        @keyframes loadLine  { from{width:0} to{width:64px} }
-      `}</style>
-      <div style={{ fontFamily:SERIF, fontSize:"clamp(52px,8vw,96px)", fontWeight:900, color:"white", letterSpacing:"-.03em", animation:"loadPulse 1.4s ease infinite" }}>ALTAR</div>
-      <div style={{ height:1, background:C.orange, animation:"loadLine .8s cubic-bezier(.16,1,.3,1) forwards" }}/>
-      <div style={{ fontSize:8, fontWeight:700, letterSpacing:".44em", textTransform:"uppercase", color:"rgba(255,255,255,.2)", fontFamily:NEXA_HEAVY, marginTop:4 }}>Cargando obra</div>
-    </div>
-  );
+  if (loading) return <div style={{ minHeight:"100vh", background:"#fff" }}/>;
 
   // ── ERROR
   if (error || !obra) return (

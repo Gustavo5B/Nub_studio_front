@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
+import { cacheGet, cacheSet, prefetchObra } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -127,52 +128,44 @@ export default function DetalleColeccionPublico() {
   const cursorOff = useCallback(() => { dotRef.current?.classList.remove("cur-over"); ringRef.current?.classList.remove("cur-over"); }, []);
 
   // ═══ CARGAR COLECCIÓN + OBRAS ═══
-useEffect(() => {
-  globalThis.scrollTo(0, 0);
-  (async () => {
-    setLoading(true);
-    try {
-      // 1. Cargar colección (YA incluye las obras)
-      const res  = await fetch(`${API_URL}/api/colecciones/slug/${slug}`);
-      const json = await res.json();
-      
-      console.log("📦 Colección recibida:", json);
-      
-      if (json.success) {
-        const colData = json.data;
-        
-        // Asegurar que obras sea un array (por si acaso)
-        if (!colData.obras) {
-          colData.obras = [];
-        }
-        
-        console.log("📦 Obras en la colección:", colData.obras.length);
-        
-        setColeccion(colData);
-        
-        // 2. Cargar colecciones recomendadas del mismo artista
-        if (colData.id_artista) {
-          try {
-            const recRes  = await fetch(`${API_URL}/api/colecciones?id_artista=${colData.id_artista}&limit=4`);
-            const recJson = await recRes.json();
-            if (recJson.success) {
-              setColeccionesRecomendadas(recJson.data.filter((c: any) => c.slug !== slug).slice(0, 4));
-            }
-          } catch (e) {
-            console.log("Error cargando recomendadas:", e);
-          }
-        }
-      } else {
-        setColeccion(null);
-      }
-    } catch (error) {
-      console.error("Error cargando colección:", error);
-      setColeccion(null);
-    } finally {
+  useEffect(() => {
+    globalThis.scrollTo(0, 0);
+    const url = `${API_URL}/api/colecciones/slug/${slug}`;
+    const cached = cacheGet(url);
+    if (cached) {
+      setColeccion(cached as Coleccion);
       setLoading(false);
+      return;
     }
-  })();
-}, [slug]);
+    (async () => {
+      setLoading(true);
+      try {
+        const res  = await fetch(url);
+        const json = await res.json();
+        if (json.success) {
+          const colData = json.data;
+          if (!colData.obras) colData.obras = [];
+          cacheSet(url, colData);
+          setColeccion(colData);
+          if (colData.id_artista) {
+            try {
+              const recRes  = await fetch(`${API_URL}/api/colecciones?id_artista=${colData.id_artista}&limit=4`);
+              const recJson = await recRes.json();
+              if (recJson.success) {
+                setColeccionesRecomendadas(recJson.data.filter((c: any) => c.slug !== slug).slice(0, 4));
+              }
+            } catch (_) { /* no-op */ }
+          }
+        } else {
+          setColeccion(null);
+        }
+      } catch {
+        setColeccion(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [slug]);
 
 
   if (loading) return <div style={{ minHeight:"100vh", background:"#fff" }}/>;
@@ -416,7 +409,7 @@ useEffect(() => {
                     key={obra.id_obra}
                     className="col-obra-card"
                     onClick={() => navigate(`/obras/${obra.slug || obra.id_obra}`)}
-                    onMouseEnter={cursorOn}
+                    onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }}
                     onMouseLeave={cursorOff}
                     style={{ height:360 }}
                   >

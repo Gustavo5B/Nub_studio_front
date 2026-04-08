@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Search, X, Image as ImageIcon, Eye, ArrowRight } from "lucide-react";
 import { authService } from "../../services/authService";
+import { prefetchObra } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -1287,7 +1288,7 @@ export default function Catalogo() {
                       onClick={() => setSelectedObra(prev =>
                         prev?.id_obra === obra.id_obra ? null : obra
                       )}
-                      onMouseEnter={cursorOn}
+                      onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }}
                       onMouseLeave={cursorOff}
                     >
                       <div className="cat-obra-card-img">

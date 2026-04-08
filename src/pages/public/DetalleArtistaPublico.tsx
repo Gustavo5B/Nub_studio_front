@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
 import { createPortal } from "react-dom";
+import { cacheGet, cacheSet, prefetchObra, prefetchColeccion } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -40,13 +41,11 @@ export default function DetalleArtistaPublico() {
 
   const [artista, setArtista]               = useState<any>(null);
   const [loading, setLoading]               = useState(true);
-  const [visible, setVisible]               = useState(false);
   const [fotosPersonales, setFotosPersonales] = useState<FotoPersonal[]>([]);
   const [accordionOpen, setAccordionOpen]   = useState(true);
   const [fotoIdx, setFotoIdx]               = useState(0);
   const [colecciones, setColecciones]       = useState<any[]>([]);
   const [recomendados, setRecomendados]     = useState<any[]>([]);
-  const [pageReady, setPageReady]           = useState(false);
 
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -111,14 +110,22 @@ export default function DetalleArtistaPublico() {
 
   useEffect(() => {
     globalThis.scrollTo(0, 0);
-    setVisible(false);
-    setPageReady(false);
+    const url = `${API_URL}/api/artistas/matricula/${encodeURIComponent(matricula ?? "")}`;
+    const cached = cacheGet(url);
+    if (cached) {
+      const data = cached as any;
+      setArtista(data);
+      if (data.fotos_personales && Array.isArray(data.fotos_personales)) setFotosPersonales(data.fotos_personales);
+      setLoading(false);
+      return;
+    }
     (async () => {
       setLoading(true);
       try {
-        const res  = await fetch(`${API_URL}/api/artistas/matricula/${encodeURIComponent(matricula ?? "")}`);
+        const res  = await fetch(url);
         const json = await res.json();
         if (json.success) {
+          cacheSet(url, json.data);
           setArtista(json.data);
           if (json.data.fotos_personales && Array.isArray(json.data.fotos_personales)) {
             setFotosPersonales(json.data.fotos_personales);
@@ -148,50 +155,13 @@ export default function DetalleArtistaPublico() {
   }, [matricula]);
 
   useEffect(() => {
-    if (!loading) {
-      const t1 = setTimeout(() => setPageReady(true), 80);
-      const t2 = setTimeout(() => setVisible(true),   180);
-      return () => { clearTimeout(t1); clearTimeout(t2); };
-    }
-  }, [loading]);
-
-  useEffect(() => {
     if (fotosPersonales.length <= 1) return;
     const id = setInterval(() => setFotoIdx(i => (i + 1) % fotosPersonales.length), 3000);
     return () => clearInterval(id);
   }, [fotosPersonales.length]);
 
-  const pageRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const container = pageRef.current;
-    if (!container) return;
-    const targets = container.querySelectorAll<HTMLElement>("[data-rv]");
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          (entry.target as HTMLElement).classList.add("rv-in");
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0 });
-    targets.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, [artista, visible]);
-
   // ── PANTALLA DE CARGA
-  if (loading) return (
-    <div style={{ position:"fixed", inset:0, background:C.dark, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
-      <style>{`
-        @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); }
-        @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
-        @keyframes loadPulse { 0%,100%{opacity:.15} 50%{opacity:.5} }
-        @keyframes loadLine  { from{width:0} to{width:64px} }
-      `}</style>
-      <div style={{ fontFamily:SERIF, fontSize:"clamp(52px,8vw,96px)", fontWeight:900, color:"white", letterSpacing:"-.03em", animation:"loadPulse 1.4s ease infinite" }}>ALTAR</div>
-      <div style={{ height:1, background:C.orange, animation:"loadLine .8s cubic-bezier(.16,1,.3,1) forwards" }}/>
-      <div style={{ fontSize:8, fontWeight:700, letterSpacing:".44em", textTransform:"uppercase", color:"rgba(255,255,255,.2)", fontFamily:NEXA_HEAVY, marginTop:4 }}>Cargando artista</div>
-    </div>
-  );
+  if (loading) return <div style={{ minHeight:"100vh", background:"#fff" }}/>;
 
   if (!artista) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"100vh", gap:20, fontFamily:SANS, background:"white" }}>
@@ -202,7 +172,7 @@ export default function DetalleArtistaPublico() {
 
   const color      = PALETTE[artista.id_artista % PALETTE.length];
   const obras      = (artista.obras || []) as any[];
-  const publicadas = obras.filter((o: any) => o.estado === "publicada" && o.activa === true);
+  const publicadas = obras.filter((o: any) => o.estado === "publicada" && o.activa !== false);
 
   const heroBg = artista.foto_portada
     ? `url(${artista.foto_portada}) center/cover no-repeat`
@@ -210,7 +180,7 @@ export default function DetalleArtistaPublico() {
 
   return (
     <>
-      <div ref={pageRef} className={pageReady ? "page-enter" : ""} style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden" }}>
+      <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden" }}>
         <style>{`
           @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display:swap; }
           @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); font-display:swap; }
@@ -225,20 +195,10 @@ export default function DetalleArtistaPublico() {
           .det-cursor-dot.cur-over { width:4px; height:4px; background:${C.orange}; }
           .det-cursor-ring.cur-over { width:52px; height:52px; border-color:${C.orange}; }
 
-          @keyframes pageIn { from{opacity:0;transform:translateY(22px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
-          .page-enter { animation:pageIn .55s cubic-bezier(.16,1,.3,1) both; }
-
           .det-nav-link { display:flex; align-items:center; gap:9px; font-size:9.5px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.5); text-decoration:none; transition:color .25s; border:none; background:none; cursor:pointer; font-family:'Nexa-Heavy',sans-serif; }
           .det-nav-link::before { content:''; display:block; width:12px; height:1px; background:currentColor; flex-shrink:0; transition:width .28s; }
           .det-nav-link:hover { color:white; }
           .det-nav-link:hover::before { width:22px; }
-
-          [data-rv] { opacity:0; transform:translateY(24px); transition:opacity .9s ease, transform .9s ease; }
-          [data-rv].rv-in { opacity:1; transform:translateY(0); }
-          [data-rv][data-d="1"] { transition-delay:.08s; }
-          [data-rv][data-d="2"] { transition-delay:.16s; }
-          [data-rv][data-d="3"] { transition-delay:.24s; }
-          [data-rv][data-d="4"] { transition-delay:.32s; }
 
           .det-section-label { display:flex; align-items:center; gap:14px; margin-bottom:48px; }
           .det-section-label span { font-size:11px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:rgba(0,0,0,.55); white-space:nowrap; font-family:'Nexa-Heavy',sans-serif; }
@@ -269,6 +229,34 @@ export default function DetalleArtistaPublico() {
           @keyframes slideCarousel { from{opacity:0;transform:translateX(32px) scale(.97)} to{opacity:1;transform:translateX(0) scale(1)} }
           @keyframes fadeI { from{opacity:0} to{opacity:1} }
           @keyframes barIn { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
+
+          @keyframes heroImgReveal {
+            0%   { opacity:0; transform:scale(1.09); filter:blur(18px) saturate(0.1) brightness(0.6); }
+            60%  { filter:blur(3px) saturate(0.75) brightness(0.9); }
+            100% { opacity:1; transform:scale(1); filter:blur(0) saturate(1) brightness(1); }
+          }
+          @keyframes bounceUp {
+            0%   { opacity:0; transform:translateY(52px) scale(0.92); }
+            55%  { opacity:1; transform:translateY(-13px) scale(1.035); }
+            75%  { transform:translateY(6px) scale(0.988); }
+            100% { opacity:1; transform:translateY(0) scale(1); }
+          }
+          @keyframes popIn {
+            0%   { opacity:0; transform:scale(0.78) translateY(22px); }
+            58%  { opacity:1; transform:scale(1.08) translateY(-6px); }
+            78%  { transform:scale(0.965) translateY(3px); }
+            100% { opacity:1; transform:scale(1) translateY(0); }
+          }
+          @keyframes slideLeft {
+            0%   { opacity:0; transform:translateX(-36px); }
+            55%  { opacity:1; transform:translateX(7px); }
+            100% { opacity:1; transform:translateX(0); }
+          }
+          @keyframes slideRightIn {
+            0%   { opacity:0; transform:translateX(36px); }
+            55%  { opacity:1; transform:translateX(-7px); }
+            100% { opacity:1; transform:translateX(0); }
+          }
         `}</style>
 
         <div className="det-grain"/>
@@ -276,17 +264,26 @@ export default function DetalleArtistaPublico() {
         {/* ══════════════════════════════════════
              HERO
         ══════════════════════════════════════ */}
-        <section className={pageReady ? "page-enter det-hero" : "det-hero"} style={{ position:"relative", height:"100vh", minHeight:600, background:heroBg, overflow:"hidden" }}>
+        <section className="det-hero" style={{ position:"relative", height:"100vh", minHeight:600, background: artista.foto_portada ? C.dark : heroBg, overflow:"hidden" }}>
           {artista.foto_portada && (
-            <div style={{ 
-              position:"absolute", 
-              inset:0, 
+            <div style={{
+              position:"absolute", inset:0, zIndex:0,
+              backgroundImage:`url(${artista.foto_portada})`,
+              backgroundSize:"cover", backgroundPosition:"center",
+              animation:"heroImgReveal 1.9s cubic-bezier(.16,1,.3,1) both",
+            }}/>
+          )}
+          {artista.foto_portada && (
+            <div style={{
+              position:"absolute",
+              inset:0,
+              zIndex:1,
               background:"linear-gradient(to top, rgba(13,11,20,.92) 0%, rgba(13,11,20,.25) 50%, rgba(13,11,20,.10) 100%)",
               pointerEvents: "none"
             }}/>
           )}
 
-          <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg, transparent, ${color} 25%, ${color} 75%, transparent)`, animation:"barIn 1.8s cubic-bezier(.16,1,.3,1) both", zIndex:2 }}/>
+          <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg, transparent, ${color} 25%, ${color} 75%, transparent)`, animation:"barIn 1.8s cubic-bezier(.16,1,.3,1) both", zIndex:10 }}/>
 
           <nav style={{ position:"absolute", top:30, left:52, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
             {[{ l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
@@ -312,14 +309,11 @@ export default function DetalleArtistaPublico() {
             position:"absolute", bottom:0, left:0, right:0,
             padding:"0 72px 60px",
             display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:40,
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(32px)",
-            transition:"opacity .9s, transform .9s",
             zIndex:5,
           }}>
             <div style={{ flex:1 }}>
               {artista.foto_logo && (
-                <div style={{ display:"inline-flex", alignItems:"center", gap:12, marginBottom:20, background:"rgba(255,255,255,.09)", backdropFilter:"blur(10px)", padding:"7px 18px 7px 7px", borderRadius:100, border:"1px solid rgba(255,255,255,.18)" }}>
+                <div style={{ display:"inline-flex", alignItems:"center", gap:12, marginBottom:20, background:"rgba(255,255,255,.09)", backdropFilter:"blur(10px)", padding:"7px 18px 7px 7px", borderRadius:100, border:"1px solid rgba(255,255,255,.18)", animation:"popIn .65s cubic-bezier(.16,1,.3,1) .25s both" }}>
                   <div style={{ width:44, height:44, borderRadius:"50%", overflow:"hidden", flexShrink:0, boxShadow:`0 0 0 2px ${color}66` }}>
                     <img src={artista.foto_logo} alt="logo" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
                   </div>
@@ -329,21 +323,21 @@ export default function DetalleArtistaPublico() {
                 </div>
               )}
               {artista.categoria_nombre && (
-                <div style={{ fontSize:9, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:color, marginBottom:16, fontFamily:NEXA_HEAVY }}>
+                <div style={{ fontSize:9, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:color, marginBottom:16, fontFamily:NEXA_HEAVY, animation:"slideLeft .6s cubic-bezier(.16,1,.3,1) .4s both" }}>
                   {artista.categoria_nombre}
                 </div>
               )}
-              <h1 style={{ fontFamily:SERIF, fontSize:"clamp(42px,7vw,96px)", fontWeight:900, color:"white", lineHeight:.9, letterSpacing:"-.03em", margin:0 }}>
+              <h1 style={{ fontFamily:SERIF, fontSize:"clamp(42px,7vw,96px)", fontWeight:900, color:"white", lineHeight:.9, letterSpacing:"-.03em", margin:0, animation:"bounceUp .95s cubic-bezier(.16,1,.3,1) .55s both" }}>
                 {artista.nombre_completo}
               </h1>
               {artista.nombre_artistico && (
-                <div style={{ fontSize:"clamp(12px,1.6vw,15px)", color:"rgba(255,255,255,.38)", fontFamily:NEXA_HEAVY, letterSpacing:".06em", marginTop:14, fontStyle:"italic" }}>
+                <div style={{ fontSize:"clamp(12px,1.6vw,15px)", color:"rgba(255,255,255,.38)", fontFamily:NEXA_HEAVY, letterSpacing:".06em", marginTop:14, fontStyle:"italic", animation:"bounceUp .7s cubic-bezier(.16,1,.3,1) .72s both" }}>
                   "{artista.nombre_artistico}"
                 </div>
               )}
             </div>
 
-            <div style={{ display:"flex", alignItems:"flex-end", gap:20, flexShrink:0 }}>
+            <div style={{ display:"flex", alignItems:"flex-end", gap:20, flexShrink:0, animation:"slideRightIn .85s cubic-bezier(.16,1,.3,1) .65s both" }}>
               <div style={{ textAlign:"right" }}>
                 <div style={{ fontSize:"clamp(28px,4vw,44px)", fontWeight:900, color:"white", fontFamily:NEXA_HEAVY, lineHeight:1 }}>
                   {publicadas.length}
@@ -379,7 +373,7 @@ export default function DetalleArtistaPublico() {
           <div style={{ display:"grid", gridTemplateColumns:"1.8fr 1fr" }}>
             
             {/* COLUMNA IZQUIERDA */}
-            <div data-rv style={{ padding:"64px 72px 56px", borderRight:"1px solid rgba(0,0,0,.05)" }}>
+            <div style={{ padding:"64px 72px 56px", borderRight:"1px solid rgba(0,0,0,.05)" }}>
               <div style={{ fontSize:8, fontWeight:800, letterSpacing:".3em", textTransform:"uppercase", color:color, marginBottom:22, fontFamily:NEXA_HEAVY }}>
                 I · Sobre el artista
               </div>
@@ -449,8 +443,8 @@ export default function DetalleArtistaPublico() {
             </div>
 
             {/* COLUMNA DERECHA */}
-            <div data-rv data-d="1" style={{ 
-              padding:"64px 44px 56px", 
+            <div style={{
+              padding:"64px 44px 56px",
               display:"flex", 
               flexDirection:"column", 
               gap:28, 
@@ -567,7 +561,7 @@ export default function DetalleArtistaPublico() {
              II · FOTOS PERSONALES
         ══════════════════════════════════════ */}
         <section id="sec-fotos" style={{ padding:"80px 0 90px", background:"#fafaf9", borderTop:"1px solid rgba(0,0,0,.04)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom: fotosPersonales.length > 0 ? 48 : 0, padding:"0 72px" }} data-rv>
+          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom: fotosPersonales.length > 0 ? 48 : 0, padding:"0 72px" }}>
             <div style={{ height:1, flex:1, background:"rgba(0,0,0,.05)" }}/>
             <button
               onClick={() => fotosPersonales.length > 0 && setAccordionOpen(o => !o)}
@@ -619,7 +613,7 @@ export default function DetalleArtistaPublico() {
                 <div key={col.id_coleccion} className="det-col-card"
                   onClick={() => navigate(`/colecciones/${col.slug}`)}
                   style={{ height:300, position:"relative" }}
-                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  onMouseEnter={() => { cursorOn(); prefetchColeccion(col.slug); }} onMouseLeave={cursorOff}
                 >
                   {col.imagen_portada ? (
                     <img className="det-col-img" src={col.imagen_portada} alt={col.nombre}/>
@@ -668,7 +662,7 @@ export default function DetalleArtistaPublico() {
                     // ✅ CORREGIDO: Usar SIEMPRE el ID numérico de la obra
                     navigate(`/obras/${obra.id_obra}`);
                   }}
-                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }} onMouseLeave={cursorOff}
                 >
                   {obra.imagen_principal ? (
                     <img src={obra.imagen_principal} alt={obra.titulo} style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
