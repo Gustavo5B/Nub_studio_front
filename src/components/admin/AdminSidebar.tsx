@@ -62,6 +62,18 @@ const IcoArtistas = ({ size = 20, active }: IP) => (
   </svg>
 );
 
+const IcoClientes = ({ size = 20, active }: IP) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <circle cx="7" cy="6" r="3"
+      fill={active ? "#E8640C" : "#6028AA"} fillOpacity={active ? 0.2 : 0.15}
+      stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.4"/>
+    <path d="M2 17.5 C2 13 4.5 11 7 11 C9.5 11 12 13 12 17.5"
+      stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.4" strokeLinecap="round" fill="none"/>
+    <path d="M14.5 8 L16 9.5 L19 6.5"
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+  </svg>
+);
+
 const IcoVentas = ({ size = 20, active }: IP) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <path d="M10.5 2.5 L17 9 C17.4 9.4 17.4 10 17 10.4 L10.4 17 C10 17.4 9.4 17.4 9 17 L2.5 10.5 C2.2 10.2 2 9.8 2 9.4 L2 4 C2 3.2 2.7 2.5 3.5 2.5 Z"
@@ -181,6 +193,7 @@ const NAV = [
   { id: "dashboard",    label: "Dashboard",   Icon: IcoDashboard,    path: "/admin"              },
   { id: "obras",        label: "Obras",        Icon: IcoObras,        path: "/admin/obras"        },
   { id: "artistas",     label: "Artistas",     Icon: IcoArtistas,     path: "/admin/artistas"     },
+  { id: "clientes",     label: "Clientes",     Icon: IcoClientes,     path: "/admin/clientes"     },
   { id: "ventas",       label: "Ventas",       Icon: IcoVentas,       path: "/admin/ventas"       },
   { id: "reportes",     label: "Reportes",     Icon: IcoReportes,     path: "/admin/reportes"     },
   { id: "estadisticas", label: "Estadísticas", Icon: IcoEstadisticas, path: "/admin/estadisticas" },

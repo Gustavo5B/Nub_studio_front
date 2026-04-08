@@ -1,10 +1,16 @@
 // src/pages/public/DetalleObra.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+<<<<<<< HEAD
+import { Heart, Share2, ZoomIn, CheckCircle, Award, ShoppingCart } from "lucide-react";
+=======
 import { Heart, Share2, ZoomIn, CheckCircle, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { authService } from "../../services/authService";
+>>>>>>> 3e5a3e69b505c7c89e86ecff6ad163c0c1fbce1c
 import { cacheGet, cacheSet } from "../../utils/apiCache";
+import { authService } from "../../services/authService";
+import { useToast } from "../../context/ToastContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -45,8 +51,38 @@ export default function DetalleObra() {
   const [error,     setError]     = useState<string | null>(null);
   const [imgActiva, setImgActiva] = useState<string | null>(null);
   const [tamSel,    setTamSel]    = useState<any>(null);
-  const [liked,     setLiked]     = useState(false);
-  const [zoomed,    setZoomed]    = useState(false);
+  const [liked,      setLiked]      = useState(false);
+  const [zoomed,     setZoomed]     = useState(false);
+  const [agregando,  setAgregando]  = useState(false);
+  const [enCarrito,  setEnCarrito]  = useState(false);
+
+  const { showToast } = useToast();
+  const isLoggedIn = authService.isAuthenticated();
+  const userRol    = localStorage.getItem("userRol") || "";
+
+  const handleAgregarCarrito = async () => {
+    if (!isLoggedIn || userRol !== "cliente") {
+      navigate("/login");
+      return;
+    }
+    setAgregando(true);
+    try {
+      const token = authService.getToken();
+      const res = await fetch(`${API_URL}/api/carrito`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id_obra: obra?.id_obra, cantidad: 1 }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Error al agregar al carrito", "err"); return; }
+      setEnCarrito(true);
+      showToast("Obra agregada al carrito", "ok");
+    } catch {
+      showToast("Sin conexión con el servidor", "err");
+    } finally {
+      setAgregando(false);
+    }
+  };
 
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -411,12 +447,47 @@ export default function DetalleObra() {
             <div style={{ height:1, background:"rgba(0,0,0,.07)" }}/>
 
             {/* CTAs */}
+<<<<<<< HEAD
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {/* Botón carrito — adaptativo según rol */}
+              {userRol === "cliente" ? (
+                <>
+                  <button
+                    onClick={handleAgregarCarrito}
+                    disabled={agregando}
+                    onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                    style={{ width:"100%", padding:"14px 24px", borderRadius:100, background: enCarrito ? "#0E8A50" : color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor: agregando ? "not-allowed" : "pointer", transition:"opacity .22s, transform .22s, background .3s", opacity: agregando ? 0.7 : 1, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
+                    onMouseOver={e => { if (!agregando) (e.currentTarget as HTMLElement).style.opacity=".85"; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; }}
+                  >
+                    <ShoppingCart size={13} strokeWidth={2.5} />
+                    {agregando ? "Agregando..." : enCarrito ? "✓ En tu carrito" : "Agregar al carrito"}
+                  </button>
+                  {enCarrito && (
+                    <button
+                      onClick={() => navigate("/mi-cuenta/carrito")}
+                      onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                      style={{ width:"100%", padding:"11px 24px", borderRadius:100, background:"transparent", color:"#0E8A50", border:"1px solid #0E8A50", fontSize:10, fontWeight:700, letterSpacing:".16em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .22s" }}
+                    >Ver carrito →</button>
+                  )}
+                </>
+              ) : (
+                <button
+                  onClick={() => navigate("/login")}
+                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  style={{ width:"100%", padding:"14px 24px", borderRadius:100, background:color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"opacity .22s, transform .22s" }}
+                  onMouseOver={e => { (e.currentTarget as HTMLElement).style.opacity=".85"; (e.currentTarget as HTMLElement).style.transform="scale(1.015)"; }}
+                  onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; (e.currentTarget as HTMLElement).style.transform="scale(1)"; }}
+                >Adquirir esta obra →</button>
+              )}
+=======
             <div style={{ display:"flex", flexDirection:"column", gap:10, animation:"slideUp .7s cubic-bezier(.16,1,.3,1) .65s both" }}>
               <button onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width:"100%", padding:"14px 24px", borderRadius:100, background:color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"opacity .22s, transform .22s" }}
                 onMouseOver={e => { (e.currentTarget as HTMLElement).style.opacity=".85"; (e.currentTarget as HTMLElement).style.transform="scale(1.015)"; }}
                 onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; (e.currentTarget as HTMLElement).style.transform="scale(1)"; }}
               >Adquirir esta obra →</button>
+>>>>>>> 3e5a3e69b505c7c89e86ecff6ad163c0c1fbce1c
               <button onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width:"100%", padding:"12px 24px", borderRadius:100, background:"transparent", color:"rgba(0,0,0,.4)", border:"1px solid rgba(0,0,0,.12)", fontSize:10, fontWeight:700, letterSpacing:".16em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .22s" }}
                 onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(0,0,0,.3)"; (e.currentTarget as HTMLElement).style.color=C.ink; }}

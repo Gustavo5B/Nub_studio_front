@@ -166,7 +166,7 @@ export default function Register() {
     setIsLoading(true);
     try {
       const response = await authService.register(formData.nombre, formData.correo, formData.contrasena, true);
-      if (response.success) {
+      if (response.requiresVerification || response.user) {
         localStorage.setItem("temp_correo_verificacion", formData.correo);
         setMensaje("Cuenta creada. Revisa tu correo para verificarla.");
         setIsError(false);

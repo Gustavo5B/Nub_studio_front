@@ -1,7 +1,7 @@
 // src/pages/public/Catalogo.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Search, X, Image as ImageIcon, Eye, ArrowRight } from "lucide-react";
+import { Search, X, Image as ImageIcon, Eye, ArrowRight, ShoppingCart } from "lucide-react";
 import { authService } from "../../services/authService";
 import { prefetchObra } from "../../utils/apiCache";
 
@@ -249,6 +249,16 @@ export default function Catalogo() {
 
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    if (!isLoggedIn || userRol !== "cliente") return;
+    const token = authService.getToken();
+    fetch(`${API_URL}/api/carrito`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (d.success) setCartCount(d.data.length); })
+      .catch(() => {});
+  }, [isLoggedIn, userRol]);
   const [hovCat, setHovCat] = useState<number | null>(null);
 
   const [doorOpen, setDoorOpen] = useState(false);
@@ -408,6 +418,8 @@ export default function Catalogo() {
         }
         .home-cursor-dot.cur-over  { width: 4px; height: 4px; background: #E8640C; }
         .home-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
+        .home-cursor-dot.cur-dark  { background: rgba(255,255,255,.85); }
+        .home-cursor-ring.cur-dark { border-color: rgba(255,255,255,.35); }
 
         /* ── Door (idéntico al Home) ── */
         .home-door-wrap {
@@ -679,15 +691,32 @@ export default function Catalogo() {
               }}>Ser artista</Link>
             </>
           ) : (
-            <Link
-              to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"}
-              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{
-                fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em",
-                textTransform: "uppercase", color: C.sub, textDecoration: "none",
-                padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)",
-              }}
-            >Mi cuenta</Link>
+            <>
+              <Link
+                to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"}
+                onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                style={{
+                  fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em",
+                  textTransform: "uppercase", color: C.sub, textDecoration: "none",
+                  padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)",
+                }}
+              >Mi cuenta</Link>
+
+              {userRol === "cliente" && (
+                <Link
+                  to="/mi-cuenta/carrito"
+                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: "50%", border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", color: C.ink, transition: "all .22s" }}
+                >
+                  <ShoppingCart size={14} strokeWidth={2} />
+                  {cartCount > 0 && (
+                    <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: C.orange, color: "#fff", fontSize: 8, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS }}>
+                      {cartCount > 9 ? "9+" : cartCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+            </>
           )}
         </div>
 
@@ -869,7 +898,10 @@ export default function Catalogo() {
             display: "grid", gridTemplateColumns: "1fr 1fr",
             minHeight: "80vh", position: "relative", overflow: "hidden",
             borderTop: "1px solid rgba(255,255,255,.04)",
-          }}>
+          }}
+            onMouseEnter={() => { dotRef.current?.classList.add("cur-dark"); ringRef.current?.classList.add("cur-dark"); }}
+            onMouseLeave={() => { dotRef.current?.classList.remove("cur-dark"); ringRef.current?.classList.remove("cur-dark"); }}
+          >
             {/* grain */}
             <div style={{
               position: "absolute", inset: 0,
