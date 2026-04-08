@@ -28,6 +28,11 @@ export default function Unauthorized() {
     navigate("/login");
   }
 
+  function handleLogout() {
+    authService.logout();
+    navigate("/");
+  }
+
   return (
     <>
       <style>{`
@@ -262,15 +267,29 @@ export default function Unauthorized() {
               ← Volver atrás
             </button>
 
+            {isLoggedIn && (
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: "10px 24px", borderRadius: 9,
+                  border: "1.5px solid rgba(0,0,0,0.12)",
+                  background: "transparent",
+                  color: C.creamSub,
+                  fontFamily: FB, fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", transition: "all 0.2s ease",
+                }}
+              >
+                Cerrar sesión
+              </button>
+            )}
+
             <button
               onClick={handleGoLogin}
               onMouseEnter={() => setHoverLogin(true)}
               onMouseLeave={() => setHoverLogin(false)}
               style={{
                 padding: "10px 24px", borderRadius: 9, border: "none",
-                background: hoverLogin
-                  ? `linear-gradient(135deg, ${C.red}, ${C.redDark})`
-                  : `linear-gradient(135deg, ${C.red}, ${C.redDark})`,
+                background: `linear-gradient(135deg, ${C.red}, ${C.redDark})`,
                 color: "#fff",
                 fontFamily: FB, fontSize: 13, fontWeight: 600,
                 cursor: "pointer", transition: "all 0.2s ease",

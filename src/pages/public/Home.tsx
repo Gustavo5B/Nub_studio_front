@@ -91,6 +91,7 @@ export default function Home() {
   const navigate   = useNavigate();
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
+  const handleLogout = () => { authService.logout(); navigate("/"); };
 
   const [doorOpen, setDoorOpen] = useState(false);
   const [doorGone, setDoorGone] = useState(false);
@@ -535,7 +536,10 @@ export default function Home() {
               <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "7px 16px", borderRadius: 100, background: C.orange, boxShadow: "0 4px 16px rgba(232,100,12,.30)", transition: "all .22s" }}>Ser artista</Link>
             </>
           ) : (
-            <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)" }}>Mi cuenta</Link>
+            <>
+              <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Mi cuenta</Link>
+              <button onClick={handleLogout} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
+            </>
           )}
         </div>
 

@@ -15,10 +15,10 @@ export default function ClienteRoute({ children }: ClienteRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  // Autenticado pero con otro rol (admin/artista) → 403
-  if (rol !== 'cliente') {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // Autenticado pero con otro rol → redirigir a su dashboard correcto
+  if (rol === 'admin') return <Navigate to="/admin" replace />;
+  if (rol === 'artista') return <Navigate to="/artista/dashboard" replace />;
+  if (rol !== 'cliente') return <Navigate to="/unauthorized" replace />;
 
   return <>{children}</>;
 }

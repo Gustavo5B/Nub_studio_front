@@ -301,8 +301,12 @@ export default function DetalleArtistaPublico() {
                   style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"white", textDecoration:"none", padding:"7px 16px", borderRadius:100, background:color, boxShadow:`0 4px 16px ${color}40`, transition:"all .22s" }}>Ser artista</Link>
               </>
             ) : (
-              <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"7px 14px", borderRadius:100, border:"1px solid rgba(255,255,255,.18)" }}>Mi cuenta</Link>
+              <>
+                <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"7px 14px", borderRadius:100, border:"1px solid rgba(255,255,255,.18)" }}>Mi cuenta</Link>
+                <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:"rgba(255,255,255,.12)", border:"1px solid rgba(255,255,255,.18)", padding:"7px 14px", borderRadius:100, cursor:"pointer", transition:"all .22s" }}>Salir</button>
+              </>
             )}
           </div>
 
