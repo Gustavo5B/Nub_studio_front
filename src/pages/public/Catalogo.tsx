@@ -1068,13 +1068,13 @@ export default function Catalogo() {
         </section>
       )}
 
-      {/* ═══ IV · OBRAS ═══ */}
-      <section id="obras-section" style={{ padding: "80px 0 120px", borderTop: "1px solid rgba(0,0,0,.04)" }}>
+           {/* ═══ IV · OBRAS ═══ */}
+      <section id="obras-section" style={{ padding: "60px 0 80px", borderTop: "1px solid rgba(0,0,0,.04)" }}>
 
-        {/* Section header */}
+        {/* Section header más compacto */}
         <div data-rv style={{
           display: "flex", alignItems: "center", gap: 14,
-          marginBottom: 48, padding: "0 72px",
+          marginBottom: 32, padding: "0 72px",
         }}>
           <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
           <div style={{
@@ -1085,8 +1085,8 @@ export default function Catalogo() {
           <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
         </div>
 
-        {/* Título sección */}
-        <div style={{ padding: "0 72px", marginBottom: 40 }}>
+        {/* Título sección + filtros - más compacto */}
+        <div style={{ padding: "0 72px", marginBottom: 28 }}>
           <div data-rv style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
             <div>
               <div style={{
@@ -1100,12 +1100,6 @@ export default function Catalogo() {
                     ? <>"{search}"</>
                     : <>Todas las obras</>
                 )}
-              </div>
-              <div style={{
-                fontSize: 11, color: C.sub, fontFamily: SANS,
-                marginTop: 6, fontStyle: "italic",
-              }}>
-                {!loading && <>{total} {total === 1 ? "obra" : "obras"} encontradas</>}
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -1140,12 +1134,18 @@ export default function Catalogo() {
               </select>
             </div>
           </div>
+          <div style={{
+            fontSize: 11, color: C.sub, fontFamily: SANS,
+            marginTop: 6, fontStyle: "italic",
+          }}>
+            {!loading && <>{total} {total === 1 ? "obra" : "obras"} encontradas</>}
+          </div>
         </div>
 
         {/* Filtros categorías — texto minimal */}
         <div data-rv data-d="1" className="cat-filter-row" style={{
-          display: "flex", gap: 32, padding: "0 72px", marginBottom: 0,
-          borderBottom: "1px solid rgba(0,0,0,.05)",
+          display: "flex", gap: 32, padding: "0 72px", marginBottom: 32,
+          borderBottom: "1px solid rgba(0,0,0,.05)", paddingBottom: 16,
         }}>
           <button
             className={`cat-filter-btn${catActiva === null ? " active" : ""}`}
@@ -1168,7 +1168,7 @@ export default function Catalogo() {
 
         {/* ── Obras ── */}
         {loading ? (
-          <div className="cat-obras-grid" style={{ paddingTop: 48 }}>
+          <div className="cat-obras-grid" style={{ paddingTop: 32 }}>
             {[...Array(8)].map((_, i) => (
               <div key={i} className="cat-skeleton" style={{
                 aspectRatio: "3/4", background: "#ece9e4",
@@ -1177,7 +1177,7 @@ export default function Catalogo() {
             ))}
           </div>
         ) : obras.length === 0 ? (
-          <div data-rv style={{ textAlign: "center", padding: "100px 72px", fontFamily: SANS }}>
+          <div data-rv style={{ textAlign: "center", padding: "80px 72px", fontFamily: SANS }}>
             <div style={{
               fontFamily: SERIF, fontSize: 20, fontStyle: "italic",
               color: "rgba(0,0,0,.18)", marginBottom: 12,
@@ -1188,133 +1188,43 @@ export default function Catalogo() {
           </div>
         ) : (
           <>
-            {/* ── Obra destacada (primera) ── */}
-            <div data-rv style={{ padding: "56px 72px 80px", borderBottom: "1px solid rgba(0,0,0,.05)", marginBottom: 80 }}>
-              <div
-                className="cat-featured-wrap"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 72,
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-                onClick={() => setSelectedObra(obras[0])}
-                onMouseEnter={cursorOn}
-                onMouseLeave={cursorOff}
-              >
-                {/* Info izquierda */}
-                <div>
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    fontSize: 8, fontWeight: 800, letterSpacing: ".3em",
-                    textTransform: "uppercase", color: "rgba(0,0,0,.22)",
-                    fontFamily: SANS, marginBottom: 24,
-                  }}>
-                    <span style={{ display: "block", width: 28, height: 1, background: "rgba(0,0,0,.18)" }} />
-                    Obra destacada
-                  </div>
-
-                  <h2 style={{
-                    fontFamily: SERIF,
-                    fontSize: "clamp(28px, 3.8vw, 56px)",
-                    fontWeight: 900, color: C.ink,
-                    letterSpacing: "-.025em", lineHeight: 1.05,
-                    margin: "0 0 18px",
-                  }}>
-                    {obras[0].titulo}
-                  </h2>
-
-                  <div style={{
-                    fontSize: 12, color: C.sub, fontFamily: SANS,
-                    marginBottom: 28, fontStyle: "italic",
-                  }}>
-                    por{" "}
-                    <span style={{ color: C.ink, fontWeight: 600, fontStyle: "normal" }}>
-                      {obras[0].artista_alias || obras[0].artista_nombre}
-                    </span>
-                    {obras[0].anio_creacion && (
-                      <span style={{ color: "rgba(0,0,0,.22)" }}> · {obras[0].anio_creacion}</span>
+            {/* ── Grid de obras SIN destacada separada ── */}
+            <div className="cat-obras-grid" style={{ paddingTop: 32 }}>
+              {obras.map(obra => {
+                const precio = obra.precio_minimo || obra.precio_base;
+                return (
+                  <div
+                    key={obra.id_obra}
+                    className="cat-obra-card"
+                    onClick={() => setSelectedObra(prev =>
+                      prev?.id_obra === obra.id_obra ? null : obra
                     )}
-                  </div>
-
-                  <div style={{ height: 1, background: "rgba(0,0,0,.05)", marginBottom: 28 }} />
-
-                  <div style={{
-                    fontFamily: SERIF,
-                    fontSize: "clamp(26px, 3vw, 44px)",
-                    fontWeight: 900, color: C.ink,
-                    letterSpacing: "-.02em", marginBottom: 36,
-                  }}>
-                    <span style={{ color: C.orange }}>$</span>
-                    {Number(obras[0].precio_minimo || obras[0].precio_base || 0).toLocaleString("es-MX")}
-                    <span style={{ fontSize: 11, fontWeight: 400, color: C.sub, fontFamily: SANS, marginLeft: 8 }}>MXN</span>
-                  </div>
-
-                  <button className="cat-featured-cta">
-                    <span className="cat-featured-cta-line" />
-                    Ver obra
-                  </button>
-                </div>
-
-                {/* Imagen derecha */}
-                <div className="cat-featured-img">
-                  {obras[0].imagen_principal ? (
-                    <img src={obras[0].imagen_principal} alt={obras[0].titulo} />
-                  ) : (
-                    <div style={{
-                      width: "100%", height: "100%", background: "#ece9e4",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <ImageIcon size={48} strokeWidth={1} color="rgba(0,0,0,.12)" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ── Grid resto de obras ── */}
-            {obras.length > 1 && (
-              <div className="cat-obras-grid">
-                {obras.slice(1).map(obra => {
-                  const precio = obra.precio_minimo || obra.precio_base;
-                  const formattedPrice = Number(precio || 0).toLocaleString("es-MX", {
-                    minimumFractionDigits: 0, maximumFractionDigits: 2,
-                  });
-                  return (
-                    <div
-                      key={obra.id_obra}
-                      className="cat-obra-card"
-                      onClick={() => setSelectedObra(prev =>
-                        prev?.id_obra === obra.id_obra ? null : obra
-                      )}
-                      onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }}
-                      onMouseLeave={cursorOff}
-                    >
-                      <div className="cat-obra-card-img">
-                        {obra.imagen_principal ? (
-                          <img src={obra.imagen_principal} alt={obra.titulo} />
-                        ) : (
-                          <div style={{
-                            width: "100%", height: "100%", background: "#ece9e4",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            <ImageIcon size={28} strokeWidth={1} color="rgba(0,0,0,.12)" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="cat-obra-card-info">
-                        <div className="cat-obra-card-desc">{obra.titulo}</div>
-                        <div className="cat-obra-card-link">
-                          <span className="cat-obra-card-link-line" />
-                          {obra.categoria_nombre || "Ver obra"}
+                    onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }}
+                    onMouseLeave={cursorOff}
+                  >
+                    <div className="cat-obra-card-img">
+                      {obra.imagen_principal ? (
+                        <img src={obra.imagen_principal} alt={obra.titulo} />
+                      ) : (
+                        <div style={{
+                          width: "100%", height: "100%", background: "#ece9e4",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <ImageIcon size={28} strokeWidth={1} color="rgba(0,0,0,.12)" />
                         </div>
+                      )}
+                    </div>
+                    <div className="cat-obra-card-info">
+                      <div className="cat-obra-card-desc">{obra.titulo}</div>
+                      <div className="cat-obra-card-link">
+                        <span className="cat-obra-card-link-line" />
+                        {obra.categoria_nombre || "Ver obra"}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
           </>
         )}
 
@@ -1322,7 +1232,7 @@ export default function Catalogo() {
         {totalPages > 1 && !loading && (
           <div data-rv style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 6, padding: "0 72px", marginTop: 40,
+            gap: 6, padding: "0 72px", marginTop: 48,
           }}>
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -1375,7 +1285,6 @@ export default function Catalogo() {
           </div>
         )}
       </section>
-
       {/* Panel detalle */}
       {selectedObra && (
         <DetallePanel
