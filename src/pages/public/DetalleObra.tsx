@@ -1,13 +1,7 @@
 // src/pages/public/DetalleObra.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-<<<<<<< HEAD
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { Heart, Share2, ZoomIn, CheckCircle, Award, ShoppingCart } from "lucide-react";
-=======
-import { Heart, Share2, ZoomIn, CheckCircle, Award } from "lucide-react";
-import { Link } from "react-router-dom";
-import { authService } from "../../services/authService";
->>>>>>> 3e5a3e69b505c7c89e86ecff6ad163c0c1fbce1c
 import { cacheGet, cacheSet } from "../../utils/apiCache";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
@@ -43,8 +37,6 @@ function obraUrl(identifier: string): string {
 export default function DetalleObra() {
   const navigate  = useNavigate();
   const { slug }  = useParams<{ slug: string }>();
-  const isLoggedIn = authService.isAuthenticated();
-  const userRol    = localStorage.getItem("userRol") || "";
 
   const [obra,      setObra]      = useState<any>(null);
   const [loading,   setLoading]   = useState(true);
@@ -361,7 +353,10 @@ export default function DetalleObra() {
                   <Link to="/register" style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"white", textDecoration:"none", padding:"5px 13px", borderRadius:100, background:color, fontFamily:"'Nexa-Heavy',sans-serif" }}>Ser artista</Link>
                 </>
               ) : (
-                <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", textDecoration:"none", padding:"5px 13px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
+                <>
+                  <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", textDecoration:"none", padding:"5px 13px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
+                  <button onClick={() => { authService.logout(); navigate("/"); }} style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:C.ink, border:"none", padding:"5px 13px", borderRadius:100, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .22s" }}>Salir</button>
+                </>
               )}
             </div>
 
@@ -447,8 +442,7 @@ export default function DetalleObra() {
             <div style={{ height:1, background:"rgba(0,0,0,.07)" }}/>
 
             {/* CTAs */}
-<<<<<<< HEAD
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ display:"flex", flexDirection:"column", gap:10, animation:"slideUp .7s cubic-bezier(.16,1,.3,1) .65s both" }}>
               {/* Botón carrito — adaptativo según rol */}
               {userRol === "cliente" ? (
                 <>
@@ -480,14 +474,6 @@ export default function DetalleObra() {
                   onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; (e.currentTarget as HTMLElement).style.transform="scale(1)"; }}
                 >Adquirir esta obra →</button>
               )}
-=======
-            <div style={{ display:"flex", flexDirection:"column", gap:10, animation:"slideUp .7s cubic-bezier(.16,1,.3,1) .65s both" }}>
-              <button onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                style={{ width:"100%", padding:"14px 24px", borderRadius:100, background:color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"opacity .22s, transform .22s" }}
-                onMouseOver={e => { (e.currentTarget as HTMLElement).style.opacity=".85"; (e.currentTarget as HTMLElement).style.transform="scale(1.015)"; }}
-                onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; (e.currentTarget as HTMLElement).style.transform="scale(1)"; }}
-              >Adquirir esta obra →</button>
->>>>>>> 3e5a3e69b505c7c89e86ecff6ad163c0c1fbce1c
               <button onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width:"100%", padding:"12px 24px", borderRadius:100, background:"transparent", color:"rgba(0,0,0,.4)", border:"1px solid rgba(0,0,0,.12)", fontSize:10, fontWeight:700, letterSpacing:".16em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .22s" }}
                 onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(0,0,0,.3)"; (e.currentTarget as HTMLElement).style.color=C.ink; }}

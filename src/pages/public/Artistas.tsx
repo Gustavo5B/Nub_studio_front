@@ -487,6 +487,7 @@ export default function Artistas() {
 
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
+  const handleLogout = () => { authService.logout(); navigate("/"); };
 
   const pageRef = useReveal(0.10);
 
@@ -615,7 +616,10 @@ export default function Artistas() {
             <Link to="/register" style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"white", textDecoration:"none", padding:"6px 14px", borderRadius:100, background:"#E8640C", fontFamily:"'Nexa-Heavy',sans-serif" }}>Ser artista</Link>
           </>
         ) : (
-          <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(20,18,30,.35)", textDecoration:"none", padding:"6px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
+          <>
+            <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(20,18,30,.35)", textDecoration:"none", padding:"6px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
+            <button onClick={handleLogout} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:"#14121E", border:"none", padding:"6px 14px", borderRadius:100, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .22s" }}>Salir</button>
+          </>
         )}
       </div>
 

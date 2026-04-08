@@ -249,6 +249,7 @@ export default function Catalogo() {
 
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
+  const handleLogout = () => { authService.logout(); navigate("/"); };
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
@@ -716,6 +717,7 @@ export default function Catalogo() {
                   )}
                 </Link>
               )}
+              <button onClick={handleLogout} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
             </>
           )}
         </div>

@@ -228,6 +228,7 @@ class AuthService {
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userRol');
     localStorage.removeItem('temp_correo_2fa');
     localStorage.removeItem('artistaFoto');
     // FIX: también limpiar cookies
