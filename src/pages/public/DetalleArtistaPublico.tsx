@@ -370,7 +370,7 @@ export default function DetalleArtistaPublico() {
         </section>
 
         {/* ══════════════════════════════════════
-             I · BIO (VERSIÓN MEJORADA CON SVG)
+             I · BIO
         ══════════════════════════════════════ */}
         <section style={{ borderTop:`3px solid ${color}`, position:"relative", overflow:"hidden" }}>
           <div style={{ position:"absolute", top:0, right:0, width:"40%", height:"100%", background:`linear-gradient(135deg, ${color}08 0%, transparent 65%)`, pointerEvents:"none" }}/>
@@ -448,7 +448,7 @@ export default function DetalleArtistaPublico() {
               )}
             </div>
 
-            {/* COLUMNA DERECHA - CON SVG ICONOS */}
+            {/* COLUMNA DERECHA */}
             <div data-rv data-d="1" style={{ 
               padding:"64px 44px 56px", 
               display:"flex", 
@@ -458,26 +458,9 @@ export default function DetalleArtistaPublico() {
               background:`linear-gradient(135deg, ${color}04 0%, transparent 100%)`
             }}>
               
-              {/* CORREO */}
               {artista.correo && (
                 <div>
-                  <div style={{ 
-                    fontSize:7.5, 
-                    fontWeight:800, 
-                    letterSpacing:".28em", 
-                    textTransform:"uppercase", 
-                    color:"rgba(0,0,0,.25)", 
-                    fontFamily:NEXA_HEAVY, 
-                    marginBottom:8,
-                    display:"flex",
-                    alignItems:"center",
-                    gap:8
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22 6L12 13L2 6M22 6V18C22 19.1046 21.1046 20 20 20H4C2.89543 20 2 19.1046 2 18V6M22 6L12 13L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Correo
-                  </div>
+                  <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.25)", fontFamily:NEXA_HEAVY, marginBottom:8 }}>Correo</div>
                   <a href={`mailto:${artista.correo}`} 
                      style={{ fontSize:13, color:C.ink, fontFamily:SANS, wordBreak:"break-all", textDecoration:"none", transition:"color .2s" }}
                      onMouseEnter={e => { cursorOn(); (e.target as HTMLElement).style.color = C.orange; }}
@@ -487,26 +470,9 @@ export default function DetalleArtistaPublico() {
                 </div>
               )}
               
-              {/* TELÉFONO */}
               {artista.telefono && (
                 <div>
-                  <div style={{ 
-                    fontSize:7.5, 
-                    fontWeight:800, 
-                    letterSpacing:".28em", 
-                    textTransform:"uppercase", 
-                    color:"rgba(0,0,0,.25)", 
-                    fontFamily:NEXA_HEAVY, 
-                    marginBottom:8,
-                    display:"flex",
-                    alignItems:"center",
-                    gap:8
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22 16.92V19.92C22.0011 20.1985 21.9441 20.4742 21.8325 20.7294C21.7209 20.9845 21.5573 21.2136 21.352 21.4019C21.1467 21.5901 20.9043 21.7335 20.6408 21.8227C20.3772 21.9119 20.0984 21.945 19.82 21.92C16.7428 21.5856 13.787 20.5341 11.19 18.85C8.77381 17.3147 6.72533 15.2662 5.19 12.85C3.49947 10.2419 2.4477 7.27273 2.12 4.18C2.09497 3.90322 2.12738 3.62418 2.2156 3.36028C2.30381 3.09638 2.4458 2.85344 2.63274 2.64734C2.81968 2.44124 3.04749 2.27675 3.30148 2.1641C3.55547 2.05145 3.83016 1.99345 4.108 1.994H7.108C7.59554 1.98905 8.06768 2.1528 8.44579 2.45387C8.8239 2.75494 9.082 3.17323 9.17 3.642C9.28889 4.25761 9.46198 4.86111 9.687 5.446C9.82997 5.81283 9.85932 6.21304 9.77182 6.59638C9.68431 6.97971 9.4839 7.32756 9.198 7.594L7.745 8.997C8.61384 10.6147 9.83469 12.027 11.328 13.141C12.442 14.044 13.986 14.996 15.866 15.75L17.242 14.284C17.5099 13.9981 17.8589 13.7975 18.2433 13.7098C18.6278 13.6221 19.0292 13.6513 19.397 13.794C19.9859 14.0203 20.5932 14.1946 21.212 14.314C21.6821 14.4022 22.1016 14.6612 22.4028 15.0406C22.704 15.4201 22.8668 15.8937 22.86 16.382C22.8617 16.5601 22.8478 16.738 22.818 16.913L22 16.92Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Teléfono
-                  </div>
+                  <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.25)", fontFamily:NEXA_HEAVY, marginBottom:8 }}>Teléfono</div>
                   <a href={`tel:${artista.telefono}`} 
                      style={{ fontSize:13, color:C.ink, fontFamily:SANS, textDecoration:"none", transition:"color .2s" }}
                      onMouseEnter={e => { cursorOn(); (e.target as HTMLElement).style.color = C.orange; }}
@@ -516,90 +482,43 @@ export default function DetalleArtistaPublico() {
                 </div>
               )}
               
-              {/* REGIÓN */}
               <div>
-                <div style={{ 
-                  fontSize:7.5, 
-                  fontWeight:800, 
-                  letterSpacing:".28em", 
-                  textTransform:"uppercase", 
-                  color:"rgba(0,0,0,.25)", 
-                  fontFamily:NEXA_HEAVY, 
-                  marginBottom:8,
-                  display:"flex",
-                  alignItems:"center",
-                  gap:8
-                }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M12 22C16 18 20 14.4183 20 10C20 5.58172 16.4183 2 12 2C7.58172 2 4 5.58172 4 10C4 14.4183 8 18 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Región
-                </div>
+                <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.25)", fontFamily:NEXA_HEAVY, marginBottom:8 }}>Región</div>
                 <div style={{ fontSize:13, color:C.ink, fontFamily:SANS }}>Huasteca Hidalguense</div>
               </div>
               
-              {/* REDES SOCIALES */}
               {(artista.instagram || artista.facebook || artista.twitter) && (
                 <div>
-                  <div style={{ 
-                    fontSize:7.5, 
-                    fontWeight:800, 
-                    letterSpacing:".28em", 
-                    textTransform:"uppercase", 
-                    color:"rgba(0,0,0,.25)", 
-                    fontFamily:NEXA_HEAVY, 
-                    marginBottom:12,
-                    display:"flex",
-                    alignItems:"center",
-                    gap:8
-                  }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M18 2H15C13.6739 2 12.4021 2.52678 11.4645 3.46447C10.5268 4.40215 10 5.67392 10 7V10H7V14H10V22H14V14H17L18 10H14V7C14 6.73478 14.1054 6.48043 14.2929 6.29289C14.4804 6.10536 14.7348 6 15 6H18V2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Redes
-                  </div>
+                  <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.25)", fontFamily:NEXA_HEAVY, marginBottom:12 }}>Redes</div>
                   <div style={{ display:"flex", gap:16, flexDirection:"column" }}>
                     {artista.instagram && (
                       <a href={artista.instagram} target="_blank" rel="noopener noreferrer"
-                         style={{ display:"flex", alignItems:"center", gap:8, textDecoration:"none", color:C.sub, transition:"color .2s" }}
+                         style={{ fontSize:12, color:C.sub, textDecoration:"none", transition:"color .2s" }}
                          onMouseEnter={e => { cursorOn(); (e.currentTarget).style.color = C.orange; }}
                          onMouseLeave={e => { cursorOff(); (e.currentTarget).style.color = C.sub; }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M17 2H7C4.23858 2 2 4.23858 2 7V17C2 19.7614 4.23858 22 7 22H17C19.7614 22 22 19.7614 22 17V7C22 4.23858 19.7614 2 17 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M16 11.37C16.1234 12.2022 15.9812 13.0522 15.5937 13.799C15.2062 14.5458 14.5931 15.1514 13.8416 15.5297C13.0901 15.9079 12.2384 16.0396 11.4077 15.9059C10.5771 15.7723 9.80971 15.3801 9.21479 14.7852C8.61987 14.1902 8.22768 13.4229 8.09406 12.5922C7.96044 11.7615 8.09206 10.9098 8.47032 10.1583C8.84858 9.40683 9.45418 8.79379 10.2009 8.40624C10.9477 8.01869 11.7977 7.8765 12.63 7.99997C13.4789 8.12596 14.2648 8.52144 14.8716 9.12827C15.4785 9.73511 15.8739 10.5211 16 11.37Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M17.5 6.5H17.51" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span style={{ fontSize:12, fontFamily:SANS }}>Instagram</span>
+                        Instagram
                       </a>
                     )}
                     {artista.facebook && (
                       <a href={artista.facebook} target="_blank" rel="noopener noreferrer"
-                         style={{ display:"flex", alignItems:"center", gap:8, textDecoration:"none", color:C.sub, transition:"color .2s" }}
+                         style={{ fontSize:12, color:C.sub, textDecoration:"none", transition:"color .2s" }}
                          onMouseEnter={e => { cursorOn(); (e.currentTarget).style.color = C.orange; }}
                          onMouseLeave={e => { cursorOff(); (e.currentTarget).style.color = C.sub; }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M18 2H15C13.6739 2 12.4021 2.52678 11.4645 3.46447C10.5268 4.40215 10 5.67392 10 7V10H7V14H10V22H14V14H17L18 10H14V7C14 6.73478 14.1054 6.48043 14.2929 6.29289C14.4804 6.10536 14.7348 6 15 6H18V2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span style={{ fontSize:12, fontFamily:SANS }}>Facebook</span>
+                        Facebook
                       </a>
                     )}
                     {artista.twitter && (
                       <a href={artista.twitter} target="_blank" rel="noopener noreferrer"
-                         style={{ display:"flex", alignItems:"center", gap:8, textDecoration:"none", color:C.sub, transition:"color .2s" }}
+                         style={{ fontSize:12, color:C.sub, textDecoration:"none", transition:"color .2s" }}
                          onMouseEnter={e => { cursorOn(); (e.currentTarget).style.color = C.orange; }}
                          onMouseLeave={e => { cursorOff(); (e.currentTarget).style.color = C.sub; }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M23 3C22.0424 3.67548 20.9821 4.19211 19.86 4.53C19.2577 3.83751 18.4573 3.34669 17.567 3.12393C16.6767 2.90116 15.7395 2.9572 14.8821 3.28445C14.0247 3.61171 13.2884 4.1944 12.773 4.95372C12.2575 5.71303 11.9877 6.61234 12 7.53V8.53C10.2426 8.57557 8.50127 8.18581 6.93101 7.39545C5.36074 6.60508 4.01032 5.43864 3 4C3 4 -1 13 8 17C5.94053 18.398 3.48716 19.0989 1 19C10 24 21 19 21 7.5C20.9991 7.22145 20.9723 6.94359 20.92 6.67C21.9406 5.66349 22.6608 4.39271 23 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span style={{ fontSize:12, fontFamily:SANS }}>Twitter</span>
+                        Twitter
                       </a>
                     )}
                   </div>
                 </div>
               )}
               
-              {/* CERTIFICADO */}
               <div style={{ 
                 display:"inline-flex", 
                 alignItems:"center", 
@@ -611,11 +530,8 @@ export default function DetalleArtistaPublico() {
                 marginTop:8,
                 width:"fit-content"
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 6L9 17L4 12" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
                 <span style={{ fontSize:9, fontWeight:800, color:color, letterSpacing:".12em", textTransform:"uppercase", fontFamily:NEXA_HEAVY }}>
-                  Certificado NUB
+                  ✓ Certificado NUB
                 </span>
               </div>
             </div>
@@ -659,17 +575,9 @@ export default function DetalleArtistaPublico() {
               style={{ fontSize:11, fontWeight:800, letterSpacing:".22em", textTransform:"uppercase", color: fotosPersonales.length === 0 ? "rgba(0,0,0,.18)" : accordionOpen ? C.orange : "rgba(0,0,0,.55)", whiteSpace:"nowrap", fontFamily:NEXA_HEAVY, background:"none", border:"none", cursor: fotosPersonales.length === 0 ? "default" : "pointer", transition:"color .25s", display:"flex", alignItems:"center", gap:10 }}
             >
               II · Galería personal
-              {fotosPersonales.length > 0 && (
-                <span style={{ fontSize:7, color:"inherit", display:"inline-block", transform: accordionOpen ? "rotate(180deg)" : "none", transition:"transform .4s cubic-bezier(.16,1,.3,1)" }}>▾</span>
-              )}
-              {fotosPersonales.length === 0 && <span style={{ fontSize:7, color:"rgba(0,0,0,.15)" }}>— sin fotos</span>}
+              {fotosPersonales.length > 0 && <span style={{ fontSize:7, color:"inherit", display:"inline-block", transform: accordionOpen ? "rotate(180deg)" : "none", transition:"transform .4s cubic-bezier(.16,1,.3,1)" }}>▾</span>}
             </button>
             <div style={{ height:1, flex:1, background:"rgba(0,0,0,.05)" }}/>
-            {fotosPersonales.length > 0 && (
-              <span style={{ fontSize:8.5, fontWeight:700, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,0,0,.20)", whiteSpace:"nowrap", fontFamily:SANS }}>
-                {fotosPersonales.length} foto{fotosPersonales.length !== 1 ? "s" : ""}
-              </span>
-            )}
           </div>
 
           <div className={`det-accord-panel${accordionOpen ? " open" : ""}`}>
@@ -678,38 +586,21 @@ export default function DetalleArtistaPublico() {
                 {fotosPersonales.length > 1 && (
                   <button onClick={() => setFotoIdx(i => (i - 1 + fotosPersonales.length) % fotosPersonales.length)}
                     onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                    style={{ position:"absolute", left:32, zIndex:10, width:48, height:48, borderRadius:"50%", background:"rgba(0,0,0,.07)", border:"1px solid rgba(0,0,0,.10)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"background .2s, transform .2s", fontFamily:SANS, fontSize:18, color:C.ink }}
-                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = C.orange; (e.currentTarget as HTMLElement).style.color = "white"; (e.currentTarget as HTMLElement).style.border = `1px solid ${C.orange}`; }}
-                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,.07)"; (e.currentTarget as HTMLElement).style.color = C.ink; (e.currentTarget as HTMLElement).style.border = "1px solid rgba(0,0,0,.10)"; }}>
+                    style={{ position:"absolute", left:32, zIndex:10, width:48, height:48, borderRadius:"50%", background:"rgba(0,0,0,.07)", border:"1px solid rgba(0,0,0,.10)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:18, color:C.ink }}>
                     ←
                   </button>
                 )}
 
                 <div key={fotoIdx} style={{ width:"min(480px, 70vw)", height:520, overflow:"hidden", position:"relative", borderRadius:4, boxShadow:"0 20px 60px rgba(0,0,0,.14)", animation:"slideCarousel .45s cubic-bezier(.16,1,.3,1) both" }}>
-                  <img src={fotosPersonales[fotoIdx].url_foto} alt=""
-                    style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top", display:"block" }}/>
-                  <div style={{ position:"absolute", bottom:14, right:16, fontSize:9, fontWeight:800, color:"rgba(255,255,255,.6)", letterSpacing:".14em", fontFamily:NEXA_HEAVY, background:"rgba(0,0,0,.35)", padding:"4px 10px", borderRadius:100, backdropFilter:"blur(4px)" }}>
-                    {String(fotoIdx+1).padStart(2,"0")} / {String(fotosPersonales.length).padStart(2,"0")}
-                  </div>
+                  <img src={fotosPersonales[fotoIdx].url_foto} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top", display:"block" }}/>
                 </div>
 
                 {fotosPersonales.length > 1 && (
                   <button onClick={() => setFotoIdx(i => (i + 1) % fotosPersonales.length)}
                     onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                    style={{ position:"absolute", right:32, zIndex:10, width:48, height:48, borderRadius:"50%", background:"rgba(0,0,0,.07)", border:"1px solid rgba(0,0,0,.10)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"background .2s", fontFamily:SANS, fontSize:18, color:C.ink }}
-                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = C.orange; (e.currentTarget as HTMLElement).style.color = "white"; (e.currentTarget as HTMLElement).style.border = `1px solid ${C.orange}`; }}
-                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,.07)"; (e.currentTarget as HTMLElement).style.color = C.ink; (e.currentTarget as HTMLElement).style.border = "1px solid rgba(0,0,0,.10)"; }}>
+                    style={{ position:"absolute", right:32, zIndex:10, width:48, height:48, borderRadius:"50%", background:"rgba(0,0,0,.07)", border:"1px solid rgba(0,0,0,.10)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:18, color:C.ink }}>
                     →
                   </button>
-                )}
-
-                {fotosPersonales.length > 1 && (
-                  <div style={{ position:"absolute", bottom:0, display:"flex", gap:6, alignItems:"center" }}>
-                    {fotosPersonales.map((_, i) => (
-                      <button key={i} onClick={() => setFotoIdx(i)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                        style={{ width: i === fotoIdx ? 20 : 6, height:6, borderRadius:100, background: i === fotoIdx ? C.orange : "rgba(0,0,0,.18)", border:"none", cursor:"pointer", padding:0, transition:"all .3s cubic-bezier(.16,1,.3,1)" }}/>
-                    ))}
-                  </div>
                 )}
               </div>
             )}
@@ -744,10 +635,7 @@ export default function DetalleArtistaPublico() {
                   </div>
                   <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"16px 20px 20px" }}>
                     <div style={{ fontSize:17, fontWeight:900, color:"white", fontFamily:SERIF, lineHeight:1.1, marginBottom:5 }}>{col.nombre}</div>
-                    {col.historia && <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontFamily:SANS, lineHeight:1.5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as const }}>{col.historia}</div>}
-                    <div style={{ marginTop:8, fontSize:9, fontWeight:700, color:"rgba(255,255,255,.35)", fontFamily:NEXA_HEAVY, letterSpacing:".08em" }}>
-                      {Number(col.total_obras) || 0} {Number(col.total_obras) === 1 ? "obra" : "obras"}
-                    </div>
+                    {col.historia && <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", fontFamily:SANS, lineHeight:1.5 }}>{col.historia}</div>}
                   </div>
                 </div>
               ))}
@@ -756,7 +644,7 @@ export default function DetalleArtistaPublico() {
         )}
 
         {/* ══════════════════════════════════════
-             IV · OBRAS
+             IV · OBRAS - CORREGIDO ✅
         ══════════════════════════════════════ */}
         {publicadas.length > 0 && (
           <section id="sec-obras" style={{ padding:"80px 0 0", background:"#fafaf9", borderTop:"1px solid rgba(0,0,0,.04)" }}>
@@ -772,15 +660,18 @@ export default function DetalleArtistaPublico() {
               </Link>
             </div>
 
-            <div style={{ display:"flex", gap:10, overflowX:"auto", padding:"40px 72px 60px", scrollSnapType:"x mandatory", scrollbarWidth:"thin", scrollbarColor:"rgba(0,0,0,.15) rgba(0,0,0,.05)", alignItems:"center" }}>
+            <div style={{ display:"flex", gap:10, overflowX:"auto", padding:"40px 72px 60px", scrollSnapType:"x mandatory", scrollbarWidth:"thin", alignItems:"center" }}>
               {publicadas.map((obra: any) => (
                 <div key={obra.id_obra} className="det-obra-card"
                   style={{ flexShrink:0, width:220, height:280, scrollSnapAlign:"start", position:"relative" }}
-                  onClick={() => navigate(`/catalogo/${obra.slug || obra.id_obra}`)}
+                  onClick={() => {
+                    // ✅ CORREGIDO: Usar SIEMPRE el ID numérico de la obra
+                    navigate(`/obras/${obra.id_obra}`);
+                  }}
                   onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 >
                   {obra.imagen_principal ? (
-                    <img src={obra.imagen_principal} alt={obra.titulo}/>
+                    <img src={obra.imagen_principal} alt={obra.titulo} style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
                   ) : (
                     <div style={{ width:"100%", height:"100%", background:`${color}12`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32 }}>🎨</div>
                   )}
@@ -834,7 +725,7 @@ export default function DetalleArtistaPublico() {
           </section>
         )}
 
-        {/* ── Footer mínimo ── */}
+        {/* Footer */}
         <div style={{ padding:"22px 72px", borderTop:"1px solid rgba(0,0,0,.05)", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
           <div style={{ fontSize:11, fontWeight:900, color:"rgba(0,0,0,.14)", fontFamily:NEXA_HEAVY, letterSpacing:".1em" }}>NU★B STUDIO</div>
           <button onClick={() => navigate("/artistas")}

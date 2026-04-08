@@ -25,9 +25,26 @@ const PALETTE    = [C.orange, C.pink, C.purple, C.blue, C.gold];
 const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style:"currency", currency:"MXN", maximumFractionDigits:0 }).format(p);
 
-async function fetchObraBySlug(slug: string) {
-  const r = await fetch(`${API_URL}/api/obras/slug/${slug}`);
-  return r.json();
+// ═══════════════════════════════════════════════════════════════
+// ═══ FUNCIÓN MEJORADA: Acepta tanto ID como slug
+// ═══════════════════════════════════════════════════════════════
+async function fetchObraByIdOrSlug(identifier: string) {
+  const isNumeric = /^\d+$/.test(identifier);
+  
+  let url;
+  if (isNumeric) {
+    url = `${API_URL}/api/obras/${identifier}`;
+    console.log("🔍 Buscando obra por ID:", identifier);
+  } else {
+    url = `${API_URL}/api/obras/slug/${identifier}`;
+    console.log("🔍 Buscando obra por slug:", identifier);
+  }
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  console.log("📦 Respuesta API:", data);
+  
+  return data;
 }
 
 export default function DetalleObra() {
@@ -36,6 +53,7 @@ export default function DetalleObra() {
 
   const [obra,      setObra]      = useState<any>(null);
   const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
   const [imgActiva, setImgActiva] = useState<string | null>(null);
   const [tamSel,    setTamSel]    = useState<any>(null);
   const [liked,     setLiked]     = useState(false);
@@ -45,7 +63,7 @@ export default function DetalleObra() {
   const ringRef = useRef<HTMLDivElement>(null);
 
   // ═══════════════════════════════════════════════════════════════
-  // ═══ CURSOR PERSONALIZADO — CORREGIDO ═══
+  // ═══ CURSOR PERSONALIZADO
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     document.body.style.cursor = "none";
@@ -74,7 +92,6 @@ export default function DetalleObra() {
         dotRef.current.style.top = `${my}px`;
       }
       
-      // Inicia animación solo UNA vez
       if (rafId === null) {
         rafId = requestAnimationFrame(animate);
       }
@@ -89,29 +106,64 @@ export default function DetalleObra() {
     };
   }, []);
 
-  const cursorOn  = useCallback(() => { dotRef.current?.classList.add("cur-over");    ringRef.current?.classList.add("cur-over");    }, []);
-  const cursorOff = useCallback(() => { dotRef.current?.classList.remove("cur-over"); ringRef.current?.classList.remove("cur-over"); }, []);
+  const cursorOn  = useCallback(() => { 
+    dotRef.current?.classList.add("cur-over");    
+    ringRef.current?.classList.add("cur-over");    
+  }, []);
+  
+  const cursorOff = useCallback(() => { 
+    dotRef.current?.classList.remove("cur-over"); 
+    ringRef.current?.classList.remove("cur-over"); 
+  }, []);
 
+  // ═══════════════════════════════════════════════════════════════
+  // ═══ FETCH DE OBRA (MEJORADO)
+  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     globalThis.scrollTo(0, 0);
-    setLoading(true);
-    fetchObraBySlug(slug ?? "")
-      .then(j => {
-        if (j.success && j.data) {
-          setObra(j.data);
-          setImgActiva(j.data.imagen_principal);
-          if (j.data.tamaños?.length > 0) {
-            setTamSel(j.data.tamaños[0]);
+    
+    if (!slug) {
+      setError("No se especificó la obra");
+      setLoading(false);
+      return;
+    }
+
+    const loadObra = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const result = await fetchObraByIdOrSlug(slug);
+        
+        // Manejar diferentes estructuras de respuesta
+        let obraData = null;
+        
+        if (result.success && result.data) {
+          obraData = result.data;
+        } else if (result.id_obra) {
+          obraData = result;
+        } else if (result.data && result.data.id_obra) {
+          obraData = result.data;
+        }
+        
+        if (obraData) {
+          setObra(obraData);
+          setImgActiva(obraData.imagen_principal);
+          if (obraData.tamaños?.length > 0) {
+            setTamSel(obraData.tamaños[0]);
           }
         } else {
-          setObra(null);
+          setError("Obra no encontrada");
         }
-      })
-      .catch(e => {
-        console.error("Error cargando obra:", e);
-        setObra(null);
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error("Error cargando obra:", err);
+        setError("Error al cargar la obra");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadObra();
   }, [slug]);
 
   // ── PANTALLA DE CARGA
@@ -129,10 +181,11 @@ export default function DetalleObra() {
     </div>
   );
 
-  if (!obra) return (
+  // ── ERROR
+  if (error || !obra) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"100vh", gap:20, fontFamily:SANS, background:C.dark }}>
       <style>{`@font-face{font-family:'SolveraLorvane';src:url('/fonts/SolveraLorvane.ttf') format('truetype');}@font-face{font-family:'Nexa-Heavy';src:url('/fonts/Nexa-Heavy.ttf') format('truetype');}`}</style>
-      <div style={{ fontFamily:SERIF, fontSize:24, fontWeight:900, color:"white" }}>Obra no encontrada</div>
+      <div style={{ fontFamily:SERIF, fontSize:24, fontWeight:900, color:"white" }}>{error || "Obra no encontrada"}</div>
       <button onClick={() => navigate("/catalogo")} style={{ padding:"12px 28px", borderRadius:100, background:C.orange, color:"white", border:"none", fontWeight:700, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", fontSize:11, letterSpacing:".15em", textTransform:"uppercase" }}>Ver catálogo</button>
     </div>
   );
@@ -500,7 +553,7 @@ export default function DetalleObra() {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
               {obra.obras_relacionadas.map((rel: any) => (
                 <div key={rel.id_obra}
-                  onClick={() => { navigate(`/obras/${rel.slug}`); globalThis.scrollTo(0,0); }}
+                  onClick={() => { navigate(`/obras/${rel.slug || rel.id_obra}`); globalThis.scrollTo(0,0); }}
                   onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                   style={{ height:280, position:"relative", overflow:"hidden", cursor:"pointer", borderRadius:2 }}
                 >
