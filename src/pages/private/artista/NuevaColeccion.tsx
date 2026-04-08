@@ -24,10 +24,13 @@ const css = `
   .nc-textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
   .nc-img-drop { border: 2px dashed #e8e6f0; border-radius: 12px; padding: 28px; text-align: center; cursor: pointer; transition: all .2s; color: #9896a8; font-size: 13px; }
   .nc-img-drop:hover, .nc-img-drop.over { border-color: #E8640C; background: #fff8f3; color: #E8640C; }
-  .nc-img-preview { position: relative; border-radius: 12px; overflow: hidden; }
-  .nc-img-preview img { width: 100%; height: 180px; object-fit: cover; display: block; }
-  .nc-img-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.55); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .nc-img-preview { position: relative; border-radius: 12px; overflow: hidden; cursor: pointer; }
+  .nc-img-preview img { width: 100%; height: 180px; object-fit: cover; display: block; transition: filter .22s; }
+  .nc-img-preview:hover img { filter: brightness(.65); }
+  .nc-img-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.55); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; z-index: 2; }
   .nc-img-remove:hover { background: #c4304a; }
+  .nc-change-label { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); opacity: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); color: #fff; font-size: 12px; font-weight: 600; font-family: 'Outfit',sans-serif; padding: 6px 14px; border-radius: 100px; white-space: nowrap; transition: opacity .22s; pointer-events: none; }
+  .nc-img-preview:hover .nc-change-label { opacity: 1; }
   .nc-select { appearance: none; cursor: pointer; }
   .nc-actions { display: flex; gap: 10px; margin-top: 4px; }
   .nc-btn-cancel { background: #f3f2f8; color: #5a5870; border: none; padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: background .2s; }
@@ -177,9 +180,10 @@ export default function NuevaColeccion() {
               <input ref={fileRef} type="file" accept="image/*" hidden
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
               {portadaSrc ? (
-                <div className="nc-img-preview">
+                <div className="nc-img-preview" onClick={() => fileRef.current?.click()}>
                   <img src={portadaSrc} alt="portada" />
-                  <button type="button" className="nc-img-remove" onClick={removeImg}>✕</button>
+                  <button type="button" className="nc-img-remove" onClick={e => { e.stopPropagation(); removeImg(); }}>✕</button>
+                  <span className="nc-change-label">🖼 Cambiar imagen</span>
                 </div>
               ) : (
                 <div className={`nc-img-drop${dragOver ? " over" : ""}`}
