@@ -18,7 +18,7 @@ interface Coleccion { id_coleccion: number; nombre: string; estado: string; }
 interface FormState {
   titulo: string; descripcion: string; historia: string; id_categoria: string; id_coleccion: string; tecnica: string;
   anio_creacion: string; dimensiones_alto: string; dimensiones_ancho: string;
-  dimensiones_profundidad: string; precio_base: string;
+  dimensiones_profundidad: string; precio_base: string; stock: string;
   permite_marco: boolean; con_certificado: boolean;
   imagen_principal: string; etiquetas: number[];
 }
@@ -49,6 +49,7 @@ const validaciones: Partial<Record<keyof FormState, (v: string) => string | null
   descripcion: v => !v.trim() ? null : v.trim().length < 20 ? "Mínimo 20 caracteres" : null,
   tecnica:     v => !v.trim() ? null : v.trim().length < 3 ? "Mínimo 3 caracteres" : null,
   precio_base: v => !v ? "El precio es requerido" : parseFloat(v) <= 0 ? "El precio debe ser mayor a 0" : null,
+  stock:       v => !v || parseInt(v) < 1 ? "La cantidad debe ser al menos 1" : null,
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export default function EditarObra() {
     titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
-    precio_base: "", permite_marco: false, con_certificado: false,
+    precio_base: "", stock: "1", permite_marco: false, con_certificado: false,
     imagen_principal: "", etiquetas: [],
   });
 
@@ -111,6 +112,7 @@ export default function EditarObra() {
         dimensiones_ancho:       String(obra.dimensiones?.ancho       ?? obra.ancho_cm       ?? ""),
         dimensiones_profundidad: String(obra.dimensiones?.profundidad ?? obra.profundidad_cm ?? ""),
         precio_base:             String(obra.precio_base || ""),
+        stock:                   String(obra.stock_actual ?? 1),
         permite_marco:           Boolean(obra.permite_marco),
         con_certificado:         Boolean(obra.con_certificado),
         imagen_principal:        obra.imagen_principal || "",
@@ -502,9 +504,9 @@ export default function EditarObra() {
             </div>
           </div>
 
-          {/* PRECIO */}
+          {/* PRECIO Y STOCK */}
           <div className="form-section">
-            <h3 className="section-title" style={{ color:"#333" }}><DollarSign size={18} /> Precio</h3>
+            <h3 className="section-title" style={{ color:"#333" }}><DollarSign size={18} /> Precio y Stock</h3>
             <div className="price-field-wrap">
               <div className="field-group price-field">
                 <label style={{ color:"#333", fontWeight:600 }}>Precio base (MXN) *</label>
@@ -523,6 +525,23 @@ export default function EditarObra() {
                   <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0 0", borderTop:"1px solid #ddd", marginTop:4 }}><span style={{ fontWeight:600, color:"#333" }}>Tú recibes</span><strong style={{ fontSize:18, color:"#27ae60" }}>${(parseFloat(form.precio_base)*0.85).toLocaleString("es-MX")} MXN</strong></div>
                 </div>
               )}
+            </div>
+
+            {/* Stock */}
+            <div className="field-group" style={{ marginTop:20 }}>
+              <label style={{ color:"#333", fontWeight:600 }}>Cantidad disponible (stock) *</label>
+              <input
+                type="number" name="stock" value={form.stock} onChange={handleChange}
+                placeholder="1" min={1} step="1"
+                style={{ border:`1px solid ${fieldErrors.stock ? "#e74c3c" : "#ddd"}`, padding:"10px", borderRadius:8, maxWidth:140, display:"block" }}
+                className={`field-input${fieldErrors.stock ? " field-input-error" : ""}`}
+              />
+              {fieldErrors.stock
+                ? <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.stock}</span>
+                : <p style={{ fontSize:11, color:"#999", margin:"6px 0 0", fontStyle:"italic" }}>
+                    Piezas únicas generalmente tienen stock 1. Para impresiones o reproducciones puedes poner más.
+                  </p>
+              }
             </div>
           </div>
 

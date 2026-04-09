@@ -47,6 +47,8 @@ export default function DetalleObra() {
   const [zoomed,     setZoomed]     = useState(false);
   const [agregando,  setAgregando]  = useState(false);
   const [enCarrito,  setEnCarrito]  = useState(false);
+  const [cantidad,   setCantidad]   = useState(1);
+  const [stockDisponible, setStockDisponible] = useState<number | null>(null);
 
   const { showToast } = useToast();
   const isLoggedIn = authService.isAuthenticated();
@@ -57,18 +59,22 @@ export default function DetalleObra() {
       navigate("/login");
       return;
     }
+    if (stockDisponible !== null && stockDisponible <= 0) {
+      showToast("Esta obra está agotada", "warn");
+      return;
+    }
     setAgregando(true);
     try {
       const token = authService.getToken();
       const res = await fetch(`${API_URL}/api/carrito`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id_obra: obra?.id_obra, cantidad: 1 }),
+        body: JSON.stringify({ id_obra: obra?.id_obra, cantidad }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.message || "Error al agregar al carrito", "err"); return; }
       setEnCarrito(true);
-      showToast("Obra agregada al carrito", "ok");
+      showToast(`${cantidad > 1 ? `${cantidad} piezas agregadas` : "Obra agregada"} al carrito`, "ok");
     } catch {
       showToast("Sin conexión con el servidor", "err");
     } finally {
@@ -165,6 +171,9 @@ export default function DetalleObra() {
           setObra(obraData);
           setImgActiva(obraData.imagen_principal);
           if (obraData.tamaños?.length > 0) setTamSel(obraData.tamaños[0]);
+          const disp = typeof obraData.stock_disponible === "number" ? obraData.stock_disponible : null;
+          setStockDisponible(disp);
+          setCantidad(disp !== null && disp > 0 ? 1 : 1);
         } else {
           setError("Obra no encontrada");
         }
@@ -185,7 +194,8 @@ export default function DetalleObra() {
     </div>
   );
 
-  const precio   = tamSel?.precio_base || obra.precio_base;
+  const precio         = tamSel?.precio_base || obra.precio_base;
+  const obraPublicada  = obra.estado === "publicada" && obra.activa === true;
   const todasImg = [
     ...(obra.imagen_principal ? [{ url_imagen:obra.imagen_principal, id_imagen:"main" }] : []),
     ...(obra.imagenes || []),
@@ -411,6 +421,25 @@ export default function DetalleObra() {
                 {fmt(Number(precio || 0))}
               </div>
               <div style={{ fontSize:11, color:"rgba(0,0,0,.3)", fontFamily:SANS, marginTop:4 }}>IVA incluido · Envío a calcular</div>
+
+              {/* Badge de stock */}
+              {stockDisponible !== null && (
+                <div style={{ marginTop:12, display:"inline-flex", alignItems:"center", gap:7,
+                  padding:"5px 14px", borderRadius:100,
+                  background: stockDisponible === 0 ? "rgba(196,48,74,0.08)" : stockDisponible <= 3 ? "rgba(168,112,6,0.10)" : "rgba(14,138,80,0.08)",
+                  border: `1px solid ${stockDisponible === 0 ? "rgba(196,48,74,0.25)" : stockDisponible <= 3 ? "rgba(168,112,6,0.25)" : "rgba(14,138,80,0.22)"}`,
+                }}>
+                  <div style={{ width:6, height:6, borderRadius:"50%",
+                    background: stockDisponible === 0 ? "#C4304A" : stockDisponible <= 3 ? "#A87006" : "#0E8A50",
+                    flexShrink:0,
+                  }}/>
+                  <span style={{ fontFamily:NEXA_HEAVY, fontSize:9, fontWeight:800, letterSpacing:".12em", textTransform:"uppercase",
+                    color: stockDisponible === 0 ? "#C4304A" : stockDisponible <= 3 ? "#A87006" : "#0E8A50",
+                  }}>
+                    {stockDisponible === 0 ? "Agotada" : stockDisponible === 1 ? "Última pieza" : `${stockDisponible} disponibles`}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Tamaños */}
@@ -441,21 +470,70 @@ export default function DetalleObra() {
 
             <div style={{ height:1, background:"rgba(0,0,0,.07)" }}/>
 
+            {/* Selector de cantidad — solo si obra publicada, stock > 1 y cliente */}
+            {obraPublicada && userRol === "cliente" && stockDisponible !== null && stockDisponible > 1 && !enCarrito && (
+              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ fontSize:8, fontWeight:800, letterSpacing:".22em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", fontFamily:NEXA_HEAVY }}>Cantidad</div>
+                <div style={{ display:"flex", alignItems:"center", gap:0, border:"1px solid rgba(0,0,0,.12)", borderRadius:100, overflow:"hidden" }}>
+                  <button
+                    type="button"
+                    onClick={() => setCantidad(c => Math.max(1, c - 1))}
+                    onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                    style={{ width:34, height:34, border:"none", background:"transparent", fontSize:16, color:cantidad <= 1 ? "rgba(0,0,0,.18)" : C.ink, cursor:cantidad <= 1 ? "default" : "pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background .15s" }}
+                    onMouseOver={e => { if (cantidad > 1) (e.currentTarget as HTMLElement).style.background="rgba(0,0,0,.05)"; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background="transparent"; }}
+                  >−</button>
+                  <span style={{ minWidth:28, textAlign:"center", fontFamily:NEXA_HEAVY, fontSize:14, fontWeight:800, color:C.ink }}>{cantidad}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCantidad(c => Math.min(stockDisponible, c + 1))}
+                    onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                    style={{ width:34, height:34, border:"none", background:"transparent", fontSize:16, color:cantidad >= stockDisponible ? "rgba(0,0,0,.18)" : C.ink, cursor:cantidad >= stockDisponible ? "default" : "pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background .15s" }}
+                    onMouseOver={e => { if (cantidad < stockDisponible) (e.currentTarget as HTMLElement).style.background="rgba(0,0,0,.05)"; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background="transparent"; }}
+                  >+</button>
+                </div>
+                <span style={{ fontSize:11, color:"rgba(0,0,0,.28)", fontFamily:SANS }}>máx. {stockDisponible}</span>
+              </div>
+            )}
+
             {/* CTAs */}
             <div style={{ display:"flex", flexDirection:"column", gap:10, animation:"slideUp .7s cubic-bezier(.16,1,.3,1) .65s both" }}>
-              {/* Botón carrito — adaptativo según rol */}
-              {userRol === "cliente" ? (
+
+              {/* Obra NO publicada — aviso de revisión */}
+              {!obraPublicada ? (
+                <div style={{ width:"100%", padding:"14px 20px", borderRadius:14,
+                  background:"rgba(168,112,6,0.07)", border:"1px solid rgba(168,112,6,0.22)",
+                  display:"flex", alignItems:"center", gap:12 }}>
+                  <span style={{ fontSize:18, flexShrink:0 }}>🕐</span>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:800, letterSpacing:".16em", textTransform:"uppercase", color:"#A87006", fontFamily:NEXA_HEAVY, marginBottom:3 }}>
+                      Obra en revisión
+                    </div>
+                    <div style={{ fontSize:11.5, color:"rgba(0,0,0,.45)", fontFamily:SANS, lineHeight:1.5 }}>
+                      Esta obra está pendiente de aprobación y aún no está disponible para adquirir.
+                    </div>
+                  </div>
+                </div>
+
+              ) : userRol === "cliente" ? (
+                /* Botón carrito — obra publicada + rol cliente */
                 <>
                   <button
                     onClick={handleAgregarCarrito}
-                    disabled={agregando}
+                    disabled={agregando || (stockDisponible !== null && stockDisponible <= 0)}
                     onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                    style={{ width:"100%", padding:"14px 24px", borderRadius:100, background: enCarrito ? "#0E8A50" : color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor: agregando ? "not-allowed" : "pointer", transition:"opacity .22s, transform .22s, background .3s", opacity: agregando ? 0.7 : 1, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
-                    onMouseOver={e => { if (!agregando) (e.currentTarget as HTMLElement).style.opacity=".85"; }}
+                    style={{ width:"100%", padding:"14px 24px", borderRadius:100,
+                      background: (stockDisponible !== null && stockDisponible <= 0) ? "rgba(0,0,0,.12)" : enCarrito ? "#0E8A50" : color,
+                      color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY,
+                      cursor: (agregando || (stockDisponible !== null && stockDisponible <= 0)) ? "not-allowed" : "pointer",
+                      transition:"opacity .22s, transform .22s, background .3s", opacity: agregando ? 0.7 : 1,
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
+                    onMouseOver={e => { if (!agregando && !(stockDisponible !== null && stockDisponible <= 0)) (e.currentTarget as HTMLElement).style.opacity=".85"; }}
                     onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; }}
                   >
                     <ShoppingCart size={13} strokeWidth={2.5} />
-                    {agregando ? "Agregando..." : enCarrito ? "✓ En tu carrito" : "Agregar al carrito"}
+                    {agregando ? "Agregando..." : (stockDisponible !== null && stockDisponible <= 0) ? "Agotada" : enCarrito ? "✓ En tu carrito" : "Agregar al carrito"}
                   </button>
                   {enCarrito && (
                     <button
@@ -466,6 +544,7 @@ export default function DetalleObra() {
                   )}
                 </>
               ) : (
+                /* Botón adquirir — obra publicada + no autenticado o rol distinto */
                 <button
                   onClick={() => navigate("/login")}
                   onMouseEnter={cursorOn} onMouseLeave={cursorOff}
@@ -474,6 +553,7 @@ export default function DetalleObra() {
                   onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity="1"; (e.currentTarget as HTMLElement).style.transform="scale(1)"; }}
                 >Adquirir esta obra →</button>
               )}
+
               <button onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ width:"100%", padding:"12px 24px", borderRadius:100, background:"transparent", color:"rgba(0,0,0,.4)", border:"1px solid rgba(0,0,0,.12)", fontSize:10, fontWeight:700, letterSpacing:".16em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .22s" }}
                 onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(0,0,0,.3)"; (e.currentTarget as HTMLElement).style.color=C.ink; }}
@@ -525,6 +605,7 @@ export default function DetalleObra() {
                     { label:"Técnica",     value:obra.tecnica_nombre || "—" },
                     { label:"Marco",       value:obra.permite_marco ? "Disponible" : "No disponible" },
                     { label:"Certificado", value:obra.con_certificado ? "Incluido" : "No incluido" },
+                    ...(stockDisponible !== null ? [{ label:"Stock", value: stockDisponible === 0 ? "Agotada" : stockDisponible === 1 ? "Última pieza" : `${stockDisponible} disponibles` }] : []),
                   ].map(({ label, value }) => (
                     <div key={label} style={{ borderBottom:"1px solid rgba(0,0,0,.07)", paddingBottom:16 }}>
                       <div style={{ fontSize:8, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,0,0,.25)", fontFamily:NEXA_HEAVY, marginBottom:6 }}>{label}</div>

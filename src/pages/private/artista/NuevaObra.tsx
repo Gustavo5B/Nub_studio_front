@@ -125,7 +125,7 @@ interface FormData {
   titulo: string; descripcion: string; historia: string; id_categoria: string;
   id_coleccion: string; tecnica: string; anio_creacion: string;
   dimensiones_alto: string; dimensiones_ancho: string; dimensiones_profundidad: string;
-  precio_base: string; permite_marco: boolean; con_certificado: boolean; etiquetas: number[];
+  precio_base: string; stock: string; permite_marco: boolean; con_certificado: boolean; etiquetas: number[];
 }
 
 // ── Sanitización frontend ─────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ export default function NuevaObra() {
     titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
-    precio_base: "", permite_marco: false, con_certificado: false, etiquetas: [],
+    precio_base: "", stock: "1", permite_marco: false, con_certificado: false, etiquetas: [],
   });
 
   useEffect(() => {
@@ -285,6 +285,9 @@ export default function NuevaObra() {
     e.preventDefault();
     if (!form.precio_base || parseFloat(form.precio_base) <= 0) {
       showToast("El precio base es requerido", "warn"); return;
+    }
+    if (!form.stock || parseInt(form.stock) < 1) {
+      showToast("La cantidad disponible debe ser al menos 1", "warn"); setStep(2); return;
     }
 
     // ── Validación de seguridad final antes de enviar ──
@@ -582,7 +585,7 @@ export default function NuevaObra() {
               </div>
 
               <div className="no-section">
-                <div className="no-section-title"><span>💰</span> Precio</div>
+                <div className="no-section-title"><span>💰</span> Precio y Stock</div>
                 <div className="no-field">
                   <label className="no-field-label">Precio base (MXN) *</label>
                   <div className="no-price-wrap">
@@ -591,6 +594,16 @@ export default function NuevaObra() {
                       value={form.precio_base} onChange={handleChange}
                       placeholder="0.00" min={0} step="0.01" />
                   </div>
+                </div>
+                <div className="no-field" style={{ marginTop: 12 }}>
+                  <label className="no-field-label">Cantidad disponible (stock) *</label>
+                  <input className="no-input" type="number" name="stock"
+                    value={form.stock} onChange={handleChange}
+                    placeholder="1" min={1} step="1"
+                    style={{ maxWidth: 120 }} />
+                  <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
+                    Piezas únicas generalmente tienen stock 1. Para impresiones o reproducciones puedes poner más.
+                  </p>
                 </div>
                 {precio > 0 && (
                   <div className="no-breakdown">
