@@ -46,7 +46,7 @@ interface BackupEntry {
 interface TablaInfo { nombre: string; filas: number; bytes: number; }
 interface CronConfig {
   id: number; activo: boolean; frecuencia: "diario" | "semanal" | "mensual";
-  hora: number; dia_semana: number;
+  hora: number; minuto: number; dia_semana: number;
   ultima_ejecucion: string | null; proxima_ejecucion: string | null;
 }
 interface BackupRaw {
@@ -63,11 +63,13 @@ const formatBytes = (b: number) => {
   if (b < 1048576) return `${(b / 1024).toFixed(1)} KB`;
   return `${(b / 1048576).toFixed(2)} MB`;
 };
-const formatFecha = (d: Date) =>
+const formatFechaCompleta = (d: Date) =>
   d.toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const formatFechaCorta = (d: Date) =>
+  d.toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
 const tiempoRelativo = (d: Date) => {
   const diff = Date.now() - d.getTime(), min = Math.floor(diff / 60000);
-  if (min < 1) return "Hace un momento";
+  if (min < 1) return "Ahora";
   if (min < 60) return `Hace ${min} min`;
   const hrs = Math.floor(min / 60);
   if (hrs < 24) return `Hace ${hrs} h`;
@@ -84,66 +86,62 @@ const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "
 function authHeaders() { return { Authorization: `Bearer ${authService.getToken()}` }; }
 function authHeadersJson() { return { Authorization: `Bearer ${authService.getToken()}`, "Content-Type": "application/json" }; }
 
-// ========== COMPONENTES UI ==========
+// ========== COMPONENTES UI REDISEÑADOS ==========
 
-// ── Topbar con breadcrumb ────────────────────────────────────────────────────
+// ── Topbar ────────────────────────────────────────────────────────────────────
 function Topbar({ navigate, cursorOn, cursorOff }: { navigate: (p: string) => void; cursorOn: () => void; cursorOff: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", height: 60, background: C.bgCard, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 30, fontFamily: SANS, boxShadow: `0 1px 3px ${C.shadow}` }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", height: 56, background: C.bgCard, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 30, fontFamily: SANS }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button onClick={() => navigate("/admin/dashboard")} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer", color: C.muted, fontSize: 12, fontWeight: 500, transition: "color 0.2s" }}>
-          <Home size={14} strokeWidth={1.8} /> Inicio
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer", color: C.muted, fontSize: 12, fontWeight: 500 }}>
+          <Home size={14} /> Inicio
         </button>
         <ChevronRight size={12} color={C.muted} />
         <span style={{ display: "flex", alignItems: "center", gap: 6, color: C.orange, fontSize: 12, fontWeight: 700 }}>
-          <Database size={14} strokeWidth={1.8} /> Backups
+          <Database size={14} /> Backups
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ padding: "4px 12px", borderRadius: 40, background: `${C.orange}10`, border: `1px solid ${C.orange}20` }}>
-          <span style={{ fontSize: 10.5, color: C.orange, fontWeight: 600 }}>Cifrado SHA-256</span>
+          <span style={{ fontSize: 10.5, color: C.orange, fontWeight: 600 }}>SHA-256</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 40, background: `${C.success}10`, border: `1px solid ${C.success}20` }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.success, display: "inline-block" }} />
-          <span style={{ fontSize: 10.5, color: C.success, fontWeight: 600 }}>Sistema activo</span>
+        <div style={{ padding: "4px 12px", borderRadius: 40, background: `${C.success}10`, border: `1px solid ${C.success}20` }}>
+          <span style={{ fontSize: 10.5, color: C.success, fontWeight: 600 }}>Activo</span>
         </div>
       </div>
     </div>
   );
 }
 
-// ── KPI Strip (con palomita en la tarjeta de Tablas) ─────────────────────────
+// ── KPI Strip (compacto pero con info completa) ──────────────────────────────
 function KpiStrip({ historial, tablasSalud }: { historial: BackupEntry[]; tablasSalud: TablaInfo[] }) {
   const ultimoBackup = historial[0];
   const totalFilas = historial.reduce((s, e) => s + e.filas, 0);
   const items = [
-    { label: "Respaldos", value: String(historial.length), icon: Database, color: C.orange, sub: "archivos guardados" },
-    { label: "Filas", value: totalFilas > 0 ? totalFilas.toLocaleString("es-MX") : "—", icon: HardDrive, color: C.blue, sub: "registros respaldados" },
-    { label: "Último", value: ultimoBackup ? tiempoRelativo(ultimoBackup.fecha) : "—", icon: Clock, color: C.gold, sub: ultimoBackup ? formatFecha(ultimoBackup.fecha) : "sin respaldo" },
-    { label: "Tablas", value: String(tablasSalud.length), icon: CheckCircle, color: C.success, sub: "monitoreadas" }, // <-- cambiado a CheckCircle
+    { label: "Respaldos", value: historial.length, icon: Database, color: C.orange },
+    { label: "Filas", value: totalFilas.toLocaleString("es-MX"), icon: HardDrive, color: C.blue },
+    { label: "Último", value: ultimoBackup ? tiempoRelativo(ultimoBackup.fecha) : "—", icon: Clock, color: C.gold },
+    { label: "Tablas", value: tablasSalud.length, icon: CheckCircle, color: C.success },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
-      {items.map(({ label, value, icon: Icon, color, sub }) => (
-        <div key={label} style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, padding: "16px 20px", transition: "transform 0.2s, box-shadow 0.2s", boxShadow: `0 1px 3px ${C.shadow}` }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.06)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 1px 3px ${C.shadow}`; }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 12, background: `${color}10`, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon size={16} color={color} strokeWidth={1.8} />
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+      {items.map(({ label, value, icon: Icon, color }) => (
+        <div key={label} style={{ background: C.bgCard, borderRadius: 14, border: `1px solid ${C.border}`, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, boxShadow: `0 1px 2px ${C.shadow}` }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}10`, border: `1px solid ${color}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon size={16} color={color} />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, fontFamily: SERIF, color: C.ink, marginBottom: 4 }}>{value}</div>
-          <div style={{ fontSize: 11, color: C.muted }}>{sub}</div>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: SERIF, color: C.ink, lineHeight: 1.2 }}>{value}</div>
+            <div style={{ fontSize: 11, color: C.muted }}>{label}</div>
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-// ── BackupRow ────────────────────────────────────────────────────────────────
+// ── BackupRow (con fecha completa y hora) ─────────────────────────────────────
 function BackupRow({ entry, onDelete, deleting, isSelected, cursorOn, cursorOff }: {
   entry: BackupEntry; onDelete: (id: string) => void; deleting: boolean; isSelected: boolean;
   cursorOn: () => void; cursorOff: () => void;
@@ -151,33 +149,45 @@ function BackupRow({ entry, onDelete, deleting, isSelected, cursorOn, cursorOff 
   const esSelectivo = entry.filename.includes("selectivo");
   const esAuto = entry.filename.includes("auto");
   return (
-    <div style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 8, background: isSelected ? `${C.orange}08` : "transparent", border: `1px solid ${isSelected ? `${C.orange}25` : C.border}`, transition: "all 0.2s", cursor: "pointer" }}
-      onMouseEnter={cursorOn} onMouseLeave={cursorOff}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+    <div
+      onClick={() => {}} // la selección se maneja en el padre
+      onMouseEnter={cursorOn}
+      onMouseLeave={cursorOff}
+      style={{
+        padding: "10px 12px",
+        borderRadius: 10,
+        marginBottom: 6,
+        background: isSelected ? `${C.orange}08` : "transparent",
+        border: `1px solid ${isSelected ? `${C.orange}30` : C.border}`,
+        cursor: "pointer",
+        transition: "all 0.15s",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
             {esAuto && <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 40, background: `${C.purple}10`, border: `1px solid ${C.purple}20`, color: C.purple, fontWeight: 700 }}>Auto</span>}
             {esSelectivo && <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 40, background: `${C.gold}10`, border: `1px solid ${C.gold}20`, color: C.gold, fontWeight: 700 }}>Selectivo</span>}
           </div>
-          <div style={{ fontSize: 13, fontWeight: 600, fontFamily: FM, color: C.ink, marginBottom: 4 }}>{entry.filename}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: C.muted }}>
+          <div style={{ fontSize: 12.5, fontWeight: 600, fontFamily: FM, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.filename}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, fontSize: 10.5, color: C.muted, flexWrap: "wrap" }}>
             <span>{tiempoRelativo(entry.fecha)}</span>
             <span>•</span>
-            <span>{formatFecha(entry.fecha)}</span>
+            <span>{formatFechaCompleta(entry.fecha)}</span>
             <span>•</span>
             <span>{formatBytes(entry.tamaño)}</span>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 4 }}>
           {entry.url_archivo && (
             <a href={entry.url_archivo} download={entry.filename} onClick={e => e.stopPropagation()} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{ width: 30, height: 30, borderRadius: 8, background: `${C.blue}08`, border: `1px solid ${C.blue}20`, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-              <Download size={12} color={C.blue} strokeWidth={2} />
+              style={{ width: 28, height: 28, borderRadius: 7, background: `${C.blue}08`, border: `1px solid ${C.blue}20`, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+              <Download size={12} color={C.blue} />
             </a>
           )}
           <button onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }} disabled={deleting} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-            style={{ width: 30, height: 30, borderRadius: 8, background: `${C.error}08`, border: `1px solid ${C.error}20`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            {deleting ? <RefreshCw size={11} color={C.error} strokeWidth={2} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={11} color={C.error} strokeWidth={2} />}
+            style={{ width: 28, height: 28, borderRadius: 7, background: `${C.error}08`, border: `1px solid ${C.error}20`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            {deleting ? <RefreshCw size={11} color={C.error} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={11} color={C.error} />}
           </button>
         </div>
       </div>
@@ -191,32 +201,26 @@ function HistorialPanel({ historial, selected, setSelected, onDelete, deletingId
   onDelete: (id: string) => void; deletingId: string | null; cursorOn: () => void; cursorOff: () => void;
 }) {
   return (
-    <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, marginBottom: 20, overflow: "hidden", boxShadow: `0 2px 8px ${C.shadow}` }}>
-      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(to right, ${C.bgCard}, ${C.inputBg})` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 10, background: `${C.orange}10`, border: `1px solid ${C.orange}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <FileText size={14} color={C.orange} strokeWidth={1.8} />
-          </div>
-          <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.ink }}>Historial de respaldos</span>
-          {historial.length > 0 && <span style={{ padding: "2px 9px", borderRadius: 100, background: `${C.orange}10`, border: `1px solid ${C.orange}20`, fontSize: 10.5, color: C.orange, fontWeight: 700 }}>{historial.length}</span>}
+    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden", marginBottom: 20 }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: C.inputBg }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <FileText size={14} color={C.orange} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Historial</span>
+          {historial.length > 0 && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 40, background: `${C.orange}10`, color: C.orange, fontWeight: 600 }}>{historial.length}</span>}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, color: C.muted }}>
-          <ExternalLink size={10} />
-          <span style={{ fontSize: 10.5 }}>Últimos 3 · Supabase Storage</span>
+        <div style={{ fontSize: 10, color: C.muted, display: "flex", alignItems: "center", gap: 4 }}>
+          <ExternalLink size={10} /> Supabase
         </div>
       </div>
-      <div style={{ padding: "12px 16px" }}>
+      <div style={{ padding: "8px", maxHeight: 320, overflowY: "auto" }}>
         {historial.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 20px" }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: `${C.orange}10`, border: `1px solid ${C.orange}20`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-              <Database size={20} color={C.orange} strokeWidth={1.5} />
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, marginBottom: 4 }}>Sin respaldos aún</div>
-            <div style={{ fontSize: 12, color: C.muted }}>Genera tu primer respaldo usando el botón naranja</div>
+          <div style={{ textAlign: "center", padding: "32px 16px" }}>
+            <Database size={24} color={C.muted} style={{ opacity: 0.5, marginBottom: 8 }} />
+            <div style={{ fontSize: 13, color: C.muted }}>Sin respaldos</div>
           </div>
         ) : (
           historial.map(entry => (
-            <div key={entry.id} onClick={() => setSelected(entry)} style={{ cursor: "pointer" }}>
+            <div key={entry.id} onClick={() => setSelected(entry)}>
               <BackupRow entry={entry} onDelete={onDelete} deleting={deletingId === entry.id} isSelected={selected?.id === entry.id} cursorOn={cursorOn} cursorOff={cursorOff} />
             </div>
           ))
@@ -226,68 +230,41 @@ function HistorialPanel({ historial, selected, setSelected, onDelete, deletingId
   );
 }
 
-// ── DetallePanel ─────────────────────────────────────────────────────────────
+// ── DetallePanel (con checksum) ──────────────────────────────────────────────
 function DetallePanel({ selected, cursorOn, cursorOff }: { selected: BackupEntry | null; cursorOn: () => void; cursorOff: () => void }) {
   if (!selected) {
     return (
-      <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, marginBottom: 20, overflow: "hidden", boxShadow: `0 2px 8px ${C.shadow}` }}>
-        <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, background: `linear-gradient(to right, ${C.bgCard}, ${C.inputBg})` }}>
-          <div style={{ width: 30, height: 30, borderRadius: 10, background: `${C.orange}10`, border: `1px solid ${C.orange}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Info size={14} color={C.orange} strokeWidth={1.8} />
-          </div>
-          <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.ink }}>Detalle</span>
-        </div>
-        <div style={{ textAlign: "center", padding: "40px 20px" }}>
-          <AlertCircle size={24} color={C.muted} strokeWidth={1.5} />
-          <div style={{ fontSize: 13, color: C.muted, marginTop: 8 }}>Selecciona un respaldo para ver detalles</div>
-        </div>
+      <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, padding: "24px 16px", textAlign: "center", marginBottom: 20 }}>
+        <Info size={24} color={C.muted} style={{ opacity: 0.4, marginBottom: 8 }} />
+        <div style={{ fontSize: 12, color: C.muted }}>Selecciona un respaldo</div>
       </div>
     );
   }
-  const stats = [
-    { label: "Fecha", value: formatFecha(selected.fecha), color: C.blue },
-    { label: "Tamaño", value: formatBytes(selected.tamaño), color: C.purple },
-    { label: "Filas", value: selected.filas.toLocaleString("es-MX"), color: C.success },
-    { label: "Tablas", value: selected.tablas, color: C.gold },
-    { label: "Duración", value: selected.duracion, color: C.pink },
-    { label: "Estado", value: "Exitoso", color: C.success },
-  ];
   return (
-    <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, marginBottom: 20, overflow: "hidden", boxShadow: `0 2px 8px ${C.shadow}` }}>
-      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, background: `linear-gradient(to right, ${C.bgCard}, ${C.inputBg})` }}>
-        <div style={{ width: 30, height: 30, borderRadius: 10, background: `${C.orange}10`, border: `1px solid ${C.orange}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Info size={14} color={C.orange} strokeWidth={1.8} />
-        </div>
-        <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.ink }}>Detalle del respaldo</span>
+    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden", marginBottom: 20 }}>
+      <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, background: C.inputBg }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Detalle</span>
       </div>
-      <div style={{ padding: "18px 20px" }}>
-        <div style={{ marginBottom: 16, padding: "12px", background: C.inputBg, borderRadius: 12, border: `1px solid ${C.border}` }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 4 }}>Archivo</div>
-          <div style={{ fontSize: 11, fontFamily: FM, color: C.ink, wordBreak: "break-all" }}>{selected.filename}</div>
+      <div style={{ padding: "12px 16px" }}>
+        <div style={{ marginBottom: 12, fontSize: 11, fontFamily: FM, color: C.muted, wordBreak: "break-all", background: C.inputBg, padding: "8px 10px", borderRadius: 8 }}>
+          {selected.filename}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {stats.map(({ label, value, color }) => (
-            <div key={label} style={{ padding: "10px", background: C.inputBg, borderRadius: 12, border: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: C.muted, textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color }}>{value}</div>
-            </div>
-          ))}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          <div><div style={{ fontSize: 9, color: C.muted }}>Fecha</div><div style={{ fontSize: 12, fontWeight: 500 }}>{formatFechaCompleta(selected.fecha)}</div></div>
+          <div><div style={{ fontSize: 9, color: C.muted }}>Tamaño</div><div style={{ fontSize: 12, fontWeight: 500 }}>{formatBytes(selected.tamaño)}</div></div>
+          <div><div style={{ fontSize: 9, color: C.muted }}>Filas</div><div style={{ fontSize: 12, fontWeight: 500 }}>{selected.filas.toLocaleString("es-MX")}</div></div>
+          <div><div style={{ fontSize: 9, color: C.muted }}>Tablas</div><div style={{ fontSize: 12, fontWeight: 500 }}>{selected.tablas}</div></div>
+          <div><div style={{ fontSize: 9, color: C.muted }}>Duración</div><div style={{ fontSize: 12, fontWeight: 500 }}>{selected.duracion}</div></div>
+          <div><div style={{ fontSize: 9, color: C.muted }}>Estado</div><div style={{ fontSize: 12, fontWeight: 500, color: C.success }}>Exitoso</div></div>
         </div>
-        <div style={{ marginTop: 12, padding: "12px", background: C.inputBg, borderRadius: 12, border: `1px solid ${C.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <Shield size={10} color={C.purple} strokeWidth={2} />
-            <span style={{ fontSize: 9, fontWeight: 700, color: C.muted }}>Checksum MD5</span>
-          </div>
+        <div style={{ marginBottom: 12, padding: "8px 10px", background: C.inputBg, borderRadius: 8 }}>
+          <div style={{ fontSize: 9, color: C.muted }}>Checksum MD5</div>
           <div style={{ fontSize: 10, fontFamily: FM, color: C.ink, wordBreak: "break-all" }}>{selected.checksum}</div>
         </div>
         {selected.url_archivo && (
-          <a
-            href={selected.url_archivo}
-            download={selected.filename}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 16, padding: "10px", borderRadius: 40, background: C.orange, color: "white", textDecoration: "none", fontWeight: 700, fontSize: 12, transition: "background 0.2s" }}
-            onMouseEnter={(e) => { cursorOn(); e.currentTarget.style.background = C.orangeDark; }}
-            onMouseLeave={(e) => { cursorOff(); e.currentTarget.style.background = C.orange; }}>
-            <Download size={14} /> Descargar
+          <a href={selected.url_archivo} download={selected.filename} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: C.orange, color: "white", padding: "8px", borderRadius: 40, fontSize: 11, fontWeight: 600, textDecoration: "none" }}>
+            <Download size={12} /> Descargar
           </a>
         )}
       </div>
@@ -295,7 +272,7 @@ function DetallePanel({ selected, cursorOn, cursorOff }: { selected: BackupEntry
   );
 }
 
-// ── EstadoTablas ─────────────────────────────────────────────────────────────
+// ── EstadoTablas (con barras de progreso) ────────────────────────────────────
 function EstadoTablas({ tablas, loading, onRefresh, cursorOn, cursorOff }: {
   tablas: TablaInfo[]; loading: boolean; onRefresh: () => void; cursorOn: () => void; cursorOff: () => void;
 }) {
@@ -303,22 +280,19 @@ function EstadoTablas({ tablas, loading, onRefresh, cursorOn, cursorOff }: {
   const maxFilas = Math.max(...tablas.map(t => t.filas), 1);
   const colors = [C.orange, C.purple, C.blue, C.pink, C.gold, C.success];
   return (
-    <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, marginBottom: 20, overflow: "hidden", boxShadow: `0 2px 8px ${C.shadow}` }}>
-      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(to right, ${C.bgCard}, ${C.inputBg})` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 10, background: `${C.success}10`, border: `1px solid ${C.success}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Activity size={14} color={C.success} strokeWidth={1.8} />
-          </div>
-          <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.ink }}>Estado de las tablas</span>
-          <span style={{ padding: "2px 8px", borderRadius: 100, background: `${C.success}10`, border: `1px solid ${C.success}20`, fontSize: 10, color: C.success, fontWeight: 700 }}>{tablas.length} tablas</span>
-          <span style={{ fontSize: 10.5, color: C.muted }}>{formatBytes(totalBytes)}</span>
+    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden", marginBottom: 20 }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: C.inputBg }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Activity size={14} color={C.success} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Tablas</span>
+          <span style={{ fontSize: 11, color: C.muted }}>{tablas.length} · {formatBytes(totalBytes)}</span>
         </div>
         <button onClick={onRefresh} disabled={loading} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
           style={{ width: 28, height: 28, borderRadius: 8, background: C.inputBg, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
           <RefreshCw size={12} color={C.muted} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
         </button>
       </div>
-      <div style={{ padding: "16px 20px", maxHeight: 320, overflowY: "auto" }}>
+      <div style={{ padding: "12px", maxHeight: 280, overflowY: "auto" }}>
         {loading && tablas.length === 0 ? (
           <div style={{ textAlign: "center", padding: "24px", color: C.muted }}>Cargando...</div>
         ) : (
@@ -326,13 +300,13 @@ function EstadoTablas({ tablas, loading, onRefresh, cursorOn, cursorOff }: {
             const pct = Math.round((t.filas / maxFilas) * 100);
             const color = colors[idx % colors.length];
             return (
-              <div key={t.nombre} style={{ marginBottom: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, fontFamily: FM, color: C.ink }}>{t.nombre}</span>
-                  <span style={{ fontSize: 11, color: C.muted }}>{t.filas.toLocaleString("es-MX")} filas · {formatBytes(t.bytes)}</span>
+              <div key={t.nombre} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3, fontSize: 11 }}>
+                  <span style={{ fontWeight: 600, fontFamily: FM, color: C.ink }}>{t.nombre}</span>
+                  <span style={{ color: C.muted }}>{t.filas.toLocaleString("es-MX")} filas · {formatBytes(t.bytes)}</span>
                 </div>
-                <div style={{ height: 4, background: C.border, borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4, transition: "width 0.3s" }} />
+                <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 2 }} />
                 </div>
               </div>
             );
@@ -343,35 +317,34 @@ function EstadoTablas({ tablas, loading, onRefresh, cursorOn, cursorOff }: {
   );
 }
 
-// ── SelectorTablas (MODIFICADO: muestra palomita cuando todas incluidas) ─────
+// ── SelectorTablas (con palomita cuando todas incluidas) ─────────────────────
 function SelectorTablas({ tablas, excluidas, onChange, cursorOn, cursorOff }: {
   tablas: string[]; excluidas: string[]; onChange: (e: string[]) => void; cursorOn: () => void; cursorOff: () => void;
 }) {
   const toggle = (t: string) => onChange(excluidas.includes(t) ? excluidas.filter(x => x !== t) : [...excluidas, t]);
-  const incluidasCount = tablas.length - excluidas.length;
   const todasIncluidas = excluidas.length === 0;
-
   return (
-    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, padding: "16px 20px", marginBottom: 20, boxShadow: `0 2px 8px ${C.shadow}` }}>
+    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, padding: "12px 16px", marginBottom: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Selección de tablas</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Table2 size={14} color={C.orange} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Tablas a respaldar</span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {todasIncluidas && <CheckCircle size={14} color={C.success} />}
-          <span style={{ fontSize: 12, color: todasIncluidas ? C.muted : C.orange, fontWeight: 600 }}>
-            {incluidasCount} de {tablas.length} incluidas
-          </span>
+          {todasIncluidas && <CheckCircle size={12} color={C.success} />}
+          <span style={{ fontSize: 11, color: todasIncluidas ? C.muted : C.orange }}>{tablas.length - excluidas.length} de {tablas.length}</span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 6, maxHeight: 200, overflowY: "auto" }}>
         {tablas.map(t => {
           const excluida = excluidas.includes(t);
           return (
             <button key={t} onClick={() => toggle(t)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 10, background: excluida ? `${C.error}05` : `${C.success}05`, border: `1px solid ${excluida ? C.error : C.success}20`, cursor: "pointer", transition: "all 0.2s" }}>
-              <div style={{ width: 14, height: 14, borderRadius: 4, background: excluida ? "transparent" : C.success, border: `1px solid ${excluida ? C.error : C.success}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {!excluida && <Check size={10} color="white" strokeWidth={3} />}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", borderRadius: 8, background: excluida ? `${C.error}05` : `${C.success}05`, border: `1px solid ${excluida ? C.error : C.success}20`, cursor: "pointer", fontSize: 11, fontFamily: FM, color: excluida ? C.error : C.success, textDecoration: excluida ? "line-through" : "none" }}>
+              <div style={{ width: 12, height: 12, borderRadius: 3, background: excluida ? "transparent" : C.success, border: `1px solid ${excluida ? C.error : C.success}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {!excluida && <Check size={8} color="white" />}
               </div>
-              <span style={{ fontSize: 11, fontFamily: FM, color: excluida ? C.error : C.success, textDecoration: excluida ? "line-through" : "none" }}>{t}</span>
+              {t}
             </button>
           );
         })}
@@ -380,13 +353,18 @@ function SelectorTablas({ tablas, excluidas, onChange, cursorOn, cursorOff }: {
   );
 }
 
-// ── ConfigCron ───────────────────────────────────────────────────────────────
+// ── ConfigCron (con minutos y AM/PM) ─────────────────────────────────────────
 function ConfigCron({ config, onSave, saving, cursorOn, cursorOff }: {
   config: CronConfig | null; onSave: (c: Partial<CronConfig>) => void; saving: boolean; cursorOn: () => void; cursorOff: () => void;
 }) {
   const [activo, setActivo] = useState(config?.activo ?? false);
   const [frecuencia, setFrecuencia] = useState<"diario" | "semanal" | "mensual">(config?.frecuencia ?? "diario");
-  const [hora, setHora] = useState(config?.hora ?? 2);
+  const [hora12, setHora12] = useState(() => {
+    const h = config?.hora ?? 2;
+    return h % 12 === 0 ? 12 : h % 12;
+  });
+  const [minuto, setMinuto] = useState(config?.minuto ?? 0);
+  const [ampm, setAmpm] = useState<"AM" | "PM">(() => (config?.hora ?? 2) >= 12 ? "PM" : "AM");
   const [diaSemana, setDiaSemana] = useState(config?.dia_semana ?? 1);
   const [expanded, setExpanded] = useState(false);
 
@@ -394,102 +372,81 @@ function ConfigCron({ config, onSave, saving, cursorOn, cursorOff }: {
     if (config) {
       setActivo(config.activo);
       setFrecuencia(config.frecuencia);
-      setHora(config.hora);
+      const h = config.hora;
+      setHora12(h % 12 === 0 ? 12 : h % 12);
+      setAmpm(h >= 12 ? "PM" : "AM");
+      setMinuto(config.minuto ?? 0);
       setDiaSemana(config.dia_semana);
     }
   }, [config]);
 
-  const descProxima = () => {
-    if (!activo) return "Desactivado";
-    const h = hora.toString().padStart(2, "0");
-    if (frecuencia === "diario") return `Diario ${h}:00`;
-    if (frecuencia === "semanal") return `${DIAS[diaSemana]} ${h}:00`;
-    return `Día 1 cada mes ${h}:00`;
+  const getHora24 = () => {
+    let h = hora12 % 12;
+    if (ampm === "PM") h += 12;
+    return h;
   };
 
-  const handleSave = () => onSave({ activo, frecuencia, hora, dia_semana: diaSemana });
+  const descProxima = () => {
+    if (!activo) return "Desactivado";
+    const h = hora12.toString().padStart(2, "0");
+    const m = minuto.toString().padStart(2, "0");
+    if (frecuencia === "diario") return `Diario ${h}:${m} ${ampm}`;
+    if (frecuencia === "semanal") return `${DIAS[diaSemana]} ${h}:${m} ${ampm}`;
+    return `Día 1, ${h}:${m} ${ampm}`;
+  };
+
+  const handleSave = () => {
+    const hora24 = getHora24();
+    onSave({ activo, frecuencia, hora: hora24, minuto, dia_semana: diaSemana });
+  };
 
   return (
-    <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, marginBottom: 20, overflow: "hidden", boxShadow: `0 2px 8px ${C.shadow}` }}>
-      <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", padding: "14px 20px", borderBottom: expanded ? `1px solid ${C.border}` : "none", display: "flex", justifyContent: "space-between", alignItems: "center", background: `linear-gradient(to right, ${C.bgCard}, ${C.inputBg})` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 10, background: activo ? `${C.success}10` : `${C.orange}10`, border: `1px solid ${activo ? C.success : C.orange}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Calendar size={14} color={activo ? C.success : C.orange} strokeWidth={1.8} />
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.ink }}>Backup automático</span>
-              <span style={{ padding: "2px 8px", borderRadius: 100, background: activo ? `${C.success}10` : `${C.muted}10`, border: `1px solid ${activo ? C.success : C.muted}20`, fontSize: 10, color: activo ? C.success : C.muted, fontWeight: 700 }}>{activo ? "Activo" : "Inactivo"}</span>
-            </div>
-            {activo && <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{descProxima()}</div>}
-          </div>
+    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden", marginBottom: 20 }}>
+      <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", background: C.inputBg }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Calendar size={14} color={activo ? C.success : C.orange} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Backup automático</span>
+          <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 40, background: activo ? `${C.success}10` : `${C.muted}10`, color: activo ? C.success : C.muted }}>{activo ? "Activo" : "Inactivo"}</span>
         </div>
-        <ChevronDown size={16} color={C.muted} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+        <ChevronDown size={14} color={C.muted} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
       </div>
-
       {expanded && (
-        <div style={{ padding: "18px 20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, padding: "10px 14px", background: C.inputBg, borderRadius: 12, border: `1px solid ${C.border}` }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Activar backup automático</div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{descProxima()}</div>
-            </div>
+        <div style={{ padding: "12px 16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <span style={{ fontSize: 11, color: C.muted }}>{descProxima()}</span>
             <button onClick={() => setActivo(!activo)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-              {activo ? <ToggleRight size={28} color={C.success} /> : <ToggleLeft size={28} color={C.muted} />}
+              style={{ background: "none", border: "none", cursor: "pointer" }}>
+              {activo ? <ToggleRight size={24} color={C.success} /> : <ToggleLeft size={24} color={C.muted} />}
             </button>
           </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6 }}>Frecuencia</label>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-              {(["diario", "semanal", "mensual"] as const).map(f => (
-                <button key={f} onClick={() => setFrecuencia(f)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                  style={{ padding: "8px 4px", borderRadius: 40, border: `1.5px solid ${frecuencia === f ? C.orange : C.border}`, background: frecuencia === f ? `${C.orange}10` : "transparent", color: frecuencia === f ? C.orange : C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: frecuencia === "semanal" ? "1fr 1fr" : "1fr", gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6 }}>Hora</label>
-              <select value={hora} onChange={e => setHora(parseInt(e.target.value))} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.inputBg, fontFamily: SANS }}>
-                {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i.toString().padStart(2, "0")}:00</option>)}
-              </select>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+            <select value={frecuencia} onChange={e => setFrecuencia(e.target.value as any)} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, fontSize: 12 }}>
+              <option value="diario">Diario</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensual">Mensual</option>
+            </select>
             {frecuencia === "semanal" && (
-              <div>
-                <label style={{ fontSize: 10, fontWeight: 700, color: C.muted, display: "block", marginBottom: 6 }}>Día</label>
-                <select value={diaSemana} onChange={e => setDiaSemana(parseInt(e.target.value))} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.inputBg }}>
-                  {DIAS.map((d, i) => <option key={d} value={i}>{d}</option>)}
-                </select>
-              </div>
+              <select value={diaSemana} onChange={e => setDiaSemana(parseInt(e.target.value))} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, fontSize: 12 }}>
+                {DIAS.map((d, i) => <option key={d} value={i}>{d}</option>)}
+              </select>
             )}
           </div>
-
-          {config && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
-              <div style={{ padding: "8px 12px", background: C.inputBg, borderRadius: 10, border: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: C.muted }}>Última ejecución</div>
-                <div style={{ fontSize: 11, color: C.ink }}>{config.ultima_ejecucion ? new Date(config.ultima_ejecucion).toLocaleString("es-MX") : "Nunca"}</div>
-              </div>
-              <div style={{ padding: "8px 12px", background: C.inputBg, borderRadius: 10, border: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: C.muted }}>Próxima ejecución</div>
-                <div style={{ fontSize: 11, color: activo ? C.success : C.muted }}>{config.proxima_ejecucion && activo ? new Date(config.proxima_ejecucion).toLocaleString("es-MX") : "—"}</div>
-              </div>
-            </div>
-          )}
-
-          <button onClick={handleSave} disabled={saving}
-            style={{ width: "100%", padding: "10px", borderRadius: 40, border: "none", background: C.orange, color: "white", fontWeight: 700, fontSize: 13, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "background 0.2s" }}
-            onMouseEnter={(e) => { cursorOn(); if (!saving) e.currentTarget.style.background = C.orangeDark; }}
-            onMouseLeave={(e) => { cursorOff(); if (!saving) e.currentTarget.style.background = C.orange; }}>
-            {saving ? <RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Zap size={14} />}
-            {saving ? "Guardando..." : "Guardar configuración"}
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <select value={hora12} onChange={e => setHora12(parseInt(e.target.value))} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, fontSize: 12, flex: 1 }}>
+              {Array.from({ length: 12 }, (_, i) => <option key={i} value={i + 1}>{(i + 1).toString().padStart(2, "0")}</option>)}
+            </select>
+            <select value={minuto} onChange={e => setMinuto(parseInt(e.target.value))} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, fontSize: 12, flex: 1 }}>
+              {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{i.toString().padStart(2, "0")}</option>)}
+            </select>
+            <select value={ampm} onChange={e => setAmpm(e.target.value as "AM" | "PM")} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, fontSize: 12, width: 70 }}>
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+          </div>
+          <button onClick={handleSave} disabled={saving} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+            style={{ width: "100%", padding: "8px", borderRadius: 40, border: "none", background: C.orange, color: "white", fontWeight: 600, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {saving ? <RefreshCw size={12} style={{ animation: "spin 1s linear infinite" }} /> : <Zap size={12} />}
+            {saving ? "Guardando..." : "Guardar"}
           </button>
         </div>
       )}
@@ -497,31 +454,23 @@ function ConfigCron({ config, onSave, saving, cursorOn, cursorOff }: {
   );
 }
 
-// ── QueIncluye ───────────────────────────────────────────────────────────────
+// ── QueIncluye (compacto) ─────────────────────────────────────────────────────
 function QueIncluye() {
   const items = [
-    { text: "Esquema completo (tablas, índices, FK)", color: C.success },
-    { text: "Datos completos (INSERT INTO)", color: C.success },
-    { text: "Reset de secuencias automático", color: C.success },
-    { text: "Verificación MD5 de integridad", color: C.success },
-    { text: "Guardado en Supabase Storage", color: C.orange },
-    { text: "Máximo 3 backups en Storage", color: C.orange },
-    { text: "Backup selectivo disponible", color: C.gold },
-    { text: "Cron automático configurable", color: C.blue },
+    "Esquema completo", "Datos completos", "Reset de secuencias",
+    "Verificación MD5", "Supabase Storage", "Máx. 3 backups",
+    "Backup selectivo", "Cron automático",
   ];
   return (
-    <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, padding: "16px 20px", boxShadow: `0 2px 8px ${C.shadow}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 10, background: `${C.orange}10`, border: `1px solid ${C.orange}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Shield size={14} color={C.orange} strokeWidth={1.8} />
-        </div>
-        <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.ink }}>¿Qué incluye?</span>
+    <div style={{ background: C.bgCard, borderRadius: 16, border: `1px solid ${C.border}`, padding: "12px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <Shield size={14} color={C.orange} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>¿Qué incluye?</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-        {items.map(({ text, color }) => (
-          <div key={text} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <CheckCircle size={12} color={color} />
-            <span style={{ fontSize: 12, color: C.ink }}>{text}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        {items.map(text => (
+          <div key={text} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
+            <CheckCircle size={10} color={C.success} /> {text}
           </div>
         ))}
       </div>
@@ -536,33 +485,29 @@ function BackupBanner({ loading, esSelectivo, tablasIncluidas, tablasNames, show
   cursorOn: () => void; cursorOff: () => void;
 }) {
   return (
-    <div style={{ background: `linear-gradient(135deg, ${C.orangeLight}, ${C.bgCard})`, borderRadius: 24, padding: "28px 32px", marginBottom: 28, border: `1px solid ${C.border}`, boxShadow: `0 4px 12px ${C.shadow}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20 }}>
+    <div style={{ background: `linear-gradient(135deg, ${C.orangeLight}, ${C.bgCard})`, borderRadius: 20, padding: "20px 24px", marginBottom: 24, border: `1px solid ${C.border}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <Star size={14} color={C.orange} fill={C.orange} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.orange, textTransform: "uppercase", letterSpacing: "0.08em" }}>Gestión de datos</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+            <Star size={12} color={C.orange} fill={C.orange} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.orange, textTransform: "uppercase" }}>Gestión de datos</span>
           </div>
-          <h1 style={{ fontSize: "clamp(24px, 5vw, 32px)", fontWeight: 900, fontFamily: SERIF, color: C.ink, margin: 0, lineHeight: 1.2 }}>
-            Centro de <span style={{ color: C.orange }}>Respaldos</span>
-          </h1>
-          <p style={{ fontSize: 13, color: C.muted, marginTop: 8 }}>Completo o selectivo · Supabase Storage · máx. 3 backups</p>
+          <h1 style={{ fontSize: 20, fontWeight: 800, fontFamily: SERIF, color: C.ink, margin: 0 }}>Centro de Respaldos</h1>
+          <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Completo o selectivo · Supabase Storage</p>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end" }}>
+        <div style={{ display: "flex", gap: 10 }}>
           {tablasNames.length > 0 && (
             <button onClick={() => setShowSelector(s => !s)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 40, padding: "6px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: SANS }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 40, padding: "6px 14px", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>
               <Table2 size={12} />
-              {esSelectivo ? `Selectivo: ${tablasIncluidas.length} tablas` : "Completo — todas las tablas"}
+              {esSelectivo ? `Selectivo (${tablasIncluidas.length})` : "Completo"}
               {showSelector ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           )}
-          <button onClick={onGenerar} disabled={loading}
-            style={{ display: "flex", alignItems: "center", gap: 8, background: C.orange, border: "none", borderRadius: 40, padding: "10px 24px", color: "white", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1, transition: "background 0.2s" }}
-            onMouseEnter={(e) => { cursorOn(); if (!loading) e.currentTarget.style.background = C.orangeDark; }}
-            onMouseLeave={(e) => { cursorOff(); if (!loading) e.currentTarget.style.background = C.orange; }}>
+          <button onClick={onGenerar} disabled={loading} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+            style={{ display: "flex", alignItems: "center", gap: 8, background: C.orange, border: "none", borderRadius: 40, padding: "8px 20px", color: "white", fontWeight: 600, fontSize: 12, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1 }}>
             <Database size={14} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
-            {loading ? "Generando respaldo..." : (esSelectivo ? `Backup selectivo (${tablasIncluidas.length} tablas)` : "Generar backup completo")}
+            {loading ? "Generando..." : (esSelectivo ? `Backup (${tablasIncluidas.length})` : "Backup completo")}
           </button>
         </div>
       </div>
@@ -575,7 +520,6 @@ export default function Backups() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  // Cursor personalizado
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
@@ -591,25 +535,17 @@ export default function Backups() {
   const [tablasNames, setTablasNames] = useState<string[]>([]);
   const [tablasExcluidas, setTablasExcluidas] = useState<string[]>([]);
 
-  // Efecto del cursor
   useEffect(() => {
     if (!window.matchMedia("(pointer: fine)").matches) return;
     document.body.style.cursor = "none";
-    let rx = 0, ry = 0;
-    let rafId: number;
+    let rx = 0, ry = 0, rafId: number;
     const onMove = (e: MouseEvent) => {
       const { clientX: mx, clientY: my } = e;
-      if (dotRef.current) {
-        dotRef.current.style.left = `${mx}px`;
-        dotRef.current.style.top = `${my}px`;
-      }
+      if (dotRef.current) { dotRef.current.style.left = `${mx}px`; dotRef.current.style.top = `${my}px`; }
       const animate = () => {
         rx += (mx - rx) * 0.15;
         ry += (my - ry) * 0.15;
-        if (ringRef.current) {
-          ringRef.current.style.left = `${rx}px`;
-          ringRef.current.style.top = `${ry}px`;
-        }
+        if (ringRef.current) { ringRef.current.style.left = `${rx}px`; ringRef.current.style.top = `${ry}px`; }
         rafId = requestAnimationFrame(animate);
       };
       cancelAnimationFrame(rafId);
@@ -632,7 +568,6 @@ export default function Backups() {
     ringRef.current?.classList.remove("cur-over");
   }, []);
 
-  // Funciones de carga (iguales)
   const cargarHistorial = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/backups/historial`, { headers: authHeaders() });
@@ -648,7 +583,7 @@ export default function Backups() {
       const json = await res.json();
       if (json.success) {
         const raw: TablaRaw[] = json.data?.tablas || json.data || [];
-        const tablas: TablaInfo[] = raw.map(t => ({ nombre: t.tabla ?? t.nombre ?? "—", filas: t.filas ?? 0, bytes: t.bytes ?? 0 }));
+        const tablas = raw.map(t => ({ nombre: t.tabla ?? t.nombre ?? "—", filas: t.filas ?? 0, bytes: t.bytes ?? 0 }));
         setTablasSalud(tablas);
         setTablasNames(tablas.map(t => t.nombre));
       }
@@ -716,7 +651,7 @@ export default function Backups() {
   return (
     <>
       <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .cur-dot {
           position: fixed; width: 6px; height: 6px; border-radius: 50%;
           background: #14121E; pointer-events: none; z-index: 99999;
@@ -736,7 +671,7 @@ export default function Backups() {
       <div ref={ringRef} className="cur-ring" />
 
       <Topbar navigate={navigate} cursorOn={cursorOn} cursorOff={cursorOff} />
-      <main style={{ flex: 1, padding: "24px 28px 40px", background: C.bgPage, minHeight: "100vh", fontFamily: SANS }}>
+      <main style={{ padding: "24px 24px 40px", background: C.bgPage, minHeight: "100vh", fontFamily: SANS }}>
         <BackupBanner
           loading={loading}
           esSelectivo={esSelectivo}
@@ -752,7 +687,7 @@ export default function Backups() {
           <SelectorTablas tablas={tablasNames} excluidas={tablasExcluidas} onChange={setTablasExcluidas} cursorOn={cursorOn} cursorOff={cursorOff} />
         )}
         <KpiStrip historial={historial} tablasSalud={tablasSalud} />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, alignItems: "start" }}>
           <div>
             <HistorialPanel
               historial={historial}
