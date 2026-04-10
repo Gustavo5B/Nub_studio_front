@@ -18,6 +18,7 @@ import ActivarCuenta          from "../pages/public/ActivarCuenta";
 import VerificarEmail         from "../pages/public/VerificarEmail";
 import ForgotPassword         from "../pages/public/ForgotPassword";
 import Blog                   from "../pages/public/Blog";
+import BlogDetalle             from "../pages/public/BlogDetalle";
 
 // Página de error
 import NotFound from "../pages/public/NotFound";
@@ -37,6 +38,7 @@ export default function PublicRoutes() {
       <Route path="/artistas/:matricula" element={<DetalleArtistaPublico />} />
       <Route path="/colecciones/:slug"  element={<DetalleColeccionPublico />} /> {/* 👈 NUEVA RUTA */}
       <Route path="/blog"               element={<Blog />} />
+      <Route path="/blog/:slug"         element={<BlogDetalle />} />
       <Route path="/sobre-nosotros"     element={<About />} />
 
       {/* Contacto SIN layout */}
