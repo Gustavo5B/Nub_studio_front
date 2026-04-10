@@ -23,8 +23,9 @@ const C = {
 const SERIF      = "'SolveraLorvane', serif";
 const SANS       = "'Outfit', sans-serif";
 const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
+const CORMORANT  = "'Cormorant Garamond', serif";
 const PALETTE    = [C.orange, C.pink, C.purple, C.blue, C.gold];
-
+const NEXA_REGULAR = "'Nexa-Regular', sans-serif";
 const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style:"currency", currency:"MXN", maximumFractionDigits:0 }).format(p);
 
@@ -224,7 +225,7 @@ export default function DetalleObra() {
   // ── ERROR
   if (error || !obra) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"100vh", gap:20, fontFamily:SANS, background:C.dark }}>
-      <style>{`@font-face{font-family:'SolveraLorvane';src:url('/fonts/SolveraLorvane.ttf') format('truetype');}@font-face{font-family:'Nexa-Heavy';src:url('/fonts/Nexa-Heavy.ttf') format('truetype');}`}</style>
+      <style>{`@font-face{font-family:'SolveraLorvane';src:url('/fonts/SolveraLorvane.ttf') format('truetype');}@font-face{font-family:'Nexa-Heavy';src:url('/fonts/Nexa-Heavy.ttf') format('truetype');}@font-face{font-family:'Nexa-Regular';src:url('/fonts/Nexa-ExtraLight.ttf') format('truetype');}`}</style>
       <div style={{ fontFamily:SERIF, fontSize:24, fontWeight:900, color:"white" }}>{error || "Obra no encontrada"}</div>
       <button onClick={() => navigate("/catalogo")} style={{ padding:"12px 28px", borderRadius:100, background:C.orange, color:"white", border:"none", fontWeight:700, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", fontSize:11, letterSpacing:".15em", textTransform:"uppercase" }}>Ver catálogo</button>
     </div>
@@ -243,7 +244,7 @@ export default function DetalleObra() {
       <style>{`
         @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display:swap; }
         @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); font-display:swap; }
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
         * { box-sizing:border-box; }
 
         .ob-grain { position:fixed; inset:0; z-index:9997; pointer-events:none; opacity:.026;
@@ -445,9 +446,18 @@ export default function DetalleObra() {
 
             {/* Título + artista */}
             <div>
-              <h1 style={{ fontFamily:SERIF, fontSize:"clamp(26px,3vw,46px)", fontWeight:900, color:C.ink, lineHeight:.95, letterSpacing:"-.02em", margin:"0 0 18px", animation:"bounceUp .95s cubic-bezier(.16,1,.3,1) .3s both" }}>
-                {obra.titulo}
-              </h1>
+             <h1 style={{ fontFamily:NEXA_HEAVY, fontWeight:900, color:C.ink, lineHeight:1.0, letterSpacing:"-0.02em", margin:"0 0 18px", animation:"bounceUp .95s cubic-bezier(.16,1,.3,1) .3s both", wordBreak:"break-word", overflowWrap:"break-word", textTransform:"uppercase" }}>
+  {(() => {
+    const words = obra.titulo.split(" ");
+    const mid   = Math.ceil(words.length / 2);
+    const line1 = words.slice(0, mid).join(" ");
+    const line2 = words.slice(mid).join(" ");
+    return <>
+      <span style={{ display:"block", fontSize:"clamp(42px,5.5vw,82px)" }}>{line1}</span>
+      {line2 && <span style={{ display:"block", fontSize:"clamp(24px,3vw,48px)", opacity:.85 }}>{line2}</span>}
+    </>;
+  })()}
+</h1>
               <button onClick={() => navigate(`/artistas/${obra.id_artista}`)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0, animation:"slideLeft .65s cubic-bezier(.16,1,.3,1) .45s both" }}
               >
@@ -641,16 +651,25 @@ export default function DetalleObra() {
             {/* Izquierda */}
             <div>
               {obra.descripcion && (
-                <div style={{ marginBottom:52 }}>
+                <div style={{ marginBottom:40 }}>
                   <div style={{ fontSize:8, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:color, fontFamily:NEXA_HEAVY, marginBottom:18 }}>I · Descripción</div>
-                  <p style={{ fontFamily:SERIF, fontSize:"clamp(16px,1.6vw,22px)", fontStyle:"italic", color:C.ink, lineHeight:1.55, margin:0 }}>
-                    "{obra.descripcion}"
+                  <p style={{ fontFamily:SANS, fontSize:"clamp(14px,1.1vw,16px)", color:C.ink, lineHeight:1.8, margin:0, overflowWrap:"break-word", wordBreak:"break-word" }}>
+                    {obra.descripcion}
+                  </p>
+                </div>
+              )}
+
+              {obra.historia && (
+                <div style={{ marginBottom:52, paddingLeft:20, borderLeft:`3px solid ${color}` }}>
+                  <div style={{ fontSize:8, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:color, fontFamily:NEXA_HEAVY, marginBottom:14 }}>II · Historia de la obra</div>
+                  <p style={{ fontFamily:SANS, fontSize:"clamp(13px,1.1vw,15px)", color:C.ink, lineHeight:1.8, margin:0, overflowWrap:"break-word", wordBreak:"break-word" }}>
+                    {obra.historia}
                   </p>
                 </div>
               )}
 
               <div>
-                <div style={{ fontSize:8, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:color, fontFamily:NEXA_HEAVY, marginBottom:22 }}>II · Detalles técnicos</div>
+                <div style={{ fontSize:8, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:color, fontFamily:NEXA_HEAVY, marginBottom:22 }}>{obra.historia ? "III" : "II"} · Detalles técnicos</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                   {[
                     { label:"Categoría",   value:obra.categoria_nombre },

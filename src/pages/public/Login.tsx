@@ -51,10 +51,6 @@ export default function Login() {
   const [mensaje, setMensaje] = useState("");
   const [isError, setIsError] = useState(false);
 
-  // Door animation
-  const [doorOpen, setDoorOpen] = useState(false);
-  const [doorGone, setDoorGone] = useState(false);
-
   // Custom cursor
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -62,37 +58,52 @@ export default function Login() {
   // Reveal
   const pageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setDoorOpen(true),  500);
-    const t2 = setTimeout(() => setDoorGone(true),  1800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
+  // ─── Custom cursor ────────────────────────────────────────────
   useEffect(() => {
     document.body.style.cursor = "none";
-    let rx = 0, ry = 0;
+    document.documentElement.style.cursor = "none";
+    
+    let mx = 0, my = 0, rx = 0, ry = 0;
     let rafId: number;
-    const onMove = (e: MouseEvent) => {
-      const dot = dotRef.current;
-      if (dot) { dot.style.left = e.clientX + "px"; dot.style.top = e.clientY + "px"; }
-      const tick = () => {
-        rx += (e.clientX - rx) * 0.15;
-        ry += (e.clientY - ry) * 0.15;
-        const ring = ringRef.current;
-        if (ring) { ring.style.left = rx + "px"; ring.style.top = ry + "px"; }
-        rafId = requestAnimationFrame(tick);
-      };
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(tick);
+    let isAnimating = false;
+    
+    const animate = () => {
+      rx += (mx - rx) * 0.15;
+      ry += (my - ry) * 0.15;
+      
+      if (ringRef.current) {
+        ringRef.current.style.left = `${rx}px`;
+        ringRef.current.style.top = `${ry}px`;
+      }
+      
+      rafId = requestAnimationFrame(animate);
     };
+    
+    const onMove = (e: MouseEvent) => {
+      mx = e.clientX;
+      my = e.clientY;
+      
+      if (dotRef.current) {
+        dotRef.current.style.left = `${mx}px`;
+        dotRef.current.style.top = `${my}px`;
+      }
+      
+      if (!isAnimating) {
+        isAnimating = true;
+        animate();
+      }
+    };
+    
     window.addEventListener("mousemove", onMove);
     return () => {
       window.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(rafId);
+      if (rafId) cancelAnimationFrame(rafId);
       document.body.style.cursor = "";
+      document.documentElement.style.cursor = "";
     };
   }, []);
 
+  // ─── Scroll reveal ────────────────────────────────────────────
   useEffect(() => {
     const container = pageRef.current;
     if (!container) return;
@@ -107,7 +118,7 @@ export default function Login() {
     }, { threshold: 0.1 });
     targets.forEach(el => io.observe(el));
     return () => io.disconnect();
-  }, [doorGone]);
+  }, []);
 
   const cursorOn  = () => { dotRef.current?.classList.add("cur-over");  ringRef.current?.classList.add("cur-over");  };
   const cursorOff = () => { dotRef.current?.classList.remove("cur-over"); ringRef.current?.classList.remove("cur-over"); };
@@ -204,7 +215,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS, position: "relative", overflow: "hidden" }}>
+    <div ref={pageRef} style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS, position: "relative", overflow: "hidden" }}>
 
       {/* ── Grain ── */}
       <div className="login-grain" />
@@ -212,25 +223,6 @@ export default function Login() {
       {/* ── Custom cursor ── */}
       <div ref={dotRef}  className="login-cursor-dot"  />
       <div ref={ringRef} className="login-cursor-ring" />
-
-      {/* ── Door animation ── */}
-      {!doorGone && (
-        <>
-          <div className={`login-door-wrap${doorOpen ? " open" : ""}`}>
-            <div className="login-door izq" />
-            <div className="login-door der" />
-          </div>
-          <div className={`login-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
-          <div className={`login-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-          <div className={`login-door-line${doorOpen ? " open" : ""}`} />
-        </>
-      )}
-
-      {/* ── Línea naranja→pink superior ── */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, height: 1, zIndex: 200,
-        background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`,
-      }} />
 
       {/* ── Volver al inicio ── */}
       <button
@@ -241,7 +233,7 @@ export default function Login() {
         style={{
           position: "fixed", top: 28, left: 52, zIndex: 300,
           display: "flex", alignItems: "center", gap: 9,
-          background: "none", border: "none", cursor: "none",
+          background: "none", border: "none", cursor: "pointer",
           fontFamily: SANS, fontSize: 9.5, fontWeight: 700,
           letterSpacing: ".22em", textTransform: "uppercase",
           color: C.sub, transition: "color .25s", padding: 0,
@@ -252,7 +244,7 @@ export default function Login() {
       </button>
 
       {/* ── Layout principal ── */}
-      <div ref={pageRef} style={{ display: "flex", minHeight: "100vh" }}>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
 
         {/* ════ PANEL IZQUIERDO ════ */}
         <div className="login-left" style={{
@@ -337,8 +329,6 @@ export default function Login() {
                 Pinturas, esculturas y fotografía.<br />
               </p>
             </div>
-
-
           </div>
         </div>
 
@@ -410,7 +400,7 @@ export default function Login() {
                       position: "absolute", right: 0, top: "50%",
                       transform: "translateY(-50%)",
                       background: "none", border: "none",
-                      cursor: "none", padding: 4,
+                      cursor: "pointer", padding: 4,
                       color: mostrarContrasena ? C.orange : C.sub,
                       display: "flex", alignItems: "center",
                       transition: "color .2s",
@@ -529,8 +519,7 @@ export default function Login() {
         }
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
-        @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes barIn   { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
         /* ── Grain ── */
         .login-grain {
@@ -554,43 +543,6 @@ export default function Login() {
         }
         .login-cursor-dot.cur-over  { width: 4px; height: 4px; background: #E8640C; }
         .login-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
-
-        /* ── Door animation ── */
-        .login-door-wrap {
-          position: fixed; inset: 0; z-index: 99990;
-          display: flex; pointer-events: none;
-        }
-        .login-door {
-          flex: 1; background: #0D0B14;
-          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
-        }
-        .login-door.izq  { transform-origin: left  center; }
-        .login-door.der  { transform-origin: right center; }
-        .login-door-wrap.open .login-door.izq { transform: translateX(-100%); }
-        .login-door-wrap.open .login-door.der { transform: translateX(100%);  }
-        .login-door-logo {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; font-family: 'SolveraLorvane', serif;
-          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
-          letter-spacing: -.03em; pointer-events: none;
-          transition: opacity .35s ease .8s;
-        }
-        .login-door-logo.open { opacity: 0; }
-        .login-door-sub {
-          position: fixed; top: calc(50% + clamp(48px, 8vw, 104px)); left: 50%;
-          transform: translateX(-50%); z-index: 99991;
-          font-size: 9px; font-weight: 700; letter-spacing: .44em;
-          text-transform: uppercase; color: rgba(255,255,255,.35);
-          pointer-events: none; transition: opacity .3s ease .7s;
-          font-family: 'Outfit', sans-serif;
-        }
-        .login-door-sub.open { opacity: 0; }
-        .login-door-line {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
-          pointer-events: none; transition: opacity .25s ease .75s;
-        }
-        .login-door-line.open { opacity: 0; }
 
         /* ── Reveal animations ── */
         [data-rv] { opacity:0; transform:translateY(24px); transition:opacity .9s ease, transform .9s ease; }
@@ -682,7 +634,7 @@ const pillBtn: React.CSSProperties = {
   border: "none", color: "#fff",
   fontSize: 9.5, fontWeight: 700,
   letterSpacing: ".22em", textTransform: "uppercase",
-  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
   boxShadow: "0 4px 20px rgba(232,100,12,.28)",
   transition: "opacity .2s, box-shadow .2s",
 };
@@ -695,6 +647,6 @@ const pillOutline: React.CSSProperties = {
   color: "#9896A8",
   fontSize: 9.5, fontWeight: 700,
   letterSpacing: ".18em", textTransform: "uppercase",
-  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
   transition: "border-color .22s, color .22s",
 };

@@ -293,21 +293,11 @@ export default function Catalogo() {
   };
   const [hovCat, setHovCat] = useState<number | null>(null);
 
-  const [doorOpen, setDoorOpen] = useState(false);
-  const [doorGone, setDoorGone] = useState(false);
-
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const pageRef = useReveal(0.10);
 
-  // ─── Door (idéntico al Home) ─────────────────────────────────────────────
-  useEffect(() => {
-    const t1 = setTimeout(() => setDoorOpen(true), 1400);
-    const t2 = setTimeout(() => setDoorGone(true), 2700);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  // ─── Cursor (idéntico al Home) ────────────────────────────────────────────
+  // ─── Cursor (igual que Home) ────────────────────────────────────────────
   useEffect(() => {
     document.body.style.cursor = "none";
     let rx = 0, ry = 0, rafId: number;
@@ -401,19 +391,6 @@ export default function Catalogo() {
       {/* ─── Grain (igual que Home) ───────────────────────────────────────── */}
       <div className="home-grain" />
 
-      {/* ─── Door (idéntico al Home) ─────────────────────────────────────── */}
-      {!doorGone && (
-        <>
-          <div className={`home-door-wrap${doorOpen ? " open" : ""}`}>
-            <div className="home-door izq" />
-            <div className="home-door der" />
-          </div>
-          <div className={`home-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
-          <div className={`home-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-          <div className={`home-door-line${doorOpen ? " open" : ""}`} />
-        </>
-      )}
-
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap');
 
@@ -453,42 +430,6 @@ export default function Catalogo() {
         .home-cursor-dot.cur-dark  { background: rgba(255,255,255,.85); }
         .home-cursor-ring.cur-dark { border-color: rgba(255,255,255,.35); }
 
-        /* ── Door (idéntico al Home) ── */
-        .home-door-wrap {
-          position: fixed; inset: 0; z-index: 99990;
-          display: flex; pointer-events: none;
-        }
-        .home-door {
-          flex: 1; background: #0D0B14;
-          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
-        }
-        .home-door.izq  { transform-origin: left  center; }
-        .home-door.der  { transform-origin: right center; }
-        .home-door-wrap.open .home-door.izq { transform: translateX(-100%); }
-        .home-door-wrap.open .home-door.der { transform: translateX(100%);  }
-        .home-door-logo {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; font-family: 'SolveraLorvane', serif;
-          font-size: clamp(64px,10vw,130px); font-weight: 900; color: #fff;
-          letter-spacing: -.03em; pointer-events: none;
-          transition: opacity .35s ease .8s;
-        }
-        .home-door-logo.open { opacity: 0; }
-        .home-door-sub {
-          position: fixed; top: calc(50% + clamp(48px,8vw,104px)); left: 50%;
-          transform: translateX(-50%); z-index: 99991;
-          font-size: 9px; font-weight: 700; letter-spacing: .44em;
-          text-transform: uppercase; color: rgba(255,255,255,.35);
-          pointer-events: none; transition: opacity .3s ease .7s;
-        }
-        .home-door-sub.open { opacity: 0; }
-        .home-door-line {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
-          pointer-events: none; transition: opacity .25s ease .75s;
-        }
-        .home-door-line.open { opacity: 0; }
-
         /* ── Hero corners ── */
         .hero-corner { position: absolute; width: 38px; height: 38px; pointer-events: none; opacity: 0; animation: fadeI 1s ease 1.1s both; }
         .hero-corner::before, .hero-corner::after { content: ''; position: absolute; background: rgba(0,0,0,.09); }
@@ -505,14 +446,14 @@ export default function Catalogo() {
         .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
 
-        /* ── Keyframes (mismos que Home) ── */
+        /* ── Keyframes ── */
         @keyframes barIn   { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
         @keyframes fadeL   { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
         @keyframes fadeR   { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
         @keyframes fadeI   { from{opacity:0} to{opacity:1} }
         @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-        /* ── Scroll reveal (mismo que Home) ── */
+        /* ── Scroll reveal ── */
         [data-rv]     { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
         [data-clip]   { clip-path:inset(100% 0 0 0); transition:clip-path 1.3s cubic-bezier(.16,1,.3,1); }
         [data-clip-h] { clip-path:inset(0 100% 0 0); transition:clip-path 1.5s cubic-bezier(.16,1,.3,1); }
@@ -528,7 +469,7 @@ export default function Catalogo() {
         [data-clip][data-d="2"]{transition-delay:.20s}
         [data-clip][data-d="3"]{transition-delay:.35s}
 
-        /* ── Expo frame (igual que Home) ── */
+        /* ── Expo frame ── */
         .cat-expo-frame {
           position: relative; border-radius: 2px; overflow: hidden;
           transform: perspective(1200px) rotateX(1.5deg) rotateY(1.8deg);
@@ -542,7 +483,7 @@ export default function Catalogo() {
         .cat-expo-frame img { filter: saturate(.75) contrast(1.05) brightness(.95); transition: filter .8s; }
         .cat-expo-frame-wrap:hover .cat-expo-frame img { filter: saturate(.92) contrast(1.06) brightness(1.0); }
 
-        /* ── Categorías (igual que Home) ── */
+        /* ── Categorías ── */
         .home-cat-item { transition: padding-left .4s cubic-bezier(.16,1,.3,1); }
         .home-cat-item:hover { padding-left: 10px; }
         .home-cat-name  { transition: color .28s, letter-spacing .4s cubic-bezier(.16,1,.3,1); }
@@ -552,7 +493,7 @@ export default function Catalogo() {
         .home-cat-arrow { transition: transform .32s, color .25s; }
         .home-cat-item:hover .home-cat-arrow { transform: translateX(8px); color: #E8640C !important; }
 
-        /* ── Grid editorial (estilo galería) ── */
+        /* ── Grid editorial ── */
         .cat-obras-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -650,7 +591,7 @@ export default function Catalogo() {
         .cat-marquee-track { display: inline-flex; animation: marquee 28s linear infinite; }
         .cat-marquee-wrap:hover .cat-marquee-track { animation-play-state: paused; }
 
-        /* ── Nav links (igual que Home) ── */
+        /* ── Nav links ── */
         .home-nav-link { display: flex; align-items: center; gap: 9px; font-size: 9.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: #9896A8; text-decoration: none; transition: color .25s; }
         .home-nav-link::before { content: ''; display: block; width: 12px; height: 1px; background: currentColor; flex-shrink: 0; transition: width .28s; }
         .home-nav-link:hover { color: #14121E; }
@@ -684,7 +625,7 @@ export default function Catalogo() {
         background: "#fff", overflow: "hidden",
       }}>
 
-        {/* Nav izquierda — idéntica a Home */}
+        {/* Nav izquierda */}
         <nav style={{
           position: "absolute", top: 30, left: 52,
           display: "flex", flexDirection: "column", gap: 10,
@@ -698,7 +639,7 @@ export default function Catalogo() {
           <Link to="/contacto"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
         </nav>
 
-        {/* Auth derecha — idéntica a Home */}
+        {/* Auth derecha */}
         <div style={{
           position: "absolute", top: 30, right: 52,
           display: "flex", alignItems: "center", gap: 12,

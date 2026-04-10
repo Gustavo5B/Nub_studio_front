@@ -1,9 +1,8 @@
-// src/pages/public/Home.tsx (COMPLETO - 3 FUENTES OPTIMIZADAS + BOTONES AUTH)
+// src/pages/public/Home.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
-
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -109,12 +108,32 @@ export default function Home() {
 
   const pageRef = useReveal(0.10);
 
+  // ─── DOOR ANIMATION — Solo primera visita por sesión ───
   useEffect(() => {
-    const t1 = setTimeout(() => setDoorOpen(true),  1400);
-    const t2 = setTimeout(() => setDoorGone(true),  2700);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const hasSeenIntro = sessionStorage.getItem('altar_intro_seen');
+    
+    if (hasSeenIntro) {
+      // Si ya vio la intro en esta sesión, saltar animación
+      setDoorGone(true);
+      setDoorOpen(true);
+      return;
+    }
+    
+    // Primera vez en esta sesión: mostrar animación completa
+    const t1 = setTimeout(() => setDoorOpen(true),  1600);
+    const t2 = setTimeout(() => setDoorGone(true),  2900);
+    const t3 = setTimeout(() => {
+      sessionStorage.setItem('altar_intro_seen', 'true');
+    }, 3000);
+    
+    return () => { 
+      clearTimeout(t1); 
+      clearTimeout(t2); 
+      clearTimeout(t3); 
+    };
   }, []);
 
+  // ─── Custom Cursor ───
   useEffect(() => {
     document.body.style.cursor = "none";
     let rx = 0, ry = 0;
@@ -158,6 +177,7 @@ export default function Home() {
     ringRef.current?.classList.remove("cur-over");
   }, []);
 
+  // ─── Parallax suave para la imagen destacada ───
   useEffect(() => {
     const onScroll = () => {
       const sec = expoSectionRef.current;
@@ -172,6 +192,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // ─── Carga de datos ───
   useEffect(() => {
     fetch(`${API_URL}/api/obras?limit=12&ordenar=recientes`)
       .then(r => r.json())
@@ -195,32 +216,22 @@ export default function Home() {
         @font-face {
           font-family: 'SolveraLorvane';
           src: url('/fonts/SolveraLorvane.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
+          font-weight: normal; font-style: normal; font-display: swap;
         }
         @font-face {
           font-family: 'SolveraLorvane';
           src: url('/fonts/SolveraLorvane.ttf') format('truetype');
-          font-weight: bold;
-          font-style: normal;
-          font-display: swap;
+          font-weight: bold; font-style: normal; font-display: swap;
         }
         @font-face {
           font-family: 'SolveraLorvane';
           src: url('/fonts/SolveraLorvane.ttf') format('truetype');
-          font-weight: 900;
-          font-style: normal;
-          font-display: swap;
+          font-weight: 900; font-style: normal; font-display: swap;
         }
-
-        /* ════ FUENTES NEXA ════ */
         @font-face {
           font-family: 'Nexa-Heavy';
           src: url('/fonts/Nexa-Heavy.ttf') format('truetype');
-          font-weight: 900;
-          font-style: normal;
-          font-display: swap;
+          font-weight: 900; font-style: normal; font-display: swap;
         }
 
         .home-grain {
@@ -246,13 +257,14 @@ export default function Home() {
         .home-cursor-dot.cur-dark  { background: #fff; }
         .home-cursor-ring.cur-dark { border-color: rgba(255,255,255,.3); }
 
+        /* ─── DOOR ANIMATION ─── */
         .home-door-wrap {
           position: fixed; inset: 0; z-index: 99990;
           display: flex; pointer-events: none;
         }
         .home-door {
           flex: 1; background: #0D0B14;
-          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
+          transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .home-door.izq  { transform-origin: left  center; }
         .home-door.der  { transform-origin: right center; }
@@ -283,7 +295,6 @@ export default function Home() {
         @keyframes scrollDn { from{top:-100%} to{top:200%} }
         @keyframes marquee  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-
         .hero-corner { position: absolute; width: 38px; height: 38px; pointer-events: none; opacity: 0; animation: fadeI 1s ease 1.1s both; }
         .hero-corner::before, .hero-corner::after { content: ''; position: absolute; background: rgba(0,0,0,.09); }
         .hero-corner::before { width: 1px; height: 38px; }
@@ -299,15 +310,10 @@ export default function Home() {
         .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
 
-        /* ════ LOGO ESTRELLA ════ */
         .home-logo-estrella-link {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: clamp(12px, 2vw, 26px);
-          height: clamp(12px, 2vw, 26px);
-          margin-bottom: 14px;
-          cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          width: clamp(12px, 2vw, 26px); height: clamp(12px, 2vw, 26px);
+          margin-bottom: 14px; cursor: pointer;
           transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           animation: fadeI 1s ease 1s both;
           text-decoration: none;
@@ -316,10 +322,7 @@ export default function Home() {
           transform: scale(1.15) rotate(6deg);
         }
         .home-logo-estrella-link img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          display: block;
+          width: 100%; height: 100%; object-fit: contain; display: block;
         }
 
         [data-rv]   { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
@@ -339,17 +342,11 @@ export default function Home() {
         [data-clip][data-d="4"]{transition-delay:.50s}
         [data-clip][data-d="5"]{transition-delay:.65s}
 
-        /* ══ SCROLL HORIZONTAL ══ */
         .scroll-horizontal {
-          display: flex;
-          gap: 64px;
-          overflow-x: auto;
-          overflow-y: visible;
-          scroll-snap-type: x mandatory;
-          scrollbar-width: thin;
+          display: flex; gap: 64px; overflow-x: auto; overflow-y: visible;
+          scroll-snap-type: x mandatory; scrollbar-width: thin;
           scrollbar-color: rgba(0,0,0,.15) rgba(0,0,0,0.08);
-          padding: 40px 96px 60px 96px;
-          -webkit-overflow-scrolling: touch;
+          padding: 40px 96px 60px 96px; -webkit-overflow-scrolling: touch;
           align-items: center;
         }
         .scroll-horizontal::-webkit-scrollbar { height: 4px; }
@@ -357,81 +354,39 @@ export default function Home() {
         .scroll-horizontal::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 4px; }
         .scroll-horizontal::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.25); }
 
-        /* ══ OBRAS ══ */
         .obra-item {
-          flex-shrink: 0;
-          position: relative;
-          cursor: pointer;
-          scroll-snap-align: start;
-          z-index: 1;
+          flex-shrink: 0; position: relative; cursor: pointer;
+          scroll-snap-align: start; z-index: 1;
           transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .obra-image-wrapper {
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-        }
+        .obra-image-wrapper { width: 100%; height: 100%; overflow: hidden; }
         .obra-item img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-          display: block;
-          transition: transform 0.7s cubic-bezier(0.2, 0, 0, 1);
+          width: 100%; height: 100%; object-fit: cover; object-position: center;
+          display: block; transition: transform 0.7s cubic-bezier(0.2, 0, 0, 1);
         }
-        .obra-item:hover {
-          z-index: 20;
-          transform: scale(1.32);
-        }
-        .obra-item:hover img {
-          transform: scale(1);
-        }
+        .obra-item:hover { z-index: 20; transform: scale(1.32); }
+        .obra-item:hover img { transform: scale(1); }
 
-        /* ══ ARTISTAS ══ */
         .artista-item {
-          flex-shrink: 0;
-          position: relative;
-          cursor: pointer;
-          scroll-snap-align: start;
-          z-index: 1;
+          flex-shrink: 0; position: relative; cursor: pointer;
+          scroll-snap-align: start; z-index: 1;
           transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .artista-image-wrapper {
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-        }
+        .artista-image-wrapper { width: 100%; height: 100%; overflow: hidden; }
         .artista-item img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center top;
-          display: block;
-          transition: transform 0.7s cubic-bezier(0.2, 0, 0, 1), filter 0.5s;
+          width: 100%; height: 100%; object-fit: cover; object-position: center top;
+          display: block; transition: transform 0.7s cubic-bezier(0.2, 0, 0, 1), filter 0.5s;
           filter: saturate(0.7) brightness(0.96);
         }
-        .artista-item:hover {
-          z-index: 20;
-          transform: scale(1.32);
-        }
-        .artista-item:hover img {
-          transform: scale(1);
-          filter: saturate(0.95) brightness(1);
-        }
+        .artista-item:hover { z-index: 20; transform: scale(1.32); }
+        .artista-item:hover img { transform: scale(1); filter: saturate(0.95) brightness(1); }
         .artista-velo {
-          position: absolute;
-          inset: 0;
+          position: absolute; inset: 0;
           background: linear-gradient(160deg, rgba(232,100,12,0) 0%, rgba(232,100,12,0.12) 100%);
-          opacity: 0;
-          transition: opacity 0.5s;
-          pointer-events: none;
-          z-index: 2;
+          opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 2;
         }
-        .artista-item:hover .artista-velo {
-          opacity: 1;
-        }
+        .artista-item:hover .artista-velo { opacity: 1; }
 
-        /* ── Categorías ── */
         .home-cat-item { transition: padding-left .4s cubic-bezier(.16,1,.3,1); }
         .home-cat-item:hover { padding-left: 10px; }
         .home-cat-name  { transition: color .28s, letter-spacing .4s cubic-bezier(.16,1,.3,1); }
@@ -441,7 +396,6 @@ export default function Home() {
         .home-cat-arrow { transition: transform .32s, color .25s; }
         .home-cat-item:hover .home-cat-arrow { transform: translateX(8px); color: #E8640C !important; }
 
-        /* ── Expo destacada ── */
         .home-expo-frame {
           position: relative; border-radius: 2px; overflow: hidden;
           transform: perspective(1200px) rotateX(1.5deg) rotateY(1.8deg);
@@ -476,12 +430,27 @@ export default function Home() {
 
         .home-marquee-track { display: inline-flex; animation: marquee 28s linear infinite; }
         .home-marquee-wrap:hover .home-marquee-track { animation-play-state: paused; }
+
+        /* ─── ACCESIBILIDAD ─── */
+        @media (prefers-reduced-motion: reduce) {
+          .home-door, .home-door-logo, .home-door-sub,
+          .home-logo-estrella-link, [data-rv], [data-clip], [data-clip-h],
+          .obra-item, .artista-item, .home-cat-item, .home-expo-frame,
+          .home-nav-link, .home-footer-link, .home-footer-social {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+          }
+          .home-cursor-dot, .home-cursor-ring { display: none !important; }
+          body { cursor: auto !important; }
+        }
       `}</style>
 
       <div className="home-grain" />
       <div ref={dotRef}  className="home-cursor-dot"  />
       <div ref={ringRef} className="home-cursor-ring" />
 
+      {/* ─── DOOR OVERLAY ─── */}
       {!doorGone && (
         <>
           <div className={`home-door-wrap${doorOpen ? " open" : ""}`}>
@@ -499,7 +468,6 @@ export default function Home() {
 
         <div style={{ position: "absolute", bottom: 70, left: "50%", transform: "translateX(-50%)", fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(60px,8vw,110px)", fontWeight: 900, color: "rgba(0,0,0,.020)", whiteSpace: "nowrap", letterSpacing: "-.02em", userSelect: "none", pointerEvents: "none", animation: "fadeI 2s ease 2s both" }}>galería</div>
 
-        {/* MENÚ DE NAVEGACIÓN */}
         <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both" }}>
           <Link to="/"               className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Inicio</Link>
           <Link to="/catalogo"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
@@ -509,12 +477,11 @@ export default function Home() {
           <Link to="/contacto"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
         </nav>
 
-        {/* BOTONES DE AUTENTICACIÓN - LADO DERECHO */}
         <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both" }}>
           {!isLoggedIn ? (
             <>
               <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Ingresar</Link>
-              <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "7px 16px", borderRadius: 100, background: C.orange, boxShadow: "0 4px 16px rgba(232,100,12,.30)", transition: "all .22s" }}>Ser artista</Link>
+              <Link to="/registro-artista" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "7px 16px", borderRadius: 100, background: C.orange, boxShadow: "0 4px 16px rgba(232,100,12,.30)", transition: "all .22s" }}>Ser artista</Link>
             </>
           ) : (
             <>
@@ -524,41 +491,34 @@ export default function Home() {
           )}
         </div>
 
-       {/* ═══ CONTENIDO CENTRAL DEL HERO ═══ */}
-<div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+          <h1 style={{
+            fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900,
+            color: doorOpen ? C.ink : "#fff",
+            letterSpacing: "-.03em", lineHeight: .88,
+            userSelect: "none", margin: 0,
+            transition: "color 0.5s ease 0.3s",
+          }}>
+            ALTAR
+          </h1>
 
-  {/* Título ALTAR — color blanco durante puerta, negro al abrirse */}
-  <h1 style={{
-    fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900,
-    color: doorOpen ? C.ink : "#fff",
-    letterSpacing: "-.03em", lineHeight: .88,
-    userSelect: "none", margin: 0,
-    transition: "color 0.25s ease",
-  }}>
-    ALTAR
-  </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, margin: "26px 0 20px", animation: "fadeI 1s ease .8s both" }}>
+            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+            <Link
+              to="/"
+              className="home-logo-estrella-link"
+              title="ALTAR - Galería de Arte"
+              onMouseEnter={cursorOn}
+              onMouseLeave={cursorOff}
+              style={{ marginBottom: 0 }}
+            >
+              <img src={estrellaImg} alt="ALTAR Logo" />
+            </Link>
+            <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
+          </div>
 
-  {/* ── ⭐ ── única estrella, reemplaza el punto naranja */}
-  <div style={{ display: "flex", alignItems: "center", gap: 18, margin: "26px 0 20px", animation: "fadeI 1s ease .8s both" }}>
-    <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
-    <Link
-      to="/"
-      className="home-logo-estrella-link"
-      title="ALTAR - Galería de Arte"
-      onMouseEnter={cursorOn}
-      onMouseLeave={cursorOff}
-      style={{ marginBottom: 0 }}
-    >
-      <img src={estrellaImg} alt="ALTAR Logo" />
-    </Link>
-    <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
-  </div>
-
-  {/* Subtítulo */}
-  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".44em", textTransform: "uppercase", color: C.sub, fontFamily: SANS, margin: 0, animation: "fadeI 1s ease 1s both" }}>Galería de Arte</p>
-
-
-</div>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".44em", textTransform: "uppercase", color: C.sub, fontFamily: SANS, margin: 0, animation: "fadeI 1s ease 1s both" }}>Galería de Arte</p>
+        </div>
 
         <div style={{ position: "absolute", bottom: 44, left: 52, fontFamily: SERIF, fontSize: 10.5, fontStyle: "italic", color: "rgba(0,0,0,.12)", letterSpacing: ".05em", display: "flex", alignItems: "center", gap: 10, animation: "fadeI 1.5s ease 1.4s both" }}>
           <span style={{ display: "block", width: 22, height: 1, background: "rgba(0,0,0,.08)" }} />500 · obras
@@ -826,7 +786,7 @@ export default function Home() {
             </div>
             <p style={{ fontSize: 11, color: C.sub, lineHeight: 1.7, maxWidth: 220, marginBottom: 22 }}>Galería de arte digital de la Huasteca Hidalguense. Arte que nace de la tierra.</p>
             <div style={{ display: "flex", gap: 8 }}>
-              {["✦", "◈", "◉"].map(s => <a key={s} href="#" className="home-footer-social">{s}</a>)}
+              {["✦", "", "◉"].map(s => <a key={s} href="#" className="home-footer-social">{s}</a>)}
             </div>
           </div>
           <div data-rv data-d="1">

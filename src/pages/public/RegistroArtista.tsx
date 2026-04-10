@@ -103,10 +103,6 @@ export default function RegistroArtista() {
     acepta_terminos: false,
   });
 
-  // Door animation
-  const [doorOpen, setDoorOpen] = useState(false);
-  const [doorGone, setDoorGone] = useState(false);
-
   // Custom cursor
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -118,12 +114,7 @@ export default function RegistroArtista() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setDoorOpen(true),  500);
-    const t2 = setTimeout(() => setDoorGone(true),  1800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
+  // ─── Custom cursor ────────────────────────────────────────────
   useEffect(() => {
     document.body.style.cursor = "none";
     let rx = 0, ry = 0;
@@ -274,7 +265,7 @@ export default function RegistroArtista() {
           <button type="button"
             onMouseEnter={cursorOn} onMouseLeave={cursorOff}
             onClick={() => setMostrarPass(p => !p)}
-            style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "none", color: mostrarPass ? C.orange : C.sub, display: "flex", alignItems: "center", transition: "color .2s", padding: 4 }}>
+            style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: mostrarPass ? C.orange : C.sub, display: "flex", alignItems: "center", transition: "color .2s", padding: 4 }}>
             {mostrarPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
@@ -371,7 +362,7 @@ export default function RegistroArtista() {
         onMouseEnter={cursorOn} onMouseLeave={cursorOff}
         onClick={() => setForm(f => ({ ...f, acepta_terminos: !f.acepta_terminos }))}
         onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setForm(f => ({ ...f, acepta_terminos: !f.acepta_terminos })); }}
-        style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "none" }}
+        style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer" }}
       >
         <div style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0, marginTop: 1, border: `1.5px solid ${form.acepta_terminos ? C.orange : "rgba(0,0,0,0.18)"}`, background: form.acepta_terminos ? C.orange : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .15s" }}>
           {form.acepta_terminos && <Check size={10} color="white" strokeWidth={3} />}
@@ -444,28 +435,12 @@ export default function RegistroArtista() {
       <div ref={dotRef}  className="ra-cursor-dot"  />
       <div ref={ringRef} className="ra-cursor-ring" />
 
-      {/* ── Door animation ── */}
-      {!doorGone && (
-        <>
-          <div className={`ra-door-wrap${doorOpen ? " open" : ""}`}>
-            <div className="ra-door izq" />
-            <div className="ra-door der" />
-          </div>
-          <div className={`ra-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
-          <div className={`ra-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-          <div className={`ra-door-line${doorOpen ? " open" : ""}`} />
-        </>
-      )}
-
-      {/* ── Línea top ── */}
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 1, zIndex: 200, background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)` }} />
-
       {/* ── Volver ── */}
       <button
         onClick={() => navigate("/")}
         onMouseEnter={cursorOn} onMouseLeave={cursorOff}
         className="ra-back-btn"
-        style={{ position: "fixed", top: 28, left: 52, zIndex: 300, display: "flex", alignItems: "center", gap: 9, background: "none", border: "none", cursor: "none", fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, transition: "color .25s", padding: 0 }}
+        style={{ position: "fixed", top: 28, left: 52, zIndex: 300, display: "flex", alignItems: "center", gap: 9, background: "none", border: "none", cursor: "pointer", fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, transition: "color .25s", padding: 0 }}
       >
         <ArrowLeft size={11} strokeWidth={2.5} />
         Volver
@@ -474,22 +449,50 @@ export default function RegistroArtista() {
       <div style={{ display: "flex", minHeight: "100vh" }}>
 
         {/* ════ PANEL IZQUIERDO — Carta al artista ════ */}
-        <div className="ra-left" style={{ flex: "0 0 52%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 64px", borderRight: "1px solid rgba(0,0,0,0.055)" }}>
+        <div className="ra-left" style={{
+          flex: "0 0 52%",
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "80px 64px",
+          borderRight: "1px solid rgba(0,0,0,0.055)",
+          overflow: "hidden",
+        }}>
 
           <div className="lc tl" /><div className="lc tr" />
           <div className="lc bl" /><div className="lc br" />
 
           <div style={{ position: "absolute", top: "18%", right: -1, width: 1, height: "64%", background: `linear-gradient(180deg, transparent, ${C.orange}70, ${C.pink}70, transparent)`, zIndex: 2 }} />
 
-          {/* ALTAR watermark */}
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", pointerEvents: "none", userSelect: "none" }}>
-            <span style={{ fontFamily: NEXA_HEAVY, fontSize: "clamp(96px, 12vw, 160px)", fontWeight: 900, color: "rgba(0,0,0,0.038)", letterSpacing: ".12em", lineHeight: 1, whiteSpace: "nowrap" }}>
+          {/* ═══ ALTAR WATERMARK — ESTÁTICO (SIN ANIMACIÓN) ═══ */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            pointerEvents: "none",
+            userSelect: "none",
+            zIndex: 1,
+          }}>
+            <span style={{
+              fontFamily: NEXA_HEAVY,
+              fontSize: "clamp(96px, 12vw, 160px)",
+              fontWeight: 900,
+              color: "rgba(0,0,0,0.038)",
+              letterSpacing: ".12em",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+            }}>
               ALTAR
             </span>
           </div>
 
           {/* Carta */}
-          <div style={{ width: "100%", position: "relative", zIndex: 2, maxWidth: 360 }}>
+          <div style={{ width: "100%", paddingLeft: 88, position: "relative", zIndex: 2 }}>
+
             <div>
               <p style={{ fontFamily: SANS, fontStyle: "italic", fontSize: 13, color: C.sub, letterSpacing: ".04em", margin: "0 0 32px" }}>
                 — Para el artista,
@@ -513,6 +516,7 @@ export default function RegistroArtista() {
                 ALTAR
               </p>
             </div>
+
           </div>
         </div>
 
@@ -581,25 +585,12 @@ export default function RegistroArtista() {
 
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
-        .ra-grain { position:fixed; inset:0; z-index:9997; pointer-events:none; opacity:.026; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:160px 160px; mix-blend-mode:multiply; }
+        .ra-grain { position:fixed; inset:0; z-index:9997; pointer-events:none; opacity:.026; background-image:url("image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:160px 160px; mix-blend-mode:multiply; }
 
         .ra-cursor-dot { position:fixed; width:6px; height:6px; border-radius:50%; background:#14121E; pointer-events:none; z-index:99999; transform:translate(-50%,-50%); transition:width .22s,height .22s,background .22s; }
         .ra-cursor-ring { position:fixed; width:32px; height:32px; border-radius:50%; border:1px solid rgba(20,18,30,.22); pointer-events:none; z-index:99998; transform:translate(-50%,-50%); transition:width .3s,height .3s,border-color .25s; }
         .ra-cursor-dot.cur-over  { width:4px; height:4px; background:#E8640C; }
         .ra-cursor-ring.cur-over { width:52px; height:52px; border-color:#E8640C; }
-
-        .ra-door-wrap { position:fixed; inset:0; z-index:99990; display:flex; pointer-events:none; }
-        .ra-door { flex:1; background:#0D0B14; transition:transform 1.2s cubic-bezier(.76,0,.24,1); }
-        .ra-door.izq { transform-origin:left center; }
-        .ra-door.der { transform-origin:right center; }
-        .ra-door-wrap.open .ra-door.izq { transform:translateX(-100%); }
-        .ra-door-wrap.open .ra-door.der { transform:translateX(100%); }
-        .ra-door-logo { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:99991; font-family:'SolveraLorvane',serif; font-size:clamp(64px,10vw,130px); font-weight:900; color:#fff; letter-spacing:-.03em; pointer-events:none; transition:opacity .35s ease .8s; }
-        .ra-door-logo.open { opacity:0; }
-        .ra-door-sub { position:fixed; top:calc(50% + clamp(48px,8vw,104px)); left:50%; transform:translateX(-50%); z-index:99991; font-size:9px; font-weight:700; letter-spacing:.44em; text-transform:uppercase; color:rgba(255,255,255,.35); pointer-events:none; transition:opacity .3s ease .7s; font-family:'Outfit',sans-serif; }
-        .ra-door-sub.open { opacity:0; }
-        .ra-door-line { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:99991; width:1px; height:60px; background:#E8640C; pointer-events:none; transition:opacity .25s ease .75s; }
-        .ra-door-line.open { opacity:0; }
 
         .lc { position:absolute; width:34px; height:34px; pointer-events:none; }
         .lc::before,.lc::after { content:''; position:absolute; background:rgba(0,0,0,0.08); }
@@ -684,7 +675,7 @@ const pillBtn: React.CSSProperties = {
   width: "100%", padding: "13px 24px", borderRadius: 100,
   background: "#E8640C", border: "none", color: "#fff",
   fontSize: 9.5, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase",
-  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
   boxShadow: "0 4px 20px rgba(232,100,12,.28)", transition: "opacity .2s",
 };
 
@@ -693,6 +684,6 @@ const pillOutline: React.CSSProperties = {
   background: "none", border: "1px solid rgba(0,0,0,0.10)",
   color: "#9896A8", fontSize: 9.5, fontWeight: 700,
   letterSpacing: ".18em", textTransform: "uppercase",
-  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
   transition: "border-color .22s, color .22s",
 };

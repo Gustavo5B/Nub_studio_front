@@ -73,10 +73,6 @@ export default function Register() {
   const isPasswordValid = metCount === 5;
   const strengthColor = ["transparent", C.pink, "#F59E0B", "#A87006", C.orange, C.orange][metCount];
 
-  // Door animation
-  const [doorOpen, setDoorOpen] = useState(false);
-  const [doorGone, setDoorGone] = useState(false);
-
   // Custom cursor
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -84,12 +80,7 @@ export default function Register() {
   // Reveal
   const pageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setDoorOpen(true),  500);
-    const t2 = setTimeout(() => setDoorGone(true),  1800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
+  // ─── Custom cursor ────────────────────────────────────────────
   useEffect(() => {
     document.body.style.cursor = "none";
     let rx = 0, ry = 0;
@@ -115,6 +106,7 @@ export default function Register() {
     };
   }, []);
 
+  // ─── Scroll reveal ────────────────────────────────────────────
   useEffect(() => {
     const container = pageRef.current;
     if (!container) return;
@@ -129,7 +121,7 @@ export default function Register() {
     }, { threshold: 0.1 });
     targets.forEach(el => io.observe(el));
     return () => io.disconnect();
-  }, [doorGone]);
+  }, []);
 
   const cursorOn  = () => { dotRef.current?.classList.add("cur-over");  ringRef.current?.classList.add("cur-over");  };
   const cursorOff = () => { dotRef.current?.classList.remove("cur-over"); ringRef.current?.classList.remove("cur-over"); };
@@ -194,7 +186,7 @@ export default function Register() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS, position: "relative", overflow: "hidden" }}>
+    <div ref={pageRef} style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS, position: "relative", overflow: "hidden" }}>
 
       {/* ── Grain ── */}
       <div className="reg-grain" />
@@ -202,25 +194,6 @@ export default function Register() {
       {/* ── Custom cursor ── */}
       <div ref={dotRef}  className="reg-cursor-dot"  />
       <div ref={ringRef} className="reg-cursor-ring" />
-
-      {/* ── Door animation ── */}
-      {!doorGone && (
-        <>
-          <div className={`reg-door-wrap${doorOpen ? " open" : ""}`}>
-            <div className="reg-door izq" />
-            <div className="reg-door der" />
-          </div>
-          <div className={`reg-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
-          <div className={`reg-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-          <div className={`reg-door-line${doorOpen ? " open" : ""}`} />
-        </>
-      )}
-
-      {/* ── Línea naranja→pink superior ── */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, height: 1, zIndex: 200,
-        background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`,
-      }} />
 
       {/* ── Volver ── */}
       <button
@@ -231,7 +204,7 @@ export default function Register() {
         style={{
           position: "fixed", top: 28, left: 52, zIndex: 300,
           display: "flex", alignItems: "center", gap: 9,
-          background: "none", border: "none", cursor: "none",
+          background: "none", border: "none", cursor: "pointer",
           fontFamily: SANS, fontSize: 9.5, fontWeight: 700,
           letterSpacing: ".22em", textTransform: "uppercase",
           color: C.sub, transition: "color .25s", padding: 0,
@@ -242,7 +215,7 @@ export default function Register() {
       </button>
 
       {/* ── Layout principal ── */}
-      <div ref={pageRef} style={{ display: "flex", minHeight: "100vh" }}>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
 
         {/* ════ PANEL IZQUIERDO ════ */}
         <div className="reg-left" style={{
@@ -432,7 +405,7 @@ export default function Register() {
                       position: "absolute", right: 0, top: "50%",
                       transform: "translateY(-50%)",
                       background: "none", border: "none",
-                      cursor: "none", padding: 4,
+                      cursor: "pointer", padding: 4,
                       color: mostrarPass ? C.orange : C.sub,
                       display: "flex", alignItems: "center",
                       transition: "color .2s",
@@ -487,7 +460,7 @@ export default function Register() {
                 onMouseLeave={cursorOff}
                 style={{
                   display: "flex", alignItems: "flex-start", gap: 12,
-                  cursor: "none", marginTop: -4,
+                  cursor: "pointer", marginTop: -4,
                 }}
               >
                 <div style={{
@@ -531,7 +504,7 @@ export default function Register() {
                 style={{
                   ...pillBtn,
                   opacity: isLoading || !aceptoTerminos ? 0.45 : 1,
-                  cursor: isLoading || !aceptoTerminos ? "not-allowed" : "none",
+                  cursor: isLoading || !aceptoTerminos ? "not-allowed" : "pointer",
                   marginTop: 4,
                 }}
               >
@@ -604,7 +577,7 @@ export default function Register() {
 
         .reg-grain {
           position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+          background-image: url("image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
           background-size: 160px 160px; mix-blend-mode: multiply;
         }
 
@@ -622,42 +595,6 @@ export default function Register() {
         }
         .reg-cursor-dot.cur-over  { width: 4px; height: 4px; background: #E8640C; }
         .reg-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
-
-        .reg-door-wrap {
-          position: fixed; inset: 0; z-index: 99990;
-          display: flex; pointer-events: none;
-        }
-        .reg-door {
-          flex: 1; background: #0D0B14;
-          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
-        }
-        .reg-door.izq  { transform-origin: left  center; }
-        .reg-door.der  { transform-origin: right center; }
-        .reg-door-wrap.open .reg-door.izq { transform: translateX(-100%); }
-        .reg-door-wrap.open .reg-door.der { transform: translateX(100%);  }
-        .reg-door-logo {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; font-family: 'SolveraLorvane', serif;
-          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
-          letter-spacing: -.03em; pointer-events: none;
-          transition: opacity .35s ease .8s;
-        }
-        .reg-door-logo.open { opacity: 0; }
-        .reg-door-sub {
-          position: fixed; top: calc(50% + clamp(48px, 8vw, 104px)); left: 50%;
-          transform: translateX(-50%); z-index: 99991;
-          font-size: 9px; font-weight: 700; letter-spacing: .44em;
-          text-transform: uppercase; color: rgba(255,255,255,.35);
-          pointer-events: none; transition: opacity .3s ease .7s;
-          font-family: 'Outfit', sans-serif;
-        }
-        .reg-door-sub.open { opacity: 0; }
-        .reg-door-line {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
-          pointer-events: none; transition: opacity .25s ease .75s;
-        }
-        .reg-door-line.open { opacity: 0; }
 
         [data-rv] { opacity:0; transform:translateY(24px); transition:opacity .9s ease, transform .9s ease; }
         [data-rv].rv-in { opacity:1; transform:translateY(0); }
@@ -752,6 +689,6 @@ const pillOutline: React.CSSProperties = {
   color: "#9896A8",
   fontSize: 9.5, fontWeight: 700,
   letterSpacing: ".18em", textTransform: "uppercase",
-  cursor: "none", fontFamily: "'Outfit', sans-serif",
+  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
   transition: "border-color .22s, color .22s",
 };

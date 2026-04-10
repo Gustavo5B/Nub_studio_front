@@ -18,7 +18,6 @@ interface Obra {
 }
 interface Stats { total: number; publicadas: number; pendientes: number; rechazadas: number; }
 type Filtro = "todas" | "pendiente" | "publicada" | "rechazada";
-type Vista  = "tabla" | "grid";
 
 const C = {
   orange: "#E8640C", pink: "#A83B90", gold: "#A87006",
@@ -27,6 +26,7 @@ const C = {
   green: "#0E8A50", red: "#C4304A",
 };
 const CS  = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.055)";
+const CS2 = "0 8px 24px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.06)";
 const FB  = "'Outfit', sans-serif";
 const FM  = "'JetBrains Mono','Fira Code',monospace";
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -44,7 +44,6 @@ export default function MisObras() {
   const [stats,   setStats]   = useState<Stats>({ total: 0, publicadas: 0, pendientes: 0, rechazadas: 0 });
   const [loading, setLoading] = useState(true);
   const [filtro,  setFiltro]  = useState<Filtro>("todas");
-  const [vista,   setVista]   = useState<Vista>("tabla");
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDatos(); }, []);
@@ -83,55 +82,81 @@ export default function MisObras() {
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh", flexDirection: "column", gap: 16 }}>
-      <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
-      <p style={{ color: C.muted, fontSize: 13, fontFamily: FB }}>Cargando tus obras...</p>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       `}</style>
+      <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid transparent`, borderTopColor: C.orange, animation: "spin .8s linear infinite" }} />
+      <p style={{ color: C.muted, fontSize: 13, fontFamily: FB }}>Cargando tus obras...</p>
     </div>
   );
 
   return (
-    <div style={{ padding: "36px 40px", fontFamily: FB, background: C.bg, minHeight: "100vh" }} className="artista-main-pad">
+    <div className="mo-wrap" style={{ padding: "36px 40px", fontFamily: FB, background: C.bg, minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
-        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        .mo-row { transition: background .15s; }
-        .mo-row:hover { background: #F9F8FC !important; }
-        .mo-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:8px; border:1px solid ${C.border}; background:#fff; color:${C.sub}; font-size:12px; font-weight:600; cursor:pointer; font-family:'Outfit',sans-serif; transition:all .15s; white-space:nowrap; }
+        @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .mo-card { background:#fff; border:1px solid ${C.border}; border-radius:18px; overflow:hidden;
+          transition:transform .22s, box-shadow .22s; box-shadow:${CS};
+          animation: fadeUp .28s ease both; }
+        .mo-card:hover { transform:translateY(-4px); box-shadow:${CS2}; }
+        .mo-card:hover .mo-card-img img { transform:scale(1.06); }
+        .mo-card-img img { transition:transform .5s cubic-bezier(.2,0,0,1); }
+
+        .mo-btn { display:inline-flex; align-items:center; justify-content:center; gap:5px;
+          padding:7px 14px; border-radius:8px; border:1px solid ${C.border}; background:#F3F2F8;
+          color:${C.sub}; font-size:12px; font-weight:600; cursor:pointer;
+          font-family:'Outfit',sans-serif; transition:all .15s; white-space:nowrap; }
         .mo-btn:hover { background:${C.orange}; border-color:${C.orange}; color:#fff; }
-        .mo-btn-view:hover { background:${C.text}; border-color:${C.text}; color:#fff; }
-        .mo-titulo-link { cursor:pointer; transition:color .15s; }
-        .mo-titulo-link:hover { color:${C.orange} !important; }
-        .mo-card { background:#fff; border:1px solid ${C.border}; border-radius:18px; overflow:hidden; transition:transform .22s, box-shadow .22s; box-shadow:${CS}; }
-        .mo-card:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,0.10); }
-        .mo-vista-btn { padding:7px 14px; border-radius:8px; border:1px solid ${C.border}; background:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; transition:all .15s; color:${C.muted}; }
-        .mo-vista-btn.active { background:${C.orange}; border-color:${C.orange}; color:#fff; }
+
+        /* Con sidebar (901–1100px) */
+        @media (min-width: 901px) and (max-width: 1100px) {
+          .mo-wrap { padding:28px 28px !important; }
+          .mo-kpi  { grid-template-columns:repeat(2,1fr) !important; gap:12px !important; }
+        }
+        /* Sin sidebar (≤900px) — ancho completo */
+        @media (max-width: 900px) {
+          .mo-wrap { padding:24px 20px !important; }
+          .mo-kpi  { grid-template-columns:repeat(4,1fr) !important; gap:12px !important; }
+        }
+        /* Tablet (≤768px) */
+        @media (max-width: 768px) {
+          .mo-wrap   { padding:20px 16px !important; }
+          .mo-kpi    { grid-template-columns:repeat(2,1fr) !important; gap:10px !important; }
+          .mo-header { flex-direction:column !important; align-items:flex-start !important; }
+          .mo-header > button { width:100% !important; }
+          .mo-grid   { grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:14px !important; }
+        }
+        /* Móvil (≤480px) */
+        @media (max-width: 480px) {
+          .mo-wrap { padding:16px 12px !important; }
+          .mo-kpi  { gap:8px !important; }
+          .mo-kpi > div { padding:14px !important; }
+          .mo-grid { grid-template-columns:1fr 1fr !important; gap:10px !important; }
+        }
+        /* Móvil muy pequeño (≤360px) */
+        @media (max-width: 360px) {
+          .mo-grid { grid-template-columns:1fr !important; }
+        }
       `}</style>
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
+      {/* ── Header ── */}
+      <div className="mo-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, gap: 16 }}>
         <div>
           <p style={{ fontSize: 11, fontWeight: 800, color: C.orange, textTransform: "uppercase", letterSpacing: 1.5, margin: "0 0 6px" }}>✦ Portal del Artista</p>
-          <h1 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: "0 0 4px" }}>Mis Obras</h1>
+          <h1 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: "0 0 4px", lineHeight: 1.1 }}>Mis Obras</h1>
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{stats.total} obra{stats.total !== 1 ? "s" : ""} en tu catálogo</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Toggle vista */}
-          <div style={{ display: "flex", gap: 4, background: "#F3F2F8", padding: 4, borderRadius: 10, border: `1px solid ${C.border}` }}>
-            <button className={`mo-vista-btn${vista === "tabla" ? " active" : ""}`} onClick={() => setVista("tabla")}>☰ Tabla</button>
-            <button className={`mo-vista-btn${vista === "grid"  ? " active" : ""}`} onClick={() => setVista("grid")}>⊞ Tarjetas</button>
-          </div>
-          <button onClick={() => navigate("/artista/nueva-obra")}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 12, background: C.orange, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB, boxShadow: `0 4px 14px ${C.orange}40` }}>
-            + Nueva obra
-          </button>
-        </div>
+        <button onClick={() => navigate("/artista/nueva-obra")}
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 12, background: C.orange, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FB, boxShadow: `0 4px 14px ${C.orange}40`, flexShrink: 0 }}>
+          + Nueva obra
+        </button>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 28 }}>
+      {/* ── KPIs ── */}
+      <div className="mo-kpi" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 28 }}>
         {[
           { label: "TOTAL OBRAS",  value: stats.total,      color: C.orange },
           { label: "PUBLICADAS",   value: stats.publicadas, color: C.green  },
@@ -146,7 +171,7 @@ export default function MisObras() {
         ))}
       </div>
 
-      {/* Filtros */}
+      {/* ── Filtros ── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {([
           { id: "todas",     label: "Todas",       count: stats.total      },
@@ -162,7 +187,7 @@ export default function MisObras() {
         ))}
       </div>
 
-      {/* VACÍO */}
+      {/* ── Vacío ── */}
       {obrasFiltradas.length === 0 && (
         <div style={{ textAlign: "center", padding: "80px 0", background: C.card, borderRadius: 20, border: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 44, marginBottom: 14 }}>🎨</div>
@@ -181,120 +206,23 @@ export default function MisObras() {
         </div>
       )}
 
-      {/* ════ VISTA TABLA ════ */}
-      {vista === "tabla" && obrasFiltradas.length > 0 && (
-        <div style={{ background: C.card, borderRadius: 18, border: `1px solid ${C.border}`, boxShadow: CS, overflow: "hidden" }}>
-          {/* Encabezado tabla */}
-          <div style={{ display: "grid", gridTemplateColumns: "56px 2fr 1fr 110px 120px 80px 80px 130px", padding: "10px 20px", background: "#F9F8FC", borderBottom: `1px solid ${C.border}`, fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: ".08em", gap: 12, alignItems: "center" }}>
-            <span></span>
-            <span>Obra</span>
-            <span>Categoría</span>
-            <span>Estado</span>
-            <span>Precio</span>
-            <span>Stock</span>
-            <span>Vistas</span>
-            <span>Acciones</span>
-          </div>
-
-          {/* Filas */}
+      {/* ── Grid de tarjetas ── */}
+      {obrasFiltradas.length > 0 && (
+        <div className="mo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 18 }}>
           {obrasFiltradas.map((obra, i) => {
             const badge     = getBadge(obra.estado);
             const stockInfo = getStockInfo(obra);
             return (
-              <div key={obra.id_obra} className="mo-row"
-                style={{ display: "grid", gridTemplateColumns: "56px 2fr 1fr 110px 120px 80px 80px 130px", padding: "14px 20px", borderBottom: i < obrasFiltradas.length - 1 ? `1px solid ${C.border}` : "none", gap: 12, alignItems: "center", background: "#fff" }}>
-
-                {/* Thumbnail */}
-                <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", background: "#F3F2F8", flexShrink: 0, border: `1px solid ${C.border}` }}>
-                  {obra.imagen_principal
-                    ? <img src={obra.imagen_principal} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🖼</div>
-                  }
-                </div>
-
-                {/* Título + meta */}
-                <div style={{ minWidth: 0 }}>
-                  <div className="mo-titulo-link" onClick={() => navigate(`/artista/obra/${obra.id_obra}`)} style={{ fontSize: 13.5, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</div>
-                  <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "nowrap", overflow: "hidden" }}>
-                    {obra.tecnica && <span style={{ fontSize: 10.5, color: C.muted }}>{obra.tecnica}</span>}
-                    {obra.nombre_coleccion && <span style={{ fontSize: 10.5, color: C.pink }}>· {obra.nombre_coleccion}</span>}
-                    {obra.destacada && <span style={{ fontSize: 10.5, color: C.gold }}>· ⭐ Destacada</span>}
-                  </div>
-                  {obra.estado === "rechazada" && obra.motivo_rechazo && (
-                    <div style={{ fontSize: 10.5, color: C.red, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      ↳ {obra.motivo_rechazo}
-                    </div>
-                  )}
-                </div>
-
-                {/* Categoría */}
-                <div style={{ fontSize: 12, color: C.sub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {obra.categoria || <span style={{ color: C.muted }}>—</span>}
-                </div>
-
-                {/* Estado badge */}
-                <div>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 100, fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, textTransform: "uppercase", letterSpacing: ".05em", whiteSpace: "nowrap" }}>
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: badge.color, flexShrink: 0 }}/>
-                    {badge.label}
-                  </span>
-                </div>
-
-                {/* Precio */}
-                <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: C.orange }}>
-                  {fmt(obra.precio_base)}
-                </div>
-
-                {/* Stock */}
-                <div>
-                  {stockInfo ? (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 100, fontSize: 10.5, fontWeight: 700, color: stockInfo.color, background: stockInfo.bg, border: `1px solid ${stockInfo.color}30`, whiteSpace: "nowrap" }}>
-                      {stockInfo.label}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 11, color: C.muted }}>—</span>
-                  )}
-                </div>
-
-                {/* Vistas */}
-                <div style={{ fontFamily: FM, fontSize: 12, fontWeight: 600, color: C.sub }}>
-                  {obra.vistas || 0}
-                </div>
-
-                {/* Acciones — siempre visibles */}
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button className="mo-btn" onClick={() => navigate(`/artista/obra/${obra.id_obra}`)}>
-                    👁 Ver
-                  </button>
-                  <button className="mo-btn" onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}>
-                    ✏ Editar
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ════ VISTA GRID ════ */}
-      {vista === "grid" && obrasFiltradas.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 18 }}>
-          {obrasFiltradas.map(obra => {
-            const badge     = getBadge(obra.estado);
-            const stockInfo = getStockInfo(obra);
-            return (
-              <div key={obra.id_obra} className="mo-card">
+              <div key={obra.id_obra} className="mo-card" style={{ animationDelay: `${i * 0.05}s` }}>
                 {/* Imagen */}
-                <div style={{ height: 188, background: "#F3F2F8", position: "relative", overflow: "hidden" }}>
+                <div className="mo-card-img" style={{ height: 188, background: "#F3F2F8", position: "relative", overflow: "hidden" }}>
                   {obra.imagen_principal
-                    ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ? <img src={obra.imagen_principal} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🖼️</div>
                   }
-                  {/* Estado */}
                   <span style={{ position: "absolute", bottom: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", borderRadius: 100, fontSize: 10, fontWeight: 800, color: badge.color, background: "rgba(255,255,255,.92)", border: `1px solid ${badge.border}`, textTransform: "uppercase", letterSpacing: ".06em", backdropFilter: "blur(6px)" }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", background: badge.color }}/>{badge.label}
                   </span>
-                  {/* Stock badge */}
                   {stockInfo && (
                     <span style={{ position: "absolute", bottom: 10, right: 10, padding: "4px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700, color: stockInfo.color, background: "rgba(255,255,255,.92)", border: `1px solid ${stockInfo.color}40`, backdropFilter: "blur(6px)" }}>
                       {stockInfo.label}
@@ -307,45 +235,27 @@ export default function MisObras() {
 
                 {/* Info */}
                 <div style={{ padding: "16px" }}>
-                  {/* Tags */}
                   <div style={{ display: "flex", gap: 5, marginBottom: 8, flexWrap: "wrap" }}>
-                    {obra.categoria && <span style={{ fontSize: 10, fontWeight: 700, color: C.orange, background: `${C.orange}10`, border: `1px solid ${C.orange}22`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
-                    {obra.tecnica   && <span style={{ fontSize: 10, fontWeight: 600, color: C.muted,  background: "#F3F2F8", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
-                    {obra.nombre_coleccion && <span style={{ fontSize: 10, fontWeight: 700, color: C.pink, background: `${C.pink}10`, border: `1px solid ${C.pink}22`, padding: "2px 8px", borderRadius: 100 }}>🗂 {obra.nombre_coleccion}</span>}
+                    {obra.categoria        && <span style={{ fontSize: 10, fontWeight: 700, color: C.orange, background: `${C.orange}10`, border: `1px solid ${C.orange}22`, padding: "2px 8px", borderRadius: 100 }}>{obra.categoria}</span>}
+                    {obra.tecnica          && <span style={{ fontSize: 10, fontWeight: 600, color: C.muted,  background: "#F3F2F8", border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 100 }}>{obra.tecnica}</span>}
+                    {obra.nombre_coleccion && <span style={{ fontSize: 10, fontWeight: 700, color: C.pink,   background: `${C.pink}10`, border: `1px solid ${C.pink}22`, padding: "2px 8px", borderRadius: 100 }}>🗂 {obra.nombre_coleccion}</span>}
                   </div>
                   <h3 style={{ fontSize: 14, fontWeight: 800, color: C.text, margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</h3>
                   <p style={{ fontSize: 17, color: C.orange, fontWeight: 900, margin: "0 0 10px", fontFamily: FM }}>{fmt(obra.precio_base)}</p>
-
-                  {/* Stats row */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <span style={{ fontSize: 11.5, color: C.muted }}>👁 {obra.vistas || 0} vistas</span>
-                    <span style={{ fontSize: 11, color: C.muted }}>{fmtFecha(obra.fecha_creacion)}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.muted, marginBottom: 10 }}>
+                    <span>👁 {obra.vistas || 0} vistas</span>
+                    <span>{fmtFecha(obra.fecha_creacion)}</span>
                   </div>
-
-                  {/* Stock destacado en grid */}
-                  {stockInfo && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: stockInfo.bg, border: `1px solid ${stockInfo.color}25`, marginBottom: 10 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: stockInfo.color, flexShrink: 0 }}/>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: stockInfo.color }}>Stock: {stockInfo.label}</span>
-                      {obra.stock_reservado && obra.stock_reservado > 0 && (
-                        <span style={{ fontSize: 10.5, color: C.muted, marginLeft: "auto" }}>{obra.stock_reservado} reservado{obra.stock_reservado > 1 ? "s" : ""}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Motivo rechazo */}
                   {obra.estado === "rechazada" && obra.motivo_rechazo && (
                     <div style={{ background: `${C.red}08`, border: `1px solid ${C.red}25`, borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 11.5, color: C.sub, lineHeight: 1.5 }}>
                       <strong style={{ color: C.red }}>Motivo: </strong>{obra.motivo_rechazo}
                     </div>
                   )}
-
-                  {/* Acciones — siempre visibles */}
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button className="mo-btn" style={{ justifyContent: "center" }} onClick={() => navigate(`/artista/obra/${obra.id_obra}`)}>
+                    <button className="mo-btn" onClick={() => navigate(`/artista/obra/${obra.id_obra}`)}>
                       👁 Ver
                     </button>
-                    <button className="mo-btn" style={{ flex: 1, justifyContent: "center" }} onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}>
+                    <button className="mo-btn" style={{ flex: 1 }} onClick={() => navigate(`/artista/editar-obra/${obra.id_obra}`)}>
                       ✏ Editar
                     </button>
                   </div>
