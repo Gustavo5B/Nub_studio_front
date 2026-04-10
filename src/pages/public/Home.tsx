@@ -274,12 +274,6 @@ export default function Home() {
           pointer-events: none; transition: opacity .3s ease .7s;
         }
         .home-door-sub.open { opacity: 0; }
-        .home-door-line {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
-          pointer-events: none; transition: opacity .25s ease .75s;
-        }
-        .home-door-line.open { opacity: 0; }
 
         @keyframes barIn    { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
         @keyframes fadeL    { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
@@ -289,17 +283,6 @@ export default function Home() {
         @keyframes scrollDn { from{top:-100%} to{top:200%} }
         @keyframes marquee  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-        .altar-letter {
-          display: inline-block; opacity: 0;
-          transform: translateY(60px) skewY(4deg);
-          animation: letterUp 1.1s cubic-bezier(.16,1,.3,1) both;
-        }
-        @keyframes letterUp { to{opacity:1;transform:translateY(0) skewY(0)} }
-        .altar-letter:nth-child(1){animation-delay:.18s}
-        .altar-letter:nth-child(2){animation-delay:.26s}
-        .altar-letter:nth-child(3){animation-delay:.34s}
-        .altar-letter:nth-child(4){animation-delay:.42s}
-        .altar-letter:nth-child(5){animation-delay:.50s}
 
         .hero-corner { position: absolute; width: 38px; height: 38px; pointer-events: none; opacity: 0; animation: fadeI 1s ease 1.1s both; }
         .hero-corner::before, .hero-corner::after { content: ''; position: absolute; background: rgba(0,0,0,.09); }
@@ -507,13 +490,11 @@ export default function Home() {
           </div>
           <div className={`home-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
           <div className={`home-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-          <div className={`home-door-line${doorOpen ? " open" : ""}`} />
         </>
       )}
 
       {/* ═══ I · HERO ═══ */}
       <section style={{ position: "relative", height: "100vh", minHeight: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`, animation: "barIn 2s cubic-bezier(.16,1,.3,1) both" }} />
         <div className="hero-corner tl" /><div className="hero-corner tr" /><div className="hero-corner bl" /><div className="hero-corner br" />
 
         <div style={{ position: "absolute", bottom: 70, left: "50%", transform: "translateX(-50%)", fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(60px,8vw,110px)", fontWeight: 900, color: "rgba(0,0,0,.020)", whiteSpace: "nowrap", letterSpacing: "-.02em", userSelect: "none", pointerEvents: "none", animation: "fadeI 2s ease 2s both" }}>galería</div>
@@ -546,9 +527,15 @@ export default function Home() {
        {/* ═══ CONTENIDO CENTRAL DEL HERO ═══ */}
 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
 
-  {/* Título ALTAR */}
-  <h1 style={{ fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: .88, display: "flex", userSelect: "none", margin: 0 }}>
-    {"ALTAR".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
+  {/* Título ALTAR — color blanco durante puerta, negro al abrirse */}
+  <h1 style={{
+    fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900,
+    color: doorOpen ? C.ink : "#fff",
+    letterSpacing: "-.03em", lineHeight: .88,
+    userSelect: "none", margin: 0,
+    transition: "color 0.25s ease",
+  }}>
+    ALTAR
   </h1>
 
   {/* ── ⭐ ── única estrella, reemplaza el punto naranja */}
@@ -802,7 +789,7 @@ export default function Home() {
             <span style={{ display: "block", width: 18, height: 1, background: C.orange }} />Para artistas
           </div>
           <h2 style={{ fontFamily: SERIF, fontSize: "clamp(30px,4vw,50px)", fontWeight: 900, color: C.ink, lineHeight: 1.08, letterSpacing: "-.025em", margin: "0 0 18px" }}>
-            ¿Tu obra merece<br />un lugar aquí?
+            ¿Tu obra merece<br />un lugar aqui?
           </h2>
           <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.8, maxWidth: 440, fontFamily: SANS }}>Únete a los artistas de la Huasteca. Tu trabajo, certificado y visible para coleccionistas de todo el país.</p>
           <div style={{ display: "flex", gap: 14, marginTop: 34, flexWrap: "wrap", alignItems: "center" }}>

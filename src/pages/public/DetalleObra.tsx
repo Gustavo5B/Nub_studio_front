@@ -371,16 +371,6 @@ export default function DetalleObra() {
             {/* Línea de color */}
             <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg, transparent, ${color} 25%, ${color} 75%, transparent)`, animation:"barIn 1.8s cubic-bezier(.16,1,.3,1) both" }}/>
 
-            {/* NAV */}
-            <nav style={{ position:"absolute", top:30, left:44, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
-              {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
-                <button key={l} className="ob-nav-link"
-                  onClick={e => { e.stopPropagation(); navigate(to); }}
-                  onMouseEnter={e => { e.stopPropagation(); cursorOff(); dotRef.current?.classList.remove("cur-light"); ringRef.current?.classList.remove("cur-light"); }}
-                  onMouseLeave={e => { e.stopPropagation(); cursorOn(); dotRef.current?.classList.add("cur-light"); ringRef.current?.classList.add("cur-light"); }}
-                >{l}</button>
-              ))}
-            </nav>
 
             {/* Zoom hint */}
             <div style={{ position:"absolute", bottom:20, left:20, display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:100, background:"rgba(13,11,20,.75)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,.1)", fontSize:9, fontWeight:700, letterSpacing:".14em", textTransform:"uppercase", color:"rgba(255,255,255,.45)", fontFamily:NEXA_HEAVY, pointerEvents:"none" }}>
@@ -436,9 +426,9 @@ export default function DetalleObra() {
 
             {/* Volver */}
             <button onClick={() => navigate(-1 as any)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:8, background:"none", border:"none", color:"rgba(0,0,0,.28)", fontSize:9, fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"color .2s", padding:0 }}
-              onMouseOver={e => (e.currentTarget as HTMLElement).style.color=C.ink}
-              onMouseOut={e => (e.currentTarget as HTMLElement).style.color="rgba(0,0,0,.28)"}
+              style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:8, background:"none", border:`1px solid rgba(0,0,0,.14)`, borderRadius:100, color:C.ink, fontSize:9, fontWeight:800, letterSpacing:".18em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .2s", padding:"6px 14px" }}
+              onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(0,0,0,.35)"; (e.currentTarget as HTMLElement).style.background="rgba(0,0,0,.04)"; }}
+              onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(0,0,0,.14)"; (e.currentTarget as HTMLElement).style.background="none"; }}
             >← Volver</button>
 
             {/* Badges */}

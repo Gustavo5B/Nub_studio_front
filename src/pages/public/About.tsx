@@ -195,11 +195,7 @@ export default function About() {
           100% { opacity: 1; transform: translateY(0); }
         }
         
-        @keyframes letterRise {
-          0% { opacity: 0; transform: translateY(70px) skewY(6deg); }
-          60% { opacity: 1; transform: translateY(-8px) skewY(-1deg); }
-          100% { opacity: 1; transform: translateY(0) skewY(0); }
-        }
+        @keyframes fadeI { from{opacity:0} to{opacity:1} }
         
         @keyframes slowFloat {
           0% { transform: translateY(0px); }
@@ -470,27 +466,15 @@ export default function About() {
           <h1
             style={{
               fontFamily: SERIF,
-              fontSize: "clamp(48px, 7vw, 88px)",
+              fontSize: "clamp(36px, 5.5vw, 80px)",
               fontWeight: 900,
               color: C.ink,
               letterSpacing: "-0.01em",
               marginBottom: 32,
-              wordSpacing: "0.05em",
+              animation: "fadeI .8s ease .2s both",
             }}
           >
-            {"SOBRE NOSOTROS".split("").map((l, i) => (
-              <span
-                key={i}
-                style={{
-                  display: "inline-block",
-                  opacity: 0,
-                  animation: `letterRise 1s cubic-bezier(0.16, 1, 0.3, 1) ${0.18 + i * 0.07}s forwards`,
-                  marginRight: l === " " ? "0.2em" : "0",
-                }}
-              >
-                {l}
-              </span>
-            ))}
+            SOBRE NOSOTROS
           </h1>
 
           <div
