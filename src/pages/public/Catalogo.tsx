@@ -1,7 +1,7 @@
 // src/pages/public/Catalogo.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Search, X, Image as ImageIcon, Eye, ArrowRight, ShoppingCart } from "lucide-react";
+import { Search, X, Image as ImageIcon, Eye, ArrowRight, ShoppingCart, Heart } from "lucide-react";
 import { authService } from "../../services/authService";
 import { prefetchObra } from "../../utils/apiCache";
 
@@ -250,7 +250,9 @@ export default function Catalogo() {
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
   const handleLogout = () => { authService.logout(); navigate("/"); };
-  const [cartCount, setCartCount] = useState(0);
+  const [cartCount,   setCartCount]   = useState(0);
+  const [favoritos,   setFavoritos]   = useState<Set<number>>(new Set());
+  const [toggling,    setToggling]    = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!isLoggedIn || userRol !== "cliente") return;
@@ -259,7 +261,37 @@ export default function Catalogo() {
       .then(r => r.json())
       .then(d => { if (d.success) setCartCount(d.data.length); })
       .catch(() => {});
+    fetch(`${API_URL}/api/favoritos`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setFavoritos(new Set(d.data.map((f: any) => f.id_obra)));
+      })
+      .catch(() => {});
   }, [isLoggedIn, userRol]);
+
+  const toggleFavorito = async (e: React.MouseEvent, id_obra: number) => {
+    e.stopPropagation();
+    if (!isLoggedIn) { navigate(`/login?redirect=/catalogo`); return; }
+    if (userRol !== "cliente") return;
+    if (toggling.has(id_obra)) return;
+    const token = authService.getToken();
+    setToggling(prev => new Set(prev).add(id_obra));
+    try {
+      const res  = await fetch(`${API_URL}/api/favoritos/${id_obra}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFavoritos(prev => {
+          const next = new Set(prev);
+          data.accion === "agregado" ? next.add(id_obra) : next.delete(id_obra);
+          return next;
+        });
+      }
+    } catch { /* silent */ }
+    setToggling(prev => { const n = new Set(prev); n.delete(id_obra); return n; });
+  };
   const [hovCat, setHovCat] = useState<number | null>(null);
 
   const [doorOpen, setDoorOpen] = useState(false);
@@ -567,6 +599,17 @@ export default function Catalogo() {
         }
         .cat-obra-card:hover .cat-obra-card-link { color: #E8640C; }
         .cat-obra-card:hover .cat-obra-card-link-line { width: 34px; }
+        .cat-fav-btn {
+          position: absolute; top: 10px; right: 10px; z-index: 4;
+          width: 32px; height: 32px; border-radius: 50%;
+          background: rgba(255,255,255,0.92); border: none;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; opacity: 0; transition: opacity .22s, transform .22s;
+          backdrop-filter: blur(8px);
+        }
+        .cat-obra-card:hover .cat-fav-btn { opacity: 1; }
+        .cat-fav-btn.fav-active { opacity: 1; background: rgba(168,59,144,0.12); }
+        .cat-fav-btn:hover { transform: scale(1.15); }
 
         /* ── Featured obra ── */
         .cat-featured-img {
@@ -1248,6 +1291,17 @@ export default function Catalogo() {
                           <ImageIcon size={28} strokeWidth={1} color="rgba(0,0,0,.12)" />
                         </div>
                       )}
+                      <button
+                        className={`cat-fav-btn${favoritos.has(obra.id_obra) ? " fav-active" : ""}`}
+                        onClick={e => toggleFavorito(e, obra.id_obra)}
+                        title={favoritos.has(obra.id_obra) ? "Quitar de favoritos" : "Agregar a favoritos"}
+                      >
+                        <Heart
+                          size={14} strokeWidth={2}
+                          color={favoritos.has(obra.id_obra) ? "#A83B90" : "rgba(0,0,0,0.45)"}
+                          fill={favoritos.has(obra.id_obra) ? "#A83B90" : "none"}
+                        />
+                      </button>
                     </div>
                     <div className="cat-obra-card-info">
                       <div className="cat-obra-card-desc">{obra.titulo}</div>

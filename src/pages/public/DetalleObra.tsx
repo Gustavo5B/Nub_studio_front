@@ -43,7 +43,8 @@ export default function DetalleObra() {
   const [error,     setError]     = useState<string | null>(null);
   const [imgActiva, setImgActiva] = useState<string | null>(null);
   const [tamSel,    setTamSel]    = useState<any>(null);
-  const [liked,      setLiked]      = useState(false);
+  const [liked,       setLiked]       = useState(false);
+  const [likingObra,  setLikingObra]  = useState(false);
   const [zoomed,     setZoomed]     = useState(false);
   const [agregando,  setAgregando]  = useState(false);
   const [enCarrito,  setEnCarrito]  = useState(false);
@@ -56,7 +57,7 @@ export default function DetalleObra() {
 
   const handleAgregarCarrito = async () => {
     if (!isLoggedIn || userRol !== "cliente") {
-      navigate("/login");
+      navigate(`/login?redirect=${encodeURIComponent(`/obras/${slug}`)}`);
       return;
     }
     if (stockDisponible !== null && stockDisponible <= 0) {
@@ -182,6 +183,41 @@ export default function DetalleObra() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  // ── Cargar estado de favorito al tener la obra
+  useEffect(() => {
+    if (!obra?.id_obra || !isLoggedIn || userRol !== "cliente") return;
+    const token = authService.getToken();
+    fetch(`${API_URL}/api/favoritos/check/${obra.id_obra}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setLiked(d.esFavorito); })
+      .catch(() => {});
+  }, [obra?.id_obra, isLoggedIn, userRol]);
+
+  const handleToggleFavorito = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      navigate(`/login?redirect=${encodeURIComponent(`/obras/${slug}`)}`);
+      return;
+    }
+    if (userRol !== "cliente" || likingObra) return;
+    setLikingObra(true);
+    try {
+      const token = authService.getToken();
+      const res   = await fetch(`${API_URL}/api/favoritos/${obra?.id_obra}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLiked(data.accion === "agregado");
+        showToast(data.accion === "agregado" ? "Agregada a favoritos" : "Eliminada de favoritos", "success");
+      }
+    } catch { /* silent */ }
+    setLikingObra(false);
+  };
+
   // ── PANTALLA DE CARGA
   if (loading) return <div style={{ minHeight:"100vh", background:"#fff" }}/>;
 
@@ -277,6 +313,33 @@ export default function DetalleObra() {
       <div ref={dotRef}  className="ob-cursor-dot"/>
       <div ref={ringRef} className="ob-cursor-ring"/>
 
+      {/* ── BANNER PREVISUALIZACIÓN (solo para artistas) ── */}
+      {userRol === "artista" && (
+        <div style={{ position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)", zIndex:99996, display:"flex", alignItems:"center", gap:14, padding:"12px 20px 12px 16px", borderRadius:100, background:"rgba(20,18,30,.92)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,.12)", boxShadow:"0 8px 32px rgba(0,0,0,.35)", whiteSpace:"nowrap" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:"#E8640C", flexShrink:0, boxShadow:"0 0 6px #E8640C" }}/>
+            <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.6)", fontFamily:"'Nexa-Heavy',sans-serif", letterSpacing:".12em", textTransform:"uppercase" }}>
+              Vista pública
+            </span>
+          </div>
+          <div style={{ width:1, height:16, background:"rgba(255,255,255,.15)", flexShrink:0 }}/>
+          <span style={{ fontSize:12, color:"rgba(255,255,255,.5)", fontFamily:"'Outfit',sans-serif" }}>
+            Así ve el cliente tu obra
+          </span>
+          <button
+            onClick={() => {
+              if (obra?.id_obra) navigate(`/artista/obra/${obra.id_obra}`);
+              else navigate("/artista/mis-obras");
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(232,100,12,.2)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(232,100,12,.5)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.08)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,.15)"; }}
+            style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 16px", borderRadius:100, background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.15)", color:"white", fontSize:11, fontWeight:800, letterSpacing:".12em", textTransform:"uppercase", cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .2s" }}
+          >
+            ← Volver al portal
+          </button>
+        </div>
+      )}
+
       <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, animation:"museumIn .45s ease both" }}>
 
         {/* ════════════════════════════════════
@@ -326,8 +389,9 @@ export default function DetalleObra() {
 
             {/* Like + Share */}
             <div style={{ position:"absolute", top:20, right:20, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both" }}>
-              <button onClick={e => { e.stopPropagation(); setLiked(l => !l); }}
-                style={{ width:38, height:38, borderRadius:"50%", background:"rgba(13,11,20,.75)", border:`1px solid ${liked ? C.pink+"55" : "rgba(255,255,255,.15)"}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s" }}>
+              <button onClick={handleToggleFavorito}
+                title={liked ? "Quitar de favoritos" : "Agregar a favoritos"}
+                style={{ width:38, height:38, borderRadius:"50%", background: liked ? `${C.pink}22` : "rgba(13,11,20,.75)", border:`1px solid ${liked ? C.pink+"55" : "rgba(255,255,255,.15)"}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s", opacity: likingObra ? 0.6 : 1 }}>
                 <Heart size={14} color={liked ? C.pink : "rgba(255,255,255,.5)"} fill={liked ? C.pink : "none"} strokeWidth={2}/>
               </button>
               <button onClick={e => { e.stopPropagation(); navigator.share?.({ title:obra.titulo, url:globalThis.location.href }); }}
@@ -546,7 +610,7 @@ export default function DetalleObra() {
               ) : (
                 /* Botón adquirir — obra publicada + no autenticado o rol distinto */
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/obras/${slug}`)}`)}
                   onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                   style={{ width:"100%", padding:"14px 24px", borderRadius:100, background:color, color:"white", border:"none", fontSize:10, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"opacity .22s, transform .22s" }}
                   onMouseOver={e => { (e.currentTarget as HTMLElement).style.opacity=".85"; (e.currentTarget as HTMLElement).style.transform="scale(1.015)"; }}

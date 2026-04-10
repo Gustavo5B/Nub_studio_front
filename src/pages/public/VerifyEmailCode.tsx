@@ -22,6 +22,7 @@ export default function VerifyEmailCode() {
   const correo = location.state?.correo
     || localStorage.getItem('temp_correo_verificacion')
     || localStorage.getItem('temp_correo_2fa');
+  const redirectTo: string = location.state?.redirect || "/";
 
   useEffect(() => {
     if (!correo) navigate('/login');
@@ -55,7 +56,8 @@ export default function VerifyEmailCode() {
       setTimeout(() => {
         localStorage.removeItem('temp_correo_verificacion');
         localStorage.removeItem('temp_correo_2fa');
-        navigate('/login');
+        const loginUrl = redirectTo !== "/" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login";
+        window.location.href = loginUrl;
       }, 2000);
     } catch (err: any) {
       if (err.status === 401) {

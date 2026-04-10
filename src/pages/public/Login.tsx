@@ -1,7 +1,7 @@
 // src/pages/public/Login.tsx
 import { useState, useEffect, useRef } from "react";
 import type { ChangeEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Eye, EyeOff, Loader2,
   AlertCircle, CheckCircle2, ArrowLeft
@@ -41,6 +41,8 @@ interface LoginError {
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const currentYear = new Date().getFullYear();
 
   const [formData, setFormData] = useState({ correo: "", contrasena: "" });
@@ -147,6 +149,8 @@ export default function Login() {
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setMensaje("");
+    const params = new URLSearchParams(window.location.search);
+    const redirectTo = params.get("redirect") || "/";
     const validationError = validateLoginInput();
     if (validationError) { showMessage(validationError, true); return; }
 
@@ -184,14 +188,14 @@ export default function Login() {
       }
       localStorage.setItem("isLoggedIn", "true");
       showMessage("Acceso concedido", false);
+      const rol = response.usuario?.rol;
+      const artista_estado = response.usuario?.artista_estado;
       setTimeout(() => {
-        const rol = response.usuario?.rol;
-        const artista_estado = response.usuario?.artista_estado;
-        if (rol === "admin") navigate("/admin");
-        else if (rol === "artista" && artista_estado === "pendiente") navigate("/artista/pendiente");
-        else if (rol === "artista") navigate("/artista/dashboard");
-        else navigate("/");
-      }, 1000);
+        if (rol === "admin") window.location.href = "/admin";
+        else if (rol === "artista" && artista_estado === "pendiente") window.location.href = "/artista/pendiente";
+        else if (rol === "artista") window.location.href = "/artista/dashboard";
+        else window.location.href = redirectTo;
+      }, 300);
     } catch (err) {
       handleLoginError(err);
     } finally {
@@ -478,7 +482,7 @@ export default function Login() {
             {/* Links — pill outline */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button
-                onClick={() => navigate("/register")}
+                onClick={() => navigate(redirectTo !== "/" ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register")}
                 onMouseEnter={cursorOn}
                 onMouseLeave={cursorOff}
                 className="login-pill-outline"

@@ -22,8 +22,9 @@ import NuevaObra          from "../pages/private/artista/NuevaObra";
 import MisObras           from "../pages/private/artista/MisObras";
 import EditarObraArtista  from "../pages/private/artista/EditarObra";
 import MiPerfilPage       from "../pages/private/artista/MiPerfilPage";
-import MisColecciones    from "../pages/private/artista/MisColecciones";
-import NuevaColeccion    from "../pages/private/artista/NuevaColeccion";
+import MisColecciones       from "../pages/private/artista/MisColecciones";
+import NuevaColeccion       from "../pages/private/artista/NuevaColeccion";
+import DetalleObraArtista   from "../pages/private/artista/DetalleObraArtista";
 import RegistroArtista    from "../pages/public/RegistroArtista";
 import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
@@ -37,6 +38,7 @@ import ClienteRoute       from "../components/ClienteRoute";
 import MiCuenta           from "../pages/cliente/MiCuenta";
 import Carrito            from "../pages/cliente/Carrito";
 import MisPedidos         from "../pages/cliente/MisPedidos";
+import MisFavoritos       from "../pages/cliente/MisFavoritos";
 
 export default function AppRoutes() {
   return (
@@ -59,6 +61,7 @@ export default function AppRoutes() {
         <Route path="colecciones"                  element={<MisColecciones />} />
         <Route path="colecciones/nueva"            element={<NuevaColeccion />} />
         <Route path="colecciones/:id/editar"       element={<NuevaColeccion />} />
+        <Route path="obra/:id"                     element={<DetalleObraArtista />} />
       </Route>
 
       <Route path="/registro-artista" element={<RegistroArtista />} />
@@ -89,7 +92,8 @@ export default function AppRoutes() {
       {/* ── Cliente ── */}
       <Route path="/mi-cuenta" element={<ClienteRoute><MiCuenta /></ClienteRoute>} />
       <Route path="/mi-cuenta/carrito" element={<ClienteRoute><Carrito /></ClienteRoute>} />
-      <Route path="/mi-cuenta/pedidos" element={<ClienteRoute><MisPedidos /></ClienteRoute>} />
+      <Route path="/mi-cuenta/pedidos"    element={<ClienteRoute><MisPedidos /></ClienteRoute>} />
+      <Route path="/mi-cuenta/favoritos" element={<ClienteRoute><MisFavoritos /></ClienteRoute>} />
 
       {/* ── Error pages ── */}
       <Route path="/unauthorized" element={<Unauthorized />} />

@@ -1,7 +1,7 @@
 // src/pages/public/Register.tsx
 import { useState, useEffect, useRef } from "react";
 import type { ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Eye, EyeOff, Loader2,
   AlertCircle, CheckCircle2, ArrowLeft, Check
@@ -42,6 +42,8 @@ interface RegisterError {
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const currentYear = new Date().getFullYear();
 
   const [formData, setFormData] = useState({ nombre: "", correo: "", contrasena: "" });
@@ -170,11 +172,11 @@ export default function Register() {
         localStorage.setItem("temp_correo_verificacion", formData.correo);
         setMensaje("Cuenta creada. Revisa tu correo para verificarla.");
         setIsError(false);
-        setTimeout(() => navigate("/verify-email-code", { state: { correo: formData.correo } }), 2000);
+        setTimeout(() => navigate("/verify-email-code", { state: { correo: formData.correo, redirect: redirectTo } }), 2000);
       } else {
         setMensaje("Cuenta creada. Redirigiendo...");
         setIsError(false);
-        setTimeout(() => navigate("/login"), 2000);
+        setTimeout(() => navigate(redirectTo !== "/" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"), 2000);
       }
     } catch (err) {
       const error = err as RegisterError;
