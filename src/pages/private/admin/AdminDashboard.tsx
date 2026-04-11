@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Bell, ChevronRight, Clock, CheckCircle, XCircle,
   Layers, Users, Package, Eye, Image, RefreshCw,
-  Upload, BarChart2, Activity, FileText,
+  Upload, BarChart2, Activity, FileText, BookOpen, MessageCircle,
 } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { authService } from "../../../services/authService";
@@ -195,6 +195,91 @@ function KpiCards({ kpis, loading }: { kpis: Record<string, number> | null; load
   );
 }
 
+// ── BlogWidget ────────────────────────────────────────────────────────────────
+function BlogWidget({ navigate }: { navigate: (p: string) => void }) {
+  const [data, setData] = useState<{ total_posts: number; comentarios_pendientes: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = authService.getToken();
+    Promise.all([
+      fetch(`${API_URL}/api/blog/admin/posts?limit=1`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API_URL}/api/blog/admin/comentarios/pendientes`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+    ])
+      .then(([postsJson, comentJson]) => {
+        setData({
+          total_posts: postsJson.pagination?.total ?? 0,
+          comentarios_pendientes: Array.isArray(comentJson.data) ? comentJson.data.length : 0,
+        });
+      })
+      .catch(() => setData({ total_posts: 0, comentarios_pendientes: 0 }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={{ background: C.card, borderRadius: 14, padding: "20px 22px", boxShadow: CS, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: C.cream, fontFamily: FB }}>Blog</div>
+          <div style={{ fontSize: 13, color: C.creamMut, fontFamily: FB, marginTop: 2 }}>Publicaciones y moderación</div>
+        </div>
+        <button onClick={() => navigate("/admin/blog")}
+          style={{ display: "flex", alignItems: "center", gap: 3, background: "transparent", border: "none", color: C.blue, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: FB }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.7"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
+          Ver panel <ChevronRight size={11} />
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ background: C.bg, borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C.border}` }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: `${C.orange}14`, border: `1px solid ${C.orange}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <BookOpen size={17} color={C.orange} strokeWidth={1.8} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: FB }}>Posts</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: loading ? C.creamMut : C.cream, fontFamily: FM, letterSpacing: "-0.02em", lineHeight: 1.2, marginTop: 2 }}>
+              {loading ? "—" : fmt(data?.total_posts ?? 0)}
+            </div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate("/admin/blog")}
+          style={{ background: (data?.comentarios_pendientes ?? 0) > 0 ? `${C.orange}08` : C.bg, borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14, border: `1px solid ${(data?.comentarios_pendientes ?? 0) > 0 ? `${C.orange}30` : C.border}`, cursor: "pointer", transition: "opacity .2s" }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.85"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}
+        >
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: `${C.pink}14`, border: `1px solid ${C.pink}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <MessageCircle size={17} color={C.pink} strokeWidth={1.8} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: FB }}>Pendientes</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: loading ? C.creamMut : (data?.comentarios_pendientes ?? 0) > 0 ? C.orange : C.cream, fontFamily: FM, letterSpacing: "-0.02em", lineHeight: 1.2, marginTop: 2 }}>
+              {loading ? "—" : fmt(data?.comentarios_pendientes ?? 0)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={() => navigate("/admin/blog")}
+          style={{ flex: 1, padding: "9px 0", background: `${C.orange}12`, border: `1px solid ${C.orange}25`, borderRadius: 9, color: C.orange, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "background .15s" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${C.orange}22`; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${C.orange}12`; }}>
+          <BookOpen size={13} /> Gestionar posts
+        </button>
+        <button onClick={() => navigate("/admin/blog/nuevo")}
+          style={{ flex: 1, padding: "9px 0", background: C.orange, border: "none", borderRadius: 9, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FB, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "opacity .15s" }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.88"}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
+          + Nuevo post
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Acciones Rápidas ──────────────────────────────────────────────────────────
 function AccionesRapidas({ navigate }: { navigate: (p: string) => void }) {
   const acciones = [
@@ -203,6 +288,7 @@ function AccionesRapidas({ navigate }: { navigate: (p: string) => void }) {
     { label: "Reportes",      sub: "Ver métricas",          Icon: BarChart2, color: C.blue,   path: "/admin/reportes" },
     { label: "Importar",      sub: "Cargar datos externos", Icon: Upload,    color: C.purple, path: "/admin/importar" },
     { label: "Estadísticas",  sub: "Análisis completo",     Icon: Activity,  color: C.green,  path: "/admin/estadisticas" },
+    { label: "Blog",          sub: "Publicaciones",         Icon: BookOpen,  color: C.orange, path: "/admin/blog" },
     { label: "Sobre nosotros",sub: "Editar contenido",      Icon: FileText,  color: C.green,  path: "/admin/sobre-nosotros" },
   ];
   return (
@@ -476,11 +562,12 @@ export default function AdminDashboard() {
           <StatStrip strip={stats?.strip ?? null} loading={loading} />
         </div>
 
-        {/* Fila 3: DonutChart (1fr) + columna derecha: ObrasRecientes + AccionesRapidas (1fr) */}
+        {/* Fila 3: DonutChart (1fr) + columna derecha: ObrasRecientes + BlogWidget + AccionesRapidas */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <DonutChart kpis={stats?.kpis ?? null} loading={loading} />
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <ObrasRecientes obras={stats?.obras_recientes || []} loading={loading} navigate={navigate} />
+            <BlogWidget navigate={navigate} />
             <AccionesRapidas navigate={navigate} />
           </div>
         </div>

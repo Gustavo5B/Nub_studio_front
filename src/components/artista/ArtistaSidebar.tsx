@@ -1,6 +1,6 @@
 // src/components/artista/ArtistaSidebar.tsx
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, User, LogOut, Plus, ChevronRight, FolderOpen } from "lucide-react";
+import { LayoutDashboard, Image, User, LogOut, Plus, ChevronRight, FolderOpen, BookOpen } from "lucide-react";
 import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
@@ -22,6 +22,7 @@ const NAV = [
   { id: "dashboard",   label: "Overview",        icon: LayoutDashboard, path: "/artista/dashboard"   },
   { id: "obras",       label: "Mis obras",        icon: Image,           path: "/artista/mis-obras"   },
   { id: "colecciones", label: "Mis colecciones",  icon: FolderOpen,      path: "/artista/colecciones" },
+  { id: "blog",        label: "Mi blog",          icon: BookOpen,        path: "/artista/blog"        },
   { id: "perfil",      label: "Mi perfil",        icon: User,            path: "/artista/perfil"      },
 ];
 
@@ -460,12 +461,22 @@ export default function ArtistaSidebar({ onClose }: Props) {
           <div className="as-divider"/>
 
           {/* Botón Subir nueva obra */}
-          <button 
-            className="as-new-btn" 
+          <button
+            className="as-new-btn"
             onClick={() => go("/artista/nueva-obra")}
           >
-            <Plus size={16}/> 
+            <Plus size={16}/>
             Subir nueva obra
+          </button>
+
+          {/* Botón Nuevo post */}
+          <button
+            className="as-new-btn"
+            style={{ background: C.pink, boxShadow: `0 4px 14px ${C.pink}35` }}
+            onClick={() => go("/artista/blog/nuevo")}
+          >
+            <Plus size={16}/>
+            Nuevo post
           </button>
 
           {/* Botón Cerrar sesión - Justo debajo de Subir nueva obra */}
