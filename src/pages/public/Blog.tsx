@@ -1,19 +1,18 @@
 // src/pages/public/Blog.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Clock, ArrowRight, Star, Mail, Eye } from "lucide-react";
+import { Clock, ArrowRight, Mail, Star, Eye } from "lucide-react";
 import { authService } from "../../services/authService";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
+const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
 const C = {
   orange: "#E8640C",
-  orangeLight: "#F57C2E",
   orangeDark: "#C24E08",
-  orangeMuted: "#FDE8DB",
   ink: "#14121E",
   sub: "#9896A8",
   dark: "#0D0B14",
-  border: "#E6E4EF",
   white: "#FFFFFF",
 };
 
@@ -27,88 +26,52 @@ const WhatsAppIcon = ({ size = 32 }: { size?: number }) => (
 );
 
 interface Post {
-  id: number;
-  cat: string;
-  catLabel: string;
+  id_post: number;
   titulo: string;
-  excerpt: string;
-  autor: string;
-  fecha: string;
-  lectura: string;
-  img: string;
+  slug: string;
+  extracto: string | null;
+  imagen_destacada: string | null;
+  autor_rol: string;
+  autor_nombre: string;
+  autor_foto: string | null;
+  vistas: number;
+  fecha_publicacion: string;
+  categoria_nombre: string | null;
+  total_comentarios: number;
 }
-
-const CATS = [
-  { key: "todos", label: "Todos" },
-  { key: "arte", label: "Arte" },
-  { key: "cultura", label: "Cultura" },
-  { key: "tecnicas", label: "Técnicas" },
-  { key: "artistas", label: "Artistas" },
-  { key: "eventos", label: "Eventos" },
-];
-
-const POSTS: Post[] = [
-  {
-    id: 1, cat: "arte", catLabel: "Arte",
-    titulo: "El alma de la Huasteca en cada trazo",
-    excerpt: "Descubre cómo los artistas de la región traducen siglos de historia en colores, formas y texturas que hablan al mundo entero.",
-    autor: "Equipo NUB", fecha: "15 Mar 2025", lectura: "8 min",
-    img: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1400&q=80",
-  },
-  {
-    id: 2, cat: "cultura", catLabel: "Cultura",
-    titulo: "Los colores que nos definen",
-    excerpt: "Una exploración visual de la paleta cromática Huasteca y su profundo significado cultural a través del tiempo.",
-    autor: "María Sánchez", fecha: "10 Mar 2025", lectura: "5 min",
-    img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=900&q=80",
-  },
-  {
-    id: 3, cat: "tecnicas", catLabel: "Técnicas",
-    titulo: "Tejidos que resisten el tiempo",
-    excerpt: "Las técnicas ancestrales de bordado Huasteco que sobreviven de generación en generación.",
-    autor: "Carlos Mendoza", fecha: "5 Mar 2025", lectura: "6 min",
-    img: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=900&q=80",
-  },
-  {
-    id: 4, cat: "artistas", catLabel: "Artistas",
-    titulo: "Voces emergentes de la región",
-    excerpt: "Nuevos talentos que están redefiniendo el arte contemporáneo desde la Huasteca Hidalguense.",
-    autor: "Lucía Torres", fecha: "28 Feb 2025", lectura: "7 min",
-    img: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=900&q=80",
-  },
-  {
-    id: 5, cat: "arte", catLabel: "Arte",
-    titulo: "La arcilla como lenguaje universal",
-    excerpt: "Del barro al arte: la cerámica Huasteca como puente entre lo sagrado y lo cotidiano.",
-    autor: "Ana García", fecha: "20 Feb 2025", lectura: "4 min",
-    img: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=900&q=80",
-  },
-  {
-    id: 6, cat: "eventos", catLabel: "Eventos",
-    titulo: "Exposiciones que marcaron el año",
-    excerpt: "Un recorrido por las exhibiciones más importantes que reunieron lo mejor del arte Huasteco.",
-    autor: "Equipo NUB", fecha: "15 Feb 2025", lectura: "5 min",
-    img: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?w=900&q=80",
-  },
-];
 
 export default function Blog() {
   const navigate = useNavigate();
   const isLoggedIn = authService.isAuthenticated();
   const userRol = localStorage.getItem("userRol") || "";
 
-  const [filtro, setFiltro] = useState("todos");
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
 
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch(`${API}/api/blog/posts?limit=12`);
+        const json = await res.json();
+        if (json.success) setPosts(json.data);
+      } catch {
+        // silently fail — show empty state
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, []);
+
+  useEffect(() => {
     if (window.matchMedia("(pointer: fine)").matches) {
       document.body.style.cursor = "none";
       let rx = 0, ry = 0;
       let rafId: number | null = null;
-
       const onMove = (e: MouseEvent) => {
         const { clientX: mx, clientY: my } = e;
         if (dotRef.current) {
@@ -126,7 +89,6 @@ export default function Blog() {
           rafId = null;
         });
       };
-
       document.addEventListener("mousemove", onMove);
       return () => {
         document.removeEventListener("mousemove", onMove);
@@ -145,34 +107,27 @@ export default function Blog() {
     ringRef.current?.classList.remove("cur-over");
   }, []);
 
-  const handleLeer = () => alert("Este artículo estará disponible próximamente");
-  const handleSubscribe = () => {
-    if (!email.trim()) return alert("Ingresa tu correo electrónico");
-    alert("¡Pronto recibirás nuestras historias en tu correo!");
-    setEmail("");
-  };
+  const featured = posts[0] ?? null;
+  const rest = posts.slice(1);
 
-  const postsFiltrados = filtro === "todos" ? POSTS : POSTS.filter(p => p.cat === filtro);
-  const featured = postsFiltrados[0] ?? null;
-  const rest = postsFiltrados.slice(1);
+  const formatFecha = (iso: string) => {
+    return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+  };
 
   return (
     <div style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap');
-
         @font-face {
           font-family: 'SolveraLorvane';
           src: url('/fonts/SolveraLorvane.ttf') format('truetype');
           font-weight: normal; font-style: normal; font-display: swap;
         }
-
         .home-grain {
           position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .026;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
           background-size: 160px 160px; mix-blend-mode: multiply;
         }
-
         .home-cursor-dot {
           position: fixed; width: 6px; height: 6px; border-radius: 50%;
           background: #14121E; pointer-events: none; z-index: 99999;
@@ -185,11 +140,16 @@ export default function Blog() {
         }
         .home-cursor-dot.cur-over { width: 4px; height: 4px; background: #E8640C; }
         .home-cursor-ring.cur-over { width: 52px; height: 52px; border-color: #E8640C; }
-
         @keyframes fadeSlideUp {
           0% { opacity: 0; transform: translateY(36px); }
           100% { opacity: 1; transform: translateY(0); }
         }
+        @keyframes letterRise {
+          0% { opacity: 0; transform: translateY(70px) skewY(6deg); }
+          60% { opacity: 1; transform: translateY(-8px) skewY(-1deg); }
+          100% { opacity: 1; transform: translateY(0) skewY(0); }
+        }
+        .animate-title { animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
         @keyframes fadeI { from{opacity:0} to{opacity:1} }
         
@@ -198,100 +158,39 @@ export default function Blog() {
         }
         
         .card {
-          background: #fff;
-          border-radius: 28px;
+          background: #fff; border-radius: 28px;
           border: 1px solid rgba(0,0,0,0.04);
           transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
           box-shadow: 0 8px 20px -12px rgba(0,0,0,0.08);
-          overflow: hidden;
-          cursor: pointer;
-          opacity: 0;
-          transform: translateY(30px);
+          overflow: hidden; cursor: pointer;
+          opacity: 0; transform: translateY(30px);
+          text-decoration: none; display: block; color: inherit;
         }
         .card.reveal {
-          opacity: 1;
-          transform: translateY(0);
+          opacity: 1; transform: translateY(0);
           transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1), transform 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
-        .card:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 24px 40px -16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.02);
-          border-color: rgba(0,0,0,0.08);
-        }
-        
-        .img-wrapper {
-          position: relative;
-          overflow: hidden;
-        }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 24px 40px -16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.08); }
+        .img-wrapper { position: relative; overflow: hidden; }
         .img-wrapper::after {
-          content: '';
-          position: absolute;
-          inset: 0;
+          content: ''; position: absolute; inset: 0;
           background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
-          transform: translateX(-100%);
-          transition: transform 0.6s ease;
-          pointer-events: none;
+          transform: translateX(-100%); transition: transform 0.6s ease; pointer-events: none;
         }
-        .card:hover .img-wrapper::after {
-          transform: translateX(100%);
-        }
-        
+        .card:hover .img-wrapper::after { transform: translateX(100%); }
         .read-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.6);
-          backdrop-filter: blur(4px);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          color: white;
-          z-index: 2;
+          position: absolute; inset: 0;
+          background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 12px; opacity: 0; transition: opacity 0.3s ease; color: white; z-index: 2;
         }
-        .img-wrapper:hover .read-overlay {
-          opacity: 1;
-        }
-        
+        .img-wrapper:hover .read-overlay { opacity: 1; }
         .category-chip {
-          display: inline-block;
-          padding: 6px 16px;
-          border-radius: 40px;
-          font-size: 12px;
-          font-weight: 700;
-          background: rgba(255,255,255,0.92);
-          backdrop-filter: blur(4px);
-          transition: all 0.2s ease;
-          z-index: 1;
-          position: relative;
+          display: inline-block; padding: 6px 16px; border-radius: 40px;
+          font-size: 12px; font-weight: 700;
+          background: rgba(255,255,255,0.92); backdrop-filter: blur(4px);
+          transition: all 0.2s ease; z-index: 1; position: relative;
         }
-        
-        .filter-btn {
-          padding: 10px 24px;
-          border-radius: 100px;
-          font-size: 13px;
-          font-weight: 500;
-          transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-          cursor: pointer;
-          border: none;
-          background: transparent;
-          color: #9896A8;
-        }
-        .filter-btn.active {
-          background: #E8640C;
-          color: white;
-          font-weight: 700;
-          box-shadow: 0 4px 12px rgba(232,100,12,0.3);
-          transform: scale(1.02);
-        }
-        .filter-btn:hover:not(.active) {
-          background: rgba(0,0,0,0.03);
-          color: #14121E;
-          transform: translateY(-2px);
-        }
-        
         .whatsapp-float {
           position: fixed; bottom: 24px; right: 24px; z-index: 9999;
           background: #25D366; border-radius: 50%; width: 56px; height: 56px;
@@ -300,49 +199,23 @@ export default function Blog() {
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .whatsapp-float:hover { transform: scale(1.08) rotate(4deg); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
-        
-        /* Menú lateral uniforme con Contact.tsx */
-        .side-nav {
-          position: absolute;
-          top: 30px;
-          left: 52px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          z-index: 11;
-        }
+        .side-nav { position: absolute; top: 30px; left: 52px; display: flex; flex-direction: column; gap: 10px; z-index: 11; }
         .side-nav-link {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          font-size: 9.5px;
-          font-weight: 700;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          color: #9896A8;
-          text-decoration: none;
-          transition: color 0.25s ease, gap 0.25s ease;
+          display: flex; align-items: center; gap: 9px;
+          font-size: 9.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+          color: #9896A8; text-decoration: none; transition: color 0.25s ease, gap 0.25s ease;
         }
         .side-nav-link::before {
-          content: '';
-          display: block;
-          width: 12px;
-          height: 1px;
-          background: currentColor;
-          flex-shrink: 0;
-          transition: width 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+          content: ''; display: block; width: 12px; height: 1px;
+          background: currentColor; flex-shrink: 0; transition: width 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
-        .side-nav-link:hover {
-          color: #E8640C;
-          gap: 14px;
-        }
-        .side-nav-link:hover::before {
-          width: 22px;
-        }
-        
+        .side-nav-link:hover { color: #E8640C; gap: 14px; }
+        .side-nav-link:hover::before { width: 22px; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 12px; }
+        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @media (max-width: 768px) {
           .card { border-radius: 24px; }
-          .filter-btn { padding: 8px 18px; font-size: 12px; }
           .side-nav { left: 24px; top: 20px; gap: 8px; }
           .side-nav-link { font-size: 8px; gap: 6px; }
           .side-nav-link::before { width: 8px; }
@@ -367,13 +240,13 @@ export default function Blog() {
       <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeSlideUp 0.8s ease 0.3s both", zIndex: 11 }}>
         {!isLoggedIn ? (
           <>
-            <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", transition: "all 0.2s" }}>Ingresar</Link>
-            <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", padding: "7px 16px", borderRadius: 100, background: C.orange, textDecoration: "none", transition: "all 0.2s" }}>Ser artista</Link>
+            <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none" }}>Ingresar</Link>
+            <Link to="/register" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", padding: "7px 16px", borderRadius: 100, background: C.orange, textDecoration: "none" }}>Ser artista</Link>
           </>
         ) : (
           <>
             <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none" }}>Mi cuenta</Link>
-            <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
+            <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer" }}>Salir</button>
           </>
         )}
       </div>
@@ -388,21 +261,9 @@ export default function Blog() {
           <h1 style={{ fontFamily: SERIF, fontSize: "clamp(48px, 7vw, 88px)", fontWeight: 900, color: C.ink, letterSpacing: "-0.02em", marginBottom: 32, animation: "fadeI .8s ease .2s both" }}>
             BLOG
           </h1>
-
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, marginBottom: 24 }}>
             <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
-            <div
-              style={{
-                width: "clamp(32px, 4vw, 48px)",
-                height: "clamp(32px, 4vw, 48px)",
-                transition: "transform 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-              onMouseEnter={(e) => { cursorOn(); e.currentTarget.style.transform = "scale(1.15)"; }}
-              onMouseLeave={(e) => { cursorOff(); e.currentTarget.style.transform = "scale(1)"; }}
-            >
-              <img src={estrellaImg} alt="ALTAR Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-            </div>
+            <img src={estrellaImg} alt="NUB" style={{ width: "clamp(32px, 4vw, 48px)", height: "clamp(32px, 4vw, 48px)", objectFit: "contain" }} />
             <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
           </div>
           <p style={{ fontSize: "clamp(15px, 2vw, 17px)", color: C.sub, maxWidth: 620, margin: "0 auto", lineHeight: 1.6, fontWeight: 400 }}>
@@ -410,130 +271,109 @@ export default function Blog() {
           </p>
         </div>
 
-        <div style={{ marginBottom: 70, overflowX: "auto", paddingBottom: 8 }}>
-          <div style={{ display: "flex", justifyContent: "center", gap: 12, minWidth: "max-content", margin: "0 auto" }}>
-            {CATS.map(({ key, label }) => {
-              const active = filtro === key;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setFiltro(key)}
-                  onMouseEnter={cursorOn}
-                  onMouseLeave={cursorOff}
-                  className={`filter-btn ${active ? "active" : ""}`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {featured && (
-          <div
-            onClick={handleLeer}
-            onMouseEnter={cursorOn}
-            onMouseLeave={cursorOff}
-            className="card reveal"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              marginBottom: 80,
-              cursor: "pointer",
-            }}
-          >
-            <div className="img-wrapper" style={{ position: "relative", minHeight: 380, overflow: "hidden" }}>
-              <img
-                src={featured.img}
-                alt={featured.titulo}
-                style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }}
-                onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)"}
-                onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"}
-              />
-              <div className="read-overlay">
-                <Eye size={32} strokeWidth={1.5} />
-                <span style={{ fontWeight: 600, letterSpacing: '0.5px' }}>Leer artículo</span>
-              </div>
-              <div style={{ position: "absolute", top: 20, left: 20, zIndex: 1 }}>
-                <span className="category-chip" style={{ color: C.orange, border: `1px solid ${C.orange}30` }}>
-                  {featured.catLabel}
-                </span>
-              </div>
-            </div>
-            <div style={{ padding: "clamp(32px, 5vw, 48px)" }}>
-              <h2 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 3.5vw, 40px)", fontWeight: 800, color: C.ink, marginBottom: 20, lineHeight: 1.2 }}>
-                {featured.titulo}
-              </h2>
-              <p style={{ fontSize: 15, color: C.sub, lineHeight: 1.65, marginBottom: 28 }}>
-                {featured.excerpt}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>
-                  {featured.autor[0]}
+        {loading ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 32 }}>
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} style={{ borderRadius: 28, overflow: "hidden", border: "1px solid rgba(0,0,0,0.04)" }}>
+                <div className="skeleton" style={{ height: 240 }} />
+                <div style={{ padding: "28px 24px 32px" }}>
+                  <div className="skeleton" style={{ height: 20, marginBottom: 12, width: "70%" }} />
+                  <div className="skeleton" style={{ height: 14, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ height: 14, width: "80%" }} />
                 </div>
-                <div>
-                  <div style={{ fontWeight: 600, color: C.ink }}>{featured.autor}</div>
-                  <div style={{ fontSize: 12, color: C.sub, display: "flex", alignItems: "center", gap: 6 }}>
-                    {featured.fecha} · <Clock size={12} /> {featured.lectura}
+              </div>
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "80px 24px", color: C.sub }}>
+            <p style={{ fontSize: 18 }}>Aún no hay publicaciones. ¡Próximamente!</p>
+          </div>
+        ) : (
+          <>
+            {featured && (
+              <Link
+                to={`/blog/${featured.slug}`}
+                onMouseEnter={cursorOn}
+                onMouseLeave={cursorOff}
+                className="card reveal"
+                style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", marginBottom: 80 }}
+              >
+                <div className="img-wrapper" style={{ position: "relative", minHeight: 380 }}>
+                  {featured.imagen_destacada ? (
+                    <img src={featured.imagen_destacada} alt={featured.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #1a1830, #2a2040)", minHeight: 380 }} />
+                  )}
+                  <div className="read-overlay">
+                    <Eye size={32} strokeWidth={1.5} />
+                    <span style={{ fontWeight: 600 }}>Leer artículo</span>
+                  </div>
+                  {featured.categoria_nombre && (
+                    <div style={{ position: "absolute", top: 20, left: 20, zIndex: 1 }}>
+                      <span className="category-chip" style={{ color: C.orange, border: `1px solid ${C.orange}30` }}>{featured.categoria_nombre}</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: "clamp(32px, 5vw, 48px)" }}>
+                  <h2 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 3.5vw, 40px)", fontWeight: 800, color: C.ink, marginBottom: 20, lineHeight: 1.2 }}>
+                    {featured.titulo}
+                  </h2>
+                  {featured.extracto && (
+                    <p style={{ fontSize: 15, color: C.sub, lineHeight: 1.65, marginBottom: 28 }}>{featured.extracto}</p>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    {featured.autor_foto ? (
+                      <img src={featured.autor_foto} alt={featured.autor_nombre} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>
+                        {featured.autor_nombre[0]}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 600, color: C.ink }}>{featured.autor_nombre}</div>
+                      <div style={{ fontSize: 12, color: C.sub, display: "flex", alignItems: "center", gap: 6 }}>
+                        {formatFecha(featured.fecha_publicacion)} · <Clock size={12} /> {featured.vistas} vistas
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 28 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: C.orange }}>
+                      Leer artículo <ArrowRight size={14} />
+                    </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+              </Link>
+            )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "clamp(28px, 4vw, 40px)" }}>
-          {rest.map((post, idx) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              index={idx}
-              cursorOn={cursorOn}
-              cursorOff={cursorOff}
-              handleLeer={handleLeer}
-            />
-          ))}
-        </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "clamp(28px, 4vw, 40px)" }}>
+              {rest.map((post, idx) => (
+                <PostCard key={post.id_post} post={post} index={idx} cursorOn={cursorOn} cursorOff={cursorOff} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <section style={{ background: C.dark, color: "#fff", padding: "clamp(64px, 8vw, 96px) 24px", marginTop: 40 }}>
         <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, background: "rgba(255,255,255,0.05)", borderRadius: 32, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", transition: "transform 0.3s", animation: "fadeSlideUp 0.6s ease" }}>
+          <div style={{ width: 64, height: 64, background: "rgba(255,255,255,0.05)", borderRadius: 32, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
             <Mail size={28} color={C.orange} />
           </div>
-          <h2 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 4vw, 42px)", marginBottom: 16, animation: "fadeSlideUp 0.6s ease 0.1s both" }}>Recibe las historias</h2>
-          <p style={{ color: C.sub, marginBottom: 32, lineHeight: 1.6, animation: "fadeSlideUp 0.6s ease 0.2s both" }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 4vw, 42px)", marginBottom: 16 }}>Recibe las historias</h2>
+          <p style={{ color: C.sub, marginBottom: 32, lineHeight: 1.6 }}>
             Las mejores reflexiones, técnicas y novedades del arte huasteco directo a tu correo.
           </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", animation: "fadeSlideUp 0.6s ease 0.3s both" }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
-              onMouseEnter={cursorOn}
-              onMouseLeave={cursorOff}
-              style={{ flex: "1 1 240px", padding: "14px 20px", borderRadius: 60, border: "none", fontSize: 14, outline: "none", background: "#1a1a24", color: "#fff", transition: "all 0.2s" }}
-              onFocus={e => e.currentTarget.style.background = "#252530"}
-              onBlur={e => e.currentTarget.style.background = "#1a1a24"}
+              style={{ flex: "1 1 240px", padding: "14px 20px", borderRadius: 60, border: "none", fontSize: 14, outline: "none", background: "#1a1a24", color: "#fff" }}
             />
             <button
-              onClick={handleSubscribe}
-              style={{
-                padding: "14px 32px", background: C.orange, border: "none",
-                borderRadius: 60, fontWeight: 700, color: "#fff", cursor: "pointer",
-                transition: "all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1)"
-              }}
-              onMouseEnter={(e) => {
-                cursorOn();
-                e.currentTarget.style.transform = "scale(1.04)";
-                e.currentTarget.style.boxShadow = "0 6px 16px rgba(232,100,12,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                cursorOff();
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
+              onClick={() => { setEmail(""); }}
+              style={{ padding: "14px 32px", background: C.orange, border: "none", borderRadius: 60, fontWeight: 700, color: "#fff", cursor: "pointer" }}
             >
               Suscribirme
             </button>
@@ -553,17 +393,16 @@ export default function Blog() {
   );
 }
 
-function PostCard({ post, index, cursorOn, cursorOff, handleLeer }: { post: Post; index: number; cursorOn: () => void; cursorOff: () => void; handleLeer: () => void }) {
+function PostCard({ post, index, cursorOn, cursorOff }: {
+  post: Post; index: number; cursorOn: () => void; cursorOff: () => void;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("reveal");
-            observer.unobserve(entry.target);
-          }
+          if (entry.isIntersecting) { entry.target.classList.add("reveal"); observer.unobserve(entry.target); }
         });
       },
       { threshold: 0.1, rootMargin: "40px" }
@@ -572,52 +411,59 @@ function PostCard({ post, index, cursorOn, cursorOff, handleLeer }: { post: Post
     return () => observer.disconnect();
   }, []);
 
+  const formatFecha = (iso: string) =>
+    new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+
   return (
-    <article
-      ref={cardRef}
-      onClick={handleLeer}
+    <Link
+      ref={cardRef as React.Ref<HTMLAnchorElement>}
+      to={`/blog/${post.slug}`}
       onMouseEnter={cursorOn}
       onMouseLeave={cursorOff}
       className="card"
       style={{ transitionDelay: `${index * 0.05}s` }}
     >
       <div className="img-wrapper" style={{ height: 240, overflow: "hidden", position: "relative" }}>
-        <img
-          src={post.img}
-          alt={post.titulo}
-          style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }}
-          onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1.06)"}
-          onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1)"}
-        />
+        {post.imagen_destacada ? (
+          <img src={post.imagen_destacada} alt={post.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #1a1830, #2a2040)" }} />
+        )}
         <div className="read-overlay">
           <Eye size={28} strokeWidth={1.5} />
-          <span style={{ fontWeight: 600, letterSpacing: '0.5px' }}>Leer artículo</span>
+          <span style={{ fontWeight: 600 }}>Leer artículo</span>
         </div>
-        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
-          <span className="category-chip" style={{ color: C.orange, border: `1px solid ${C.orange}30` }}>
-            {post.catLabel}
-          </span>
-        </div>
+        {post.categoria_nombre && (
+          <div style={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
+            <span className="category-chip" style={{ color: "#E8640C", border: "1px solid rgba(232,100,12,0.3)" }}>{post.categoria_nombre}</span>
+          </div>
+        )}
       </div>
       <div style={{ padding: "28px 24px 32px" }}>
-        <h3 style={{ fontFamily: SERIF, fontSize: 22, lineHeight: 1.3, fontWeight: 700, color: C.ink, marginBottom: 12 }}>
+        <h3 style={{ fontFamily: "'SolveraLorvane', serif", fontSize: 22, lineHeight: 1.3, fontWeight: 700, color: "#14121E", marginBottom: 12 }}>
           {post.titulo}
         </h3>
-        <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.65, marginBottom: 24 }}>
-          {post.excerpt}
-        </p>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(0,0,0,0.04)", paddingTop: 18, fontSize: 12, color: C.sub }}>
+        {post.extracto && (
+          <p style={{ fontSize: 14, color: "#9896A8", lineHeight: 1.65, marginBottom: 24 }}>
+            {post.extracto.length > 120 ? post.extracto.slice(0, 120) + "…" : post.extracto}
+          </p>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(0,0,0,0.04)", paddingTop: 18, fontSize: 12, color: "#9896A8" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
-              {post.autor[0]}
-            </div>
-            <span style={{ fontWeight: 500 }}>{post.autor}</span>
+            {post.autor_foto ? (
+              <img src={post.autor_foto} alt={post.autor_nombre} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
+            ) : (
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #E8640C, #C24E08)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
+                {post.autor_nombre[0]}
+              </div>
+            )}
+            <span style={{ fontWeight: 500 }}>{post.autor_nombre}</span>
           </div>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <Clock size={12} /> {post.lectura}
+            <Clock size={12} /> {formatFecha(post.fecha_publicacion)}
           </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

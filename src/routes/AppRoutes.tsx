@@ -25,6 +25,8 @@ import MiPerfilPage       from "../pages/private/artista/MiPerfilPage";
 import MisColecciones       from "../pages/private/artista/MisColecciones";
 import NuevaColeccion       from "../pages/private/artista/NuevaColeccion";
 import DetalleObraArtista   from "../pages/private/artista/DetalleObraArtista";
+import MisBlogPosts         from "../pages/private/artista/MisBlogPosts";
+import NuevoPost            from "../pages/private/artista/NuevoPost";
 import RegistroArtista    from "../pages/public/RegistroArtista";
 import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
@@ -34,6 +36,7 @@ import AdminSobreNosotros from "../pages/private/admin/sobreNosotros";
 import AdminColecciones   from "../pages/private/admin/AdminColecciones";
 import AdminClientes      from "../pages/private/admin/AdminClientes";
 import AdminVentas        from "../pages/private/admin/AdminVentas";
+import AdminBlog          from "../pages/private/admin/AdminBlog";
 import ClienteRoute       from "../components/ClienteRoute";
 import MiCuenta           from "../pages/cliente/MiCuenta";
 import Carrito            from "../pages/cliente/Carrito";
@@ -62,6 +65,9 @@ export default function AppRoutes() {
         <Route path="colecciones/nueva"            element={<NuevaColeccion />} />
         <Route path="colecciones/:id/editar"       element={<NuevaColeccion />} />
         <Route path="obra/:id"                     element={<DetalleObraArtista />} />
+        <Route path="blog"                         element={<MisBlogPosts />} />
+        <Route path="blog/nuevo"                   element={<NuevoPost />} />
+        <Route path="blog/editar/:id"              element={<NuevoPost />} />
       </Route>
 
       <Route path="/registro-artista" element={<RegistroArtista />} />
@@ -87,6 +93,9 @@ export default function AppRoutes() {
         <Route path="sobre-nosotros" element={<AdminSobreNosotros />} />
         <Route path="clientes"       element={<AdminClientes />} />
         <Route path="ventas"         element={<AdminVentas />} />
+        <Route path="blog"           element={<AdminBlog />} />
+        <Route path="blog/nuevo"     element={<NuevoPost />} />
+        <Route path="blog/editar/:id" element={<NuevoPost />} />
       </Route>
 
       {/* ── Cliente ── */}
