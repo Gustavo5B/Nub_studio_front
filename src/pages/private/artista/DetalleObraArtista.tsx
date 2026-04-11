@@ -46,9 +46,10 @@ export default function DetalleObraArtista() {
   const { id }        = useParams<{ id: string }>();
   const { showToast } = useToast();
 
-  const [obra,    setObra]    = useState<Obra | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [imgSel,  setImgSel]  = useState<string>("");
+  const [obra,        setObra]        = useState<Obra | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [imgSel,      setImgSel]      = useState<string>("");
+  const [imgRatio,    setImgRatio]    = useState<number | null>(null); // w/h ratio
 
   useEffect(() => { cargar(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -94,7 +95,7 @@ export default function DetalleObraArtista() {
   ];
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", fontFamily: FB, padding: "36px 40px" }} className="artista-main-pad">
+    <div style={{ background: C.bg, minHeight: "100vh", fontFamily: FB, padding: "36px 40px" }} className="doa-wrap">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
         @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
@@ -105,6 +106,27 @@ export default function DetalleObraArtista() {
         .doa-action-btn:hover { border-color:${C.orange}; color:${C.orange}; background:${C.orange}08; }
         .doa-action-btn.primary { background:${C.orange}; border-color:${C.orange}; color:#fff; }
         .doa-action-btn.primary:hover { opacity:.88; }
+
+        /* Con sidebar (901–1200px): columna derecha más angosta */
+        @media (min-width:901px) and (max-width:1200px) {
+          .doa-wrap { padding:28px 20px !important; }
+          .doa-grid { grid-template-columns:minmax(0,1fr) 280px !important; gap:16px !important; }
+        }
+        /* Sin sidebar (≤900px): una sola columna */
+        @media (max-width:900px) {
+          .doa-wrap { padding:24px 20px !important; }
+          .doa-grid { grid-template-columns:1fr !important; }
+          .doa-right { position:static !important; }
+        }
+        /* Tablet (≤768px) */
+        @media (max-width:768px) {
+          .doa-wrap { padding:20px 16px !important; }
+        }
+        /* Móvil (≤480px) */
+        @media (max-width:480px) {
+          .doa-wrap { padding:16px 12px !important; }
+          .doa-action-btn { padding:9px 14px !important; font-size:12px !important; }
+        }
       `}</style>
 
       {/* Breadcrumb */}
@@ -120,19 +142,40 @@ export default function DetalleObraArtista() {
         <span style={{ fontSize: 13, color: C.sub, maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{obra.titulo}</span>
       </div>
 
-      {/* Layout principal: 2 columnas */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 24, alignItems: "start" }}>
+      {/* Layout principal */}
+      <div className="doa-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 20, alignItems: "start" }}>
 
         {/* ── COLUMNA IZQUIERDA ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
 
-          {/* Imagen principal */}
-          <div style={{ background: C.card, borderRadius: 20, border: `1px solid ${C.border}`, boxShadow: CS, overflow: "hidden" }}>
-            <div style={{ position: "relative", height: 420, background: "#F3F2F8" }}>
-              {imgSel
-                ? <img src={imgSel} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60 }}>🖼️</div>
-              }
+          {/* Imagen principal — card se encoge al ancho real de la imagen */}
+          <div style={{
+            background: C.card, borderRadius: 20, border: `1px solid ${C.border}`, boxShadow: CS, overflow: "hidden",
+            maxWidth: imgRatio && imgRatio < 0.85
+              ? `calc(${Math.round(imgRatio * 72)}vh + 2px)`
+              : "100%",
+            margin: "0 auto", width: "100%",
+          }}>
+            <div className="doa-img-box" style={{ background: "#F3F2F8" }}>
+              {imgSel ? (
+                <img
+                  src={imgSel}
+                  alt={obra.titulo}
+                  onLoad={e => {
+                    const img = e.currentTarget;
+                    setImgRatio(img.naturalWidth / img.naturalHeight);
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    height: "auto",
+                    maxHeight: "72vh",
+                    objectFit: "contain",
+                  }}
+                />
+              ) : (
+                <div style={{ height: 320, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60 }}>🖼️</div>
+              )}
               {/* Estado badge sobre imagen */}
               <span style={{ position: "absolute", top: 16, left: 16, display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 13px", borderRadius: 100, fontSize: 11, fontWeight: 800, color: badge.color, background: "rgba(255,255,255,.95)", border: `1px solid ${badge.border}`, backdropFilter: "blur(8px)", textTransform: "uppercase", letterSpacing: ".06em" }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: badge.color }}/> {badge.label}
@@ -148,7 +191,7 @@ export default function DetalleObraArtista() {
                 {todasImg.map(img => (
                   <div key={img.id_imagen} className={`doa-thumb${imgSel === img.url_imagen ? " active" : ""}`}
                     style={{ width: 64, height: 64 }}
-                    onClick={() => setImgSel(img.url_imagen)}
+                    onClick={() => { setImgSel(img.url_imagen); setImgRatio(null); }}
                   >
                     <img src={img.url_imagen} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
@@ -166,7 +209,7 @@ export default function DetalleObraArtista() {
                     <Image size={14} color={C.orange} strokeWidth={2}/>
                     <span style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: ".1em" }}>Descripción</span>
                   </div>
-                  <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.75, margin: 0 }}>{obra.descripcion}</p>
+                  <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.75, margin: 0, overflowWrap: "break-word", wordBreak: "break-word" }}>{obra.descripcion}</p>
                 </div>
               )}
               {obra.historia && (
@@ -175,7 +218,7 @@ export default function DetalleObraArtista() {
                     <Tag size={14} color={C.pink} strokeWidth={2}/>
                     <span style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: ".1em" }}>Historia</span>
                   </div>
-                  <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.75, margin: 0 }}>{obra.historia}</p>
+                  <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.75, margin: 0, overflowWrap: "break-word", wordBreak: "break-word" }}>{obra.historia}</p>
                 </div>
               )}
             </div>
@@ -197,7 +240,7 @@ export default function DetalleObraArtista() {
         </div>
 
         {/* ── COLUMNA DERECHA ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 24 }}>
+        <div className="doa-right" style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 24, minWidth: 0, width: "100%", overflow: "hidden" }}>
 
           {/* Título + acciones */}
           <div style={{ background: C.card, borderRadius: 20, border: `1px solid ${C.border}`, boxShadow: CS, padding: "24px 24px 20px" }}>

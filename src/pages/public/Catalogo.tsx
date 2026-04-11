@@ -237,7 +237,6 @@ export default function Catalogo() {
   const [loading,     setLoading]     = useState(true);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedObra, setSelectedObra] = useState<Obra | null>(null);
 
   const [search,    setSearch]    = useState(searchParams.get("q") || "");
   const [catActiva, setCatActiva] = useState<number | null>(
@@ -294,21 +293,11 @@ export default function Catalogo() {
   };
   const [hovCat, setHovCat] = useState<number | null>(null);
 
-  const [doorOpen, setDoorOpen] = useState(false);
-  const [doorGone, setDoorGone] = useState(false);
-
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const pageRef = useReveal(0.10);
 
-  // ─── Door (idéntico al Home) ─────────────────────────────────────────────
-  useEffect(() => {
-    const t1 = setTimeout(() => setDoorOpen(true), 1400);
-    const t2 = setTimeout(() => setDoorGone(true), 2700);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  // ─── Cursor (idéntico al Home) ────────────────────────────────────────────
+  // ─── Cursor (igual que Home) ────────────────────────────────────────────
   useEffect(() => {
     document.body.style.cursor = "none";
     let rx = 0, ry = 0, rafId: number;
@@ -385,12 +374,12 @@ export default function Catalogo() {
 
   useEffect(() => { cargarObras(); }, [cargarObras]);
 
+
   const handleCat    = (id: number | null) => { setCatActiva(id); setPage(1); };
   const handleSearch = (val: string)       => { setSearch(val);   setPage(1); };
   const handleOrden  = (val: string)       => { setOrdenar(val);  setPage(1); };
 
   const catNombre = catActiva ? categorias.find(c => c.id_categoria === catActiva)?.nombre : null;
-  const titleLetters = "CATÁLOGO".split("");
 
   return (
     <div ref={pageRef} style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh" }}>
@@ -401,19 +390,6 @@ export default function Catalogo() {
 
       {/* ─── Grain (igual que Home) ───────────────────────────────────────── */}
       <div className="home-grain" />
-
-      {/* ─── Door (idéntico al Home) ─────────────────────────────────────── */}
-      {!doorGone && (
-        <>
-          <div className={`home-door-wrap${doorOpen ? " open" : ""}`}>
-            <div className="home-door izq" />
-            <div className="home-door der" />
-          </div>
-          <div className={`home-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
-          <div className={`home-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-          <div className={`home-door-line${doorOpen ? " open" : ""}`} />
-        </>
-      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap');
@@ -454,42 +430,6 @@ export default function Catalogo() {
         .home-cursor-dot.cur-dark  { background: rgba(255,255,255,.85); }
         .home-cursor-ring.cur-dark { border-color: rgba(255,255,255,.35); }
 
-        /* ── Door (idéntico al Home) ── */
-        .home-door-wrap {
-          position: fixed; inset: 0; z-index: 99990;
-          display: flex; pointer-events: none;
-        }
-        .home-door {
-          flex: 1; background: #0D0B14;
-          transition: transform 1.2s cubic-bezier(.76,0,.24,1);
-        }
-        .home-door.izq  { transform-origin: left  center; }
-        .home-door.der  { transform-origin: right center; }
-        .home-door-wrap.open .home-door.izq { transform: translateX(-100%); }
-        .home-door-wrap.open .home-door.der { transform: translateX(100%);  }
-        .home-door-logo {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; font-family: 'SolveraLorvane', serif;
-          font-size: clamp(64px,10vw,130px); font-weight: 900; color: #fff;
-          letter-spacing: -.03em; pointer-events: none;
-          transition: opacity .35s ease .8s;
-        }
-        .home-door-logo.open { opacity: 0; }
-        .home-door-sub {
-          position: fixed; top: calc(50% + clamp(48px,8vw,104px)); left: 50%;
-          transform: translateX(-50%); z-index: 99991;
-          font-size: 9px; font-weight: 700; letter-spacing: .44em;
-          text-transform: uppercase; color: rgba(255,255,255,.35);
-          pointer-events: none; transition: opacity .3s ease .7s;
-        }
-        .home-door-sub.open { opacity: 0; }
-        .home-door-line {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-          z-index: 99991; width: 1px; height: 60px; background: #E8640C;
-          pointer-events: none; transition: opacity .25s ease .75s;
-        }
-        .home-door-line.open { opacity: 0; }
-
         /* ── Hero corners ── */
         .hero-corner { position: absolute; width: 38px; height: 38px; pointer-events: none; opacity: 0; animation: fadeI 1s ease 1.1s both; }
         .hero-corner::before, .hero-corner::after { content: ''; position: absolute; background: rgba(0,0,0,.09); }
@@ -506,22 +446,14 @@ export default function Catalogo() {
         .hero-corner.br::before { right:0; left:auto; bottom:0; top:auto; }
         .hero-corner.br::after  { right:0; left:auto; bottom:0; top:auto; }
 
-        /* ── Keyframes (mismos que Home) ── */
+        /* ── Keyframes ── */
         @keyframes barIn   { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
         @keyframes fadeL   { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
         @keyframes fadeR   { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
         @keyframes fadeI   { from{opacity:0} to{opacity:1} }
         @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-        /* ── Altar letters (mismo que Home) ── */
-        .altar-letter {
-          display: inline-block; opacity: 0;
-          transform: translateY(60px) skewY(4deg);
-          animation: letterUp 1.1s cubic-bezier(.16,1,.3,1) both;
-        }
-        @keyframes letterUp { to{opacity:1;transform:translateY(0) skewY(0)} }
-
-        /* ── Scroll reveal (mismo que Home) ── */
+        /* ── Scroll reveal ── */
         [data-rv]     { opacity:0; transform:translateY(26px); transition:opacity .9s ease, transform .9s ease; }
         [data-clip]   { clip-path:inset(100% 0 0 0); transition:clip-path 1.3s cubic-bezier(.16,1,.3,1); }
         [data-clip-h] { clip-path:inset(0 100% 0 0); transition:clip-path 1.5s cubic-bezier(.16,1,.3,1); }
@@ -537,7 +469,7 @@ export default function Catalogo() {
         [data-clip][data-d="2"]{transition-delay:.20s}
         [data-clip][data-d="3"]{transition-delay:.35s}
 
-        /* ── Expo frame (igual que Home) ── */
+        /* ── Expo frame ── */
         .cat-expo-frame {
           position: relative; border-radius: 2px; overflow: hidden;
           transform: perspective(1200px) rotateX(1.5deg) rotateY(1.8deg);
@@ -551,7 +483,7 @@ export default function Catalogo() {
         .cat-expo-frame img { filter: saturate(.75) contrast(1.05) brightness(.95); transition: filter .8s; }
         .cat-expo-frame-wrap:hover .cat-expo-frame img { filter: saturate(.92) contrast(1.06) brightness(1.0); }
 
-        /* ── Categorías (igual que Home) ── */
+        /* ── Categorías ── */
         .home-cat-item { transition: padding-left .4s cubic-bezier(.16,1,.3,1); }
         .home-cat-item:hover { padding-left: 10px; }
         .home-cat-name  { transition: color .28s, letter-spacing .4s cubic-bezier(.16,1,.3,1); }
@@ -561,7 +493,7 @@ export default function Catalogo() {
         .home-cat-arrow { transition: transform .32s, color .25s; }
         .home-cat-item:hover .home-cat-arrow { transform: translateX(8px); color: #E8640C !important; }
 
-        /* ── Grid editorial (estilo galería) ── */
+        /* ── Grid editorial ── */
         .cat-obras-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -659,7 +591,7 @@ export default function Catalogo() {
         .cat-marquee-track { display: inline-flex; animation: marquee 28s linear infinite; }
         .cat-marquee-wrap:hover .cat-marquee-track { animation-play-state: paused; }
 
-        /* ── Nav links (igual que Home) ── */
+        /* ── Nav links ── */
         .home-nav-link { display: flex; align-items: center; gap: 9px; font-size: 9.5px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: #9896A8; text-decoration: none; transition: color .25s; }
         .home-nav-link::before { content: ''; display: block; width: 12px; height: 1px; background: currentColor; flex-shrink: 0; transition: width .28s; }
         .home-nav-link:hover { color: #14121E; }
@@ -688,18 +620,12 @@ export default function Catalogo() {
       {/* ═══ I · HERO ═══ */}
       <section style={{
         position: "relative",
-        height: "85vh", minHeight: 560,
+        padding: "100px 0 48px", minHeight: "unset",
         display: "flex", alignItems: "center", justifyContent: "center",
         background: "#fff", overflow: "hidden",
       }}>
-        {/* Barra superior (idéntica a Home) */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: 1,
-          background: `linear-gradient(90deg, transparent, ${C.orange} 25%, ${C.pink} 75%, transparent)`,
-          animation: "barIn 2s cubic-bezier(.16,1,.3,1) both",
-        }} />
 
-        {/* Nav izquierda — idéntica a Home */}
+        {/* Nav izquierda */}
         <nav style={{
           position: "absolute", top: 30, left: 52,
           display: "flex", flexDirection: "column", gap: 10,
@@ -713,7 +639,7 @@ export default function Catalogo() {
           <Link to="/contacto"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
         </nav>
 
-        {/* Auth derecha — idéntica a Home */}
+        {/* Auth derecha */}
         <div style={{
           position: "absolute", top: 30, right: 52,
           display: "flex", alignItems: "center", gap: 12,
@@ -765,50 +691,25 @@ export default function Catalogo() {
           )}
         </div>
 
-        {/* Corner decorators */}
-        <div className="hero-corner tl" />
-        <div className="hero-corner tr" />
-        <div className="hero-corner bl" />
-        <div className="hero-corner br" />
-
-        {/* Watermark */}
-        <div style={{
-          position: "absolute", bottom: 50, left: "50%", transform: "translateX(-50%)",
-          fontFamily: SERIF, fontStyle: "italic",
-          fontSize: "clamp(60px, 10vw, 130px)", fontWeight: 900,
-          color: "rgba(0,0,0,.018)", whiteSpace: "nowrap", letterSpacing: "-.02em",
-          userSelect: "none", pointerEvents: "none",
-          animation: "fadeI 2s ease 2s both",
-        }}>
-          colección
-        </div>
-
         {/* Contenido central */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
 
-          {/* Título con animación letra por letra */}
+          {/* Título */}
           <h1 style={{
             fontFamily: SERIF,
-            fontSize: "clamp(76px, 12vw, 160px)",
+            fontSize: "clamp(42px, 6vw, 80px)",
             fontWeight: 900, color: C.ink,
             letterSpacing: "-.03em", lineHeight: .9,
-            display: "flex", userSelect: "none", margin: 0,
+            userSelect: "none", margin: 0,
+            animation: "fadeI .8s ease .2s both",
           }}>
-            {titleLetters.map((l, i) => (
-              <span
-                key={i}
-                className="altar-letter"
-                style={{ animationDelay: `${0.18 + i * 0.07}s` }}
-              >
-                {l}
-              </span>
-            ))}
+            CATALOGO
           </h1>
 
           {/* Separador + dot */}
           <div style={{
             display: "flex", alignItems: "center", gap: 18,
-            margin: "22px 0 18px",
+            margin: "14px 0 12px",
             animation: "fadeI 1s ease .8s both",
           }}>
             <div style={{ width: 52, height: 1, background: "rgba(0,0,0,.08)" }} />
@@ -823,7 +724,7 @@ export default function Catalogo() {
           <p style={{
             fontSize: 9, fontWeight: 700, letterSpacing: ".44em",
             textTransform: "uppercase", color: C.sub,
-            fontFamily: SANS, margin: "0 0 36px",
+            fontFamily: SANS, margin: "0 0 24px",
             animation: "fadeI 1s ease 1s both",
           }}>
             Arte Huasteca
@@ -873,43 +774,202 @@ export default function Catalogo() {
           </div>
         </div>
 
-        {/* Stats bottom */}
-        <div style={{
-          position: "absolute", bottom: 32, left: 52,
-          fontFamily: SERIF, fontSize: 10.5, fontStyle: "italic",
-          color: "rgba(0,0,0,.14)", letterSpacing: ".05em",
-          display: "flex", alignItems: "center", gap: 10,
-          animation: "fadeI 1.5s ease 1.4s both",
-        }}>
-          <span style={{ display: "block", width: 22, height: 1, background: "rgba(0,0,0,.08)" }} />
-          {total > 0 ? `${total} · obras` : "galería"}
-        </div>
-        <div style={{
-          position: "absolute", bottom: 32, right: 52,
-          fontFamily: SERIF, fontSize: 10.5, fontStyle: "italic",
-          color: "rgba(0,0,0,.14)", letterSpacing: ".05em",
-          display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse",
-          animation: "fadeI 1.5s ease 1.4s both",
-        }}>
-          <span style={{ display: "block", width: 22, height: 1, background: "rgba(0,0,0,.08)" }} />
-          Huasteca
+      </section>
+
+      {/* ═══ I · OBRAS ═══ */}
+      <section id="obras-section" style={{ padding: "40px 0 80px", borderTop: "1px solid rgba(0,0,0,.04)" }}>
+
+        {/* Título sección + filtros */}
+        <div style={{ padding: "0 72px", marginBottom: 28 }}>
+          <div data-rv style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+            <div>
+              <div style={{
+                fontFamily: NEXA_HEAVY, fontSize: "clamp(22px, 2.8vw, 34px)",
+                fontWeight: 900, color: C.ink, letterSpacing: "-.02em", lineHeight: 1.1,
+              }}>
+                {loading ? "Cargando obras…" : (
+                  catNombre
+                    ? <><span style={{ color: C.orange }}>{catNombre}</span></>
+                    : search
+                    ? <>"{search}"</>
+                    : <>Todas las obras</>
+                )}
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              {(catActiva || search) && (
+                <button onClick={() => { handleCat(null); handleSearch(""); setSearchOpen(false); }}
+                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    fontSize: 8.5, fontWeight: 700, letterSpacing: ".18em",
+                    textTransform: "uppercase", color: C.sub,
+                    background: "none", border: "none", cursor: "pointer",
+                    fontFamily: SANS, transition: "color .2s",
+                  }}>
+                  <X size={11} strokeWidth={2} /> Limpiar
+                </button>
+              )}
+              <select
+                value={ordenar}
+                onChange={e => handleOrden(e.target.value)}
+                onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                style={{
+                  background: "none", border: "none",
+                  borderBottom: "1px solid rgba(0,0,0,.12)",
+                  color: "rgba(0,0,0,.40)", fontSize: 9,
+                  padding: "6px 22px 6px 0",
+                  fontFamily: SANS, fontWeight: 700,
+                  letterSpacing: ".14em", textTransform: "uppercase",
+                  cursor: "pointer", outline: "none",
+                  appearance: "none", WebkitAppearance: "none",
+                }}>
+                {ORDENAR.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{
+            fontSize: 11, color: C.sub, fontFamily: SANS,
+            marginTop: 6, fontStyle: "italic",
+          }}>
+            {!loading && <>{total} {total === 1 ? "obra" : "obras"} encontradas</>}
+          </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{
-          position: "absolute", bottom: 26, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-          animation: "fadeI 1s ease 1.8s both",
+        {/* Filtros categorías */}
+        <div data-rv data-d="1" className="cat-filter-row" style={{
+          display: "flex", gap: 32, padding: "0 72px", marginBottom: 32,
+          borderBottom: "1px solid rgba(0,0,0,.05)", paddingBottom: 16,
         }}>
-          <div style={{
-            fontSize: 7.5, fontWeight: 700, letterSpacing: ".32em",
-            textTransform: "uppercase", color: "rgba(0,0,0,.14)", fontFamily: SANS,
-          }}>Explorar</div>
-          <div style={{
-            width: 1, height: 32,
-            background: "linear-gradient(to bottom, rgba(0,0,0,.12), transparent)",
-          }} />
+          <button
+            className={`cat-filter-btn${catActiva === null ? " active" : ""}`}
+            onClick={() => handleCat(null)}
+            onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+          >
+            Todas
+          </button>
+          {categorias.map(c => (
+            <button
+              key={c.id_categoria}
+              className={`cat-filter-btn${catActiva === c.id_categoria ? " active" : ""}`}
+              onClick={() => handleCat(c.id_categoria)}
+              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+            >
+              {c.nombre}
+            </button>
+          ))}
         </div>
+
+        {/* ── Grid de obras ── */}
+        {loading ? (
+          <div className="cat-obras-grid" style={{ paddingTop: 32 }}>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="cat-skeleton" style={{
+                aspectRatio: "3/4", background: "#ece9e4",
+                opacity: 0.55 - (i % 4) * 0.06,
+              }} />
+            ))}
+          </div>
+        ) : obras.length === 0 ? (
+          <div data-rv style={{ textAlign: "center", padding: "80px 72px", fontFamily: SANS }}>
+            <div style={{
+              fontFamily: SERIF, fontSize: 20, fontStyle: "italic",
+              color: "rgba(0,0,0,.18)", marginBottom: 12,
+            }}>Sin obras para mostrar</div>
+            <div style={{ fontSize: 10.5, color: C.sub, letterSpacing: ".1em" }}>
+              Intenta con otro término o categoría
+            </div>
+          </div>
+        ) : (
+          <div className="cat-obras-grid" style={{ paddingTop: 32 }}>
+            {obras.map(obra => (
+              <div
+                key={obra.id_obra}
+                className="cat-obra-card"
+                onClick={() => navigate(`/obras/${obra.slug || obra.id_obra}`)}
+                onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }}
+                onMouseLeave={cursorOff}
+              >
+                <div className="cat-obra-card-img">
+                  {obra.imagen_principal ? (
+                    <img src={obra.imagen_principal} alt={obra.titulo} />
+                  ) : (
+                    <div style={{
+                      width: "100%", height: "100%", background: "#ece9e4",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <ImageIcon size={28} strokeWidth={1} color="rgba(0,0,0,.12)" />
+                    </div>
+                  )}
+                  <button
+                    className={`cat-fav-btn${favoritos.has(obra.id_obra) ? " fav-active" : ""}`}
+                    onClick={e => toggleFavorito(e, obra.id_obra)}
+                    title={favoritos.has(obra.id_obra) ? "Quitar de favoritos" : "Agregar a favoritos"}
+                  >
+                    <Heart
+                      size={14} strokeWidth={2}
+                      color={favoritos.has(obra.id_obra) ? "#A83B90" : "rgba(0,0,0,0.45)"}
+                      fill={favoritos.has(obra.id_obra) ? "#A83B90" : "none"}
+                    />
+                  </button>
+                </div>
+                <div className="cat-obra-card-info">
+                  <div className="cat-obra-card-desc">{obra.titulo}</div>
+                  <div className="cat-obra-card-link">
+                    <span className="cat-obra-card-link-line" />
+                    {obra.categoria_nombre || "Ver obra"}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Paginación */}
+        {totalPages > 1 && !loading && (
+          <div data-rv style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            gap: 6, padding: "0 72px", marginTop: 48,
+          }}>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+              style={{
+                width: 38, height: 38, border: "1px solid rgba(0,0,0,.10)",
+                background: "none", cursor: page === 1 ? "not-allowed" : "pointer",
+                opacity: page === 1 ? 0.25 : 1, color: C.sub,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, transition: "all .18s", borderRadius: 2,
+              }}>‹</button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+              return (
+                <button key={p} onClick={() => setPage(p)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  style={{
+                    width: 38, height: 38, borderRadius: 2,
+                    border: `1px solid ${p === page ? C.orange : "rgba(0,0,0,.10)"}`,
+                    background: p === page ? C.orange : "none",
+                    color: p === page ? "white" : "rgba(0,0,0,.35)",
+                    fontWeight: p === page ? 800 : 500,
+                    fontSize: 11, cursor: "pointer", fontFamily: SANS,
+                    letterSpacing: ".08em", transition: "all .18s",
+                  }}>{p}</button>
+              );
+            })}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+              style={{
+                width: 38, height: 38, border: "1px solid rgba(0,0,0,.10)",
+                background: "none", cursor: page === totalPages ? "not-allowed" : "pointer",
+                opacity: page === totalPages ? 0.25 : 1, color: C.sub,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, transition: "all .18s", borderRadius: 2,
+              }}>›</button>
+          </div>
+        )}
       </section>
 
       {/* ═══ MARQUEE ═══ */}
@@ -1146,242 +1206,6 @@ export default function Catalogo() {
         </section>
       )}
 
-           {/* ═══ IV · OBRAS ═══ */}
-      <section id="obras-section" style={{ padding: "60px 0 80px", borderTop: "1px solid rgba(0,0,0,.04)" }}>
-
-        {/* Section header más compacto */}
-        <div data-rv style={{
-          display: "flex", alignItems: "center", gap: 14,
-          marginBottom: 32, padding: "0 72px",
-        }}>
-          <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
-          <div style={{
-            fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em",
-            textTransform: "uppercase", color: "rgba(0,0,0,.18)",
-            whiteSpace: "nowrap", fontFamily: SANS,
-          }}>IV · Obras</div>
-          <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
-        </div>
-
-        {/* Título sección + filtros - más compacto */}
-        <div style={{ padding: "0 72px", marginBottom: 28 }}>
-          <div data-rv style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-            <div>
-              <div style={{
-                fontFamily: NEXA_HEAVY, fontSize: "clamp(22px, 2.8vw, 34px)",
-                fontWeight: 900, color: C.ink, letterSpacing: "-.02em", lineHeight: 1.1,
-              }}>
-                {loading ? "Cargando obras…" : (
-                  catNombre
-                    ? <><span style={{ color: C.orange }}>{catNombre}</span></>
-                    : search
-                    ? <>"{search}"</>
-                    : <>Todas las obras</>
-                )}
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {(catActiva || search) && (
-                <button onClick={() => { handleCat(null); handleSearch(""); setSearchOpen(false); }}
-                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    fontSize: 8.5, fontWeight: 700, letterSpacing: ".18em",
-                    textTransform: "uppercase", color: C.sub,
-                    background: "none", border: "none", cursor: "pointer",
-                    fontFamily: SANS, transition: "color .2s",
-                  }}>
-                  <X size={11} strokeWidth={2} /> Limpiar
-                </button>
-              )}
-              <select
-                value={ordenar}
-                onChange={e => handleOrden(e.target.value)}
-                onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                style={{
-                  background: "none", border: "none",
-                  borderBottom: "1px solid rgba(0,0,0,.12)",
-                  color: "rgba(0,0,0,.40)", fontSize: 9,
-                  padding: "6px 22px 6px 0",
-                  fontFamily: SANS, fontWeight: 700,
-                  letterSpacing: ".14em", textTransform: "uppercase",
-                  cursor: "pointer", outline: "none",
-                  appearance: "none", WebkitAppearance: "none",
-                }}>
-                {ORDENAR.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{
-            fontSize: 11, color: C.sub, fontFamily: SANS,
-            marginTop: 6, fontStyle: "italic",
-          }}>
-            {!loading && <>{total} {total === 1 ? "obra" : "obras"} encontradas</>}
-          </div>
-        </div>
-
-        {/* Filtros categorías — texto minimal */}
-        <div data-rv data-d="1" className="cat-filter-row" style={{
-          display: "flex", gap: 32, padding: "0 72px", marginBottom: 32,
-          borderBottom: "1px solid rgba(0,0,0,.05)", paddingBottom: 16,
-        }}>
-          <button
-            className={`cat-filter-btn${catActiva === null ? " active" : ""}`}
-            onClick={() => handleCat(null)}
-            onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-          >
-            Todas
-          </button>
-          {categorias.map(c => (
-            <button
-              key={c.id_categoria}
-              className={`cat-filter-btn${catActiva === c.id_categoria ? " active" : ""}`}
-              onClick={() => handleCat(c.id_categoria)}
-              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-            >
-              {c.nombre}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Obras ── */}
-        {loading ? (
-          <div className="cat-obras-grid" style={{ paddingTop: 32 }}>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="cat-skeleton" style={{
-                aspectRatio: "3/4", background: "#ece9e4",
-                opacity: 0.55 - (i % 4) * 0.06,
-              }} />
-            ))}
-          </div>
-        ) : obras.length === 0 ? (
-          <div data-rv style={{ textAlign: "center", padding: "80px 72px", fontFamily: SANS }}>
-            <div style={{
-              fontFamily: SERIF, fontSize: 20, fontStyle: "italic",
-              color: "rgba(0,0,0,.18)", marginBottom: 12,
-            }}>Sin obras para mostrar</div>
-            <div style={{ fontSize: 10.5, color: C.sub, letterSpacing: ".1em" }}>
-              Intenta con otro término o categoría
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* ── Grid de obras SIN destacada separada ── */}
-            <div className="cat-obras-grid" style={{ paddingTop: 32 }}>
-              {obras.map(obra => {
-                const precio = obra.precio_minimo || obra.precio_base;
-                return (
-                  <div
-                    key={obra.id_obra}
-                    className="cat-obra-card"
-                    onClick={() => setSelectedObra(prev =>
-                      prev?.id_obra === obra.id_obra ? null : obra
-                    )}
-                    onMouseEnter={() => { cursorOn(); prefetchObra(obra.slug || obra.id_obra); }}
-                    onMouseLeave={cursorOff}
-                  >
-                    <div className="cat-obra-card-img">
-                      {obra.imagen_principal ? (
-                        <img src={obra.imagen_principal} alt={obra.titulo} />
-                      ) : (
-                        <div style={{
-                          width: "100%", height: "100%", background: "#ece9e4",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <ImageIcon size={28} strokeWidth={1} color="rgba(0,0,0,.12)" />
-                        </div>
-                      )}
-                      <button
-                        className={`cat-fav-btn${favoritos.has(obra.id_obra) ? " fav-active" : ""}`}
-                        onClick={e => toggleFavorito(e, obra.id_obra)}
-                        title={favoritos.has(obra.id_obra) ? "Quitar de favoritos" : "Agregar a favoritos"}
-                      >
-                        <Heart
-                          size={14} strokeWidth={2}
-                          color={favoritos.has(obra.id_obra) ? "#A83B90" : "rgba(0,0,0,0.45)"}
-                          fill={favoritos.has(obra.id_obra) ? "#A83B90" : "none"}
-                        />
-                      </button>
-                    </div>
-                    <div className="cat-obra-card-info">
-                      <div className="cat-obra-card-desc">{obra.titulo}</div>
-                      <div className="cat-obra-card-link">
-                        <span className="cat-obra-card-link-line" />
-                        {obra.categoria_nombre || "Ver obra"}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* Paginación minimal */}
-        {totalPages > 1 && !loading && (
-          <div data-rv style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 6, padding: "0 72px", marginTop: 48,
-          }}>
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{
-                width: 38, height: 38, border: "1px solid rgba(0,0,0,.10)",
-                background: "none", cursor: page === 1 ? "not-allowed" : "pointer",
-                opacity: page === 1 ? 0.25 : 1, color: C.sub,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, transition: "all .18s", borderRadius: 2,
-              }}>
-              ‹
-            </button>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
-              return (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                  style={{
-                    width: 38, height: 38, borderRadius: 2,
-                    border: `1px solid ${p === page ? C.orange : "rgba(0,0,0,.10)"}`,
-                    background: p === page ? C.orange : "none",
-                    color: p === page ? "white" : "rgba(0,0,0,.35)",
-                    fontWeight: p === page ? 800 : 500,
-                    fontSize: 11, cursor: "pointer", fontFamily: SANS,
-                    letterSpacing: ".08em", transition: "all .18s",
-                  }}>
-                  {p}
-                </button>
-              );
-            })}
-
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-              style={{
-                width: 38, height: 38, border: "1px solid rgba(0,0,0,.10)",
-                background: "none", cursor: page === totalPages ? "not-allowed" : "pointer",
-                opacity: page === totalPages ? 0.25 : 1, color: C.sub,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, transition: "all .18s", borderRadius: 2,
-              }}>
-              ›
-            </button>
-          </div>
-        )}
-      </section>
-      {/* Panel detalle */}
-      {selectedObra && (
-        <DetallePanel
-          obra={selectedObra}
-          onClose={() => setSelectedObra(null)}
-          navigate={navigate}
-        />
-      )}
     </div>
   );
 }

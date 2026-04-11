@@ -157,21 +157,6 @@ export default function Contact() {
           50% { box-shadow: 0 0 22px rgba(232,100,12,.85); transform: scale(1.38); }
         }
 
-        .altar-letter {
-          display: inline-block; opacity: 0;
-          transform: translateY(60px) skewY(4deg);
-          animation: letterUp 1.1s cubic-bezier(.16,1,.3,1) both;
-        }
-        @keyframes letterUp { to { opacity: 1; transform: translateY(0) skewY(0); } }
-        .altar-letter:nth-child(1){animation-delay:.18s}
-        .altar-letter:nth-child(2){animation-delay:.26s}
-        .altar-letter:nth-child(3){animation-delay:.34s}
-        .altar-letter:nth-child(4){animation-delay:.42s}
-        .altar-letter:nth-child(5){animation-delay:.50s}
-        .altar-letter:nth-child(6){animation-delay:.58s}
-        .altar-letter:nth-child(7){animation-delay:.66s}
-        .altar-letter:nth-child(8){animation-delay:.74s}
-
         .whatsapp-float {
           position: fixed;
           bottom: 24px;
@@ -244,8 +229,8 @@ export default function Contact() {
 
         {/* Título CONTACTO */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(48px, 6vw, 72px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", margin: "0 0 24px" }}>
-            {"CONTACTO".split("").map((l, i) => <span key={i} className="altar-letter">{l}</span>)}
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(40px, 5.5vw, 68px)", fontWeight: 900, color: C.ink, letterSpacing: "-.03em", margin: "0 0 24px", animation: "fadeI .8s ease .2s both" }}>
+            CONTACTO
           </h1>
 
           {/* Estrella debajo del título */}

@@ -94,7 +94,7 @@ export default function MiCuenta() {
       count:    favCount,
       unit:     favCount === 1 ? "obra" : "obras",
       accent:   C.pink,
-      onClick:  () => {},
+      onClick:  () => navigate("/mi-cuenta/favoritos"),
       active:   true,
     },
   ];

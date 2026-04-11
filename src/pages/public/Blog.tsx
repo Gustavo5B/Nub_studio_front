@@ -150,6 +150,13 @@ export default function Blog() {
           100% { opacity: 1; transform: translateY(0) skewY(0); }
         }
         .animate-title { animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeI { from{opacity:0} to{opacity:1} }
+        
+        .animate-title {
+          animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
         .card {
           background: #fff; border-radius: 28px;
           border: 1px solid rgba(0,0,0,0.04);
@@ -251,10 +258,8 @@ export default function Blog() {
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(80px, 10vw, 120px) 24px 80px" }}>
 
         <div className="animate-title" style={{ textAlign: "center", marginBottom: 64 }}>
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(56px, 8vw, 96px)", fontWeight: 900, color: C.ink, letterSpacing: "-0.02em", marginBottom: 32 }}>
-            {"BLOG".split("").map((l, i) => (
-              <span key={i} style={{ display: "inline-block", opacity: 0, animation: `letterRise 1s cubic-bezier(0.16, 1, 0.3, 1) ${0.18 + i * 0.1}s forwards` }}>{l}</span>
-            ))}
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(48px, 7vw, 88px)", fontWeight: 900, color: C.ink, letterSpacing: "-0.02em", marginBottom: 32, animation: "fadeI .8s ease .2s both" }}>
+            BLOG
           </h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, marginBottom: 24 }}>
             <div style={{ width: 56, height: 1, background: "rgba(0,0,0,.08)" }} />
