@@ -3,16 +3,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity, ChevronRight, RefreshCw, Users, TrendingUp, TrendingDown,
-  Clock, Calendar, BarChart2, Table2, CheckCircle, XCircle,
+  Clock, BarChart2, Table2, CheckCircle, XCircle,
   PieChart as PieIcon, Thermometer, Sparkles, Home,
-  LogOut, Key, Lock, BarChart, TrendingUp as TrendingUpIcon,
-  Calendar as CalendarIcon, Clock as ClockIcon, Activity as ActivityIcon,
-  PieChart, MapPin, Award,
+  LogOut, Key, Lock, TrendingUp as TrendingUpIcon,
+  Filter, X,
 } from "lucide-react";
 import {
   BarChart as ReBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, AreaChart, Area, Line, Legend,
-  PieChart as RePieChart, Pie, ReferenceLine,
+  PieChart as RePieChart, Pie,
 } from "recharts";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
@@ -91,7 +90,41 @@ interface Modelo {
 interface DistItem { tipo_evento:string; total:number; porcentaje:number; fill?:string }
 interface CalorCell { dia:number; dia_label:string; hora:number; hora_label:string; total:number; intensidad:number }
 interface EventoHistorial { id_historial:number; correo:string; tipo_evento:string; ip_address:string; fecha:string; detalles:string; nombre_completo:string }
-type Tab = "resumen"|"semanal"|"diario"|"hora"|"dia-semana"|"pastel"|"calor"|"historial";
+type Preset = "hoy"|"semana"|"mes"|"3meses"|"todo"|"custom";
+
+interface FiltroState { inicio: string; fin: string; preset: Preset }
+
+// Usa fecha LOCAL (no UTC) para que coincida con la hora del usuario en México
+function localISO(d: Date) {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+function hoy()    { return localISO(new Date()); }
+function diasAtras(n: number) {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return localISO(d);
+}
+function inicioSemana() {
+  const d = new Date();
+  // Semana domingo–sábado: getDay() = 0 para domingo
+  d.setDate(d.getDate() - d.getDay());
+  return localISO(d);
+}
+function inicioMes() {
+  const d = new Date(); d.setDate(1);
+  return localISO(d);
+}
+
+const PRESETS: { id: Preset; label: string }[] = [
+  { id:"hoy",    label:"Hoy"         },
+  { id:"semana", label:"Esta semana" },
+  { id:"mes",    label:"Este mes"    },
+  { id:"3meses", label:"3 meses"     },
+  { id:"todo",   label:"Todo"        },
+];
 
 // ========== COMPONENTES UI ==========
 
@@ -219,35 +252,89 @@ const PieTip = ({ active, payload }: any) => {
   );
 };
 
-// ── Tab Bar (iconos sin emojis) ─────────────────────────────────────
-const TABS: { id:Tab; label:string; icon:React.ElementType; desc:string }[] = [
-  { id:"resumen",    label:"Resumen",    icon:BarChart2,   desc:"Vista general" },
-  { id:"semanal",    label:"Semanas",    icon:Calendar,    desc:"Últimas 12 sem." },
-  { id:"diario",     label:"Días",       icon:TrendingUp,  desc:"Últimos 30 días" },
-  { id:"hora",       label:"Por hora",   icon:Clock,       desc:"0 – 23 hs" },
-  { id:"dia-semana", label:"Día semana", icon:Activity,    desc:"Lun → Dom" },
-  { id:"pastel",     label:"Tipos",      icon:PieIcon,     desc:"% de eventos" },
-  { id:"calor",      label:"Mapa calor", icon:Thermometer, desc:"Hora × Día" },
-  { id:"historial",  label:"Historial",  icon:Table2,      desc:"Tabla completa" },
-];
+// ── Filtro de fechas ─────────────────────────────────────────────────
+function FiltroFecha({ filtro, onChange }: { filtro: FiltroState; onChange: (f: FiltroState) => void }) {
+  const aplicarPreset = (id: Preset) => {
+    const fin = hoy();
+    let inicio = "";
+    if (id === "hoy")    inicio = hoy();
+    if (id === "semana") inicio = inicioSemana();
+    if (id === "mes")    inicio = inicioMes();
+    if (id === "3meses") inicio = diasAtras(90);
+    if (id === "todo")   { onChange({ inicio: "", fin: "", preset: "todo" }); return; }
+    onChange({ inicio, fin, preset: id });
+  };
 
-function TabBar({ tab, setTab }: any) {
+  const tieneFilro = filtro.preset !== "todo";
+
   return (
-    <div style={{ display:"flex", gap:4, marginBottom:24, background:C.inputBg, padding:4, borderRadius:12, border:`1px solid ${C.border}` }}>
-      {TABS.map(({ id, label, icon:Icon }) => {
-        const on = tab === id;
-        return (
-          <button key={id} onClick={() => setTab(id)}
-            style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"8px 6px",
-              borderRadius:9, border: on ? `1px solid ${C.orange}` : "1px solid transparent",
-              background: on ? C.bgCard : "transparent",
-              color: on ? C.orange : C.muted,
-              cursor:"pointer", fontFamily:SANS, transition:"all .15s", fontWeight: on ? 700 : 500, fontSize:12 }}>
-            <Icon size={14} color={on ? C.orange : C.muted} />
-            <span>{label}</span>
-          </button>
-        );
-      })}
+    <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:20, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", fontFamily:SANS }}>
+      <div style={{ display:"flex", alignItems:"center", gap:6, color:C.orange, fontWeight:700, fontSize:12 }}>
+        <Filter size={14} /> Período
+      </div>
+      <div style={{ display:"flex", gap:4 }}>
+        {PRESETS.map(p => {
+          const on = filtro.preset === p.id;
+          return (
+            <button key={p.id} onClick={() => aplicarPreset(p.id)}
+              style={{ padding:"5px 12px", borderRadius:8, border: on ? `1px solid ${C.orange}` : `1px solid ${C.border}`,
+                background: on ? `${C.orange}12` : "transparent",
+                color: on ? C.orange : C.muted,
+                fontFamily:SANS, fontSize:12, fontWeight: on ? 700 : 500, cursor:"pointer", transition:"all .15s" }}>
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ width:1, height:20, background:C.border }} />
+
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <span style={{ fontSize:11, color:C.muted }}>Desde</span>
+        <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
+          <input type="date" value={filtro.inicio} max={filtro.fin || hoy()}
+            onChange={e => onChange({ ...filtro, inicio: e.target.value, preset: "custom" })}
+            style={{ padding:"4px 8px", borderRadius:7, border:`1px solid ${C.border}`, background:C.inputBg, fontFamily:SANS, fontSize:12, color:C.ink, outline:"none" }} />
+          {filtro.inicio && <span style={{ fontSize:9, color:C.muted, textAlign:"center" }}>{filtro.inicio.split("-").reverse().join("/")}</span>}
+        </div>
+        <span style={{ fontSize:11, color:C.muted }}>Hasta</span>
+        <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
+          <input type="date" value={filtro.fin} min={filtro.inicio} max={hoy()}
+            onChange={e => onChange({ ...filtro, fin: e.target.value, preset: "custom" })}
+            style={{ padding:"4px 8px", borderRadius:7, border:`1px solid ${C.border}`, background:C.inputBg, fontFamily:SANS, fontSize:12, color:C.ink, outline:"none" }} />
+          {filtro.fin && <span style={{ fontSize:9, color:C.muted, textAlign:"center" }}>{filtro.fin.split("-").reverse().join("/")}</span>}
+        </div>
+      </div>
+
+      {tieneFilro && filtro.preset !== "todo" && (
+        <button onClick={() => onChange({ inicio:"", fin:"", preset:"todo" })}
+          style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:8, border:`1px solid ${C.border}`, background:"transparent", color:C.muted, fontSize:11, cursor:"pointer" }}>
+          <X size={11} /> Limpiar
+        </button>
+      )}
+
+      {filtro.preset === "custom" && filtro.inicio && filtro.fin && (
+        <span style={{ fontSize:11, color:C.orange, marginLeft:"auto" }}>
+          {new Date(filtro.inicio + "T00:00:00").toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}
+          {" → "}
+          {new Date(filtro.fin + "T00:00:00").toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Encabezado de sección ────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title, sub, accent = C.orange }: { icon: React.ElementType; title: string; sub?: string; accent?: string }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20, paddingBottom:12, borderBottom:`1px solid ${C.border}` }}>
+      <div style={{ width:32, height:32, borderRadius:10, background:`${accent}12`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <Icon size={16} color={accent} strokeWidth={1.8} />
+      </div>
+      <div>
+        <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>{title}</div>
+        {sub && <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>{sub}</div>}
+      </div>
     </div>
   );
 }
@@ -385,12 +472,15 @@ function MapaCalor({ datos, maxVal: _maxVal }: any) {
           {tooltip.cell.total} accesos
         </div>
       )}
-      <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:12, justifyContent:"center" }}>
-        <span style={{ fontSize:10, color:C.muted }}>Baja</span>
+      <div style={{ marginTop:12, padding:"8px 12px", background:C.bgPage, borderRadius:8, fontSize:11, color:C.muted, textAlign:"center" }}>
+        Cada celda = total de accesos registrados en esa combinación hora/día · pasa el cursor para ver el número exacto
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8, justifyContent:"center" }}>
+        <span style={{ fontSize:10, color:C.muted }}>Sin actividad</span>
         <div style={{ display:"flex", gap:3 }}>
-          {[0.1,0.3,0.5,0.7,0.9].map(v => <div key={v} style={{ width:20, height:10, borderRadius:3, background:getHeatColor(v) }} />)}
+          {[0,0.1,0.3,0.5,0.7,0.9].map(v => <div key={v} style={{ width:20, height:10, borderRadius:3, background:getHeatColor(v), border:`1px solid ${C.border}` }} />)}
         </div>
-        <span style={{ fontSize:10, color:C.muted }}>Alta</span>
+        <span style={{ fontSize:10, color:C.muted }}>Alta actividad</span>
       </div>
     </div>
   );
@@ -405,327 +495,106 @@ function findPicoValle<T extends { total: number }>(data: T[]): { pico: T; valle
   return { pico, valle };
 }
 
-// ========== TABLAS MEJORADAS CON ETIQUETAS DE EJES ==========
+// ── Sección: Tendencia (toggle día / semana) ─────────────────────────
+function SeccionTendencia({ semanalComb, predSemanal, modeloSem, diarioComb, predDiario, modeloDia }: any) {
+  const [granularidad, setGranularidad] = useState<"dia"|"semana">("semana");
+  const esSemanal = granularidad === "semana";
 
-// ── Tab: Resumen ─────────────────────────────────────────────────────
-function TabResumen({ porHora, porDia, distribucion, distribucionWithFill, fechaInicio }: any) {
-  const pvH = findPicoValle(porHora);
-  const pvD = findPicoValle(porDia);
+  const comb    = esSemanal ? semanalComb : diarioComb;
+  const pred    = esSemanal ? predSemanal : predDiario;
+  const modelo  = esSemanal ? modeloSem   : modeloDia;
+  const nPuntos = comb.filter((d: any) => d.total !== undefined).length;
+  // Mínimo 4 puntos para que el modelo exponencial sea confiable
+  const modeloValido = modelo && nPuntos >= 4;
+
+  const periodoLabel = (() => {
+    const reales = comb.filter((d: any) => d.total !== undefined);
+    if (reales.length === 0) return "Sin datos";
+    if (reales.length === 1) return reales[0].fecha_label ?? reales[0].label;
+    return `${reales[0].fecha_label ?? reales[0].label} – ${reales[reales.length-1].fecha_label ?? reales[reales.length-1].label} (${reales.length} ${esSemanal ? "sem." : "días"})`;
+  })();
+
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <BarChart size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Actividad por hora del día</span>
-        </div>
-        <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Suma histórica desde {fechaInicio} · acumulado de todos los días</div>
-        <ResponsiveContainer width="100%" height={180}>
-          <ReBarChart data={porHora} margin={{ top:10, right:20, bottom:20, left:0 }}>
-            <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Hora del día", position:"insideBottom", offset:-5, fill:C.muted, fontSize:10 }} />
-            <YAxis tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Número de accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
-            <Tooltip content={<ChartTip />} />
-            <Bar dataKey="total" name="Accesos acumulados" fill={C.orange} radius={[4,4,0,0]} fillOpacity={0.85} />
-          </ReBarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <PieIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Distribución por tipo de evento</span>
-        </div>
-        <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Proporción de cada tipo de acceso en el historial</div>
-        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <ResponsiveContainer width={140} height={140}>
-            <RePieChart>
-              <Pie data={distribucionWithFill} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={60} innerRadius={32} paddingAngle={2} />
-              <Tooltip content={<PieTip />} />
-            </RePieChart>
-          </ResponsiveContainer>
-          <div style={{ flex:1 }}>
-            {distribucion.map((d: any) => {
-              const ev = EVENTO_LABELS[d.tipo_evento] ?? { label:d.tipo_evento, color:C.blue };
-              const IconComponent = EVENTO_ICONS[d.tipo_evento] || Activity;
-              return (
-                <div key={d.tipo_evento} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                    <IconComponent size={12} color={ev.color} />
-                    <span style={{ fontSize:11, color:C.muted }}>{ev.label}</span>
-                  </div>
-                  <span style={{ fontSize:11, fontWeight:700, color:ev.color }}>{d.porcentaje}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <CalendarIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Actividad por día de la semana</span>
-        </div>
-        <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Suma de accesos agrupados por día (todos los lunes, martes, etc.)</div>
-        <ResponsiveContainer width="100%" height={180}>
-          <ReBarChart data={porDia} margin={{ top:10, right:20, bottom:20, left:0 }}>
-            <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Día de la semana", position:"insideBottom", offset:-5, fill:C.muted, fontSize:10 }} />
-            <YAxis tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Número de accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
-            <Tooltip content={<ChartTip />} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
-            <Bar dataKey="exitosos" name="Exitosos" fill={C.purple} radius={[4,4,0,0]} stackId="a" fillOpacity={0.85} />
-            <Bar dataKey="fallidos" name="Fallidos" fill={C.pink} radius={[4,4,0,0]} stackId="a" fillOpacity={0.8} />
-          </ReBarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <Award size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Hallazgos clave</span>
-        </div>
-        {pvH && pvD && (
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div><span style={{ fontWeight:700, color:C.orange }}>Hora pico:</span> {pvH.pico.label} ({pvH.pico.total} accesos)</div>
-            <div><span style={{ fontWeight:700, color:C.blue }}>Menor actividad:</span> {pvH.valle.label} ({pvH.valle.total} accesos)</div>
-            <div><span style={{ fontWeight:700, color:C.success }}>Día más activo:</span> {pvD.pico.label} ({pvD.pico.total} accesos)</div>
-            <div><span style={{ fontWeight:700, color:C.purple }}>Día menos activo:</span> {pvD.valle.label} ({pvD.valle.total} accesos)</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Tab: Semanal ─────────────────────────────────────────────────────
-function TabSemanal({ semanal, predSemanal, modeloSem, semanalComb }: any) {
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      {modeloSem && <ModeloBox modelo={modeloSem} periodo="Últimas 12 semanas" />}
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <CalendarIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Accesos por semana (histórico + predicción)</span>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <ReBarChart data={semanalComb} margin={{ top:20, right:30, bottom:30, left:0 }}>
-            <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="fecha_label" tick={{ fill:C.muted, fontSize:10, rotate: -15 }} label={{ value:"Semana", position:"insideBottom", offset:-10, fill:C.muted, fontSize:10 }} />
-            <YAxis tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Número de accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
-            <Tooltip content={<ChartTip />} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
-            <Bar dataKey="total" name="Accesos reales" fill={C.blue} radius={[5,5,0,0]} fillOpacity={0.85} />
-            <Bar dataKey="prediccion" name="Predicción" fill={C.gold} radius={[5,5,0,0]} fillOpacity={0.65} />
-          </ReBarChart>
-        </ResponsiveContainer>
-      </div>
-      {predSemanal.length > 0 && (
-        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-            <TrendingUpIcon size={16} color={C.gold} />
-            <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Próximas 4 semanas (predicción)</span>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
-            {predSemanal.map((p: any) => (
-              <div key={p.fecha_label} style={{ textAlign:"center", padding:"10px", background:C.inputBg, borderRadius:12 }}>
-                <div style={{ fontSize:11, color:C.muted }}>{p.fecha_label}</div>
-                <div style={{ fontSize:22, fontWeight:700, color:C.gold, fontFamily:SERIF }}>{p.prediccion}</div>
-                <div style={{ fontSize:10, color:C.muted }}>accesos estimados</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Tab: Diario ──────────────────────────────────────────────────────
-function TabDiario({ diario, predDiario, modeloDia, diarioComb }: any) {
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      {modeloDia && <ModeloBox modelo={modeloDia} periodo="Últimos 30 días" />}
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <TrendingUpIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Accesos diarios (últimos 30 días + predicción)</span>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={diarioComb} margin={{ top:20, right:30, bottom:30, left:0 }}>
-            <defs><linearGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.orange} stopOpacity={0.2} /><stop offset="100%" stopColor={C.orange} stopOpacity={0} /></linearGradient></defs>
-            <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:9, interval:2 }} label={{ value:"Día", position:"insideBottom", offset:-10, fill:C.muted, fontSize:10 }} />
-            <YAxis tick={{ fill:C.muted, fontSize:9 }} label={{ value:"Número de accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
-            <Tooltip content={<ChartTip />} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
-            <Area type="monotone" dataKey="total" name="Accesos reales" stroke={C.orange} strokeWidth={2} fill="url(#gradOrange)" dot={false} />
-            <Area type="monotone" dataKey="prediccion" name="Predicción" stroke={C.gold} strokeWidth={2} fill="none" strokeDasharray="5 3" dot={{ r:3, fill:C.gold }} />
-            <Line type="monotone" dataKey="promedio_movil" name="Promedio móvil 7d" stroke={C.success} strokeWidth={1.5} dot={false} strokeDasharray="3 2" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      {predDiario.length > 0 && (
-        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-            <ClockIcon size={16} color={C.gold} />
-            <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Próximos 7 días (predicción)</span>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:8 }}>
-            {predDiario.map((p: any) => (
-              <div key={p.fecha_label} style={{ textAlign:"center", padding:"8px", background:C.inputBg, borderRadius:10 }}>
-                <div style={{ fontSize:10, color:C.muted }}>{p.fecha_label}</div>
-                <div style={{ fontSize:18, fontWeight:700, color:C.gold, fontFamily:SERIF }}>{p.prediccion}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Tab: Por hora (detallada) ────────────────────────────────────────
-function TabHora({ porHora, fechaInicio }: any) {
-  const pv = findPicoValle(porHora);
-  return (
-    <div>
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <ClockIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Distribución de accesos por hora</span>
-        </div>
-        <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Acumulado histórico desde {fechaInicio} · NO son accesos de hoy únicamente</div>
-        <ResponsiveContainer width="100%" height={300}>
-          <ReBarChart data={porHora} margin={{ top:20, right:30, bottom:30, left:0 }}>
-            <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Hora del día", position:"insideBottom", offset:-5, fill:C.muted, fontSize:10 }} />
-            <YAxis tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Número de accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
-            <Tooltip content={<ChartTip />} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
-            <Bar dataKey="exitosos" name="Accesos exitosos" fill={C.success} radius={[4,4,0,0]} stackId="a" fillOpacity={0.85} />
-            <Bar dataKey="fallidos" name="Intentos fallidos" fill={C.error} radius={[4,4,0,0]} stackId="a" fillOpacity={0.8} />
-          </ReBarChart>
-        </ResponsiveContainer>
-      </div>
-      {pv && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.orange, marginBottom:8 }}>Hora pico</div>
-            <div style={{ fontSize:28, fontWeight:700, fontFamily:SERIF, color:C.ink }}>{pv.pico.label}</div>
-            <div style={{ fontSize:12, color:C.muted, marginTop:4 }}>{pv.pico.total} accesos acumulados</div>
-          </div>
-          <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.blue, marginBottom:8 }}>Menor actividad</div>
-            <div style={{ fontSize:28, fontWeight:700, fontFamily:SERIF, color:C.ink }}>{pv.valle.label}</div>
-            <div style={{ fontSize:12, color:C.muted, marginTop:4 }}>{pv.valle.total} accesos</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Tab: Día semana (detallada) ──────────────────────────────────────
-function TabDiaSemana({ porDia, fechaInicio }: any) {
-  const pv = findPicoValle(porDia);
-  return (
-    <div>
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px", marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <ActivityIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Patrón semanal de actividad</span>
-        </div>
-        <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Suma de todos los registros desde {fechaInicio} por día de la semana</div>
-        <ResponsiveContainer width="100%" height={300}>
-          <ReBarChart data={porDia} margin={{ top:20, right:30, bottom:30, left:0 }}>
-            <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:11 }} label={{ value:"Día de la semana", position:"insideBottom", offset:-5, fill:C.muted, fontSize:10 }} />
-            <YAxis tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Número de accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
-            <Tooltip content={<ChartTip />} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
-            <Bar dataKey="exitosos" name="Accesos exitosos" fill={C.purple} radius={[5,5,0,0]} stackId="a" fillOpacity={0.85} />
-            <Bar dataKey="fallidos" name="Intentos fallidos" fill={C.pink} radius={[5,5,0,0]} stackId="a" fillOpacity={0.8} />
-          </ReBarChart>
-        </ResponsiveContainer>
-      </div>
-      {pv && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.success, marginBottom:8 }}>Día más activo</div>
-            <div style={{ fontSize:28, fontWeight:700, fontFamily:SERIF, color:C.ink }}>{pv.pico.label}</div>
-            <div style={{ fontSize:12, color:C.muted, marginTop:4 }}>{pv.pico.total} accesos</div>
-          </div>
-          <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.purple, marginBottom:8 }}>Día menos activo</div>
-            <div style={{ fontSize:28, fontWeight:700, fontFamily:SERIF, color:C.ink }}>{pv.valle.label}</div>
-            <div style={{ fontSize:12, color:C.muted, marginTop:4 }}>{pv.valle.total} accesos</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Tab: Pastel (tipos) ──────────────────────────────────────────────
-function TabPastel({ distribucion, distribucionWithFill }: any) {
-  return (
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <PieIcon size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Distribución de eventos de acceso</span>
-        </div>
-        <ResponsiveContainer width="100%" height={280}>
-          <RePieChart>
-            <Pie data={distribucionWithFill} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={2} />
-            <Tooltip content={<PieTip />} />
-          </RePieChart>
-        </ResponsiveContainer>
-      </div>
-      <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <Table2 size={16} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Desglose por tipo de evento</span>
-        </div>
-        {distribucion.map((d: any) => {
-          const ev = EVENTO_LABELS[d.tipo_evento] ?? { label:d.tipo_evento, color:C.blue };
-          const IconComponent = EVENTO_ICONS[d.tipo_evento] || Activity;
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:4, alignSelf:"flex-start", background:C.inputBg, borderRadius:10, padding:3, border:`1px solid ${C.border}` }}>
+        {(["semana","dia"] as const).map(g => {
+          const on = granularidad === g;
           return (
-            <div key={d.tipo_evento} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <IconComponent size={14} color={ev.color} />
-                <span style={{ fontSize:12, color:C.ink }}>{ev.label}</span>
-              </div>
-              <div style={{ textAlign:"right" }}>
-                <div style={{ fontSize:16, fontWeight:700, color:ev.color }}>{d.porcentaje}%</div>
-                <div style={{ fontSize:10, color:C.muted }}>{fmt(d.total)} eventos</div>
-              </div>
-            </div>
+            <button key={g} onClick={() => setGranularidad(g)}
+              style={{ padding:"5px 16px", borderRadius:8, border: on ? `1px solid ${C.orange}` : "1px solid transparent",
+                background: on ? C.bgCard : "transparent", color: on ? C.orange : C.muted,
+                fontSize:12, fontWeight: on ? 700 : 500, fontFamily:SANS, cursor:"pointer", transition:"all .15s" }}>
+              {g === "semana" ? "Por semana" : "Por día"}
+            </button>
           );
         })}
       </div>
-    </div>
-  );
-}
 
-// ── Tab: Mapa calor (ya mejorado) ───────────────────────────────────
-function TabCalor({ mapaCalor, mapaMax, mapaTop5 }: any) {
-  return (
-    <div>
-      <MapaCalor datos={mapaCalor} maxVal={mapaMax} />
-      {mapaTop5.length > 0 && (
-        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px", marginTop:20 }}>
+      {nPuntos > 0 && nPuntos < 4 && (
+        <div style={{ background:`${C.gold}08`, border:`1px solid ${C.gold}30`, borderRadius:12, padding:"12px 16px", fontSize:12, color:C.gold, display:"flex", alignItems:"center", gap:8 }}>
+          <Sparkles size={14} /> El modelo de predicción requiere al menos 4 {esSemanal ? "semanas" : "días"} de datos. Con {nPuntos} {esSemanal ? (nPuntos === 1 ? "semana" : "semanas") : (nPuntos === 1 ? "día" : "días")} el margen de error sería muy alto. Amplía el rango.
+        </div>
+      )}
+
+      {modeloValido && <ModeloBox modelo={modelo} periodo={periodoLabel} />}
+
+      {nPuntos === 0 ? (
+        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"48px", textAlign:"center", color:C.muted, fontSize:13 }}>
+          No hay registros en el período seleccionado.
+        </div>
+      ) : esSemanal ? (
+        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>{periodoLabel}</div>
+          <ResponsiveContainer width="100%" height={300}>
+            <ReBarChart data={semanalComb} margin={{ top:20, right:30, bottom:30, left:0 }}>
+              <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="fecha_label" tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Semana", position:"insideBottom", offset:-10, fill:C.muted, fontSize:10 }} />
+              <YAxis tick={{ fill:C.muted, fontSize:10 }} label={{ value:"Accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
+              <Tooltip content={<ChartTip />} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
+              <Bar dataKey="total" name="Accesos reales" fill={C.blue} radius={[5,5,0,0]} fillOpacity={0.85} />
+              {modeloValido && <Bar dataKey="prediccion" name="Predicción" fill={C.gold} radius={[5,5,0,0]} fillOpacity={0.65} />}
+            </ReBarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
+          <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>{periodoLabel}</div>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={diarioComb} margin={{ top:20, right:30, bottom:30, left:0 }}>
+              <defs>
+                <linearGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={C.orange} stopOpacity={0.2} />
+                  <stop offset="100%" stopColor={C.orange} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:9, interval:2 }} label={{ value:"Día", position:"insideBottom", offset:-10, fill:C.muted, fontSize:10 }} />
+              <YAxis tick={{ fill:C.muted, fontSize:9 }} label={{ value:"Accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:10 }} />
+              <Tooltip content={<ChartTip />} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize:11, color:C.muted, paddingTop:8 }} />
+              <Area type="monotone" dataKey="total" name="Accesos reales" stroke={C.orange} strokeWidth={2} fill="url(#gradOrange)" dot={false} />
+              {modeloValido && <Area type="monotone" dataKey="prediccion" name="Predicción" stroke={C.gold} strokeWidth={2} fill="none" strokeDasharray="5 3" dot={{ r:3, fill:C.gold }} />}
+              {modeloValido && <Line type="monotone" dataKey="promedio_movil" name="Promedio móvil 7d" stroke={C.success} strokeWidth={1.5} dot={false} strokeDasharray="3 2" />}
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {modeloValido && pred.length > 0 && (
+        <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-            <Award size={16} color={C.orange} />
-            <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Top 5 momentos de mayor actividad histórica</span>
+            <TrendingUpIcon size={14} color={C.gold} />
+            <span style={{ fontSize:13, fontWeight:700, color:C.ink }}>
+              {esSemanal ? "Próximas 4 semanas" : "Próximos 7 días"} (predicción)
+            </span>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12 }}>
-            {mapaTop5.map((c: CalorCell, i: number) => (
-              <div key={i} style={{ textAlign:"center", padding:"12px", background:C.inputBg, borderRadius:12 }}>
-                <div style={{ fontSize:20, fontWeight:700, fontFamily:SERIF, color:C.orange }}>{c.total}</div>
-                <div style={{ fontSize:11, color:C.muted }}>{c.dia_label}</div>
-                <div style={{ fontSize:10, color:C.gold }}>{c.hora_label}</div>
+          <div style={{ display:"grid", gridTemplateColumns:`repeat(${pred.length},1fr)`, gap:10 }}>
+            {pred.map((p: any) => (
+              <div key={p.fecha_label} style={{ textAlign:"center", padding:"10px 8px", background:C.inputBg, borderRadius:12 }}>
+                <div style={{ fontSize:10, color:C.muted }}>{p.fecha_label}</div>
+                <div style={{ fontSize:20, fontWeight:700, color:C.gold, fontFamily:FM }}>{p.prediccion}</div>
+                <div style={{ fontSize:9, color:C.muted }}>estimados</div>
               </div>
             ))}
           </div>
@@ -735,15 +604,33 @@ function TabCalor({ mapaCalor, mapaMax, mapaTop5 }: any) {
   );
 }
 
-// ── Tab: Historial (tabla detallada) ─────────────────────────────────
+
+
+// ── Historial de accesos con paginación ─────────────────────────────
+const POR_PAGINA = 50;
+
 function TabHistorial({ historial, filtroDia, setFiltroDia }: any) {
-  const filtrado = filtroDia === "todos" ? historial : historial.filter((e: EventoHistorial) => e.tipo_evento === filtroDia);
+  const [pagina, setPagina] = useState(1);
+
+  const filtrado = filtroDia === "todos"
+    ? historial
+    : historial.filter((e: EventoHistorial) => e.tipo_evento === filtroDia);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrado.length / POR_PAGINA));
+  const paginaSegura = Math.min(pagina, totalPaginas);
+  const inicio = (paginaSegura - 1) * POR_PAGINA;
+  const pagActual = filtrado.slice(inicio, inicio + POR_PAGINA);
+
+  // Al cambiar filtro, volver a la primera página
+  const handleFiltro = (tipo: string) => { setFiltroDia(tipo); setPagina(1); };
+
   return (
     <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, overflow:"hidden" }}>
-      <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", background:C.inputBg }}>
+      {/* Cabecera */}
+      <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", background:C.inputBg, flexWrap:"wrap", gap:8 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <Table2 size={14} color={C.orange} />
-          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Historial completo de accesos</span>
+          <span style={{ fontSize:14, fontWeight:700, color:C.ink }}>Historial de accesos</span>
           <span style={{ fontSize:11, padding:"2px 8px", borderRadius:40, background:`${C.orange}10`, color:C.orange }}>{filtrado.length} registros</span>
         </div>
         <div style={{ display:"flex", gap:6 }}>
@@ -752,7 +639,7 @@ function TabHistorial({ historial, filtroDia, setFiltroDia }: any) {
             const ev = EVENTO_LABELS[tipo] ?? { label:"Todos", color:C.muted };
             const IconComponent = EVENTO_ICONS[tipo] || Activity;
             return (
-              <button key={tipo} onClick={() => setFiltroDia(tipo)}
+              <button key={tipo} onClick={() => handleFiltro(tipo)}
                 style={{ padding:"4px 10px", borderRadius:8, border: on ? `1px solid ${ev.color}` : `1px solid ${C.border}`, background: on ? `${ev.color}10` : "transparent", color: on ? ev.color : C.muted, fontSize:11, cursor:"pointer", transition:"all 0.2s" }}>
                 <IconComponent size={10} style={{ marginRight:4 }} />
                 {tipo === "todos" ? "Todos" : ev.label.replace("Acceso exitoso","Exitoso").replace("Contraseña incorrecta","Fallido").replace("Cierre de sesión","Salida")}
@@ -761,32 +648,86 @@ function TabHistorial({ historial, filtroDia, setFiltroDia }: any) {
           })}
         </div>
       </div>
+
+      {/* Tabla */}
       <div style={{ overflowX:"auto" }}>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
           <thead>
             <tr style={{ background:C.inputBg, borderBottom:`1px solid ${C.border}` }}>
-              {["Fecha y hora", "Usuario", "Correo", "Evento", "IP", "Detalle"].map(h => <th key={h} style={{ padding:"10px 12px", textAlign:"left", color:C.muted, fontWeight:600 }}>{h}</th>)}
+              {["Fecha y hora","Usuario","Correo","Evento","IP","Detalle"].map(h =>
+                <th key={h} style={{ padding:"10px 12px", textAlign:"left", color:C.muted, fontWeight:600 }}>{h}</th>
+              )}
             </tr>
           </thead>
           <tbody>
-            {filtrado.map((e: EventoHistorial, i: number) => {
+            {pagActual.map((e: EventoHistorial, i: number) => {
               const ev = EVENTO_LABELS[e.tipo_evento] ?? { label:e.tipo_evento, color:C.blue };
               const IconComponent = EVENTO_ICONS[e.tipo_evento] || Activity;
               return (
-                <tr key={e.id_historial} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===0 ? "transparent" : C.inputBg }}>
+                <tr key={e.id_historial} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===0?"transparent":C.inputBg }}>
                   <td style={{ padding:"8px 12px", whiteSpace:"nowrap", color:C.muted }}>{new Date(e.fecha).toLocaleString()}</td>
                   <td style={{ padding:"8px 12px", fontWeight:600 }}>{e.nombre_completo || "—"}</td>
                   <td style={{ padding:"8px 12px", color:C.muted }}>{e.correo}</td>
-                  <td style={{ padding:"8px 12px" }}><span style={{ display:"inline-flex", alignItems:"center", gap:4, background:`${ev.color}10`, padding:"2px 8px", borderRadius:20, fontSize:11, color:ev.color }}><IconComponent size={10} /> {ev.label}</span></td>
+                  <td style={{ padding:"8px 12px" }}>
+                    <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:`${ev.color}10`, padding:"2px 8px", borderRadius:20, fontSize:11, color:ev.color }}>
+                      <IconComponent size={10} /> {ev.label}
+                    </span>
+                  </td>
                   <td style={{ padding:"8px 12px", color:C.muted }}>{e.ip_address || "—"}</td>
                   <td style={{ padding:"8px 12px", color:C.muted }}>{e.detalles || "—"}</td>
                 </tr>
               );
             })}
-            {filtrado.length === 0 && <tr><td colSpan={6} style={{ padding:"40px", textAlign:"center", color:C.muted }}>No hay registros</td></tr>}
+            {filtrado.length === 0 && (
+              <tr><td colSpan={6} style={{ padding:"40px", textAlign:"center", color:C.muted }}>No hay registros</td></tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div style={{ padding:"12px 16px", borderTop:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", background:C.inputBg }}>
+          <span style={{ fontSize:11, color:C.muted }}>
+            Mostrando {inicio + 1}–{Math.min(inicio + POR_PAGINA, filtrado.length)} de {filtrado.length}
+          </span>
+          <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+            <button onClick={() => setPagina(1)} disabled={paginaSegura === 1}
+              style={{ padding:"4px 8px", borderRadius:7, border:`1px solid ${C.border}`, background:"transparent", color:paginaSegura===1?C.border:C.muted, fontSize:11, cursor:paginaSegura===1?"default":"pointer" }}>
+              «
+            </button>
+            <button onClick={() => setPagina(p => Math.max(1, p-1))} disabled={paginaSegura === 1}
+              style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.border}`, background:"transparent", color:paginaSegura===1?C.border:C.muted, fontSize:11, cursor:paginaSegura===1?"default":"pointer" }}>
+              ‹ Anterior
+            </button>
+
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1)
+              .filter(n => n === 1 || n === totalPaginas || Math.abs(n - paginaSegura) <= 1)
+              .reduce<(number|"…")[]>((acc, n, idx, arr) => {
+                if (idx > 0 && (n as number) - (arr[idx-1] as number) > 1) acc.push("…");
+                acc.push(n);
+                return acc;
+              }, [])
+              .map((n, i) => n === "…"
+                ? <span key={`e${i}`} style={{ padding:"4px 6px", fontSize:11, color:C.muted }}>…</span>
+                : <button key={n} onClick={() => setPagina(n as number)}
+                    style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${n===paginaSegura?C.orange:C.border}`, background:n===paginaSegura?`${C.orange}10`:"transparent", color:n===paginaSegura?C.orange:C.muted, fontSize:11, fontWeight:n===paginaSegura?700:400, cursor:"pointer" }}>
+                    {n}
+                  </button>
+              )
+            }
+
+            <button onClick={() => setPagina(p => Math.min(totalPaginas, p+1))} disabled={paginaSegura === totalPaginas}
+              style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.border}`, background:"transparent", color:paginaSegura===totalPaginas?C.border:C.muted, fontSize:11, cursor:paginaSegura===totalPaginas?"default":"pointer" }}>
+              Siguiente ›
+            </button>
+            <button onClick={() => setPagina(totalPaginas)} disabled={paginaSegura === totalPaginas}
+              style={{ padding:"4px 8px", borderRadius:7, border:`1px solid ${C.border}`, background:"transparent", color:paginaSegura===totalPaginas?C.border:C.muted, fontSize:11, cursor:paginaSegura===totalPaginas?"default":"pointer" }}>
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -796,7 +737,7 @@ export default function AdminEstadisticas() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { dotRef, ringRef, cursorOn, cursorOff } = useCustomCursor();
-  const [tab, setTab] = useState<Tab>("resumen");
+  const [filtro, setFiltro] = useState<FiltroState>({ inicio:"", fin:"", preset:"todo" });
   const [loading, setLoading] = useState(true);
   const [resumen, setResumen] = useState<Resumen|null>(null);
   const [porHora, setPorHora] = useState<HoraData[]>([]);
@@ -815,19 +756,28 @@ export default function AdminEstadisticas() {
   const [historial, setHistorial] = useState<EventoHistorial[]>([]);
   const [filtroDia, setFiltroDia] = useState<string>("todos");
 
-  const cargar = useCallback(async () => {
+  const buildQS = useCallback((f: FiltroState) => {
+    const p = new URLSearchParams();
+    if (f.inicio) p.set("fecha_inicio", f.inicio);
+    if (f.fin)    p.set("fecha_fin",    f.fin);
+    const qs = p.toString();
+    return qs ? `?${qs}` : "";
+  }, []);
+
+  const cargar = useCallback(async (f?: FiltroState) => {
     setLoading(true);
+    const qs = buildQS(f ?? filtro);
     try {
       const headers = authH();
       const [rR,hR,dR,sR,diR,distR,mcR,hiR] = await Promise.all([
-        fetch(`${API}/api/estadisticas/resumen`, { headers }),
-        fetch(`${API}/api/estadisticas/por-hora`, { headers }),
-        fetch(`${API}/api/estadisticas/por-dia-semana`, { headers }),
-        fetch(`${API}/api/estadisticas/por-semana`, { headers }),
-        fetch(`${API}/api/estadisticas/por-dia`, { headers }),
-        fetch(`${API}/api/estadisticas/distribucion`, { headers }),
-        fetch(`${API}/api/estadisticas/mapa-calor`, { headers }),
-        fetch(`${API}/api/estadisticas/historial`, { headers }),
+        fetch(`${API}/api/estadisticas/resumen${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/por-hora${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/por-dia-semana${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/por-semana${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/por-dia${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/distribucion${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/mapa-calor${qs}`, { headers }),
+        fetch(`${API}/api/estadisticas/historial${qs}`, { headers }),
       ]);
       const [rJ,hJ,dJ,sJ,diJ,distJ,mcJ,hiJ] = await Promise.all([rR.json(),hR.json(),dR.json(),sR.json(),diR.json(),distR.json(),mcR.json(),hiR.json()]);
       if (rJ.success) setResumen(rJ.data);
@@ -840,14 +790,21 @@ export default function AdminEstadisticas() {
       if (hiJ.success) setHistorial(hiJ.data);
     } catch (err) { showToast("Error al cargar estadísticas","err"); }
     finally { setLoading(false); }
-  }, [showToast]);
+  }, [showToast, filtro, buildQS]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { cargar(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFiltroChange = useCallback((f: FiltroState) => {
+    setFiltro(f);
+    cargar(f);
+  }, [cargar]);
 
   const fechaInicio = historial.length > 0 ? new Date(historial[historial.length-1]?.fecha).toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}) : "—";
   const fechaFin    = historial.length > 0 ? new Date(historial[0]?.fecha).toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}) : "—";
   const semanalComb = [...semanal.map(d=>({...d})), ...predSemanal.map(d=>({...d,total:undefined}))];
   const diarioComb  = [...diario.map(d=>({...d})), ...predDiario.map(d=>({...d,total:undefined}))];
+  const pvH = findPicoValle(porHora);
+  const pvD = findPicoValle(porDia);
 
   return (
     <>
@@ -871,15 +828,18 @@ export default function AdminEstadisticas() {
       <div ref={dotRef} className="cur-dot" />
       <div ref={ringRef} className="cur-ring" />
 
-      <Topbar navigate={navigate} onRefresh={cargar} loading={loading} cursorOn={cursorOn} cursorOff={cursorOff} />
-      <main style={{ padding:"24px 24px 40px", background:C.bgPage, minHeight:"100vh", fontFamily:SANS }}>
+      <Topbar navigate={navigate} onRefresh={() => cargar()} loading={loading} cursorOn={cursorOn} cursorOff={cursorOff} />
+      <main style={{ padding:"24px 24px 60px", background:C.bgPage, minHeight:"100vh", fontFamily:SANS }}>
         <PageHeader resumen={resumen} fechaInicio={fechaInicio} fechaFin={fechaFin} />
+        <FiltroFecha filtro={filtro} onChange={handleFiltroChange} />
+
+        {/* ── KPIs ───────────────────────────────────────────────── */}
         {loading ? (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:24 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:32 }}>
             {Array.from({length:6}).map((_,i) => <div key={i} style={{ height:90, background:C.bgCard, borderRadius:14, border:`1px solid ${C.border}` }} />)}
           </div>
         ) : resumen && (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:24 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:32 }}>
             <KpiCard label="Total eventos" value={fmt(resumen.total_eventos)} contexto="Todos los accesos" accent={C.blue} icon={Activity} />
             <KpiCard label="Logins exitosos" value={fmt(resumen.logins_exitosos)} contexto="Accesos completados" accent={C.success} icon={CheckCircle} />
             <KpiCard label="Intentos fallidos" value={fmt(resumen.logins_fallidos)} contexto="Contraseña incorrecta" accent={C.error} icon={XCircle} />
@@ -888,15 +848,145 @@ export default function AdminEstadisticas() {
             <KpiCard label="Tasa de éxito" value={resumen.total_eventos > 0 ? `${Math.round(resumen.logins_exitosos/resumen.total_eventos*100)}%` : "—"} contexto="Exitosos vs total" accent={C.gold} icon={TrendingUp} sub={`${resumen.logins_fallidos} fallidos`} />
           </div>
         )}
-        <TabBar tab={tab} setTab={setTab} />
-        {tab === "resumen" && <TabResumen porHora={porHora} porDia={porDia} distribucion={distribucion} distribucionWithFill={distribucionWithFill} fechaInicio={fechaInicio} />}
-        {tab === "semanal" && <TabSemanal semanal={semanal} predSemanal={predSemanal} modeloSem={modeloSem} semanalComb={semanalComb} />}
-        {tab === "diario" && <TabDiario diario={diario} predDiario={predDiario} modeloDia={modeloDia} diarioComb={diarioComb} />}
-        {tab === "hora" && <TabHora porHora={porHora} fechaInicio={fechaInicio} />}
-        {tab === "dia-semana" && <TabDiaSemana porDia={porDia} fechaInicio={fechaInicio} />}
-        {tab === "pastel" && <TabPastel distribucion={distribucion} distribucionWithFill={distribucionWithFill} />}
-        {tab === "calor" && <TabCalor mapaCalor={mapaCalor} mapaMax={mapaMax} mapaTop5={mapaTop5} />}
-        {tab === "historial" && <TabHistorial historial={historial} filtroDia={filtroDia} setFiltroDia={setFiltroDia} />}
+
+        {/* ── §1 Tendencia ───────────────────────────────────────── */}
+        <section style={{ marginBottom:40 }}>
+          <SectionHeader icon={TrendingUpIcon} title="Tendencia de accesos" sub="Evolución en el tiempo · modelo exponencial + predicción" />
+          <SeccionTendencia semanalComb={semanalComb} predSemanal={predSemanal} modeloSem={modeloSem} diarioComb={diarioComb} predDiario={predDiario} modeloDia={modeloDia} />
+        </section>
+
+        {/* ── §2 Patrones de actividad ────────────────────────────── */}
+        <section style={{ marginBottom:40 }}>
+          <SectionHeader icon={BarChart2} title="Patrones de actividad" sub="Distribución acumulada por hora del día y día de la semana" />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            {/* Por hora */}
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.ink, marginBottom:4 }}>Por hora del día</div>
+                <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Acumulado del período · exitosos y fallidos</div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <ReBarChart data={porHora} margin={{ top:10, right:16, bottom:24, left:0 }}>
+                    <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:9 }} label={{ value:"Hora", position:"insideBottom", offset:-8, fill:C.muted, fontSize:9 }} />
+                    <YAxis tick={{ fill:C.muted, fontSize:9 }} label={{ value:"Accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:9 }} />
+                    <Tooltip content={<ChartTip />} />
+                    <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize:10, paddingTop:6 }} />
+                    <Bar dataKey="exitosos" name="Exitosos" fill={C.success} radius={[3,3,0,0]} stackId="a" fillOpacity={0.85} />
+                    <Bar dataKey="fallidos" name="Fallidos" fill={C.error} radius={[3,3,0,0]} stackId="a" fillOpacity={0.8} />
+                  </ReBarChart>
+                </ResponsiveContainer>
+              </div>
+              {pvH && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  <div style={{ background:C.bgCard, borderRadius:12, border:`1px solid ${C.border}`, padding:"12px 14px" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.orange, marginBottom:4 }}>Hora pico</div>
+                    <div style={{ fontSize:22, fontWeight:700, fontFamily:FM, color:C.ink }}>{(pvH.pico as any).label}</div>
+                    <div style={{ fontSize:10, color:C.muted }}>{pvH.pico.total} accesos</div>
+                  </div>
+                  <div style={{ background:C.bgCard, borderRadius:12, border:`1px solid ${C.border}`, padding:"12px 14px" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.blue, marginBottom:4 }}>Menor actividad</div>
+                    <div style={{ fontSize:22, fontWeight:700, fontFamily:FM, color:C.ink }}>{(pvH.valle as any).label}</div>
+                    <div style={{ fontSize:10, color:C.muted }}>{pvH.valle.total} accesos</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Por día de semana */}
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.ink, marginBottom:4 }}>Por día de la semana</div>
+                <div style={{ fontSize:10, color:C.muted, marginBottom:12 }}>Suma de todos los lunes, martes, etc. del período</div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <ReBarChart data={porDia} margin={{ top:10, right:16, bottom:24, left:0 }}>
+                    <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill:C.muted, fontSize:9 }} label={{ value:"Día", position:"insideBottom", offset:-8, fill:C.muted, fontSize:9 }} />
+                    <YAxis tick={{ fill:C.muted, fontSize:9 }} label={{ value:"Accesos", angle:-90, position:"insideLeft", fill:C.muted, fontSize:9 }} />
+                    <Tooltip content={<ChartTip />} />
+                    <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize:10, paddingTop:6 }} />
+                    <Bar dataKey="exitosos" name="Exitosos" fill={C.purple} radius={[3,3,0,0]} stackId="a" fillOpacity={0.85} />
+                    <Bar dataKey="fallidos" name="Fallidos" fill={C.pink} radius={[3,3,0,0]} stackId="a" fillOpacity={0.8} />
+                  </ReBarChart>
+                </ResponsiveContainer>
+              </div>
+              {pvD && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  <div style={{ background:C.bgCard, borderRadius:12, border:`1px solid ${C.border}`, padding:"12px 14px" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.success, marginBottom:4 }}>Día más activo</div>
+                    <div style={{ fontSize:22, fontWeight:700, fontFamily:FM, color:C.ink }}>{(pvD.pico as any).label}</div>
+                    <div style={{ fontSize:10, color:C.muted }}>{pvD.pico.total} accesos</div>
+                  </div>
+                  <div style={{ background:C.bgCard, borderRadius:12, border:`1px solid ${C.border}`, padding:"12px 14px" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.purple, marginBottom:4 }}>Día menos activo</div>
+                    <div style={{ fontSize:22, fontWeight:700, fontFamily:FM, color:C.ink }}>{(pvD.valle as any).label}</div>
+                    <div style={{ fontSize:10, color:C.muted }}>{pvD.valle.total} accesos</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── §3 Distribución de eventos ──────────────────────────── */}
+        <section style={{ marginBottom:40 }}>
+          <SectionHeader icon={PieIcon} title="Distribución de eventos" sub="Proporción de cada tipo de acceso en el período" />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <RePieChart>
+                  <Pie data={distribucionWithFill} dataKey="total" nameKey="tipo_evento" cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={2} />
+                  <Tooltip content={<PieTip />} />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px" }}>
+              <div style={{ fontSize:13, fontWeight:700, color:C.ink, marginBottom:16 }}>Desglose por tipo</div>
+              {distribucion.map((d: any) => {
+                const ev = EVENTO_LABELS[d.tipo_evento] ?? { label:d.tipo_evento, color:C.blue };
+                const IconEv = EVENTO_ICONS[d.tipo_evento] || Activity;
+                return (
+                  <div key={d.tipo_evento} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <IconEv size={14} color={ev.color} />
+                      <span style={{ fontSize:12, color:C.ink }}>{ev.label}</span>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:16, fontWeight:700, color:ev.color }}>{d.porcentaje}%</div>
+                      <div style={{ fontSize:10, color:C.muted }}>{fmt(d.total)} eventos</div>
+                    </div>
+                  </div>
+                );
+              })}
+              {distribucion.length === 0 && <div style={{ color:C.muted, fontSize:12, textAlign:"center", padding:"20px 0" }}>Sin datos en el período</div>}
+            </div>
+          </div>
+        </section>
+
+        {/* ── §4 Mapa de calor ───────────────────────────────────── */}
+        <section style={{ marginBottom:40 }}>
+          <SectionHeader icon={Thermometer} title="Mapa de calor de accesos" sub="Concentración de accesos al sistema por franja horaria y día de la semana · naranja intenso = mayor tráfico acumulado" />
+          <MapaCalor datos={mapaCalor} maxVal={mapaMax} />
+          {mapaTop5.length > 0 && (
+            <div style={{ background:C.bgCard, borderRadius:16, border:`1px solid ${C.border}`, padding:"16px 20px", marginTop:16 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:C.ink, marginBottom:12 }}>Top 5 momentos de mayor actividad</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12 }}>
+                {mapaTop5.map((c: CalorCell, i: number) => (
+                  <div key={i} style={{ textAlign:"center", padding:"12px", background:C.inputBg, borderRadius:12 }}>
+                    <div style={{ fontSize:20, fontWeight:700, fontFamily:FM, color:C.orange }}>{c.total}</div>
+                    <div style={{ fontSize:11, color:C.muted }}>{c.dia_label}</div>
+                    <div style={{ fontSize:10, color:C.gold }}>{c.hora_label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── §5 Historial ───────────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={Table2} title="Historial de accesos" sub="Registro completo del período seleccionado" />
+          <TabHistorial historial={historial} filtroDia={filtroDia} setFiltroDia={setFiltroDia} />
+        </section>
       </main>
     </>
   );
