@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
 import { authService } from "../../services/authService";
+import { useToast } from "../../context/ToastContext";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
 const C = {
@@ -29,9 +30,10 @@ const WhatsAppIcon = ({ size = 32 }: { size?: number }) => (
   </svg>
 );
 export default function Contact() {
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
+  const { showToast } = useToast();
   const isLoggedIn = authService.isAuthenticated();
-  const userRol = localStorage.getItem("userRol") || "";
+  const userRol    = localStorage.getItem("userRol") || "";
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -83,17 +85,30 @@ export default function Contact() {
     ringRef.current?.classList.remove("cur-over");
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res  = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/contacto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEnviado(true);
+        setTimeout(() => {
+          setEnviado(false);
+          setFormData({ nombre: "", email: "", mensaje: "" });
+        }, 3500);
+      } else {
+        showToast(data.message || "Error al enviar el mensaje", "err");
+      }
+    } catch {
+      showToast("Sin conexión, intenta más tarde", "err");
+    } finally {
       setIsLoading(false);
-      setEnviado(true);
-      setTimeout(() => {
-        setEnviado(false);
-        setFormData({ nombre: "", email: "", mensaje: "" });
-      }, 3500);
-    }, 1200);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
