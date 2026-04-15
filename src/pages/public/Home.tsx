@@ -44,6 +44,7 @@ interface Obra {
 
 interface Artista {
   id_artista:      number;
+  matricula:       string;
   nombre_completo: string;
   alias?:          string;
   especialidad?:   string;
@@ -703,7 +704,7 @@ export default function Home() {
               <div
                 key={artista.id_artista}
                 className="artista-item"
-                onClick={() => navigate(`/artistas/${artista.id_artista}`)}
+                onClick={() => navigate(`/artistas/${artista.matricula}`)}
                 onMouseEnter={cursorOn}
                 onMouseLeave={cursorOff}
                 style={{ width: 238, height: 306 }}
