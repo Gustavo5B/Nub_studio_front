@@ -305,8 +305,8 @@ export default function Login() {
               </p>
 
               <h2 style={{
-                fontFamily: SERIF, fontStyle: "italic",
-                fontSize: "clamp(30px, 3.8vw, 48px)",
+                fontFamily: NEXA_HEAVY,
+                fontSize: "clamp(28px, 3.5vw, 44px)",
                 fontWeight: 900, color: C.ink,
                 lineHeight: 1.15, margin: "0 0 22px",
                 letterSpacing: "-.02em",
