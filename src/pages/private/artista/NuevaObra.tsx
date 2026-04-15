@@ -206,17 +206,30 @@ export default function NuevaObra() {
     }).catch(() => {}).finally(() => setCheckingPerfil(false));
   }, []);
 
+  const getFieldError = (name: string, value: string): string => {
+    if (hasSuspiciousContent(value)) return "Contenido no permitido";
+    if (name === "titulo") {
+      if (!value.trim())             return "El título es requerido";
+      if (value.trim().length < 5)   return `Mínimo 5 caracteres (${value.trim().length}/5)`;
+    }
+    if (name === "descripcion") {
+      if (!value.trim())             return "La descripción es requerida";
+      if (value.trim().length < 20)  return `Mínimo 20 caracteres (${value.trim().length}/20)`;
+    }
+    if (name === "historia" && value.trim() && value.trim().length < 20)
+      return `Mínimo 20 caracteres (${value.trim().length}/20)`;
+    if (name === "tecnica" && value.trim() && value.trim().length < 3)
+      return `Mínimo 3 caracteres (${value.trim().length}/3)`;
+    return "";
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const newValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
 
-    // Validar en tiempo real solo campos de texto sensibles
     if (typeof newValue === "string" && ["titulo", "descripcion", "historia", "tecnica"].includes(name)) {
-      if (hasSuspiciousContent(newValue)) {
-        setFieldErrors(prev => ({ ...prev, [name]: "Contenido no permitido" }));
-      } else {
-        setFieldErrors(prev => ({ ...prev, [name]: undefined }));
-      }
+      const err = getFieldError(name, newValue);
+      setFieldErrors(prev => ({ ...prev, [name]: err || undefined }));
     }
 
     setForm(p => ({ ...p, [name]: newValue }));
@@ -262,10 +275,33 @@ export default function NuevaObra() {
   };
 
   const handleNext = () => {
-    if (!form.titulo.trim())      { showToast("El título es requerido", "warn"); return; }
-    if (!form.descripcion.trim()) { showToast("La descripción es requerida", "warn"); return; }
-    if (!form.id_categoria)       { showToast("Selecciona una categoría", "warn"); return; }
-    if (!imageFile)               { showToast("Debes subir una imagen", "warn"); return; }
+    // ── Longitud mínima ──────────────────────────────────
+    if (!form.titulo.trim()) {
+      showToast("El título es requerido", "warn");
+      setFieldErrors(prev => ({ ...prev, titulo: "El título es requerido" })); return;
+    }
+    if (form.titulo.trim().length < 5) {
+      showToast("El título debe tener al menos 5 caracteres", "warn");
+      setFieldErrors(prev => ({ ...prev, titulo: "Mínimo 5 caracteres" })); return;
+    }
+    if (!form.descripcion.trim()) {
+      showToast("La descripción es requerida", "warn");
+      setFieldErrors(prev => ({ ...prev, descripcion: "La descripción es requerida" })); return;
+    }
+    if (form.descripcion.trim().length < 20) {
+      showToast("La descripción debe tener al menos 20 caracteres", "warn");
+      setFieldErrors(prev => ({ ...prev, descripcion: "Mínimo 20 caracteres" })); return;
+    }
+    if (form.historia.trim() && form.historia.trim().length < 20) {
+      showToast("La historia debe tener al menos 20 caracteres si se escribe", "warn");
+      setFieldErrors(prev => ({ ...prev, historia: "Mínimo 20 caracteres" })); return;
+    }
+    if (form.tecnica.trim() && form.tecnica.trim().length < 3) {
+      showToast("La técnica debe tener al menos 3 caracteres", "warn");
+      setFieldErrors(prev => ({ ...prev, tecnica: "Mínimo 3 caracteres" })); return;
+    }
+    if (!form.id_categoria) { showToast("Selecciona una categoría", "warn"); return; }
+    if (!imageFile)         { showToast("Debes subir una imagen", "warn"); return; }
 
     // ── Validación de seguridad antes de avanzar al paso 2 ──
     const camposTexto = ["titulo", "descripcion", "tecnica"] as const;
