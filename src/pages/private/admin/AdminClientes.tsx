@@ -1,6 +1,6 @@
 // src/pages/private/admin/AdminClientes.tsx
 import { useState, useEffect, useCallback } from "react";
-import { Search, Users, ShoppingBag, CheckCircle, XCircle, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Users, CheckCircle, RefreshCw } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
 
@@ -25,11 +25,7 @@ interface Cliente {
   nombre_completo: string;
   correo: string;
   telefono: string | null;
-  estado: string;
-  verificado: boolean;
-  activo: boolean;
   fecha_registro: string;
-  ultima_conexion: string | null;
   total_compras: string;
   monto_total: string;
 }
@@ -41,9 +37,9 @@ export default function AdminClientes() {
   const [search,     setSearch]     = useState("");
   const [searchTemp, setSearchTemp] = useState("");
   const [page,       setPage]       = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total,      setTotal]      = useState(0);
-  const [toggling,   setToggling]   = useState<number | null>(null);
+  const [totalPages,       setTotalPages]       = useState(1);
+  const [total,            setTotal]            = useState(0);
+  const [totalActivos,     setTotalActivos]     = useState(0);
 
   const fetchClientes = useCallback(async () => {
     setLoading(true);
@@ -55,6 +51,7 @@ export default function AdminClientes() {
         setClientes(data.data);
         setTotalPages(data.pagination.totalPages);
         setTotal(data.pagination.total);
+        setTotalActivos(data.pagination.total_activos ?? 0);
       }
     } catch {
       showToast("Error al cargar clientes", "err");
@@ -71,31 +68,7 @@ export default function AdminClientes() {
     setPage(1);
   };
 
-  const toggleActivo = async (cliente: Cliente) => {
-    setToggling(cliente.id_usuario);
-    try {
-      const res  = await fetch(`${API}/api/admin/clientes/${cliente.id_usuario}/estado`, {
-        method: "PUT", headers: authH(),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(data.message, "ok");
-        setClientes(prev => prev.map(c =>
-          c.id_usuario === cliente.id_usuario ? { ...c, activo: data.activo } : c
-        ));
-      } else {
-        showToast(data.message || "Error", "err");
-      }
-    } catch {
-      showToast("Sin conexión", "err");
-    } finally {
-      setToggling(null);
-    }
-  };
 
-  // ── KPIs ──────────────────────────────────────────────────────
-  const activos     = clientes.filter(c => c.activo).length;
-  const verificados = clientes.filter(c => c.verificado).length;
 
   return (
     <div style={{ padding: "28px 32px", background: C.bg, minHeight: "100vh", fontFamily: FB }}>
@@ -103,9 +76,6 @@ export default function AdminClientes() {
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
         .acl-row { transition: background .15s; }
         .acl-row:hover { background: rgba(0,0,0,.018) !important; }
-        .acl-toggle { cursor: pointer; transition: opacity .18s; border: none; background: none; padding: 0; display: flex; align-items: center; }
-        .acl-toggle:hover { opacity: .7; }
-        .acl-toggle:disabled { opacity: .4; cursor: not-allowed; }
       `}</style>
 
       {/* Header */}
@@ -123,11 +93,10 @@ export default function AdminClientes() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }}>
         {[
-          { label: "Total clientes", value: total,      icon: <Users size={18} color={C.purple} strokeWidth={1.8}/>, accent: C.purple },
-          { label: "Activos",        value: activos,    icon: <CheckCircle size={18} color={C.green} strokeWidth={1.8}/>, accent: C.green },
-          { label: "Verificados",    value: verificados, icon: <ShoppingBag size={18} color={C.blue} strokeWidth={1.8}/>, accent: C.blue },
+          { label: "Total clientes", value: total,        icon: <Users size={18} color={C.purple} strokeWidth={1.8}/>, accent: C.purple },
+          { label: "Activos",        value: totalActivos, icon: <CheckCircle size={18} color={C.green} strokeWidth={1.8}/>, accent: C.green },
         ].map(k => (
           <div key={k.label} style={{ background: C.card, borderRadius: 10, padding: "16px 20px", boxShadow: CS, borderLeft: `3px solid ${k.accent}`, display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 38, height: 38, borderRadius: 8, background: `${k.accent}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -167,7 +136,7 @@ export default function AdminClientes() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["Cliente", "Correo", "Registro", "Compras", "Total gastado", "Verificado", "Estado"].map(h => (
+              {["Cliente", "Correo", "Registro", "Compras", "Total gastado"].map(h => (
                 <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: ".1em", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
@@ -176,7 +145,7 @@ export default function AdminClientes() {
             {loading ? (
               <tr><td colSpan={7} style={{ textAlign: "center", padding: 48, color: C.creamMut, fontSize: 13 }}>Cargando...</td></tr>
             ) : clientes.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: 48, color: C.creamMut, fontSize: 13 }}>Sin resultados</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: "center", padding: 48, color: C.creamMut, fontSize: 13 }}>Sin resultados</td></tr>
             ) : clientes.map(c => (
               <tr key={c.id_usuario} className="acl-row" style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td style={{ padding: "12px 16px" }}>
@@ -199,25 +168,6 @@ export default function AdminClientes() {
                 </td>
                 <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: C.green, fontFamily: FM }}>
                   {fmtMXN(Number(c.monto_total))}
-                </td>
-                <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                  {c.verificado
-                    ? <CheckCircle size={16} color={C.green} strokeWidth={2} />
-                    : <XCircle    size={16} color={C.creamMut} strokeWidth={2} />
-                  }
-                </td>
-                <td style={{ padding: "12px 16px" }}>
-                  <button
-                    className="acl-toggle"
-                    onClick={() => toggleActivo(c)}
-                    disabled={toggling === c.id_usuario}
-                    title={c.activo ? "Desactivar cliente" : "Activar cliente"}
-                  >
-                    {c.activo
-                      ? <ToggleRight size={26} color={C.green}   strokeWidth={1.8} />
-                      : <ToggleLeft  size={26} color={C.creamMut} strokeWidth={1.8} />
-                    }
-                  </button>
                 </td>
               </tr>
             ))}
