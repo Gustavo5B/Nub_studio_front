@@ -458,7 +458,7 @@ export default function DetalleObra() {
     </>;
   })()}
 </h1>
-              <button onClick={() => navigate(`/artistas/${obra.id_artista}`)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+              <button onClick={() => navigate(`/artistas/${obra.artista_matricula}`)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0, animation:"slideLeft .65s cubic-bezier(.16,1,.3,1) .45s both" }}
               >
                 <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", border:`2px solid ${C.pink}44`, flexShrink:0 }}>
@@ -722,7 +722,7 @@ export default function DetalleObra() {
                       {obra.artista_biografia}
                     </p>
                   )}
-                  <button onClick={() => navigate(`/artistas/${obra.id_artista}`)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                  <button onClick={() => navigate(`/artistas/${obra.artista_matricula}`)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                     style={{ width:"100%", padding:"10px 20px", borderRadius:100, background:"transparent", border:`1px solid ${C.pink}44`, color:C.pink, fontSize:9, fontWeight:800, letterSpacing:".18em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .22s" }}
                     onMouseOver={e => { (e.currentTarget as HTMLElement).style.background=`${C.pink}10`; }}
                     onMouseOut={e => { (e.currentTarget as HTMLElement).style.background="transparent"; }}
