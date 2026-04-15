@@ -213,6 +213,52 @@ export default function NuevoPost() {
   const [imagenFile,      setImagenFile]      = useState<File | null>(null);
   const [imagenPreview,   setImagenPreview]   = useState<string | null>(null);
   const [guardando,       setGuardando]       = useState(false);
+  const [errors,          setErrors]          = useState<Record<string, string>>({});
+
+  // ── Helpers de validación ────────────────────────────────
+  const XSS_RE  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
+  const SQLI_RE = /('|(OR|AND)\s+\d+=\d+|UNION\s+SELECT|DROP\s+TABLE|INSERT\s+INTO|DELETE\s+FROM|--\s|\/\*)/i;
+  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, "").trim();
+  const isMalicious = (v: string) => XSS_RE.test(v) || SQLI_RE.test(v);
+
+  const validateField = (field: string, value: string): string => {
+    if (field === "titulo") {
+      if (!value.trim())              return "El título es obligatorio";
+      if (value.trim().length < 5)   return "El título debe tener al menos 5 caracteres";
+      if (value.trim().length > 200) return "El título no puede superar 200 caracteres";
+      if (isMalicious(value))        return "El título contiene caracteres no permitidos";
+    }
+    if (field === "extracto" && value.trim()) {
+      if (value.trim().length < 20)  return "El extracto debe tener al menos 20 caracteres";
+      if (value.trim().length > 400) return "El extracto no puede superar 400 caracteres";
+      if (isMalicious(value))        return "El extracto contiene caracteres no permitidos";
+    }
+    if (field === "contenido") {
+      const plain = stripHtml(value);
+      if (!plain)                    return "El contenido es obligatorio";
+      if (plain.length < 50)         return "El contenido debe tener al menos 50 caracteres";
+      if (XSS_RE.test(value))        return "El contenido contiene código no permitido";
+    }
+    if (field === "metaDescription" && value.trim()) {
+      if (value.trim().length > 160) return "La meta descripción no puede superar 160 caracteres";
+      if (isMalicious(value))        return "La meta descripción contiene caracteres no permitidos";
+    }
+    return "";
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    const err = validateField(field, value);
+    setErrors(prev => ({ ...prev, [field]: err }));
+    if (field === "titulo")          setTitulo(value);
+    if (field === "extracto")        setExtracto(value);
+    if (field === "metaDescription") setMetaDescription(value);
+  };
+
+  const handleContenidoChange = (html: string) => {
+    setContenido(html);
+    const err = validateField("contenido", html);
+    setErrors(prev => ({ ...prev, contenido: err }));
+  };
 
   useEffect(() => {
     fetch(`${API}/api/categorias`)
@@ -253,8 +299,16 @@ export default function NuevoPost() {
   };
 
   const guardar = async (estadoFinal: string) => {
-    if (!titulo.trim())   { showToast("El título es obligatorio", "err"); return; }
-    if (!contenido.trim() || contenido === "<br>") { showToast("El contenido es obligatorio", "err"); return; }
+    const errTitulo     = validateField("titulo", titulo);
+    const errExtracto   = validateField("extracto", extracto);
+    const errContenido  = validateField("contenido", contenido);
+    const errMeta       = validateField("metaDescription", metaDescription);
+    const newErrors     = { titulo: errTitulo, extracto: errExtracto, contenido: errContenido, metaDescription: errMeta };
+    setErrors(newErrors);
+    if (errTitulo || errContenido || errExtracto || errMeta) {
+      showToast("Corrige los errores antes de continuar", "warn");
+      return;
+    }
     setGuardando(true);
     try {
       const formData = new FormData();
@@ -305,8 +359,10 @@ export default function NuevoPost() {
         @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display: swap; }
         .np-input    { width:100%; padding:12px 16px; border:1.5px solid ${C.border}; border-radius:12px; font-family:${SANS}; font-size:14px; color:${C.ink}; background:${C.card}; outline:none; transition:border-color .2s; box-sizing:border-box; }
         .np-input:focus { border-color:${C.orange}; }
+        .np-input.err, .np-textarea.err { border-color:#c4304a !important; background:#fff5f7; }
         .np-textarea { width:100%; padding:14px 16px; border:1.5px solid ${C.border}; border-radius:12px; font-family:${SANS}; font-size:14px; color:${C.ink}; background:${C.card}; outline:none; resize:vertical; transition:border-color .2s; box-sizing:border-box; }
         .np-textarea:focus { border-color:${C.orange}; }
+        .np-error { font-size:11.5px; color:#c4304a; font-weight:500; margin-top:4px; display:block; }
         .np-select   { width:100%; padding:12px 16px; border:1.5px solid ${C.border}; border-radius:12px; font-family:${SANS}; font-size:14px; color:${C.ink}; background:${C.card}; outline:none; cursor:pointer; }
         .np-label    { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:${C.sub}; margin-bottom:6px; display:block; }
         .np-card     { background:${C.card}; border-radius:18px; padding:24px; box-shadow:${CS}; margin-bottom:20px; }
@@ -344,21 +400,39 @@ export default function NuevoPost() {
       {/* Título */}
       <div className="np-card">
         <label className="np-label" htmlFor="titulo">Título *</label>
-        <input id="titulo" className="np-input" value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Escribe el título del post…" maxLength={200} />
-        <div style={{ textAlign: "right", fontSize: 11, color: C.muted, marginTop: 6 }}>{titulo.length}/200</div>
+        <input
+          id="titulo"
+          className={`np-input${errors.titulo ? " err" : ""}`}
+          value={titulo}
+          onChange={e => handleFieldChange("titulo", e.target.value)}
+          placeholder="Escribe el título del post…"
+          maxLength={200}
+        />
+        <div style={{ textAlign: "right", fontSize: 11, color: C.muted, marginTop: 4 }}>{titulo.length}/200</div>
+        {errors.titulo && <span className="np-error">{errors.titulo}</span>}
       </div>
 
       {/* Extracto */}
       <div className="np-card">
-        <label className="np-label" htmlFor="extracto">Extracto / Resumen</label>
-        <textarea id="extracto" className="np-textarea" value={extracto} onChange={e => setExtracto(e.target.value)} placeholder="Breve descripción del artículo (aparece en la lista del blog)…" rows={3} maxLength={400} />
-        <div style={{ textAlign: "right", fontSize: 11, color: C.muted, marginTop: 6 }}>{extracto.length}/400</div>
+        <label className="np-label" htmlFor="extracto">Extracto / Resumen <span style={{ textTransform:"none", fontWeight:400, letterSpacing:0 }}>— opcional (mín. 20 si se escribe)</span></label>
+        <textarea
+          id="extracto"
+          className={`np-textarea${errors.extracto ? " err" : ""}`}
+          value={extracto}
+          onChange={e => handleFieldChange("extracto", e.target.value)}
+          placeholder="Breve descripción del artículo (aparece en la lista del blog)…"
+          rows={3}
+          maxLength={400}
+        />
+        <div style={{ textAlign: "right", fontSize: 11, color: C.muted, marginTop: 4 }}>{extracto.length}/400</div>
+        {errors.extracto && <span className="np-error">{errors.extracto}</span>}
       </div>
 
       {/* Contenido — editor enriquecido */}
       <div className="np-card">
-        <span className="np-label">Contenido *</span>
-        <RichEditor value={contenido} onChange={setContenido} />
+        <span className="np-label">Contenido * <span style={{ textTransform:"none", fontWeight:400, letterSpacing:0 }}>— mín. 50 caracteres</span></span>
+        <RichEditor value={contenido} onChange={handleContenidoChange} />
+        {errors.contenido && <span className="np-error" style={{ marginTop: 8 }}>{errors.contenido}</span>}
       </div>
 
       {/* Imagen de portada */}
@@ -409,8 +483,16 @@ export default function NuevoPost() {
         </div>
         <div style={{ marginTop: 20 }}>
           <label className="np-label" htmlFor="meta">Meta descripción (SEO)</label>
-          <input id="meta" className="np-input" value={metaDescription} onChange={e => setMetaDescription(e.target.value)} placeholder="Descripción para motores de búsqueda…" maxLength={160} />
-          <div style={{ textAlign: "right", fontSize: 11, color: C.muted, marginTop: 6 }}>{metaDescription.length}/160</div>
+          <input
+            id="meta"
+            className={`np-input${errors.metaDescription ? " err" : ""}`}
+            value={metaDescription}
+            onChange={e => handleFieldChange("metaDescription", e.target.value)}
+            placeholder="Descripción para motores de búsqueda…"
+            maxLength={160}
+          />
+          <div style={{ textAlign: "right", fontSize: 11, color: C.muted, marginTop: 4 }}>{metaDescription.length}/160</div>
+          {errors.metaDescription && <span className="np-error">{errors.metaDescription}</span>}
         </div>
       </div>
 

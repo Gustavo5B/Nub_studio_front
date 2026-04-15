@@ -41,6 +41,9 @@ const css = `
   .nc-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: nc-rotate .7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes nc-rotate { to { transform: rotate(360deg); } }
   @media (max-width: 600px) { .nc-wrap { padding: 20px 16px; } }
+  .nc-input.err, .nc-textarea.err { border-color: #c4304a; background: #fff5f7; }
+  .nc-error { font-size: 11.5px; color: #c4304a; font-weight: 500; margin-top: 2px; }
+  .nc-counter { font-size: 11px; color: #9896a8; text-align: right; margin-top: 2px; }
 `;
 
 export default function NuevaColeccion() {
@@ -59,6 +62,35 @@ export default function NuevaColeccion() {
   const [dragOver,     setDragOver]     = useState(false);
   const [loading,      setLoading]      = useState(esEdicion);
   const [saving,       setSaving]       = useState(false);
+  const [errors,       setErrors]       = useState<Record<string, string>>({});
+
+  // Patrones de seguridad
+  const XSS_PATTERN = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:|data:text\/html/i;
+  const SQLI_PATTERN = /('|(OR|AND)\s+\d+=\d+|UNION\s+SELECT|DROP\s+TABLE|INSERT\s+INTO|DELETE\s+FROM|--\s|\/\*)/i;
+
+  const containsMalicious = (val: string) => XSS_PATTERN.test(val) || SQLI_PATTERN.test(val);
+
+  const validateField = (field: string, value: string): string => {
+    if (field === "nombre") {
+      if (!value.trim()) return "El nombre es requerido";
+      if (value.trim().length < 3) return "El nombre debe tener al menos 3 caracteres";
+      if (value.trim().length > 200) return "El nombre no puede superar 200 caracteres";
+      if (containsMalicious(value)) return "El nombre contiene caracteres no permitidos";
+    }
+    if (field === "historia" && value.trim()) {
+      if (value.trim().length < 20) return "La historia debe tener al menos 20 caracteres";
+      if (value.trim().length > 1000) return "La historia no puede superar 1000 caracteres";
+      if (containsMalicious(value)) return "La historia contiene caracteres no permitidos";
+    }
+    return "";
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    const err = validateField(field, value);
+    setErrors(prev => ({ ...prev, [field]: err }));
+    if (field === "nombre") setNombre(value);
+    if (field === "historia") setHistoria(value);
+  };
 
   useEffect(() => {
     if (!esEdicion) return;
@@ -101,7 +133,16 @@ export default function NuevaColeccion() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim()) { showToast("El nombre es requerido", "warn"); return; }
+
+    // Validar todos los campos antes de enviar
+    const errNombre  = validateField("nombre", nombre);
+    const errHistoria = validateField("historia", historia);
+    const newErrors = { nombre: errNombre, historia: errHistoria };
+    setErrors(newErrors);
+    if (errNombre || errHistoria) {
+      showToast("Corrige los errores antes de continuar", "warn");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -153,14 +194,29 @@ export default function NuevaColeccion() {
           <div className="nc-card">
             <div className="nc-field">
               <label className="nc-label">Nombre *</label>
-              <input className="nc-input" value={nombre} onChange={e => setNombre(e.target.value)}
-                placeholder="Ej: Tierra y Barro" maxLength={200} />
+              <input
+                className={`nc-input${errors.nombre ? " err" : ""}`}
+                value={nombre}
+                onChange={e => handleFieldChange("nombre", e.target.value)}
+                placeholder="Ej: Tierra y Barro"
+                maxLength={200}
+              />
+              <div className="nc-counter">{nombre.length}/200</div>
+              {errors.nombre && <span className="nc-error">{errors.nombre}</span>}
             </div>
 
             <div className="nc-field">
-              <label className="nc-label">Historia</label>
-              <textarea className="nc-textarea" value={historia} onChange={e => setHistoria(e.target.value)}
-                placeholder="Cuéntanos el origen, la inspiración o el contexto de esta colección…" rows={5} />
+              <label className="nc-label">Historia <span style={{ textTransform:"none", fontWeight:400, letterSpacing:0 }}>— opcional (mín. 20 caracteres si se escribe)</span></label>
+              <textarea
+                className={`nc-textarea${errors.historia ? " err" : ""}`}
+                value={historia}
+                onChange={e => handleFieldChange("historia", e.target.value)}
+                placeholder="Cuéntanos el origen, la inspiración o el contexto de esta colección…"
+                rows={5}
+                maxLength={1000}
+              />
+              <div className="nc-counter">{historia.length}/1000</div>
+              {errors.historia && <span className="nc-error">{errors.historia}</span>}
             </div>
 
             {esEdicion && (
