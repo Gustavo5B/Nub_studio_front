@@ -32,9 +32,8 @@ interface ItemCarrito {
 export default function Carrito() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [items,        setItems]        = useState<ItemCarrito[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [creandoOrden, setCreandoOrden] = useState(false);
+  const [items, setItems] = useState<ItemCarrito[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const token   = authService.getToken();
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
@@ -49,7 +48,7 @@ export default function Carrito() {
     } finally {
       setLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { fetchCarrito(); }, [fetchCarrito]);
 
@@ -78,25 +77,6 @@ export default function Carrito() {
     }
   };
 
-  const crearOrden = async () => {
-    setCreandoOrden(true);
-    try {
-      const res  = await fetch(`${API_URL}/api/ventas`, { method: "POST", headers });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(data.message, "ok");
-        setItems([]);
-        navigate("/mi-cuenta/pedidos");
-      } else {
-        showToast(data.message || "Error al crear la orden", "err");
-      }
-    } catch {
-      showToast("Sin conexión con el servidor", "err");
-    } finally {
-      setCreandoOrden(false);
-    }
-  };
-
   const total = items.reduce((sum, i) => sum + Number(i.precio_base) * i.cantidad, 0);
 
   return (
@@ -114,7 +94,6 @@ export default function Carrito() {
         .car-del-btn:hover { color:${C.red}; background:#FEF2F2; }
       `}</style>
 
-      {/* Header */}
       <header style={{ background: "#fff", borderBottom: `1px solid ${C.border}`, padding: "0 40px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button onClick={() => navigate("/mi-cuenta")} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: SERIF, fontSize: 18, fontWeight: 900, color: C.ink }}>
           <ArrowLeft size={18} strokeWidth={2} />
@@ -124,8 +103,6 @@ export default function Carrito() {
       </header>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", display: "grid", gridTemplateColumns: items.length > 0 ? "1fr 300px" : "1fr", gap: 24, alignItems: "start" }}>
-
-        {/* Lista de items */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {loading ? (
             <div style={{ textAlign: "center", padding: 60, color: C.sub, fontSize: 14 }}>Cargando carrito...</div>
@@ -140,22 +117,17 @@ export default function Carrito() {
             </div>
           ) : items.map(item => (
             <div key={item.id_carrito} className="car-item" style={{ background: C.card, borderRadius: 12, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", display: "flex", gap: 16, alignItems: "center" }}>
-              {/* Imagen */}
               <div style={{ width: 72, height: 90, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "#ece9e4", cursor: "pointer" }} onClick={() => navigate(`/obras/${item.slug}`)}>
                 {item.imagen_principal
                   ? <img src={item.imagen_principal} alt={item.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: C.sub }}>🖼</div>
                 }
               </div>
-
-              {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.titulo}</div>
                 <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>{item.artista_alias}</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: C.orange, marginTop: 8, fontFamily: NEXA }}>{fmt(Number(item.precio_base))}</div>
               </div>
-
-              {/* Cantidad */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                 <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1}>
                   <Minus size={11} strokeWidth={2.5} />
@@ -165,13 +137,9 @@ export default function Carrito() {
                   <Plus size={11} strokeWidth={2.5} />
                 </button>
               </div>
-
-              {/* Subtotal */}
               <div style={{ minWidth: 80, textAlign: "right", flexShrink: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>{fmt(Number(item.precio_base) * item.cantidad)}</div>
               </div>
-
-              {/* Eliminar */}
               <button className="car-del-btn" onClick={() => eliminar(item.id_carrito)}>
                 <Trash2 size={15} strokeWidth={2} />
               </button>
@@ -179,11 +147,9 @@ export default function Carrito() {
           ))}
         </div>
 
-        {/* Resumen */}
         {items.length > 0 && (
           <div style={{ background: C.card, borderRadius: 12, padding: "24px", boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", position: "sticky", top: 24 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginBottom: 20, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>Resumen del pedido</div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                 <span style={{ color: C.sub }}>Subtotal ({items.length} {items.length === 1 ? "obra" : "obras"})</span>
@@ -194,22 +160,18 @@ export default function Carrito() {
                 <span style={{ color: C.sub, fontSize: 11 }}>A coordinar</span>
               </div>
             </div>
-
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: C.ink, marginBottom: 20, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
               <span>Total</span>
               <span style={{ color: C.orange, fontFamily: NEXA }}>{fmt(total)}</span>
             </div>
-
             <button
-              onClick={crearOrden}
-              disabled={creandoOrden}
-              style={{ width: "100%", padding: "14px", borderRadius: 100, background: creandoOrden ? C.sub : C.orange, color: "#fff", border: "none", fontSize: 11, fontWeight: 800, letterSpacing: ".16em", textTransform: "uppercase", cursor: creandoOrden ? "not-allowed" : "pointer", fontFamily: SANS, transition: "background .22s" }}
+              onClick={() => navigate("/checkout")}
+              style={{ width: "100%", padding: "14px", borderRadius: 100, background: C.orange, color: "#fff", border: "none", fontSize: 11, fontWeight: 800, letterSpacing: ".16em", textTransform: "uppercase", cursor: "pointer", fontFamily: SANS, transition: "background .22s" }}
             >
-              {creandoOrden ? "Procesando..." : "Confirmar orden →"}
+              Proceder al pago →
             </button>
-
             <p style={{ fontSize: 10, color: C.sub, textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>
-              Al confirmar, te contactaremos para coordinar el pago y envío.
+              Serás redirigido a la pasarela de pago para completar tu compra.
             </p>
           </div>
         )}
