@@ -190,8 +190,8 @@ export default function DetalleArtistaPublico() {
             background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
             background-size:160px 160px; mix-blend-mode:multiply; }
 
-          .det-cursor-dot { position:fixed; width:6px; height:6px; border-radius:50%; background:${C.ink}; pointer-events:none; z-index:99999; transform:translate(-50%,-50%); transition:width .22s,height .22s,background .22s; }
-          .det-cursor-ring { position:fixed; width:32px; height:32px; border-radius:50%; border:1px solid rgba(20,18,30,.22); pointer-events:none; z-index:99998; transform:translate(-50%,-50%); transition:width .3s,height .3s,border-color .25s; }
+          .det-cursor-dot { position:fixed; width:6px; height:6px; border-radius:50%; background:#fff; pointer-events:none; z-index:99999; transform:translate(-50%,-50%); mix-blend-mode:difference; transition:width .22s,height .22s,background .22s; }
+          .det-cursor-ring { position:fixed; width:32px; height:32px; border-radius:50%; border:1px solid rgba(255,255,255,.5); pointer-events:none; z-index:99998; transform:translate(-50%,-50%); transition:width .3s,height .3s,border-color .25s; }
           .det-cursor-dot.cur-over { width:4px; height:4px; background:${C.orange}; }
           .det-cursor-ring.cur-over { width:52px; height:52px; border-color:${C.orange}; }
 
