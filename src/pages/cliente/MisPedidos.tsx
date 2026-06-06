@@ -20,8 +20,9 @@ const fmt = (p: number) =>
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   pendiente:  { bg: "#FEF3C7", color: "#92400E", label: "Pendiente" },
+  pagado:     { bg: "#D1FAE5", color: "#065F46", label: "Pagado" },
   procesando: { bg: "#DBEAFE", color: "#1E40AF", label: "Procesando" },
-  enviado:    { bg: "#D1FAE5", color: "#065F46", label: "Enviado" },
+  enviado:    { bg: "#DBEAFE", color: "#1E40AF", label: "Enviado" },
   entregado:  { bg: "#D1FAE5", color: "#065F46", label: "Entregado" },
   cancelado:  { bg: "#FEE2E2", color: "#991B1B", label: "Cancelado" },
 };
@@ -36,7 +37,7 @@ interface Pedido {
   precio_unitario: string;
   total: string;
   estado: string;
-  fecha_creacion: string;
+  fecha_venta: string;
 }
 
 export default function MisPedidos() {
@@ -89,7 +90,7 @@ export default function MisPedidos() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {pedidos.map(p => {
               const estadoStyle = ESTADO_STYLES[p.estado] ?? ESTADO_STYLES.pendiente;
-              const fecha = new Date(p.fecha_creacion).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+              const fecha = new Date(p.fecha_venta).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
 
               return (
                 <div key={p.id_venta} className="ped-item" style={{ background: C.card, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", display: "flex", gap: 16, alignItems: "center" }}>
