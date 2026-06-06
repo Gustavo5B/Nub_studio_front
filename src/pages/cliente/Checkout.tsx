@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import { authService } from "../../services/authService";
 
@@ -40,7 +41,6 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [procesando, setProcesando] = useState(false);
 
-  // Dirección de envío
   const [direccion, setDireccion] = useState({
     calle: "",
     numero_exterior: "",
@@ -52,21 +52,20 @@ export default function Checkout() {
     referencias: "",
   });
 
-  const [estados, setEstados] = useState<any[]>([]);
-  const [municipios, setMunicipios] = useState<any[]>([]);
+  const [estados, setEstados] = useState<{ id_estado: number; nombre: string }[]>([]);
+  const [municipios, setMunicipios] = useState<{ id_municipio: number; nombre: string }[]>([]);
   const [cargandoMunicipios, setCargandoMunicipios] = useState(false);
 
   const token = authService.getToken();
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-  // Cargar carrito
   useEffect(() => {
     const fetchCarrito = async () => {
       try {
         const res = await fetch(`${API_URL}/api/carrito`, { headers });
         const data = await res.json();
         if (data.success) {
-          const itemsConPrecio = data.data.map((item: any) => ({
+          const itemsConPrecio = data.data.map((item: ItemCarrito) => ({
             ...item,
             precio_unitario: Number(item.precio_base),
             subtotal: Number(item.precio_base) * item.cantidad,
@@ -86,15 +85,13 @@ export default function Checkout() {
     fetchCarrito();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cargar estados
   useEffect(() => {
     fetch(`${API_URL}/api/estados`)
       .then(r => r.json())
       .then(d => { if (d.success) setEstados(d.data); })
-      .catch(err => console.error("Error cargando estados", err));
+      .catch(() => {});
   }, []);
 
-  // Cargar municipios cuando cambia el estado
   useEffect(() => {
     if (direccion.id_estado > 0) {
       setCargandoMunicipios(true);
@@ -136,22 +133,43 @@ export default function Checkout() {
     setProcesando(true);
 
     try {
+      // 1. Guardar dirección de envío y obtener su ID
+      const dirRes = await fetch(`${API_URL}/api/direcciones`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          calle: direccion.calle.trim(),
+          numero_exterior: direccion.numero_exterior.trim(),
+          numero_interior: direccion.numero_interior.trim() || null,
+          colonia: direccion.colonia.trim(),
+          codigo_postal: direccion.codigo_postal.trim(),
+          id_estado: direccion.id_estado,
+          id_municipio: direccion.id_municipio,
+          referencias: direccion.referencias.trim() || null,
+        }),
+      });
+      const dirData = await dirRes.json();
+      if (!dirRes.ok || !dirData.success) {
+        throw new Error(dirData.message || "Error al guardar la dirección");
+      }
+
+      // 2. Procesar checkout vinculando la dirección guardada
       const res = await fetch(`${API_URL}/api/ventas/checkout`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ id_direccion_envio: null }),
+        body: JSON.stringify({ id_direccion_envio: dirData.id_direccion }),
       });
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || "Error al procesar el checkout");
 
-      // Redirigir a MercadoPago (sandbox en desarrollo, init_point en producción)
       const urlPago = data.sandbox_init_point || data.init_point;
       if (!urlPago) throw new Error("No se recibió la URL de pago");
 
       window.location.href = urlPago;
-    } catch (error: any) {
-      showToast(error.message || "Error de conexión", "err");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error de conexión";
+      showToast(msg, "err");
       setProcesando(false);
     }
   };
@@ -170,7 +188,7 @@ export default function Checkout() {
         <div style={{ fontSize: 16, color: C.ink }}>Tu carrito está vacío</div>
         <button
           onClick={() => navigate("/catalogo")}
-          style={{ background: C.orange, color: "#fff", border: "none", borderRadius: 100, padding: "10px 24px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+          style={{ background: C.orange, color: "#fff", border: "none", borderRadius: 100, padding: "10px 24px", cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: SANS }}
         >
           Ir al catálogo
         </button>
@@ -178,8 +196,26 @@ export default function Checkout() {
     );
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: `1px solid ${C.border}`,
+    fontSize: 14,
+    fontFamily: SANS,
+    outline: "none",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: 12,
+    fontWeight: 600,
+    marginBottom: 6,
+    color: C.ink,
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: SANS, padding: "40px 24px" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: SANS }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
         @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
@@ -187,77 +223,102 @@ export default function Checkout() {
         .mp-btn { transition: opacity .2s, transform .1s; }
         .mp-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
         .mp-btn:active:not(:disabled) { transform: translateY(0); }
+        .ck-grid {
+          max-width: 1000px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr 360px;
+          gap: 24px;
+          align-items: start;
+          padding: 32px 24px 60px;
+        }
+        @media (max-width: 760px) {
+          .ck-grid { grid-template-columns: 1fr; padding: 20px 16px 48px; }
+          .ck-summary { order: -1; position: static !important; }
+          .ck-form-cols { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
-      <div style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, alignItems: "start" }}>
+      {/* Header */}
+      <header style={{ background: "#fff", borderBottom: `1px solid ${C.border}`, padding: "0 24px", height: 56, display: "flex", alignItems: "center" }}>
+        <button
+          onClick={() => navigate("/mi-cuenta/carrito")}
+          style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: SANS, padding: "6px 0" }}
+        >
+          <ArrowLeft size={16} strokeWidth={2.5} />
+          Volver al carrito
+        </button>
+      </header>
+
+      <div className="ck-grid">
 
         {/* Formulario de dirección */}
         <div style={{ background: C.card, borderRadius: 16, padding: 28, boxShadow: "0 2px 8px rgba(0,0,0,.05)" }}>
-          <h1 style={{ fontSize: 20, fontWeight: 800, fontFamily: NEXA, marginBottom: 6, color: C.ink }}>Dirección de envío</h1>
-          <p style={{ fontSize: 13, color: C.sub, marginBottom: 24 }}>Ingresa dónde recibirás tu obra</p>
+          <h1 style={{ fontSize: 20, fontWeight: 800, fontFamily: NEXA, marginBottom: 6, color: C.ink, margin: "0 0 6px" }}>Dirección de envío</h1>
+          <p style={{ fontSize: 13, color: C.sub, marginBottom: 24, margin: "0 0 24px" }}>Ingresa dónde recibirás tu obra</p>
 
           <form onSubmit={handlePagar}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="ck-form-cols" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={{ gridColumn: "span 2" }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Calle *</label>
+                <label style={labelStyle}>Calle *</label>
                 <input
                   type="text"
                   placeholder="Ej: Av. Insurgentes Sur"
                   value={direccion.calle}
                   onChange={e => setDireccion({ ...direccion, calle: e.target.value })}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS }}
+                  style={inputStyle}
                   required
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Número exterior *</label>
+                <label style={labelStyle}>Número exterior *</label>
                 <input
                   type="text"
                   placeholder="Ej: 1234"
                   value={direccion.numero_exterior}
                   onChange={e => setDireccion({ ...direccion, numero_exterior: e.target.value })}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS }}
+                  style={inputStyle}
                   required
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Número interior (opcional)</label>
+                <label style={labelStyle}>Número interior (opcional)</label>
                 <input
                   type="text"
                   placeholder="Ej: Depto 3B"
                   value={direccion.numero_interior}
                   onChange={e => setDireccion({ ...direccion, numero_interior: e.target.value })}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS }}
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Colonia *</label>
+                <label style={labelStyle}>Colonia *</label>
                 <input
                   type="text"
                   placeholder="Ej: Del Valle"
                   value={direccion.colonia}
                   onChange={e => setDireccion({ ...direccion, colonia: e.target.value })}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS }}
+                  style={inputStyle}
                   required
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Código postal *</label>
+                <label style={labelStyle}>Código postal *</label>
                 <input
                   type="text"
                   placeholder="Ej: 03100"
                   value={direccion.codigo_postal}
                   onChange={e => setDireccion({ ...direccion, codigo_postal: e.target.value })}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS }}
+                  style={inputStyle}
                   required
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Estado *</label>
+                <label style={labelStyle}>Estado *</label>
                 <select
                   value={direccion.id_estado}
                   onChange={e => setDireccion({ ...direccion, id_estado: Number(e.target.value), id_municipio: 0 })}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS, background: "#fff" }}
+                  style={{ ...inputStyle, background: "#fff" }}
                   required
                 >
                   <option value={0}>Selecciona un estado</option>
@@ -267,12 +328,12 @@ export default function Checkout() {
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Municipio *</label>
+                <label style={labelStyle}>Municipio *</label>
                 <select
                   value={direccion.id_municipio}
                   onChange={e => setDireccion({ ...direccion, id_municipio: Number(e.target.value) })}
                   disabled={!direccion.id_estado || cargandoMunicipios}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS, background: "#fff", opacity: !direccion.id_estado ? 0.6 : 1 }}
+                  style={{ ...inputStyle, background: "#fff", opacity: !direccion.id_estado ? 0.6 : 1 }}
                   required
                 >
                   <option value={0}>{cargandoMunicipios ? "Cargando..." : "Selecciona un municipio"}</option>
@@ -282,18 +343,17 @@ export default function Checkout() {
                 </select>
               </div>
               <div style={{ gridColumn: "span 2" }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: C.ink }}>Referencias (opcional)</label>
+                <label style={labelStyle}>Referencias (opcional)</label>
                 <textarea
                   placeholder="Ej: Entre calles, color de la fachada, referencia cercana..."
                   value={direccion.referencias}
                   onChange={e => setDireccion({ ...direccion, referencias: e.target.value })}
                   rows={3}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, fontFamily: SANS, resize: "vertical" }}
+                  style={{ ...inputStyle, resize: "vertical" }}
                 />
               </div>
             </div>
 
-            {/* Botón pagar con MercadoPago */}
             <button
               type="submit"
               disabled={procesando}
@@ -329,14 +389,14 @@ export default function Checkout() {
               )}
             </button>
             <p style={{ fontSize: 11, color: C.sub, textAlign: "center", marginTop: 12 }}>
-              🔒 Serás redirigido a MercadoPago para completar tu pago de forma segura
+              Serás redirigido a MercadoPago para completar tu pago de forma segura
             </p>
           </form>
         </div>
 
         {/* Resumen del pedido */}
-        <div style={{ background: C.card, borderRadius: 16, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,.05)", position: "sticky", top: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: C.ink, fontFamily: NEXA }}>Resumen del pedido</h2>
+        <div className="ck-summary" style={{ background: C.card, borderRadius: 16, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,.05)", position: "sticky", top: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: C.ink, fontFamily: NEXA, margin: "0 0 16px" }}>Resumen del pedido</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
             {items.map(item => (
               <div key={item.id_carrito} style={{ display: "flex", gap: 12, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
@@ -344,12 +404,12 @@ export default function Checkout() {
                   src={item.imagen_principal}
                   alt={item.titulo}
                   style={{ width: 52, height: 64, objectFit: "cover", borderRadius: 8, flexShrink: 0, background: "#ece9e4" }}
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.titulo}</div>
                   <div style={{ fontSize: 11, color: C.sub, marginTop: 2 }}>{item.artista_alias}</div>
-                  <div style={{ fontSize: 11, color: C.sub }}>x{item.cantidad}</div>
+                  <div style={{ fontSize: 11, color: C.sub }}>×{item.cantidad}</div>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, flexShrink: 0 }}>{fmt(item.subtotal)}</div>
               </div>
@@ -360,6 +420,7 @@ export default function Checkout() {
             <span style={{ fontWeight: 800, fontSize: 20, color: C.orange, fontFamily: NEXA }}>{fmt(total)}</span>
           </div>
         </div>
+
       </div>
     </div>
   );

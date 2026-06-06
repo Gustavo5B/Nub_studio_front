@@ -1,5 +1,4 @@
-// src/pages/cliente/MisPedidos.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Package, CheckCircle, XCircle, Clock } from "lucide-react";
 import { authService } from "../../services/authService";
@@ -35,9 +34,18 @@ interface Pedido {
   artista_alias: string;
   cantidad: number;
   precio_unitario: string;
+  subtotal: string;
   total: string;
   estado: string;
   fecha_venta: string;
+}
+
+interface OrdenGroup {
+  key: string;
+  fecha: string;
+  items: Pedido[];
+  totalGrupo: number;
+  estado: string;
 }
 
 const STATUS_BANNER: Record<string, { bg: string; border: string; color: string; icon: React.ReactNode; title: string; msg: string }> = {
@@ -69,12 +77,10 @@ export default function MisPedidos() {
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState<string | null>(null);
 
-  // Detect ?status= from MercadoPago redirect
   useEffect(() => {
     const status = searchParams.get("status");
     if (status && STATUS_BANNER[status]) {
       setBanner(status);
-      // Remove ?status= from URL without reloading
       window.history.replaceState({}, "", "/mi-cuenta/pedidos");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,14 +94,36 @@ export default function MisPedidos() {
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Agrupa ventas por minuto de creación — items del mismo checkout comparten timestamp
+  const ordenes = useMemo<OrdenGroup[]>(() => {
+    const map = new Map<string, OrdenGroup>();
+    const result: OrdenGroup[] = [];
+
+    for (const p of pedidos) {
+      const key = p.fecha_venta.slice(0, 16); // YYYY-MM-DDTHH:mm
+      if (!map.has(key)) {
+        const grupo: OrdenGroup = { key, fecha: p.fecha_venta, items: [], totalGrupo: 0, estado: p.estado };
+        map.set(key, grupo);
+        result.push(grupo);
+      }
+      const g = map.get(key)!;
+      g.items.push(p);
+      g.totalGrupo += Number(p.total);
+    }
+
+    return result;
+  }, [pedidos]);
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: SANS }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
         @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
         @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
-        .ped-item { transition: box-shadow .2s; }
-        .ped-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+        .ped-card { transition: box-shadow .2s; }
+        .ped-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.09); }
+        .ped-item-link { cursor: pointer; transition: opacity .15s; }
+        .ped-item-link:hover { opacity: .8; }
       `}</style>
 
       {/* Header */}
@@ -104,12 +132,14 @@ export default function MisPedidos() {
           <ArrowLeft size={18} strokeWidth={2} />
           Mis Pedidos
         </button>
-        <span style={{ fontSize: 13, color: C.sub }}>{pedidos.length} {pedidos.length === 1 ? "orden" : "órdenes"}</span>
+        <span style={{ fontSize: 13, color: C.sub }}>
+          {ordenes.length} {ordenes.length === 1 ? "orden" : "órdenes"}
+        </span>
       </header>
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
 
-        {/* Payment status banner */}
+        {/* Banner de estado de pago */}
         {banner && STATUS_BANNER[banner] && (() => {
           const b = STATUS_BANNER[banner];
           return (
@@ -130,46 +160,104 @@ export default function MisPedidos() {
 
         {loading ? (
           <div style={{ textAlign: "center", padding: 60, color: C.sub, fontSize: 14 }}>Cargando pedidos...</div>
-        ) : pedidos.length === 0 ? (
+        ) : ordenes.length === 0 ? (
           <div style={{ textAlign: "center", padding: 80 }}>
             <Package size={48} color={C.border} strokeWidth={1} style={{ marginBottom: 16 }} />
             <div style={{ fontSize: 18, fontWeight: 700, color: C.ink, marginBottom: 8 }}>Aún no tienes pedidos</div>
             <div style={{ fontSize: 13, color: C.sub, marginBottom: 24 }}>Cuando confirmes una orden aparecerá aquí</div>
-            <button onClick={() => navigate("/catalogo")} style={{ background: C.orange, color: "#fff", border: "none", borderRadius: 100, padding: "11px 24px", fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", cursor: "pointer", fontFamily: SANS }}>
+            <button
+              onClick={() => navigate("/catalogo")}
+              style={{ background: C.orange, color: "#fff", border: "none", borderRadius: 100, padding: "11px 24px", fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", cursor: "pointer", fontFamily: SANS }}
+            >
               Explorar catálogo
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {pedidos.map(p => {
-              const estadoStyle = ESTADO_STYLES[p.estado] ?? ESTADO_STYLES.pendiente;
-              const fecha = new Date(p.fecha_venta).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {ordenes.map((orden, idx) => {
+              const estadoStyle = ESTADO_STYLES[orden.estado] ?? ESTADO_STYLES.pendiente;
+              const fecha = new Date(orden.fecha).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+              const numOrden = ordenes.length - idx;
 
               return (
-                <div key={p.id_venta} className="ped-item" style={{ background: C.card, borderRadius: 12, padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", display: "flex", gap: 16, alignItems: "center" }}>
-                  {/* Imagen */}
-                  <div style={{ width: 64, height: 80, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "#ece9e4", cursor: "pointer" }} onClick={() => navigate(`/obras/${p.slug}`)}>
-                    {p.imagen_principal
-                      ? <img src={p.imagen_principal} alt={p.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: C.sub }}>🖼</div>
-                    }
+                <div
+                  key={orden.key}
+                  className="ped-card"
+                  style={{ background: C.card, borderRadius: 14, boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", overflow: "hidden" }}
+                >
+                  {/* Cabecera de la orden */}
+                  <div style={{ padding: "14px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>Orden #{numOrden}</span>
+                      <span style={{ width: 4, height: 4, borderRadius: "50%", background: C.border, display: "inline-block" }} />
+                      <span style={{ fontSize: 12, color: C.sub }}>{fecha}</span>
+                    </div>
+                    <span style={{
+                      background: estadoStyle.bg,
+                      color: estadoStyle.color,
+                      borderRadius: 100,
+                      padding: "3px 12px",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: ".12em",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {estadoStyle.label}
+                    </span>
                   </div>
 
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{p.titulo}</div>
-                        <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{p.artista_alias}</div>
+                  {/* Items de la orden */}
+                  <div style={{ padding: "4px 0" }}>
+                    {orden.items.map((p, iIdx) => (
+                      <div
+                        key={p.id_venta}
+                        style={{
+                          display: "flex",
+                          gap: 14,
+                          alignItems: "center",
+                          padding: "14px 20px",
+                          borderBottom: iIdx < orden.items.length - 1 ? `1px solid ${C.border}` : "none",
+                        }}
+                      >
+                        <div
+                          className="ped-item-link"
+                          style={{ width: 52, height: 64, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "#ece9e4" }}
+                          onClick={() => navigate(`/obras/${p.slug}`)}
+                        >
+                          {p.imagen_principal
+                            ? <img src={p.imagen_principal} alt={p.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: C.sub, fontSize: 18 }}>▪</div>
+                          }
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            className="ped-item-link"
+                            style={{ fontSize: 14, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                            onClick={() => navigate(`/obras/${p.slug}`)}
+                          >
+                            {p.titulo}
+                          </div>
+                          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{p.artista_alias}</div>
+                          <div style={{ fontSize: 11, color: C.sub, marginTop: 1 }}>{p.cantidad} {p.cantidad === 1 ? "pieza" : "piezas"}</div>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, flexShrink: 0 }}>
+                          {fmt(Number(p.total))}
+                        </div>
                       </div>
-                      <span style={{ background: estadoStyle.bg, color: estadoStyle.color, borderRadius: 100, padding: "3px 10px", fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        {estadoStyle.label}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
-                      <div style={{ fontSize: 11, color: C.sub }}>Orden #{p.id_venta} · {fecha} · {p.cantidad} {p.cantidad === 1 ? "pieza" : "piezas"}</div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>{fmt(Number(p.total))}</div>
-                    </div>
+                    ))}
+                  </div>
+
+                  {/* Total de la orden */}
+                  <div style={{ padding: "12px 20px", borderTop: `2px solid ${C.orange}`, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 13, color: C.sub }}>
+                      {orden.items.length} {orden.items.length === 1 ? "obra" : "obras"}
+                    </span>
+                    <span style={{ fontSize: 11, color: C.border }}>|</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Total:</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>
+                      {fmt(orden.totalGrupo)}
+                    </span>
                   </div>
                 </div>
               );
