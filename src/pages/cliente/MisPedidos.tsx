@@ -1,7 +1,7 @@
 // src/pages/cliente/MisPedidos.tsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Package, CheckCircle, XCircle, Clock } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 
@@ -40,11 +40,44 @@ interface Pedido {
   fecha_venta: string;
 }
 
+const STATUS_BANNER: Record<string, { bg: string; border: string; color: string; icon: React.ReactNode; title: string; msg: string }> = {
+  success: {
+    bg: "#F0FDF4", border: "#86EFAC", color: "#166534",
+    icon: <CheckCircle size={22} strokeWidth={2} />,
+    title: "¡Pago confirmado!",
+    msg: "Tu orden fue procesada exitosamente. Te avisaremos cuando sea enviada.",
+  },
+  failure: {
+    bg: "#FEF2F2", border: "#FCA5A5", color: "#991B1B",
+    icon: <XCircle size={22} strokeWidth={2} />,
+    title: "Pago rechazado",
+    msg: "No pudimos procesar tu pago. Intenta de nuevo o usa otro método.",
+  },
+  pending: {
+    bg: "#FFFBEB", border: "#FCD34D", color: "#92400E",
+    icon: <Clock size={22} strokeWidth={2} />,
+    title: "Pago en revisión",
+    msg: "Tu pago está siendo verificado. Te notificaremos cuando se confirme.",
+  },
+};
+
 export default function MisPedidos() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
+  const [banner, setBanner] = useState<string | null>(null);
+
+  // Detect ?status= from MercadoPago redirect
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status && STATUS_BANNER[status]) {
+      setBanner(status);
+      // Remove ?status= from URL without reloading
+      window.history.replaceState({}, "", "/mi-cuenta/pedidos");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const token = authService.getToken();
@@ -75,6 +108,26 @@ export default function MisPedidos() {
       </header>
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
+
+        {/* Payment status banner */}
+        {banner && STATUS_BANNER[banner] && (() => {
+          const b = STATUS_BANNER[banner];
+          return (
+            <div style={{ background: b.bg, border: `1px solid ${b.border}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "flex-start", gap: 14, color: b.color }}>
+              <span style={{ flexShrink: 0, marginTop: 1 }}>{b.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{b.title}</div>
+                <div style={{ fontSize: 13, opacity: .85 }}>{b.msg}</div>
+              </div>
+              <button
+                onClick={() => setBanner(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: b.color, opacity: 0.6, fontSize: 18, lineHeight: 1, padding: "0 2px", flexShrink: 0 }}
+                aria-label="Cerrar"
+              >✕</button>
+            </div>
+          );
+        })()}
+
         {loading ? (
           <div style={{ textAlign: "center", padding: 60, color: C.sub, fontSize: 14 }}>Cargando pedidos...</div>
         ) : pedidos.length === 0 ? (
