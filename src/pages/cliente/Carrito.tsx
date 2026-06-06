@@ -1,16 +1,25 @@
 // src/pages/cliente/Carrito.tsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingCart, ArrowLeft } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, Search, X } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
+import { emitCartUpdate } from "../../context/CartContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const C = {
-  orange: "#E8640C", ink: "#14121E", sub: "#9896A8",
-  bg: "#F9F8FC", card: "#FFFFFF", border: "#E6E4EF", red: "#C4304A",
+  orange: "#E8640C",
+  ink: "#14121E",
+  sub: "#9896A8",
+  subLight: "#C4C2D0",
+  bg: "#F9F8FC",
+  card: "#FFFFFF",
+  border: "#E6E4EF",
+  red: "#C4304A",
+  redBg: "#FEF2F2",
 };
+
 const SANS  = "'Outfit', sans-serif";
 const SERIF = "'SolveraLorvane', serif";
 const NEXA  = "'Nexa-Heavy', sans-serif";
@@ -27,13 +36,49 @@ interface ItemCarrito {
   precio_base: string;
   cantidad: number;
   artista_alias: string;
+  stock_disponible: number;
+}
+
+function StockBadge({ stock, cantidad }: { stock: number; cantidad: number }) {
+  const libre = Math.max(0, stock - cantidad);
+  if (stock <= 0) {
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase",
+        color: C.red, background: "#FEF2F2", borderRadius: 4, padding: "2px 7px",
+      }}>
+        Sin stock
+      </span>
+    );
+  }
+  if (libre <= 3) {
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase",
+        color: "#92400E", background: "#FFF7ED", borderRadius: 4, padding: "2px 7px",
+      }}>
+        ¡Últimas {stock}!
+      </span>
+    );
+  }
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 600, color: C.sub, letterSpacing: ".04em",
+    }}>
+      {stock} disponibles
+    </span>
+  );
 }
 
 export default function Carrito() {
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
   const { showToast } = useToast();
-  const [items, setItems] = useState<ItemCarrito[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems]       = useState<ItemCarrito[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [search, setSearch]     = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const token   = authService.getToken();
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
@@ -42,18 +87,27 @@ export default function Carrito() {
     try {
       const res  = await fetch(`${API_URL}/api/carrito`, { headers });
       const data = await res.json();
-      if (data.success) setItems(data.data);
+      if (data.success) {
+        setItems(data.data);
+        setSelected(new Set(data.data.map((i: ItemCarrito) => i.id_carrito)));
+        emitCartUpdate();
+      }
     } catch {
       showToast("Error al cargar el carrito", "err");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchCarrito(); }, [fetchCarrito]);
 
   const actualizarCantidad = async (id_carrito: number, nuevaCantidad: number) => {
     if (nuevaCantidad < 1) return;
+    const item = items.find(i => i.id_carrito === id_carrito);
+    if (item && nuevaCantidad > item.stock_disponible) {
+      showToast(`Solo quedan ${item.stock_disponible} unidades disponibles`, "err");
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/api/carrito/${id_carrito}`, {
         method: "PUT", headers,
@@ -66,113 +120,666 @@ export default function Carrito() {
   };
 
   const eliminar = async (id_carrito: number) => {
+    setDeletingId(id_carrito);
     try {
       const res = await fetch(`${API_URL}/api/carrito/${id_carrito}`, { method: "DELETE", headers });
       if (res.ok) {
         setItems(prev => prev.filter(i => i.id_carrito !== id_carrito));
+        setSelected(prev => { const s = new Set(prev); s.delete(id_carrito); return s; });
         showToast("Obra eliminada del carrito", "ok");
+        emitCartUpdate();
       }
     } catch {
       showToast("Error al eliminar", "err");
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const total = items.reduce((sum, i) => sum + Number(i.precio_base) * i.cantidad, 0);
+  const toggleItem = (id: number) => {
+    setSelected(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  const toggleAll = () => {
+    const visible = filteredItems.map(i => i.id_carrito);
+    const allVisibleSelected = visible.every(id => selected.has(id));
+    if (allVisibleSelected) {
+      setSelected(prev => { const s = new Set(prev); visible.forEach(id => s.delete(id)); return s; });
+    } else {
+      setSelected(prev => { const s = new Set(prev); visible.forEach(id => s.add(id)); return s; });
+    }
+  };
+
+  const filteredItems = useMemo(() => {
+    if (!search.trim()) return items;
+    const q = search.toLowerCase();
+    return items.filter(i =>
+      i.titulo.toLowerCase().includes(q) ||
+      i.artista_alias.toLowerCase().includes(q)
+    );
+  }, [items, search]);
+
+  const allChecked  = filteredItems.length > 0 && filteredItems.every(i => selected.has(i.id_carrito));
+  const someChecked = filteredItems.some(i => selected.has(i.id_carrito)) && !allChecked;
+
+  const itemsSeleccionados = useMemo(
+    () => items.filter(i => selected.has(i.id_carrito)),
+    [items, selected]
+  );
+
+  const totalSeleccionado = itemsSeleccionados.reduce(
+    (sum, i) => sum + Number(i.precio_base) * i.cantidad, 0
+  );
+
+  const handleCheckout = () => {
+    if (selected.size === 0) {
+      showToast("Selecciona al menos una obra para continuar", "err");
+      return;
+    }
+    sessionStorage.setItem("ids_carrito_checkout", JSON.stringify([...selected]));
+    navigate("/checkout");
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: SANS }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
         @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); }
         @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
-        .car-item { transition: box-shadow .2s; }
-        .car-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-        .car-qty-btn { width:28px; height:28px; border-radius:50%; border:1px solid ${C.border}; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .18s; }
-        .car-qty-btn:hover:not(:disabled) { border-color:${C.orange}; color:${C.orange}; }
-        .car-qty-btn:disabled { opacity:.35; cursor:not-allowed; }
-        .car-del-btn { background:none; border:none; cursor:pointer; color:${C.sub}; display:flex; align-items:center; padding:6px; border-radius:6px; transition:color .18s, background .18s; }
-        .car-del-btn:hover { color:${C.red}; background:#FEF2F2; }
+
+        .car-item {
+          transition: box-shadow .25s ease, opacity .2s ease, background .18s ease;
+        }
+        .car-item:hover {
+          box-shadow: 0 4px 20px rgba(20,18,30,.07);
+          z-index: 1;
+          position: relative;
+        }
+        .car-item.deselected { opacity: .5; }
+
+        .car-checkbox {
+          width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+          border: 2px solid ${C.border}; background: #fff; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: all .18s ease;
+        }
+        .car-checkbox.checked { background: ${C.orange}; border-color: ${C.orange}; }
+        .car-checkbox.indeterminate { background: #fff; border-color: ${C.orange}; }
+        .car-checkbox:hover { border-color: ${C.orange}; }
+
+        .car-qty-btn {
+          width: 30px; height: 30px; border-radius: 50%;
+          border: 1.5px solid ${C.border};
+          background: #fff; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: all .18s ease; color: ${C.ink};
+        }
+        .car-qty-btn:hover:not(:disabled) { border-color: ${C.orange}; color: ${C.orange}; background: #FFF4ED; }
+        .car-qty-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+        .car-del-btn {
+          width: 34px; height: 34px; border-radius: 8px;
+          background: none; border: none; cursor: pointer; color: ${C.subLight};
+          display: flex; align-items: center; justify-content: center;
+          transition: color .18s, background .18s;
+        }
+        .car-del-btn:hover { color: ${C.red}; background: ${C.redBg}; }
+        .car-del-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        .checkout-btn {
+          transition: background .22s ease, transform .15s ease, box-shadow .22s ease;
+        }
+        .checkout-btn:hover:not(:disabled) {
+          background: #D4570A !important;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 24px rgba(232,100,12,.38);
+        }
+        .checkout-btn:disabled { opacity: .5; cursor: not-allowed; }
+        .checkout-btn:active:not(:disabled) { transform: translateY(0); }
+
+        .back-btn {
+          display: flex; align-items: center; gap: 7px;
+          background: none; border: none; cursor: pointer;
+          font-family: ${SANS}; font-size: 13px; font-weight: 600;
+          color: ${C.sub}; transition: color .18s;
+        }
+        .back-btn:hover { color: ${C.ink}; }
+
+        .search-input {
+          border: none; outline: none; background: transparent;
+          font-family: ${SANS}; font-size: 13px; color: ${C.ink};
+          width: 100%; min-width: 0;
+        }
+        .search-input::placeholder { color: ${C.subLight}; }
+
+        .img-thumb { transition: transform .3s ease; }
+        .car-item:hover .img-thumb { transform: scale(1.04); }
+
+        .select-all-row {
+          display: flex; align-items: center; gap: 14px;
+          transition: background .18s;
+          padding: 11px 20px;
+          cursor: pointer;
+          border-bottom: 1px solid ${C.border};
+        }
+        .select-all-row:hover { background: #FAFAFD; }
+
+        .summary-item-row {
+          display: flex; align-items: flex-start; gap: 10px;
+          padding: 9px 0;
+          border-bottom: 1px solid #F2F0F8;
+        }
+        .summary-item-row:last-child { border-bottom: none; }
+
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .car-item { animation: fadeSlideIn .28s ease both; }
+
+        @keyframes shimmer {
+          0%  { background-position: 200% 0; }
+          100%{ background-position: -200% 0; }
+        }
+
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; }
+          50% { opacity: .4; }
+        }
       `}</style>
 
-      <header style={{ background: "#fff", borderBottom: `1px solid ${C.border}`, padding: "0 40px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button onClick={() => navigate("/mi-cuenta")} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontFamily: SERIF, fontSize: 18, fontWeight: 900, color: C.ink }}>
-          <ArrowLeft size={18} strokeWidth={2} />
-          Mi Carrito
-        </button>
-        <span style={{ fontSize: 13, color: C.sub }}>{items.length} {items.length === 1 ? "obra" : "obras"}</span>
-      </header>
-
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", display: "grid", gridTemplateColumns: items.length > 0 ? "1fr 300px" : "1fr", gap: 24, alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {loading ? (
-            <div style={{ textAlign: "center", padding: 60, color: C.sub, fontSize: 14 }}>Cargando carrito...</div>
-          ) : items.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 80 }}>
-              <ShoppingCart size={48} color={C.border} strokeWidth={1} style={{ marginBottom: 16 }} />
-              <div style={{ fontSize: 18, fontWeight: 700, color: C.ink, marginBottom: 8 }}>Tu carrito está vacío</div>
-              <div style={{ fontSize: 13, color: C.sub, marginBottom: 24 }}>Explora el catálogo y agrega obras</div>
-              <button onClick={() => navigate("/catalogo")} style={{ background: C.orange, color: "#fff", border: "none", borderRadius: 100, padding: "11px 24px", fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", cursor: "pointer", fontFamily: SANS }}>
-                Explorar catálogo
-              </button>
-            </div>
-          ) : items.map(item => (
-            <div key={item.id_carrito} className="car-item" style={{ background: C.card, borderRadius: 12, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", display: "flex", gap: 16, alignItems: "center" }}>
-              <div style={{ width: 72, height: 90, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "#ece9e4", cursor: "pointer" }} onClick={() => navigate(`/obras/${item.slug}`)}>
-                {item.imagen_principal
-                  ? <img src={item.imagen_principal} alt={item.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: C.sub }}>🖼</div>
-                }
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.titulo}</div>
-                <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>{item.artista_alias}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: C.orange, marginTop: 8, fontFamily: NEXA }}>{fmt(Number(item.precio_base))}</div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1}>
-                  <Minus size={11} strokeWidth={2.5} />
-                </button>
-                <span style={{ fontSize: 14, fontWeight: 700, minWidth: 20, textAlign: "center" }}>{item.cantidad}</span>
-                <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad + 1)} disabled={item.cantidad >= 10}>
-                  <Plus size={11} strokeWidth={2.5} />
-                </button>
-              </div>
-              <div style={{ minWidth: 80, textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: C.ink }}>{fmt(Number(item.precio_base) * item.cantidad)}</div>
-              </div>
-              <button className="car-del-btn" onClick={() => eliminar(item.id_carrito)}>
-                <Trash2 size={15} strokeWidth={2} />
-              </button>
-            </div>
-          ))}
+      {/* ── Header ── */}
+      <header style={{
+        background: "#fff",
+        borderBottom: `1px solid ${C.border}`,
+        padding: "0 32px",
+        height: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 20,
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+      }}>
+        {/* Back + Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
+          <button className="back-btn" onClick={() => navigate(-1)}>
+            <ArrowLeft size={15} strokeWidth={2} />
+            Volver
+          </button>
+          <div style={{ width: 1, height: 18, background: C.border }} />
+          {/* Logo */}
+          <div
+            onClick={() => navigate("/")}
+            style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}
+          >
+            <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 900, color: C.ink, letterSpacing: "-.01em" }}>
+              NU★B
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: ".18em", textTransform: "uppercase", marginTop: 2 }}>
+              Studio
+            </span>
+          </div>
         </div>
 
+        {/* Search bar */}
         {items.length > 0 && (
-          <div style={{ background: C.card, borderRadius: 12, padding: "24px", boxShadow: "0 1px 4px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.055)", position: "sticky", top: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginBottom: 20, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>Resumen del pedido</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: C.sub }}>Subtotal ({items.length} {items.length === 1 ? "obra" : "obras"})</span>
-                <span style={{ fontWeight: 600, color: C.ink }}>{fmt(total)}</span>
+          <div style={{
+            flex: 1, maxWidth: 340,
+            display: "flex", alignItems: "center", gap: 10,
+            background: searchFocused ? "#fff" : C.bg,
+            border: `1.5px solid ${searchFocused ? C.orange : C.border}`,
+            borderRadius: 100,
+            padding: "0 16px",
+            height: 38,
+            transition: "border-color .18s, background .18s",
+          }}>
+            <Search size={14} color={searchFocused ? C.orange : C.sub} strokeWidth={2} style={{ flexShrink: 0 }} />
+            <input
+              className="search-input"
+              placeholder="Buscar en tu carrito..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                style={{ background: "none", border: "none", cursor: "pointer", color: C.sub, display: "flex", padding: 0, flexShrink: 0 }}
+              >
+                <X size={14} strokeWidth={2} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Contador */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <ShoppingBag size={15} color={C.sub} strokeWidth={1.5} />
+          <span style={{ fontSize: 13, color: C.sub, fontWeight: 500 }}>
+            {items.length} {items.length === 1 ? "obra" : "obras"}
+          </span>
+        </div>
+      </header>
+
+      <main style={{
+        maxWidth: 1020,
+        margin: "0 auto",
+        padding: "36px 24px",
+        display: "grid",
+        gridTemplateColumns: items.length > 0 ? "1fr 308px" : "1fr",
+        gap: 24,
+        alignItems: "start",
+      }}>
+
+        {/* ── Lista ── */}
+        <div>
+
+          {/* Título de sección */}
+          {!loading && items.length > 0 && (
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
+              <div>
+                <h1 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
+                  Mi carrito
+                </h1>
+                {search && (
+                  <p style={{ fontSize: 12, color: C.sub, margin: "4px 0 0", fontWeight: 500 }}>
+                    {filteredItems.length} resultado{filteredItems.length !== 1 ? "s" : ""} para «{search}»
+                  </p>
+                )}
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: C.sub }}>Envío</span>
-                <span style={{ color: C.sub, fontSize: 11 }}>A coordinar</span>
+              {selected.size > 0 && (
+                <span style={{ fontSize: 12, color: C.sub, fontWeight: 500 }}>
+                  {selected.size} de {items.length} {selected.size === 1 ? "seleccionada" : "seleccionadas"}
+                </span>
+              )}
+            </div>
+          )}
+
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[1, 2, 3].map(n => (
+                <div key={n} style={{
+                  height: 108, borderRadius: 16,
+                  background: `linear-gradient(90deg, #ece9f0 25%, #f5f3f8 50%, #ece9f0 75%)`,
+                  backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite",
+                }} />
+              ))}
+            </div>
+
+          ) : items.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "88px 32px" }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: "50%", background: "#F3F0F8",
+                display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px",
+              }}>
+                <ShoppingBag size={30} color={C.subLight} strokeWidth={1.5} />
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.ink, fontFamily: SERIF, marginBottom: 10 }}>
+                Tu carrito está vacío
+              </div>
+              <div style={{ fontSize: 14, color: C.sub, marginBottom: 32, lineHeight: 1.6 }}>
+                Descubre obras únicas de artistas de la Huasteca Hidalguense
+              </div>
+              <button
+                onClick={() => navigate("/catalogo")}
+                style={{
+                  background: C.orange, color: "#fff", border: "none",
+                  borderRadius: 100, padding: "13px 28px",
+                  fontSize: 11, fontWeight: 700, letterSpacing: ".16em",
+                  textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                }}
+              >
+                Explorar catálogo <ArrowRight size={13} strokeWidth={2.5} />
+              </button>
+            </div>
+
+          ) : filteredItems.length === 0 ? (
+            <div style={{
+              background: C.card, borderRadius: 20, padding: "48px 32px", textAlign: "center",
+              boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)",
+            }}>
+              <div style={{ fontSize: 14, color: C.sub, marginBottom: 12 }}>
+                Sin resultados para «{search}»
+              </div>
+              <button
+                onClick={() => setSearch("")}
+                style={{
+                  background: "none", border: `1.5px solid ${C.border}`, borderRadius: 100,
+                  padding: "8px 20px", fontSize: 12, fontWeight: 600, color: C.ink,
+                  cursor: "pointer", fontFamily: SANS,
+                }}
+              >
+                Limpiar búsqueda
+              </button>
+            </div>
+
+          ) : (
+            <div style={{
+              background: C.card, borderRadius: 20,
+              boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)",
+              overflow: "hidden",
+            }}>
+              {/* Select-all row */}
+              <div className="select-all-row" onClick={toggleAll}>
+                <div className={`car-checkbox ${allChecked ? "checked" : someChecked ? "indeterminate" : ""}`}>
+                  {allChecked && (
+                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4.5L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  {someChecked && !allChecked && (
+                    <svg width="10" height="2" viewBox="0 0 10 2" fill="none">
+                      <rect y=".5" width="10" height="1" rx=".5" fill={C.orange}/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: C.ink, userSelect: "none" }}>
+                  {allChecked ? "Deseleccionar todo" : "Seleccionar todo"}
+                </span>
+              </div>
+
+              {/* Items */}
+              {filteredItems.map((item, idx) => {
+                const isSelected = selected.has(item.id_carrito);
+                const stock = Number(item.stock_disponible);
+                const atLimit = item.cantidad >= stock;
+
+                return (
+                  <div
+                    key={item.id_carrito}
+                    className={`car-item${isSelected ? "" : " deselected"}`}
+                    style={{
+                      padding: "16px 20px",
+                      display: "flex", gap: 14, alignItems: "center",
+                      borderBottom: idx < filteredItems.length - 1 ? `1px solid ${C.border}` : "none",
+                      animationDelay: `${idx * 55}ms`,
+                      background: isSelected ? "#fff" : "#FAFAFD",
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <div className={`car-checkbox${isSelected ? " checked" : ""}`} onClick={() => toggleItem(item.id_carrito)}>
+                      {isSelected && (
+                        <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                          <path d="M1 4.5L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+
+                    {/* Thumbnail */}
+                    <div
+                      style={{
+                        width: 72, height: 88, borderRadius: 10, overflow: "hidden",
+                        flexShrink: 0, background: "#EDE9E3", cursor: "pointer",
+                      }}
+                      onClick={() => navigate(`/obras/${item.slug}`)}
+                    >
+                      {item.imagen_principal
+                        ? <img className="img-thumb" src={item.imagen_principal} alt={item.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <ShoppingBag size={20} color={C.subLight} strokeWidth={1.5} />
+                          </div>
+                      }
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        onClick={() => navigate(`/obras/${item.slug}`)}
+                        style={{
+                          fontSize: 14, fontWeight: 700, color: C.ink,
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          cursor: "pointer", marginBottom: 2,
+                        }}
+                      >
+                        {item.titulo}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 6, fontWeight: 500 }}>
+                        {item.artista_alias}
+                      </div>
+                      {/* Stock badge */}
+                      <StockBadge stock={stock} cantidad={item.cantidad} />
+                    </div>
+
+                    {/* Precio */}
+                    <div style={{ textAlign: "center", flexShrink: 0, minWidth: 72 }}>
+                      <div style={{ fontSize: 11, color: C.sub, fontWeight: 500, marginBottom: 3 }}>Precio</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontFamily: NEXA }}>
+                        {fmt(Number(item.precio_base))}
+                      </div>
+                    </div>
+
+                    {/* Cantidad */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1} aria-label="Reducir">
+                        <Minus size={11} strokeWidth={2.5} />
+                      </button>
+                      <span style={{ fontSize: 14, fontWeight: 700, minWidth: 22, textAlign: "center", color: C.ink }}>
+                        {item.cantidad}
+                      </span>
+                      <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad + 1)} disabled={atLimit} aria-label="Aumentar">
+                        <Plus size={11} strokeWidth={2.5} />
+                      </button>
+                    </div>
+
+                    {/* Subtotal */}
+                    <div style={{ minWidth: 80, textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: C.sub, fontWeight: 500, marginBottom: 3 }}>Subtotal</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>
+                        {fmt(Number(item.precio_base) * item.cantidad)}
+                      </div>
+                    </div>
+
+                    {/* Eliminar */}
+                    <button
+                      className="car-del-btn"
+                      onClick={() => eliminar(item.id_carrito)}
+                      disabled={deletingId === item.id_carrito}
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 size={14} strokeWidth={1.8} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Panel resumen ── */}
+        {items.length > 0 && (
+          <div style={{ position: "sticky", top: 80 }}>
+            {/* Resumen card */}
+            <div style={{
+              background: C.card, borderRadius: 20, overflow: "hidden",
+              boxShadow: "0 4px 24px rgba(20,18,30,.07), 0 0 0 1px rgba(20,18,30,.055)",
+            }}>
+              {/* Header del resumen */}
+              <div style={{
+                background: C.ink, padding: "18px 22px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <span style={{
+                  fontFamily: SERIF, fontSize: 15, fontWeight: 900, color: "#fff",
+                  letterSpacing: "-.01em",
+                }}>
+                  Resumen de compra
+                </span>
+                {selected.size > 0 && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase",
+                    color: C.orange, background: "rgba(232,100,12,.15)", borderRadius: 4, padding: "3px 8px",
+                  }}>
+                    {selected.size} {selected.size === 1 ? "obra" : "obras"}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ padding: "20px 22px" }}>
+                {/* Mini-lista seleccionados */}
+                {itemsSeleccionados.length > 0 ? (
+                  <div style={{ marginBottom: 18 }}>
+                    {itemsSeleccionados.map(item => (
+                      <div key={item.id_carrito} className="summary-item-row">
+                        {/* Thumb mini */}
+                        <div style={{
+                          width: 36, height: 44, borderRadius: 6, overflow: "hidden",
+                          flexShrink: 0, background: "#F0EDE8",
+                        }}>
+                          {item.imagen_principal && (
+                            <img src={item.imagen_principal} alt={item.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: 12, fontWeight: 600, color: C.ink,
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                            marginBottom: 2,
+                          }}>
+                            {item.titulo}
+                          </div>
+                          <div style={{ fontSize: 11, color: C.sub }}>
+                            {item.artista_alias}
+                            {item.cantidad > 1 && <span style={{ color: C.subLight }}> ×{item.cantidad}</span>}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: C.ink, flexShrink: 0 }}>
+                          {fmt(Number(item.precio_base) * item.cantidad)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                    padding: "20px 0 24px", marginBottom: 18,
+                  }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: "50%", background: "#F3F0F8",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <ShoppingBag size={18} color={C.subLight} strokeWidth={1.5} />
+                    </div>
+                    <div style={{ fontSize: 12, color: C.sub, textAlign: "center", lineHeight: 1.5 }}>
+                      Selecciona obras del carrito<br/>para ver el resumen
+                    </div>
+                  </div>
+                )}
+
+                {/* Totales */}
+                <div style={{ borderTop: `1.5px solid ${C.border}`, paddingTop: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: C.sub, fontWeight: 500 }}>Subtotal</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{fmt(totalSeleccionado)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 18, alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: C.sub, fontWeight: 500 }}>Envío</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase",
+                      color: "#15803D", background: "#F0FDF4", borderRadius: 4, padding: "2px 7px",
+                    }}>
+                      A coordinar
+                    </span>
+                  </div>
+
+                  {/* Total grande */}
+                  <div style={{
+                    background: C.bg, borderRadius: 12, padding: "14px 16px",
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    marginBottom: 18,
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.ink, textTransform: "uppercase", letterSpacing: ".08em" }}>Total</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: C.orange, fontFamily: NEXA }}>
+                      {fmt(totalSeleccionado)}
+                    </span>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    className="checkout-btn"
+                    onClick={handleCheckout}
+                    disabled={selected.size === 0}
+                    style={{
+                      width: "100%", padding: "14px", borderRadius: 100,
+                      background: selected.size === 0 ? C.border : C.orange,
+                      color: selected.size === 0 ? C.sub : "#fff",
+                      border: "none",
+                      fontSize: 11, fontWeight: 800, letterSpacing: ".18em",
+                      textTransform: "uppercase", cursor: selected.size === 0 ? "not-allowed" : "pointer",
+                      fontFamily: SANS, display: "flex", alignItems: "center",
+                      justifyContent: "center", gap: 8,
+                    }}
+                  >
+                    {selected.size === 0
+                      ? "Selecciona obras"
+                      : `Pagar ${selected.size} ${selected.size === 1 ? "obra" : "obras"}`
+                    }
+                    {selected.size > 0 && <ArrowRight size={14} strokeWidth={2.5} />}
+                  </button>
+
+                  {/* Métodos de pago */}
+                  <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+                    <div style={{ fontSize: 10, color: C.subLight, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", textAlign: "center", marginBottom: 12 }}>
+                      Métodos aceptados
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+                      {/* MercadoPago */}
+                      <div style={{ background: "#009EE3", borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center" }}>
+                        <svg width="56" height="13" viewBox="0 0 112 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <text x="0" y="20" fill="white" fontFamily="Arial" fontWeight="700" fontSize="17">Mercado Pago</text>
+                        </svg>
+                      </div>
+                      {/* OXXO */}
+                      <div style={{ background: "#E8131A", borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center" }}>
+                        <span style={{ color: "#fff", fontSize: 11, fontWeight: 900, letterSpacing: ".06em", fontFamily: NEXA }}>OXXO</span>
+                      </div>
+                      {/* Visa */}
+                      <div style={{ background: "#1A1F71", borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center" }}>
+                        <span style={{ color: "#fff", fontSize: 14, fontWeight: 900, letterSpacing: ".04em", fontStyle: "italic", fontFamily: NEXA }}>VISA</span>
+                      </div>
+                      {/* MC */}
+                      <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 9px", display: "flex", alignItems: "center", gap: 3 }}>
+                        <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#EB001B" }} />
+                        <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#F79E1B", marginLeft: -6 }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Seguridad */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
+                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+                      <path d="M6 1L1 3v4c0 2.761 2.239 5 5 5s5-2.239 5-5V3L6 1z" stroke={C.subLight} strokeWidth="1.3" fill="none" strokeLinejoin="round"/>
+                      <path d="M4 7l1.5 1.5L8 5.5" stroke={C.subLight} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span style={{ fontSize: 11, color: C.subLight, fontWeight: 500 }}>Pago seguro · 256-bit SSL</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: C.ink, marginBottom: 20, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
-              <span>Total</span>
-              <span style={{ color: C.orange, fontFamily: NEXA }}>{fmt(total)}</span>
-            </div>
+
+            {/* Seguir explorando */}
             <button
-              onClick={() => navigate("/checkout")}
-              style={{ width: "100%", padding: "14px", borderRadius: 100, background: C.orange, color: "#fff", border: "none", fontSize: 11, fontWeight: 800, letterSpacing: ".16em", textTransform: "uppercase", cursor: "pointer", fontFamily: SANS, transition: "background .22s" }}
+              onClick={() => navigate("/catalogo")}
+              style={{
+                marginTop: 12, width: "100%", background: "none",
+                border: `1.5px solid ${C.border}`, borderRadius: 100,
+                padding: "11px", fontSize: 11, fontWeight: 700, letterSpacing: ".14em",
+                textTransform: "uppercase", color: C.sub, cursor: "pointer",
+                fontFamily: SANS, transition: "border-color .18s, color .18s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.ink; (e.currentTarget as HTMLButtonElement).style.color = C.ink; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.sub; }}
             >
-              Proceder al pago →
+              Seguir explorando
             </button>
-            <p style={{ fontSize: 10, color: C.sub, textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>
-              Serás redirigido a la pasarela de pago para completar tu compra.
-            </p>
           </div>
         )}
       </main>

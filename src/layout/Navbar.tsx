@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import logoImg from "../assets/images/logo.png";
 import { authService } from "../services/authService";
+import { useCart } from "../context/CartContext";
 
 const C = {
   orange:   "#E8640C",
@@ -56,6 +57,7 @@ export default function Navbar() {
   const userName   = authService.getUserName() || "Mi cuenta";
   const userEmail  = authService.getUserEmail() || "";
   const userRol    = localStorage.getItem("userRol") || "cliente";
+  const { cartCount } = useCart();
 
   // Detectar scroll para cambiar fondo del navbar
   useEffect(() => {
@@ -202,6 +204,43 @@ export default function Navbar() {
 
           {/* ── Acciones ── */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+
+            {/* Botón carrito con badge */}
+            {isLoggedIn && userRol === "cliente" && (
+              <button
+                onClick={() => navigate("/carrito")}
+                style={{
+                  position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 40, height: 40, borderRadius: 11,
+                  background: "rgba(255,255,255,0.1)",
+                  border: `1px solid ${C.navBorder}`,
+                  cursor: "pointer", color: C.navTextMuted,
+                  transition: "all .15s",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.18)"; (e.currentTarget as HTMLButtonElement).style.color = C.navText; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = C.navTextMuted; }}
+                aria-label="Ir al carrito"
+              >
+                <ShoppingBag size={18} strokeWidth={1.8} />
+                {cartCount > 0 && (
+                  <span style={{
+                    position: "absolute", top: -5, right: -5,
+                    minWidth: 18, height: 18, borderRadius: 9,
+                    background: C.orange,
+                    color: "#fff",
+                    fontSize: 10, fontWeight: 800,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "0 4px",
+                    boxShadow: `0 2px 8px ${C.orange}70`,
+                    border: `2px solid ${C.navBg}`,
+                    fontFamily: FB,
+                    lineHeight: 1,
+                  }}>
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* No logueado */}
             {!isLoggedIn && (

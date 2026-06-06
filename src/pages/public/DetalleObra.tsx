@@ -5,6 +5,7 @@ import { Heart, Share2, ZoomIn, CheckCircle, Award, ShoppingCart } from "lucide-
 import { cacheGet, cacheSet } from "../../utils/apiCache";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
+import { emitCartUpdate } from "../../context/CartContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -77,6 +78,7 @@ export default function DetalleObra() {
       if (!res.ok) { showToast(data.message || "Error al agregar al carrito", "err"); return; }
       setEnCarrito(true);
       showToast(`${cantidad > 1 ? `${cantidad} piezas agregadas` : "Obra agregada"} al carrito`, "ok");
+      emitCartUpdate();
     } catch {
       showToast("Sin conexión con el servidor", "err");
     } finally {
