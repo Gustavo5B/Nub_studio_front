@@ -205,7 +205,12 @@ export default function DetalleObra() {
       return;
     }
     if (userRol !== "cliente" || likingObra) return;
+
+    // Actualización optimista — el UI responde inmediatamente sin esperar al servidor
+    const nuevoLiked = !liked;
+    setLiked(nuevoLiked);
     setLikingObra(true);
+
     try {
       const token = authService.getToken();
       const res   = await fetch(`${API_URL}/api/favoritos/${obra?.id_obra}`, {
@@ -214,11 +219,19 @@ export default function DetalleObra() {
       });
       const data = await res.json();
       if (data.success) {
+        // Confirmamos con el valor real del servidor
         setLiked(data.accion === "agregado");
-        showToast(data.accion === "agregado" ? "Agregada a favoritos" : "Eliminada de favoritos", "success");
+        showToast(data.accion === "agregado" ? "Agregada a favoritos" : "Eliminada de favoritos", "ok");
+      } else {
+        // Si falla, revertimos
+        setLiked(!nuevoLiked);
       }
-    } catch { /* silent */ }
-    setLikingObra(false);
+    } catch {
+      // Si hay error de red, revertimos
+      setLiked(!nuevoLiked);
+    } finally {
+      setLikingObra(false);
+    }
   };
 
   // ── PANTALLA DE CARGA
