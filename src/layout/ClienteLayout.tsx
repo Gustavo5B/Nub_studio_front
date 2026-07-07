@@ -1,7 +1,8 @@
 // src/layout/ClienteLayout.tsx
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Heart, ShoppingBag, User } from "lucide-react";
+import { Heart, ShoppingBag, User, LogOut, Palette, Package } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { authService } from "../services/authService";
 
 const C = {
   orange: "#E8640C", pink: "#A83B90", blue: "#2D6FBE",
@@ -15,18 +16,23 @@ export default function ClienteLayout() {
   const location  = useLocation();
   const { cartCount } = useCart();
   const nombre = localStorage.getItem("userName") || "Mi cuenta";
+
+  const handleLogout = () => {
+    authService.logout();
+    navigate("/login");
+  };
   const path   = location.pathname;
 
   const isActive = (p: string) => path === p || path.startsWith(p + "/");
 
   const linkStyle = (active: boolean): React.CSSProperties => ({
     background: "none", border: "none", cursor: "pointer", padding: "6px 0",
-    fontFamily: SANS, fontSize: 12, fontWeight: 600,
+    fontFamily: SANS, fontSize: 13.5, fontWeight: 600,
     color: active ? C.ink : C.sub,
-    letterSpacing: ".05em", transition: "color .15s",
-    display: "flex", alignItems: "center", gap: 6,
+    letterSpacing: ".04em", transition: "color .15s",
+    display: "flex", alignItems: "center", gap: 7,
     borderBottom: active ? `2px solid ${C.orange}` : "2px solid transparent",
-    paddingBottom: active ? 2 : 2,
+    paddingBottom: 2,
   });
 
   return (
@@ -69,36 +75,54 @@ export default function ClienteLayout() {
           </button>
 
           {/* Nav links */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 28, flex: 1, justifyContent: "center" }}>
-            <button className="cl-link" style={linkStyle(false)} onClick={() => navigate("/catalogo")}>
-              Galería
+          <nav style={{ display: "flex", alignItems: "center", gap: 34, flex: 1, justifyContent: "center" }}>
+            <button className="cl-link" style={linkStyle(isActive("/catalogo"))} onClick={() => navigate("/catalogo")}>
+              <Palette size={14} strokeWidth={1.8} /> Galería
             </button>
             <button className="cl-link" style={linkStyle(isActive("/mi-cuenta/pedidos"))} onClick={() => navigate("/mi-cuenta/pedidos")}>
-              Mis Pedidos
+              <Package size={14} strokeWidth={1.8} /> Mis Pedidos
             </button>
             <button className="cl-link" style={linkStyle(isActive("/mi-cuenta/favoritos"))} onClick={() => navigate("/mi-cuenta/favoritos")}>
-              <Heart size={12} strokeWidth={2} /> Favoritos
+              <Heart size={14} strokeWidth={1.8} /> Favoritos
             </button>
             <button className="cl-link" style={{ ...linkStyle(isActive("/mi-cuenta/carrito") || isActive("/checkout")), position: "relative" }} onClick={() => navigate("/mi-cuenta/carrito")}>
-              <ShoppingBag size={12} strokeWidth={2} /> Carrito
+              <ShoppingBag size={14} strokeWidth={1.8} /> Carrito
               {cartCount > 0 && (
                 <span className="cl-cart-badge">{cartCount > 9 ? "9+" : cartCount}</span>
               )}
             </button>
           </nav>
 
-          {/* Avatar + nombre */}
-          <button className="cl-link" style={{ ...linkStyle(isActive("/mi-cuenta") && !isActive("/mi-cuenta/pedidos") && !isActive("/mi-cuenta/favoritos") && !isActive("/mi-cuenta/carrito")), gap: 7 }} onClick={() => navigate("/mi-cuenta")}>
-            <div style={{
-              width: 28, height: 28, borderRadius: "50%", background: C.ink,
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <User size={13} color="#fff" strokeWidth={2} />
-            </div>
-            <span style={{ color: C.ink, fontSize: 12.5, fontWeight: 700 }}>
-              {nombre.split(" ")[0]}
-            </span>
-          </button>
+          {/* Avatar + nombre + logout */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button className="cl-link" style={{ ...linkStyle(isActive("/mi-cuenta") && !isActive("/mi-cuenta/pedidos") && !isActive("/mi-cuenta/favoritos") && !isActive("/mi-cuenta/carrito")), gap: 9 }} onClick={() => navigate("/mi-cuenta")}>
+              <div style={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: `linear-gradient(135deg, ${C.ink} 0%, #2D1A4A 100%)`,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                boxShadow: "0 2px 8px rgba(20,18,30,.25)",
+              }}>
+                <User size={16} color="#fff" strokeWidth={1.8} />
+              </div>
+              <span style={{ color: C.ink, fontSize: 13.5, fontWeight: 700 }}>
+                {nombre.split(" ")[0]}
+              </span>
+            </button>
+            <div style={{ width: 1, height: 16, background: C.border }} />
+            <button
+              title="Cerrar sesión"
+              onClick={handleLogout}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                padding: "7px 8px", display: "flex", alignItems: "center",
+                color: C.sub, transition: "color .15s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "#C4304A")}
+              onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
+            >
+              <LogOut size={18} strokeWidth={1.9} />
+            </button>
+          </div>
         </div>
       </header>
 

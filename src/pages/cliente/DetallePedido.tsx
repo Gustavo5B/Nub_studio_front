@@ -188,6 +188,24 @@ export default function DetallePedido() {
 
       <main style={{maxWidth:860, margin:"0 auto", padding:"44px 32px 100px"}}>
 
+        {/* Volver */}
+        <div style={{ marginBottom: 20 }}>
+          <button
+            onClick={() => navigate("/mi-cuenta/pedidos")}
+            style={{
+              display:"flex", alignItems:"center", gap:6,
+              background:"none", border:"none", cursor:"pointer",
+              padding:"6px 0", fontSize:12, fontWeight:600,
+              color:C.sub, fontFamily:SANS, letterSpacing:".04em",
+              transition:"color .15s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = C.ink)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
+          >
+            <ArrowLeft size={13} strokeWidth={2.5}/> Mis pedidos
+          </button>
+        </div>
+
         {/* ── Hero del pedido ── */}
         <div className="reveal" style={{
           background:C.card, borderRadius:22, overflow:"hidden",

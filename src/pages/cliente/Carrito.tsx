@@ -101,22 +101,28 @@ export default function Carrito() {
 
   useEffect(() => { fetchCarrito(); }, [fetchCarrito]);
 
-  const actualizarCantidad = async (id_carrito: number, nuevaCantidad: number) => {
+  const actualizarCantidad = (id_carrito: number, nuevaCantidad: number) => {
     if (nuevaCantidad < 1) return;
     const item = items.find(i => i.id_carrito === id_carrito);
-    if (item && nuevaCantidad > item.stock_disponible) {
+    if (!item) return;
+    if (nuevaCantidad > item.stock_disponible) {
       showToast(`Solo quedan ${item.stock_disponible} unidades disponibles`, "err");
       return;
     }
-    try {
-      const res = await fetch(`${API_URL}/api/carrito/${id_carrito}`, {
-        method: "PUT", headers,
-        body: JSON.stringify({ cantidad: nuevaCantidad }),
-      });
-      if (res.ok) setItems(prev => prev.map(i => i.id_carrito === id_carrito ? { ...i, cantidad: nuevaCantidad } : i));
-    } catch {
+    const cantidadAnterior = item.cantidad;
+    // Actualiza la UI de inmediato (optimistic update)
+    setItems(prev => prev.map(i => i.id_carrito === id_carrito ? { ...i, cantidad: nuevaCantidad } : i));
+    // Manda al servidor en segundo plano
+    fetch(`${API_URL}/api/carrito/${id_carrito}`, {
+      method: "PUT", headers,
+      body: JSON.stringify({ cantidad: nuevaCantidad }),
+    }).then(res => {
+      if (!res.ok) throw new Error();
+    }).catch(() => {
+      // Si falla, revierte al número anterior
+      setItems(prev => prev.map(i => i.id_carrito === id_carrito ? { ...i, cantidad: cantidadAnterior } : i));
       showToast("Error al actualizar cantidad", "err");
-    }
+    });
   };
 
   const eliminar = async (id_carrito: number) => {

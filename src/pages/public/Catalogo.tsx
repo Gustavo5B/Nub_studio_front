@@ -1,8 +1,9 @@
-// src/pages/public/Catalogo.tsx
+﻿// src/pages/public/Catalogo.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Search, X, Image as ImageIcon, Eye, ArrowRight, ShoppingCart, Heart } from "lucide-react";
 import { authService } from "../../services/authService";
+import ProtectedImage from "../../components/ProtectedImage";
 import { prefetchObra } from "../../utils/apiCache";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -113,10 +114,12 @@ function DetallePanel({
         {/* Imagen */}
         <div style={{ height: 320, position: "relative", flexShrink: 0, background: "#f7f5f2" }}>
           {obra.imagen_principal && (
-            <img src={obra.imagen_principal} alt={obra.titulo} style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover", filter: "saturate(.82) brightness(.94)",
-            }} />
+            <ProtectedImage
+              src={obra.imagen_principal}
+              alt={obra.titulo}
+              wrapStyle={{ position: "absolute", inset: 0 }}
+              imgStyle={{ width: "100%", height: "100%", objectFit: "cover", filter: "saturate(.82) brightness(.94)" }}
+            />
           )}
           <div style={{
             position: "absolute", inset: 0,
@@ -686,7 +689,7 @@ export default function Catalogo() {
                   )}
                 </Link>
               )}
-              <button onClick={handleLogout} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
+              <button onClick={handleLogout} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "11px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "9px 20px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
             </>
           )}
         </div>
@@ -892,7 +895,12 @@ export default function Catalogo() {
               >
                 <div className="cat-obra-card-img">
                   {obra.imagen_principal ? (
-                    <img src={obra.imagen_principal} alt={obra.titulo} />
+                    <ProtectedImage
+                      src={obra.imagen_principal}
+                      alt={obra.titulo}
+                      wrapStyle={{ width: "100%", height: "100%" }}
+                      imgStyle={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                   ) : (
                     <div style={{
                       width: "100%", height: "100%", background: "#ece9e4",

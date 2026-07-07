@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, ShieldCheck, Truck } from "lucide-react";
+import { MapPin, ShieldCheck, Truck, ArrowLeft, Lock } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import { authService } from "../../services/authService";
 
@@ -195,7 +195,7 @@ export default function Checkout() {
 
   const labelStyle: React.CSSProperties = {
     display: "block", fontSize: 11, fontWeight: 700, marginBottom: 6,
-    color: C.sub, letterSpacing: ".06em", textTransform: "uppercase",
+    color: C.ink, letterSpacing: ".06em", textTransform: "uppercase",
   };
 
   if (loading) return (
@@ -219,11 +219,11 @@ export default function Checkout() {
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
         @font-face { font-family: 'Nexa-Heavy'; src: url('/fonts/Nexa-Heavy.ttf') format('truetype'); }
         input, select, textarea { box-sizing: border-box; }
-        .pay-btn { transition: background .2s, transform .15s, box-shadow .2s; }
-        .pay-btn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,158,227,.4); }
-        .pay-btn:active:not(:disabled) { transform: translateY(0); }
-        .pay-btn:disabled { opacity: .6; cursor: not-allowed; }
-        .ck-grid { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; padding: 36px 24px 60px; }
+        .pay-btn { transition: all .2s; }
+        .pay-btn:hover:not(:disabled) { background: #15803D !important; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(21,128,61,.38); }
+        .pay-btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+        .pay-btn:disabled { opacity: .55; cursor: not-allowed; }
+        .ck-grid { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; padding: 4px 20px 60px; }
         .ck-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 780px) {
           .ck-grid { grid-template-columns: 1fr; padding: 20px 16px 48px; }
@@ -242,17 +242,35 @@ export default function Checkout() {
 
           {/* Tarjeta: Dirección */}
           <div style={{ background: C.card, borderRadius: 20, padding: "28px 28px 32px", boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FFF1E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MapPin size={18} color={C.orange} strokeWidth={2} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FFF1E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MapPin size={18} color={C.orange} strokeWidth={2} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontFamily: NEXA }}>Dirección de envío</div>
+                  <div style={{ fontSize: 12, color: C.sub }}>Ingresa dónde recibirás tu obra</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontFamily: NEXA }}>Dirección de envío</div>
-                <div style={{ fontSize: 12, color: C.sub }}>Ingresa dónde recibirás tu obra</div>
-              </div>
+              <button
+                onClick={() => navigate("/mi-cuenta/carrito")}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "#fff", border: `1.5px solid ${C.border}`,
+                  cursor: "pointer", padding: "7px 14px", borderRadius: 100,
+                  fontSize: 11.5, fontWeight: 700, color: C.ink,
+                  fontFamily: SANS, letterSpacing: ".04em",
+                  transition: "all .15s",
+                  boxShadow: "0 1px 4px rgba(20,18,30,.07)",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.ink; e.currentTarget.style.boxShadow = "0 2px 8px rgba(20,18,30,.13)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "0 1px 4px rgba(20,18,30,.07)"; }}
+              >
+                <ArrowLeft size={13} strokeWidth={2.5} /> Volver
+              </button>
             </div>
 
-            <form onSubmit={handlePagar}>
+            <form id="checkout-form" onSubmit={handlePagar}>
               <div className="ck-cols">
                 <div style={{ gridColumn: "span 2" }}>
                   <label style={labelStyle}>Calle *</label>
@@ -320,59 +338,6 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* ── Métodos de pago aceptados ── */}
-              <div style={{ marginTop: 28, padding: "20px", background: "#F9F8FC", borderRadius: 14, border: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 14 }}>
-                  Métodos de pago aceptados vía MercadoPago
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                  <div className="method-icon"><IconMP /></div>
-                  <div className="method-icon"><IconVisa /></div>
-                  <div className="method-icon"><IconMC /></div>
-                  <div className="method-icon"><IconAmex /></div>
-                  <div className="method-icon"><IconOXXO /></div>
-                  <div className="method-icon"><IconSpei /></div>
-                </div>
-                <div style={{ fontSize: 11, color: C.subLight, marginTop: 10, lineHeight: 1.5 }}>
-                  Tarjetas de crédito/débito, transferencia bancaria, efectivo en OXXO y más.
-                </div>
-              </div>
-
-              {/* ── Botón pagar ── */}
-              <button type="submit" disabled={procesando} className="pay-btn"
-                style={{
-                  width: "100%", marginTop: 20, padding: "16px",
-                  background: "#009EE3", color: "#fff", border: "none",
-                  borderRadius: 14, fontSize: 15, fontWeight: 700,
-                  cursor: "pointer", display: "flex", alignItems: "center",
-                  justifyContent: "center", gap: 10, fontFamily: SANS,
-                }}>
-                {procesando ? (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite" }}>
-                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity=".3"/>
-                      <path d="M12 2a10 10 0 0110 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                    Preparando pago...
-                  </>
-                ) : (
-                  <>
-                    <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
-                      <circle cx="24" cy="24" r="24" fill="white" fillOpacity=".2"/>
-                      <text x="24" y="29" textAnchor="middle" fontSize="12" fontWeight="bold" fill="white" fontFamily="Arial">MP</text>
-                    </svg>
-                    Continuar con MercadoPago
-                  </>
-                )}
-              </button>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12 }}>
-                <ShieldCheck size={13} color={C.subLight} strokeWidth={1.8} />
-                <span style={{ fontSize: 11, color: C.subLight }}>
-                  Pago 100% seguro · Tus datos están protegidos
-                </span>
-              </div>
             </form>
           </div>
         </div>
@@ -426,18 +391,59 @@ export default function Checkout() {
               <span style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>Total</span>
               <span style={{ fontSize: 22, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>{fmt(total)}</span>
             </div>
+
+            {/* Envío inline */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+              <Truck size={14} color={C.sub} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: C.sub, lineHeight: 1.4 }}>
+                Costo de envío coordinado con el artista tras el pago.
+              </span>
+            </div>
           </div>
 
-          {/* Envío info */}
-          <div style={{ background: C.card, borderRadius: 16, padding: "18px 20px", boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)" }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <Truck size={18} color={C.orange} strokeWidth={1.8} style={{ flexShrink: 0, marginTop: 1 }} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 3 }}>Envío personalizado</div>
-                <div style={{ fontSize: 12, color: C.sub, lineHeight: 1.5 }}>
-                  El costo y tiempo de envío se coordinará directamente con el artista una vez confirmado tu pago.
-                </div>
-              </div>
+          {/* Métodos de pago + botón pagar */}
+          <div style={{ background: C.card, borderRadius: 20, padding: "20px 20px 22px", boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 12 }}>
+              Métodos de pago aceptados
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
+              <div className="method-icon"><IconMP /></div>
+              <div className="method-icon"><IconVisa /></div>
+              <div className="method-icon"><IconMC /></div>
+              <div className="method-icon"><IconAmex /></div>
+              <div className="method-icon"><IconOXXO /></div>
+              <div className="method-icon"><IconSpei /></div>
+            </div>
+
+            <button type="submit" form="checkout-form" disabled={procesando} className="pay-btn"
+              style={{
+                width: "100%", padding: "14px 20px",
+                background: "#16A34A", color: "#fff", border: "none",
+                borderRadius: 100, fontSize: 12, fontWeight: 700,
+                letterSpacing: ".12em", textTransform: "uppercase",
+                cursor: "pointer", display: "flex", alignItems: "center",
+                justifyContent: "center", gap: 8, fontFamily: SANS,
+              }}>
+              {procesando ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite" }}>
+                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity=".35"/>
+                    <path d="M12 2a10 10 0 0110 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+                  </svg>
+                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <Lock size={14} strokeWidth={2} />
+                  Pagar ahora
+                </>
+              )}
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 10 }}>
+              <ShieldCheck size={11} color={C.subLight} strokeWidth={1.8} />
+              <span style={{ fontSize: 10.5, color: C.subLight, letterSpacing: ".02em" }}>Pago 100% seguro · Datos protegidos</span>
             </div>
           </div>
 

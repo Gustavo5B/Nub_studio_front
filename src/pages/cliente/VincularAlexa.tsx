@@ -137,38 +137,6 @@ export default function VincularAlexa() {
         }
       `}</style>
 
-      {/* ── Navbar ── */}
-      <header style={{
-        position: "sticky", top: 0, zIndex: 200,
-        background: "rgba(255,255,255,.92)", backdropFilter: "blur(14px)",
-        borderBottom: `1px solid ${C.border}`,
-        padding: "0 40px", height: 62,
-        display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 20,
-      }}>
-        <button
-          onClick={() => navigate(-1)}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            background: "none", border: "none", cursor: "pointer",
-            padding: "6px 0", fontSize: 13, fontWeight: 600,
-            color: C.sub, fontFamily: SANS,
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = C.ink)}
-          onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
-        >
-          <ArrowLeft size={14} strokeWidth={2}/> Volver
-        </button>
-
-        <div style={{ width: 1, height: 18, background: C.border }}/>
-
-        <button
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: SERIF, fontSize: 22, fontWeight: 900, color: C.ink, letterSpacing: "-.02em" }}
-          onClick={() => navigate("/")}
-        >
-          NU<span style={{ color: C.orange }}>★</span>B
-        </button>
-      </header>
-
       {/* ── Main ── */}
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "56px 24px 100px" }}>
 

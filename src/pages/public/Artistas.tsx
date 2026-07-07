@@ -1,4 +1,4 @@
-// src/pages/public/Artistas.tsx (REFACTORIZADO - LAYOUT VERTICAL)
+﻿// src/pages/public/Artistas.tsx (REFACTORIZADO - LAYOUT VERTICAL)
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Search, X, Grid3x3, LayoutList, Layers } from "lucide-react";
@@ -618,7 +618,7 @@ export default function Artistas() {
         ) : (
           <>
             <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(20,18,30,.35)", textDecoration:"none", padding:"6px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
-            <button onClick={handleLogout} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:"#14121E", border:"none", padding:"6px 14px", borderRadius:100, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .22s" }}>Salir</button>
+            <button onClick={handleLogout} style={{ fontSize: "11px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:"#14121E", border:"none", padding: "9px 20px", borderRadius:100, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .22s" }}>Salir</button>
           </>
         )}
       </div>
