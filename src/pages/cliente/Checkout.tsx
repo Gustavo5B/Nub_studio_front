@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
+import { MapPin, ShieldCheck, Truck } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import { authService } from "../../services/authService";
 
@@ -234,13 +234,6 @@ export default function Checkout() {
         .method-icon:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
       `}</style>
 
-      {/* Header */}
-      <header style={{ background: "#fff", borderBottom: `1px solid ${C.border}`, padding: "0 28px", height: 60, display: "flex", alignItems: "center" }}>
-        <button onClick={() => navigate("/mi-cuenta/carrito")} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: SANS }}>
-          <ArrowLeft size={16} strokeWidth={2.5} />
-          Volver al carrito
-        </button>
-      </header>
 
       <div className="ck-grid">
 

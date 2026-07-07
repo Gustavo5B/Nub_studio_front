@@ -1,7 +1,7 @@
 // src/pages/cliente/Carrito.tsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ArrowRight, Search, X } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 import { emitCartUpdate } from "../../context/CartContext";
@@ -292,81 +292,6 @@ export default function Carrito() {
         }
       `}</style>
 
-      {/* ── Header ── */}
-      <header style={{
-        background: "#fff",
-        borderBottom: `1px solid ${C.border}`,
-        padding: "0 32px",
-        height: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 20,
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-      }}>
-        {/* Back + Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
-          <button className="back-btn" onClick={() => navigate(-1)}>
-            <ArrowLeft size={15} strokeWidth={2} />
-            Volver
-          </button>
-          <div style={{ width: 1, height: 18, background: C.border }} />
-          {/* Logo */}
-          <div
-            onClick={() => navigate("/")}
-            style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}
-          >
-            <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 900, color: C.ink, letterSpacing: "-.01em" }}>
-              NU★B
-            </span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: ".18em", textTransform: "uppercase", marginTop: 2 }}>
-              Studio
-            </span>
-          </div>
-        </div>
-
-        {/* Search bar */}
-        {items.length > 0 && (
-          <div style={{
-            flex: 1, maxWidth: 340,
-            display: "flex", alignItems: "center", gap: 10,
-            background: searchFocused ? "#fff" : C.bg,
-            border: `1.5px solid ${searchFocused ? C.orange : C.border}`,
-            borderRadius: 100,
-            padding: "0 16px",
-            height: 38,
-            transition: "border-color .18s, background .18s",
-          }}>
-            <Search size={14} color={searchFocused ? C.orange : C.sub} strokeWidth={2} style={{ flexShrink: 0 }} />
-            <input
-              className="search-input"
-              placeholder="Buscar en tu carrito..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                style={{ background: "none", border: "none", cursor: "pointer", color: C.sub, display: "flex", padding: 0, flexShrink: 0 }}
-              >
-                <X size={14} strokeWidth={2} />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Contador */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <ShoppingBag size={15} color={C.sub} strokeWidth={1.5} />
-          <span style={{ fontSize: 13, color: C.sub, fontWeight: 500 }}>
-            {items.length} {items.length === 1 ? "obra" : "obras"}
-          </span>
-        </div>
-      </header>
 
       <main style={{
         maxWidth: 1020,
@@ -467,9 +392,19 @@ export default function Carrito() {
               boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)",
               overflow: "hidden",
             }}>
-              {/* Select-all row */}
-              <div className="select-all-row" onClick={toggleAll}>
-                <div className={`car-checkbox ${allChecked ? "checked" : someChecked ? "indeterminate" : ""}`}>
+              {/* ── Column headers ── */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "0 20px", height: 40,
+                borderBottom: `1px solid ${C.border}`,
+                background: "#FAFAFD",
+              }}>
+                {/* Checkbox select-all */}
+                <div
+                  className={`car-checkbox ${allChecked ? "checked" : someChecked ? "indeterminate" : ""}`}
+                  onClick={toggleAll}
+                  style={{ cursor: "pointer" }}
+                >
                   {allChecked && (
                     <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
                       <path d="M1 4.5L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -481,9 +416,17 @@ export default function Carrito() {
                     </svg>
                   )}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: C.ink, userSelect: "none" }}>
-                  {allChecked ? "Deseleccionar todo" : "Seleccionar todo"}
-                </span>
+                {/* Producto col (thumbnail + info) */}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 96, flexShrink: 0 }} /> {/* imagen placeholder */}
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: C.sub }}>
+                    Producto
+                  </span>
+                </div>
+                <div style={{ minWidth: 86, textAlign: "center", fontSize: 10, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: C.sub }}>Precio</div>
+                <div style={{ minWidth: 110, textAlign: "center", fontSize: 10, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: C.sub }}>Cant.</div>
+                <div style={{ minWidth: 88, textAlign: "right", fontSize: 10, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: C.sub }}>Total</div>
+                <div style={{ width: 34, flexShrink: 0 }} />
               </div>
 
               {/* Items */}
@@ -513,10 +456,10 @@ export default function Carrito() {
                       )}
                     </div>
 
-                    {/* Thumbnail */}
+                    {/* Thumbnail — más grande */}
                     <div
                       style={{
-                        width: 72, height: 88, borderRadius: 10, overflow: "hidden",
+                        width: 96, height: 116, borderRadius: 12, overflow: "hidden",
                         flexShrink: 0, background: "#EDE9E3", cursor: "pointer",
                       }}
                       onClick={() => navigate(`/obras/${item.slug}`)}
@@ -524,7 +467,7 @@ export default function Carrito() {
                       {item.imagen_principal
                         ? <img className="img-thumb" src={item.imagen_principal} alt={item.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                         : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <ShoppingBag size={20} color={C.subLight} strokeWidth={1.5} />
+                            <ShoppingBag size={24} color={C.subLight} strokeWidth={1.5} />
                           </div>
                       }
                     </div>
@@ -536,28 +479,26 @@ export default function Carrito() {
                         style={{
                           fontSize: 14, fontWeight: 700, color: C.ink,
                           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                          cursor: "pointer", marginBottom: 2,
+                          cursor: "pointer", marginBottom: 3,
                         }}
                       >
                         {item.titulo}
                       </div>
-                      <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 6, fontWeight: 500 }}>
+                      <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 8, fontWeight: 500 }}>
                         {item.artista_alias}
                       </div>
-                      {/* Stock badge */}
                       <StockBadge stock={stock} cantidad={item.cantidad} />
                     </div>
 
                     {/* Precio */}
-                    <div style={{ textAlign: "center", flexShrink: 0, minWidth: 72 }}>
-                      <div style={{ fontSize: 11, color: C.sub, fontWeight: 500, marginBottom: 3 }}>Precio</div>
+                    <div style={{ textAlign: "center", flexShrink: 0, minWidth: 86 }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontFamily: NEXA }}>
                         {fmt(Number(item.precio_base))}
                       </div>
                     </div>
 
                     {/* Cantidad */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, minWidth: 110, justifyContent: "center" }}>
                       <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1} aria-label="Reducir">
                         <Minus size={11} strokeWidth={2.5} />
                       </button>
@@ -569,10 +510,9 @@ export default function Carrito() {
                       </button>
                     </div>
 
-                    {/* Subtotal */}
-                    <div style={{ minWidth: 80, textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 11, color: C.sub, fontWeight: 500, marginBottom: 3 }}>Subtotal</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>
+                    {/* Total */}
+                    <div style={{ minWidth: 88, textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>
                         {fmt(Number(item.precio_base) * item.cantidad)}
                       </div>
                     </div>

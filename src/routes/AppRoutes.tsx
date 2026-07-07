@@ -38,6 +38,7 @@ import AdminClientes      from "../pages/private/admin/AdminClientes";
 import AdminVentas        from "../pages/private/admin/AdminVentas";
 import AdminBlog          from "../pages/private/admin/AdminBlog";
 import ClienteRoute       from "../components/ClienteRoute";
+import ClienteLayout      from "../layout/ClienteLayout";
 import MiCuenta           from "../pages/cliente/MiCuenta";
 import Carrito            from "../pages/cliente/Carrito";
 import MisPedidos         from "../pages/cliente/MisPedidos";
@@ -101,13 +102,15 @@ export default function AppRoutes() {
       </Route>
 
       {/* ── Cliente ── */}
-      <Route path="/mi-cuenta" element={<ClienteRoute><MiCuenta /></ClienteRoute>} />
-      <Route path="/mi-cuenta/carrito" element={<ClienteRoute><Carrito /></ClienteRoute>} />
-      <Route path="/mi-cuenta/pedidos"          element={<ClienteRoute><MisPedidos /></ClienteRoute>} />
-      <Route path="/mi-cuenta/pedidos/:id"      element={<ClienteRoute><DetallePedido /></ClienteRoute>} />
-      <Route path="/mi-cuenta/favoritos" element={<ClienteRoute><MisFavoritos /></ClienteRoute>} />
-      <Route path="/mi-cuenta/vincular-alexa" element={<ClienteRoute><VincularAlexa /></ClienteRoute>} />      
-      <Route path="/checkout" element={<ClienteRoute><Checkout /></ClienteRoute>} />
+      <Route element={<ClienteRoute><ClienteLayout /></ClienteRoute>}>
+        <Route path="/mi-cuenta"                element={<MiCuenta />} />
+        <Route path="/mi-cuenta/carrito"        element={<Carrito />} />
+        <Route path="/mi-cuenta/pedidos"        element={<MisPedidos />} />
+        <Route path="/mi-cuenta/pedidos/:id"    element={<DetallePedido />} />
+        <Route path="/mi-cuenta/favoritos"      element={<MisFavoritos />} />
+        <Route path="/mi-cuenta/vincular-alexa" element={<VincularAlexa />} />
+        <Route path="/checkout"                 element={<Checkout />} />
+      </Route>
 
       {/* ── Error pages ── */}
       <Route path="/unauthorized" element={<Unauthorized />} />

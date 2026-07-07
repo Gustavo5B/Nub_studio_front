@@ -1,7 +1,7 @@
 // src/pages/cliente/MisFavoritos.tsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Heart, ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { Heart, ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 import { emitCartUpdate } from "../../context/CartContext";
@@ -202,49 +202,6 @@ export default function MisFavoritos() {
         .fav-card { animation: fadeUp .3s ease both; }
       `}</style>
 
-      {/* ── Header ── */}
-      <header style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "#fff",
-        borderBottom: `1px solid ${C.border}`,
-        padding: "0 32px", height: 60,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              display: "flex", alignItems: "center", gap: 7,
-              background: "none", border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 600, color: C.sub, fontFamily: SANS,
-              transition: "color .18s", padding: 0,
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.ink}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.sub}
-          >
-            <ArrowLeft size={15} strokeWidth={2} /> Volver
-          </button>
-          <div style={{ width: 1, height: 18, background: C.border }} />
-          <div
-            onClick={() => navigate("/")}
-            style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}
-          >
-            <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 900, color: C.ink, letterSpacing: "-.01em" }}>
-              NU★B
-            </span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: ".18em", textTransform: "uppercase", marginTop: 2 }}>
-              Studio
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Heart size={15} color={C.pink} strokeWidth={2} fill={`${C.pink}44`} />
-          <span style={{ fontSize: 13, color: C.sub, fontWeight: 500 }}>
-            {loading ? "…" : favoritos.length} {!loading && (favoritos.length === 1 ? "guardada" : "guardadas")}
-          </span>
-        </div>
-      </header>
 
       {/* ── Hero title ── */}
       <div style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 0" }}>

@@ -1,7 +1,7 @@
 // src/pages/cliente/MiCuenta.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Package, Heart, LogOut, ArrowUpRight, Sparkles, Mic } from "lucide-react";
+import { ShoppingCart, Package, Heart, ArrowUpRight, Mic } from "lucide-react";
 import { authService } from "../../services/authService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -190,35 +190,6 @@ export default function MiCuenta() {
       {/* Grain */}
       <div className="mc-grain"/>
 
-      {/* ── Navbar ── */}
-      <header style={{
-        position:"sticky", top:0, zIndex:200,
-        background:"rgba(255,255,255,.92)", backdropFilter:"blur(14px)",
-        borderBottom:`1px solid ${C.border}`,
-        padding:"0 40px", height:62,
-        display:"flex", alignItems:"center", justifyContent:"space-between",
-      }}>
-        <button className="mc-logo-btn" onClick={() => navigate("/")}>
-          NU<span style={{color:C.orange}}>★</span>B
-        </button>
-
-        <div style={{
-          position:"absolute", left:"50%", transform:"translateX(-50%)",
-          fontSize:11, fontWeight:700, letterSpacing:".2em",
-          textTransform:"uppercase", color:C.sub,
-        }}>
-          Mi Cuenta
-        </div>
-
-        <div style={{display:"flex", alignItems:"center", gap:8}}>
-          <button className="mc-pill-btn" onClick={() => navigate("/catalogo")}>
-            <Sparkles size={12} strokeWidth={2}/> Galería
-          </button>
-          <button className="logout-btn" onClick={handleLogout}>
-            <LogOut size={12} strokeWidth={2}/> Salir
-          </button>
-        </div>
-      </header>
 
       {/* ── Hero ── */}
       <div style={{ background:"#fff", borderBottom:`1px solid ${C.border}`, position:"relative", overflow:"hidden" }}>
