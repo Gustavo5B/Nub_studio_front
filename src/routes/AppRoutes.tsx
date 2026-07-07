@@ -44,6 +44,7 @@ import MisPedidos         from "../pages/cliente/MisPedidos";
 import MisFavoritos       from "../pages/cliente/MisFavoritos";
 import DetallePedido      from "../pages/cliente/DetallePedido";
 import Checkout           from "../pages/cliente/Checkout";
+import VincularAlexa      from "../pages/cliente/VincularAlexa";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -105,6 +106,7 @@ export default function AppRoutes() {
       <Route path="/mi-cuenta/pedidos"          element={<ClienteRoute><MisPedidos /></ClienteRoute>} />
       <Route path="/mi-cuenta/pedidos/:id"      element={<ClienteRoute><DetallePedido /></ClienteRoute>} />
       <Route path="/mi-cuenta/favoritos" element={<ClienteRoute><MisFavoritos /></ClienteRoute>} />
+      <Route path="/mi-cuenta/vincular-alexa" element={<ClienteRoute><VincularAlexa /></ClienteRoute>} />      
       <Route path="/checkout" element={<ClienteRoute><Checkout /></ClienteRoute>} />
 
       {/* ── Error pages ── */}

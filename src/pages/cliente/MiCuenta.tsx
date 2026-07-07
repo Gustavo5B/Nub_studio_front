@@ -1,7 +1,7 @@
 // src/pages/cliente/MiCuenta.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Package, Heart, LogOut, ArrowUpRight, Sparkles } from "lucide-react";
+import { ShoppingCart, Package, Heart, LogOut, ArrowUpRight, Sparkles, Mic } from "lucide-react";
 import { authService } from "../../services/authService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -82,6 +82,16 @@ export default function MiCuenta() {
       accent: C.pink,
       path: "/mi-cuenta/favoritos",
       gradient: `linear-gradient(135deg, #A83B9022, #A83B9008)`,
+    },
+    {
+      icon: <Mic size={20} strokeWidth={1.5}/>,
+      label: "Vincular Alexa",
+      desc: "Conecta tu Echo",
+      count: 0,
+      unit: "",
+      accent: C.blue,
+      path: "/mi-cuenta/vincular-alexa",
+      gradient: `linear-gradient(135deg, #2D6FBE22, #2D6FBE08)`,
     },
   ];
 
@@ -358,7 +368,7 @@ export default function MiCuenta() {
         </div>
 
         {/* ── Cards ── */}
-        <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:18, marginBottom:40}}>
+        <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18, marginBottom:40}}>
           {cards.map((card, idx) => (
             <div
               key={card.label}
@@ -427,7 +437,7 @@ export default function MiCuenta() {
         <div style={{
           background:C.card, borderRadius:20, overflow:"hidden",
           boxShadow:"0 2px 16px rgba(20,18,30,.07), 0 0 0 1px rgba(20,18,30,.055)",
-        }} className="reveal" style2="animation-delay:280ms">
+        }} className="reveal">
 
           {/* Accent bar */}
           <div style={{height:3, background:`linear-gradient(90deg,${C.orange},${C.pink})`}}/>
