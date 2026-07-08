@@ -424,16 +424,8 @@ export default function MisPedidos() {
 
         ) : (
           <>
-            {/* Encabezado de tabla */}
-            <div className="table-head" style={{marginBottom:0}}>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em"}}>Obra</span>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em"}}>Artista</span>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em", textAlign:"center"}}>Cant.</span>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em", textAlign:"right"}}>Precio</span>
-            </div>
-
             {/* Lista de órdenes */}
-            <div style={{display:"flex", flexDirection:"column", gap:12, marginTop:8}}>
+            <div style={{display:"flex", flexDirection:"column", gap:12}}>
               {ordenes.map((orden, idx) => {
                 const est    = ESTADO_CONFIG[orden.estado] ?? ESTADO_CONFIG.pendiente;
                 const fechaObj = new Date(orden.fecha);
@@ -543,24 +535,43 @@ export default function MisPedidos() {
                           </div>
                         </div>
 
-                        {/* Botón ver detalle */}
-                        <button
-                          onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
-                          className="ver-detalle-btn"
-                          style={{
-                            display:"flex", alignItems:"center", gap:6,
-                            background:"none", border:`1.5px solid ${C.border}`,
-                            borderRadius:100, padding:"9px 20px", cursor:"pointer",
-                            fontSize:11, fontWeight:700, color:C.ink, fontFamily:SANS,
-                            letterSpacing:".08em", textTransform:"uppercase",
-                            transition:"all .2s", flexShrink:0,
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=C.orange; (e.currentTarget as HTMLElement).style.color=C.orange; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor=C.border; (e.currentTarget as HTMLElement).style.color=C.ink; }}
-                        >
-                          Ver detalle
-                          <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
-                        </button>
+                        {/* Botones */}
+                        <div style={{display:"flex", flexDirection:"column", gap:8, flexShrink:0}}>
+                          {orden.estado === "pendiente" && (
+                            <button
+                              onClick={() => navigate("/mi-cuenta/carrito")}
+                              style={{
+                                display:"flex", alignItems:"center", gap:6,
+                                background:C.orange, border:"none",
+                                borderRadius:100, padding:"9px 20px", cursor:"pointer",
+                                fontSize:11, fontWeight:700, color:"#fff", fontFamily:SANS,
+                                letterSpacing:".08em", textTransform:"uppercase",
+                                transition:"background .18s", boxShadow:`0 4px 14px ${C.orange}35`,
+                              }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background="#d45a0a"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background=C.orange; }}
+                            >
+                              Reintentar pago
+                            </button>
+                          )}
+                          <button
+                            onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
+                            className="ver-detalle-btn"
+                            style={{
+                              display:"flex", alignItems:"center", gap:6,
+                              background:"none", border:`1.5px solid ${C.border}`,
+                              borderRadius:100, padding:"9px 20px", cursor:"pointer",
+                              fontSize:11, fontWeight:700, color:C.ink, fontFamily:SANS,
+                              letterSpacing:".08em", textTransform:"uppercase",
+                              transition:"all .2s",
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=C.orange; (e.currentTarget as HTMLElement).style.color=C.orange; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor=C.border; (e.currentTarget as HTMLElement).style.color=C.ink; }}
+                          >
+                            Ver detalle
+                            <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
