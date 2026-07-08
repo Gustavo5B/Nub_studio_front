@@ -1,4 +1,4 @@
-// src/pages/public/Home.tsx
+﻿// src/pages/public/Home.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
@@ -487,7 +487,7 @@ export default function Home() {
           ) : (
             <>
               <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Mi cuenta</Link>
-              <button onClick={handleLogout} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
+              <button onClick={handleLogout} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "11px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "9px 20px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
             </>
           )}
         </div>

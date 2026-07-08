@@ -182,39 +182,29 @@ export default function DetallePedido() {
         }
       `}</style>
 
-      {/* ── Navbar ── */}
-      <header style={{
-        position:"sticky", top:0, zIndex:100,
-        background:"rgba(255,255,255,.95)", backdropFilter:"blur(14px)",
-        borderBottom:`1px solid ${C.border}`,
-        padding:"0 40px", height:62,
-        display:"flex", alignItems:"center", justifyContent:"space-between",
-      }}>
-        <button className="dp-logo" onClick={() => navigate("/")}>
-          NU<span style={{color:C.orange}}>★</span>B
-        </button>
-
-        <div style={{
-          position:"absolute", left:"50%", transform:"translateX(-50%)",
-          display:"flex", flexDirection:"column", alignItems:"center",
-        }}>
-          <span style={{fontSize:10, fontWeight:700, letterSpacing:".2em", textTransform:"uppercase", color:C.sub}}>
-            Detalle de pedido
-          </span>
-          <span style={{fontSize:11, fontFamily:MONO, color:C.subLight, letterSpacing:".06em"}}>
-            {codigo}
-          </span>
-        </div>
-
-        <button className="dp-back" onClick={() => navigate("/mi-cuenta/pedidos")}>
-          <ArrowLeft size={12} strokeWidth={2.5}/> Mis pedidos
-        </button>
-      </header>
 
       {/* Línea arcoíris */}
       <div style={{height:2.5, background:`linear-gradient(90deg,${C.orange},${C.pink},${C.blue},${C.orange})`}}/>
 
       <main style={{maxWidth:860, margin:"0 auto", padding:"44px 32px 100px"}}>
+
+        {/* Volver */}
+        <div style={{ marginBottom: 20 }}>
+          <button
+            onClick={() => navigate("/mi-cuenta/pedidos")}
+            style={{
+              display:"flex", alignItems:"center", gap:6,
+              background:"none", border:"none", cursor:"pointer",
+              padding:"6px 0", fontSize:12, fontWeight:600,
+              color:C.sub, fontFamily:SANS, letterSpacing:".04em",
+              transition:"color .15s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = C.ink)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.sub)}
+          >
+            <ArrowLeft size={13} strokeWidth={2.5}/> Mis pedidos
+          </button>
+        </div>
 
         {/* ── Hero del pedido ── */}
         <div className="reveal" style={{

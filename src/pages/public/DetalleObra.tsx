@@ -1,9 +1,10 @@
-// src/pages/public/DetalleObra.tsx
+﻿// src/pages/public/DetalleObra.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Heart, Share2, ZoomIn, CheckCircle, Award, ShoppingCart } from "lucide-react";
 import { cacheGet, cacheSet } from "../../utils/apiCache";
 import { authService } from "../../services/authService";
+import ProtectedImage from "../../components/ProtectedImage";
 import { useToast } from "../../context/ToastContext";
 import { emitCartUpdate } from "../../context/CartContext";
 
@@ -371,12 +372,11 @@ export default function DetalleObra() {
             onMouseLeave={() => { cursorOff(); dotRef.current?.classList.remove("cur-light"); ringRef.current?.classList.remove("cur-light"); }}
           >
             {(imgActiva || obra.imagen_principal) ? (
-              <img
+              <ProtectedImage
                 src={imgActiva || obra.imagen_principal}
                 alt={obra.titulo}
-                style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform .6s cubic-bezier(.2,0,0,1)", animation:"heroImgReveal 1.9s cubic-bezier(.16,1,.3,1) both" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "scale(1.04)"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = "scale(1)"}
+                wrapStyle={{ width: "100%", height: "100%" }}
+                imgStyle={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform .6s cubic-bezier(.2,0,0,1)", animation:"heroImgReveal 1.9s cubic-bezier(.16,1,.3,1) both" }}
               />
             ) : (
               <div style={{ width:"100%", height:"100%", background:`linear-gradient(135deg, ${color}18, #1a1830)`, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -415,7 +415,7 @@ export default function DetalleObra() {
                     style={{ width:52, height:52 }}
                     onClick={e => { e.stopPropagation(); setImgActiva(img.url_imagen); }}
                   >
-                    <img src={img.url_imagen} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                    <ProtectedImage src={img.url_imagen} wrapStyle={{ width:"100%", height:"100%" }} imgStyle={{ width:"100%", height:"100%", objectFit:"cover" }} />
                   </div>
                 ))}
               </div>
@@ -435,7 +435,7 @@ export default function DetalleObra() {
               ) : (
                 <>
                   <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", textDecoration:"none", padding:"5px 13px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", fontFamily:"'Nexa-Heavy',sans-serif" }}>Mi cuenta</Link>
-                  <button onClick={() => { authService.logout(); navigate("/"); }} style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:C.ink, border:"none", padding:"5px 13px", borderRadius:100, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .22s" }}>Salir</button>
+                  <button onClick={() => { authService.logout(); navigate("/"); }} style={{ fontSize: "11px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:C.ink, border:"none", padding: "9px 20px", borderRadius:100, cursor:"pointer", fontFamily:"'Nexa-Heavy',sans-serif", transition:"all .22s" }}>Salir</button>
                 </>
               )}
             </div>
@@ -825,8 +825,11 @@ export default function DetalleObra() {
       {/* Lightbox */}
       {zoomed && (
         <div onClick={() => setZoomed(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.96)", zIndex:100000, display:"flex", alignItems:"center", justifyContent:"center", cursor:"zoom-out", backdropFilter:"blur(16px)", animation:"fadeI .25s ease" }}>
-          <img src={imgActiva || obra.imagen_principal} alt={obra.titulo}
-            style={{ maxWidth:"88vw", maxHeight:"88vh", objectFit:"contain", borderRadius:2, boxShadow:"0 40px 100px rgba(0,0,0,.8)" }}
+          <ProtectedImage
+            src={imgActiva || obra.imagen_principal}
+            alt={obra.titulo}
+            wrapStyle={{ maxWidth:"88vw", maxHeight:"88vh", borderRadius:2, boxShadow:"0 40px 100px rgba(0,0,0,.8)" }}
+            imgStyle={{ maxWidth:"100%", maxHeight:"88vh", objectFit:"contain", display:"block" }}
           />
           <div style={{ position:"absolute", top:20, right:20, width:36, height:36, borderRadius:"50%", border:"1px solid rgba(255,255,255,.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(255,255,255,.5)", fontSize:18, cursor:"pointer" }}>✕</div>
         </div>

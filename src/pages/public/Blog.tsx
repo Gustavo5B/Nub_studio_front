@@ -1,4 +1,4 @@
-// src/pages/public/Blog.tsx
+﻿// src/pages/public/Blog.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Clock, ArrowRight, Mail, Star, Eye } from "lucide-react";
@@ -246,7 +246,7 @@ export default function Blog() {
         ) : (
           <>
             <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none" }}>Mi cuenta</Link>
-            <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer" }}>Salir</button>
+            <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "11px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "9px 20px", borderRadius: 100, cursor: "pointer" }}>Salir</button>
           </>
         )}
       </div>

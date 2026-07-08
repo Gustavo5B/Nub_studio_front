@@ -1,4 +1,4 @@
-// src/pages/public/Contact.tsx
+﻿// src/pages/public/Contact.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
@@ -218,7 +218,7 @@ export default function Contact() {
         ) : (
           <>
             <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)" }}>Mi cuenta</Link>
-            <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: "#14121E", border: "none", padding: "7px 14px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
+            <button onClick={() => { authService.logout(); navigate("/"); }} onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "11px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: "#14121E", border: "none", padding: "9px 20px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
           </>
         )}
       </div>

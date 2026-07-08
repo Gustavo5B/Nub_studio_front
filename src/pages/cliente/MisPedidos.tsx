@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Package, CheckCircle, XCircle, Clock, ChevronDown, ShoppingBag, Heart, User } from "lucide-react";
+import { Package, CheckCircle, XCircle, Clock, ChevronDown } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 
@@ -10,6 +10,7 @@ const C = {
   orange:  "#E8640C",
   pink:    "#A83B90",
   blue:    "#2D6FBE",
+  green:   "#0E8A50",
   ink:     "#14121E",
   sub:     "#9896A8",
   subLight:"#C4C2D0",
@@ -187,59 +188,6 @@ export default function MisPedidos() {
         }
       `}</style>
 
-      {/* ══════════════════════════════
-          NAVBAR
-      ══════════════════════════════ */}
-      <header style={{
-        position:"sticky", top:0, zIndex:100,
-        background:"rgba(255,255,255,.95)", backdropFilter:"blur(14px)",
-        borderBottom:`1px solid ${C.border}`,
-      }}>
-        {/* Línea arcoiris */}
-        <div style={{height:2.5, background:`linear-gradient(90deg,${C.orange},${C.pink},${C.blue},${C.orange})`}}/>
-
-        <div style={{
-          maxWidth:1100, margin:"0 auto",
-          padding:"0 40px", height:62,
-          display:"flex", alignItems:"center", justifyContent:"space-between", gap:40,
-        }}>
-          {/* Logo */}
-          <button className="mp-nav-logo" onClick={() => navigate("/")}>
-            NU<span style={{color:C.orange}}>★</span>B
-          </button>
-
-          {/* Nav links */}
-          <nav style={{display:"flex", alignItems:"center", gap:28, flex:1, justifyContent:"center"}}>
-            <button className="mp-nav-link" onClick={() => navigate("/catalogo")}>
-              Galería
-            </button>
-            <button className="mp-nav-link active" onClick={() => navigate("/mi-cuenta/pedidos")}
-              style={{color:C.ink, borderBottom:`2px solid ${C.orange}`, paddingBottom:2}}>
-              Mis Pedidos
-            </button>
-            <button className="mp-nav-link" onClick={() => navigate("/mi-cuenta/favoritos")}>
-              <Heart size={12} strokeWidth={2}/> Favoritos
-            </button>
-            <button className="mp-nav-link" onClick={() => navigate("/mi-cuenta/carrito")}>
-              <ShoppingBag size={12} strokeWidth={2}/> Carrito
-            </button>
-          </nav>
-
-          {/* Cuenta */}
-          <div style={{display:"flex", alignItems:"center", gap:10}}>
-            <button className="mp-nav-link" onClick={() => navigate("/mi-cuenta")}
-              style={{gap:7}}>
-              <div style={{
-                width:28, height:28, borderRadius:"50%", background:C.ink,
-                display:"flex", alignItems:"center", justifyContent:"center",
-              }}>
-                <User size={13} color="#fff" strokeWidth={2}/>
-              </div>
-              <span style={{color:C.ink, fontSize:12.5, fontWeight:700}}>{nombre.split(" ")[0]}</span>
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* ══════════════════════════════
           HERO / PAGE TITLE
@@ -363,62 +311,124 @@ export default function MisPedidos() {
                           : diffMin < 1440 ? `Hace ${Math.floor(diffMin/60)}h`
                           : diffMin < 2880 ? "Ayer" : fecha;
 
+                const THUMBS   = orden.items.slice(0, 3);
+                const extraCount = orden.items.length - 3;
+
                 return (
                   <div key={orden.id_pedido} className="orden-card reveal" style={{animationDelay:`${idx*50}ms`}}>
 
-                    {/* Header */}
-                    <div
-                      className="orden-header"
-                      onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
-                      role="button" tabIndex={0}
-                      onKeyDown={e => e.key==="Enter" && navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
-                    >
-                      {/* Left */}
-                      <div style={{flex:1, minWidth:0}}>
-                        <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:5, flexWrap:"wrap"}}>
-                          <span style={{fontSize:14.5, fontWeight:700, color:C.ink}}>{rel}</span>
-                          <span style={{fontSize:12, color:C.subLight}}>—</span>
-                          <span style={{fontSize:12.5, color:C.sub}}>{fecha} · {hora}</span>
-                          {/* Estado badge */}
+                    {/* Franja de estado */}
+                    <div style={{height:3, background:
+                      orden.estado==="pagado"||orden.estado==="entregado"
+                        ? `linear-gradient(90deg,${C.green},#16A34A)`
+                        : orden.estado==="cancelado"
+                        ? `linear-gradient(90deg,#EF4444,#DC2626)`
+                        : `linear-gradient(90deg,${C.orange},${C.pink})`
+                    }}/>
+
+                    <div style={{padding:"18px 24px"}}>
+
+                      {/* Fila superior: badge + código + total */}
+                      <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:8}}>
+                        <div style={{display:"flex", alignItems:"center", gap:8}}>
                           <span style={{
                             display:"inline-flex", alignItems:"center", gap:5,
                             background:est.bg, border:`1px solid ${est.border}`,
-                            borderRadius:100, padding:"2px 9px",
+                            borderRadius:100, padding:"3px 10px",
                             fontSize:9.5, fontWeight:700, color:est.color, letterSpacing:".1em", textTransform:"uppercase",
                           }}>
                             <span style={{width:5,height:5,borderRadius:"50%",background:est.dot}}/>
                             {est.label}
                           </span>
-                        </div>
-                        <div style={{display:"flex", alignItems:"center", gap:8}}>
-                          <span style={{fontSize:11.5, color:C.sub}}>
-                            {orden.items.length} {orden.items.length===1?"obra":"obras"}
-                          </span>
-                          <span style={{color:C.border}}>·</span>
-                          <span style={{fontSize:11, color:C.subLight, fontFamily:MONO, letterSpacing:".06em", userSelect:"all"}}>
+                          <span style={{fontSize:10.5, color:C.subLight, fontFamily:MONO, letterSpacing:".06em"}}>
                             {codigo}
                           </span>
+                          <span style={{fontSize:11.5, color:C.subLight}}>·</span>
+                          <span style={{fontSize:11.5, color:C.sub}}>{rel}</span>
                         </div>
-                      </div>
-
-                      {/* Right */}
-                      <div style={{display:"flex", alignItems:"center", gap:16, flexShrink:0}}>
                         <div style={{fontFamily:NEXA, fontSize:22, fontWeight:900, color:C.orange, letterSpacing:"-.02em"}}>
                           {fmt(orden.totalGrupo)}
                         </div>
-                        <div style={{
-                          width:32, height:32, borderRadius:"50%",
-                          border:`1.5px solid ${C.border}`,
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          transition:"all .2s",
-                        }}>
-                          <ChevronDown size={15} strokeWidth={2.5} color={C.sub}
-                            style={{transform:"rotate(-90deg)"}}
-                          />
+                      </div>
+
+                      {/* Fila de obras: thumbnails + info + botón */}
+                      <div style={{display:"flex", alignItems:"center", gap:16}}>
+
+                        {/* Thumbnails */}
+                        <div style={{display:"flex", gap:8, flexShrink:0}}>
+                          {THUMBS.map((item, i) => (
+                            <div key={i} style={{
+                              width:68, height:84, borderRadius:10, overflow:"hidden",
+                              background:"#EDE9E3", flexShrink:0, position:"relative",
+                            }}>
+                              {item.imagen_principal
+                                ? <img src={item.imagen_principal} alt={item.titulo}
+                                    style={{width:"100%", height:"100%", objectFit:"cover", display:"block"}}/>
+                                : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                    <Package size={20} color={C.subLight} strokeWidth={1.5}/>
+                                  </div>
+                              }
+                              {/* overlay +N en el último thumb si hay más */}
+                              {i===2 && extraCount>0 && (
+                                <div style={{
+                                  position:"absolute", inset:0,
+                                  background:"rgba(20,18,30,.55)",
+                                  display:"flex", alignItems:"center", justifyContent:"center",
+                                  borderRadius:10,
+                                }}>
+                                  <span style={{color:"#fff", fontSize:13, fontWeight:800, fontFamily:NEXA}}>+{extraCount}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
+
+                        {/* Info de obras */}
+                        <div style={{flex:1, minWidth:0}}>
+                          {orden.items.slice(0,2).map(item => (
+                            <div key={item.id_venta} style={{
+                              display:"flex", alignItems:"baseline", gap:6, marginBottom:4,
+                            }}>
+                              <span style={{
+                                fontSize:13.5, fontWeight:700, color:C.ink,
+                                whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:220,
+                              }}>{item.titulo}</span>
+                              <span style={{fontSize:11, color:C.subLight, flexShrink:0}}>· {item.artista_alias}</span>
+                              {item.cantidad>1 && (
+                                <span style={{fontSize:10.5, color:C.sub, flexShrink:0}}>×{item.cantidad}</span>
+                              )}
+                            </div>
+                          ))}
+                          {orden.items.length>2 && (
+                            <div style={{fontSize:11.5, color:C.sub, marginTop:2}}>
+                              +{orden.items.length-2} obra{orden.items.length-2>1?"s":""} más
+                            </div>
+                          )}
+                          <div style={{fontSize:11, color:C.subLight, marginTop:6}}>
+                            {fecha} · {hora}
+                          </div>
+                        </div>
+
+                        {/* Botón ver detalle */}
+                        <button
+                          onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
+                          className="ver-detalle-btn"
+                          style={{
+                            display:"flex", alignItems:"center", gap:6,
+                            background:"none", border:`1.5px solid ${C.border}`,
+                            borderRadius:100, padding:"9px 20px", cursor:"pointer",
+                            fontSize:11, fontWeight:700, color:C.ink, fontFamily:SANS,
+                            letterSpacing:".08em", textTransform:"uppercase",
+                            transition:"all .2s", flexShrink:0,
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=C.orange; (e.currentTarget as HTMLElement).style.color=C.orange; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor=C.border; (e.currentTarget as HTMLElement).style.color=C.ink; }}
+                        >
+                          Ver detalle
+                          <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
+                        </button>
                       </div>
                     </div>
-
                   </div>
                 );
               })}
@@ -427,70 +437,6 @@ export default function MisPedidos() {
         )}
       </main>
 
-      {/* ══════════════════════════════
-          FOOTER
-      ══════════════════════════════ */}
-      <footer style={{borderTop:`1px solid ${C.border}`, background:"#fff", marginTop:"auto"}}>
-        <div style={{maxWidth:1100, margin:"0 auto", padding:"32px 40px"}}>
-          <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:24}}>
-
-            {/* Logo + tagline */}
-            <div>
-              <div style={{fontFamily:SERIF, fontSize:20, fontWeight:900, color:C.ink, letterSpacing:"-.02em", marginBottom:5}}>
-                NU<span style={{color:C.orange}}>★</span>B <span style={{fontFamily:SANS, fontSize:11, fontWeight:600, letterSpacing:".15em", color:C.sub, textTransform:"uppercase"}}>Studio</span>
-              </div>
-              <div style={{fontSize:11.5, color:C.subLight}}>
-                Galería de arte digital · Huasteca Hidalguense
-              </div>
-            </div>
-
-            {/* Nav footer */}
-            <nav style={{display:"flex", gap:24, alignItems:"center", flexWrap:"wrap"}}>
-              {[
-                { label:"Galería",      path:"/catalogo" },
-                { label:"Artistas",     path:"/artistas" },
-                { label:"Mi carrito",   path:"/mi-cuenta/carrito" },
-                { label:"Favoritos",    path:"/mi-cuenta/favoritos" },
-                { label:"Mi cuenta",    path:"/mi-cuenta" },
-              ].map(link => (
-                <button key={link.label}
-                  onClick={() => navigate(link.path)}
-                  style={{
-                    background:"none", border:"none", cursor:"pointer",
-                    fontSize:12, fontWeight:500, color:C.sub, fontFamily:SANS,
-                    padding:0, transition:"color .15s",
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.ink}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.sub}
-                >
-                  {link.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Bottom bar */}
-          <div style={{
-            marginTop:24, paddingTop:20, borderTop:`1px solid ${C.border}`,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            flexWrap:"wrap", gap:12,
-          }}>
-            <span style={{fontSize:11.5, color:C.subLight}}>
-              © {new Date().getFullYear()} NU★B Studio · Todos los derechos reservados
-            </span>
-            <div style={{display:"flex", gap:6}}>
-              {["MercadoPago","OXXO","Visa","Mastercard"].map(m => (
-                <span key={m} style={{
-                  fontSize:9.5, fontWeight:700, letterSpacing:".08em",
-                  color:C.subLight, background:C.bgOff,
-                  border:`1px solid ${C.border}`, borderRadius:6,
-                  padding:"3px 8px", fontFamily:SANS,
-                }}>{m}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
