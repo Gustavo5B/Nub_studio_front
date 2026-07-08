@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import ProtectedImage from "../../components/ProtectedImage";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 import { emitCartUpdate } from "../../context/CartContext";
@@ -125,23 +126,9 @@ export default function MisFavoritos() {
           transform: translateY(-3px);
           box-shadow: 0 16px 48px rgba(20,18,30,.12) !important;
         }
-        .fav-img { user-select: none; -webkit-user-select: none; }
-        .fav-img img {
-          transition: transform .55s cubic-bezier(.2,0,0,1);
-          -webkit-user-drag: none; pointer-events: none;
-        }
-        .fav-card:hover .fav-img img { transform: scale(1.06); }
-
-        .fav-watermark {
-          position: absolute; inset: 0; z-index: 3;
-          pointer-events: none;
-          display: flex; align-items: center; justify-content: center;
-          font-family: ${NEXA}; font-size: 13px; font-weight: 900;
-          letter-spacing: .35em; text-transform: uppercase; color: #fff;
-          mix-blend-mode: difference; opacity: .75;
-          white-space: nowrap;
-          transform: rotate(-25deg);
-        }
+        .fav-img img, .fav-img-inner { transition: transform .55s cubic-bezier(.2,0,0,1); }
+        .fav-card:hover .fav-img img,
+        .fav-card:hover .fav-img-inner { transform: scale(1.06); }
 
         .fav-overlay {
           position: absolute; inset: 0;
@@ -331,23 +318,20 @@ export default function MisFavoritos() {
                 <div
                   className="fav-img"
                   onClick={() => navigate(`/obras/${fav.slug}`)}
-                  onContextMenu={e => e.preventDefault()}
                   style={{ aspectRatio: "3/4", overflow: "hidden", position: "relative", background: "#EDE9E3" }}
                 >
                   {fav.imagen_principal
-                    ? <img
-                        src={fav.imagen_principal} alt={fav.titulo}
-                        draggable={false}
-                        onDragStart={e => e.preventDefault()}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    ? <ProtectedImage
+                        src={fav.imagen_principal}
+                        alt={fav.titulo}
+                        wrapStyle={{ position: "absolute", inset: 0 }}
+                        imgStyle={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        className="fav-img-inner"
                       />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Heart size={32} color={C.subLight} strokeWidth={1} />
                       </div>
                   }
-
-                  {/* Marca de agua */}
-                  <div className="fav-watermark">NU★B STUDIO</div>
 
                   {/* Overlay en hover */}
                   <div className="fav-overlay" />
