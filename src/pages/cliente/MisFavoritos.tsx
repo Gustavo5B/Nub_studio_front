@@ -125,8 +125,21 @@ export default function MisFavoritos() {
           transform: translateY(-3px);
           box-shadow: 0 16px 48px rgba(20,18,30,.12) !important;
         }
-        .fav-img img { transition: transform .55s cubic-bezier(.2,0,0,1); }
+        .fav-img { user-select: none; -webkit-user-select: none; }
+        .fav-img img {
+          transition: transform .55s cubic-bezier(.2,0,0,1);
+          -webkit-user-drag: none; pointer-events: none;
+        }
         .fav-card:hover .fav-img img { transform: scale(1.06); }
+
+        .fav-watermark {
+          position: absolute; bottom: 10px; right: 12px; z-index: 3;
+          pointer-events: none;
+          font-family: ${NEXA}; font-size: 9px; font-weight: 900;
+          letter-spacing: .25em; text-transform: uppercase; color: #fff;
+          mix-blend-mode: difference; opacity: .55;
+          white-space: nowrap;
+        }
 
         .fav-overlay {
           position: absolute; inset: 0;
@@ -316,15 +329,23 @@ export default function MisFavoritos() {
                 <div
                   className="fav-img"
                   onClick={() => navigate(`/obras/${fav.slug}`)}
+                  onContextMenu={e => e.preventDefault()}
                   style={{ aspectRatio: "3/4", overflow: "hidden", position: "relative", background: "#EDE9E3" }}
                 >
                   {fav.imagen_principal
-                    ? <img src={fav.imagen_principal} alt={fav.titulo}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ? <img
+                        src={fav.imagen_principal} alt={fav.titulo}
+                        draggable={false}
+                        onDragStart={e => e.preventDefault()}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Heart size={32} color={C.subLight} strokeWidth={1} />
                       </div>
                   }
+
+                  {/* Marca de agua */}
+                  <div className="fav-watermark">NU★B STUDIO</div>
 
                   {/* Overlay en hover */}
                   <div className="fav-overlay" />
