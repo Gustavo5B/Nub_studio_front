@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, MessageCircle, ShieldAlert, Eye, Edit3, Trash2, CheckCircle, XCircle, Plus, Ban, ToggleLeft, ToggleRight } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
+import type { ToastType } from "../../../context/ToastContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -134,7 +135,7 @@ export default function AdminBlog() {
 function TabPosts({ token, navigate, showToast }: {
   token: string;
   navigate: ReturnType<typeof useNavigate>;
-  showToast: (msg: string, type: string) => void;
+  showToast: (msg: string, type?: ToastType) => void;
 }) {
   const [posts, setPosts] = useState<PostAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -292,7 +293,7 @@ function TabPosts({ token, navigate, showToast }: {
 
 function TabModeracion({ token, showToast }: {
   token: string;
-  showToast: (msg: string, type: string) => void;
+  showToast: (msg: string, type?: ToastType) => void;
 }) {
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -407,7 +408,7 @@ function TabModeracion({ token, showToast }: {
 
 function TabPalabras({ token, showToast }: {
   token: string;
-  showToast: (msg: string, type: string) => void;
+  showToast: (msg: string, type?: ToastType) => void;
 }) {
   const [palabras, setPalabras] = useState<Palabra[]>([]);
   const [loading, setLoading] = useState(true);

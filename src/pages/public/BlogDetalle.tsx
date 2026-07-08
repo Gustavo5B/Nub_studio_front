@@ -4,6 +4,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Clock, Eye, MessageCircle, Send, Trash2, ChevronRight } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -38,6 +39,7 @@ interface Post {
 
 interface Comentario {
   id_comentario: number;
+  id_usuario: number;
   padre_id: number | null;
   nivel: number;
   contenido: string;
@@ -48,6 +50,14 @@ interface Comentario {
   autor_foto: string | null;
   respuestas: Comentario[];
 }
+
+interface ConteoReaccion {
+  emoji: string;
+  total: number;
+}
+
+const contarComentarios = (lista: Comentario[]): number =>
+  lista.reduce((acc, c) => acc + 1 + contarComentarios(c.respuestas), 0);
 
 const WhatsAppIcon = ({ size = 32 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 448 512" fill="white" xmlns="http://www.w3.org/2000/svg">
@@ -72,6 +82,11 @@ export default function BlogDetalle() {
   const [nuevoComentario, setNuevoComentario] = useState("");
   const [respondiendo, setRespondiendo] = useState<{ id: number; nombre: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  const [emojis, setEmojis] = useState<string[]>([]);
+  const [conteos, setConteos] = useState<ConteoReaccion[]>([]);
+  const [miReaccion, setMiReaccion] = useState<string | null>(null);
+  const [reaccionando, setReaccionando] = useState(false);
 
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -144,6 +159,53 @@ export default function BlogDetalle() {
     cargarComentarios();
   }, [cargarComentarios]);
 
+  const cargarReacciones = useCallback(() => {
+    if (!post) return;
+    fetch(`${API}/api/blog/posts/${post.id_post}/reacciones`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          setConteos(json.data.conteos || []);
+          setMiReaccion(json.data.mi_reaccion || null);
+          setEmojis(json.data.emojis_permitidos || []);
+        }
+      })
+      .catch(() => {});
+  }, [post, token]);
+
+  useEffect(() => {
+    cargarReacciones();
+  }, [cargarReacciones]);
+
+  const toggleReaccion = async (emoji: string) => {
+    if (!post || reaccionando) return;
+    if (!isLoggedIn || !["cliente", "artista", "admin"].includes(userRol)) {
+      showToast("Inicia sesión para reaccionar", "err");
+      return;
+    }
+    setReaccionando(true);
+    try {
+      const quitar = miReaccion === emoji;
+      const res = await fetch(`${API}/api/blog/posts/${post.id_post}/reacciones`, {
+        method: quitar ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        ...(quitar ? {} : { body: JSON.stringify({ emoji }) }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        cargarReacciones();
+      } else {
+        showToast(json.message || "Error al reaccionar", "err");
+      }
+    } catch {
+      showToast("Error de conexión", "err");
+    } finally {
+      setReaccionando(false);
+    }
+  };
+
   const enviarComentario = async () => {
     if (!nuevoComentario.trim()) return;
     if (!post) return;
@@ -159,9 +221,10 @@ export default function BlogDetalle() {
       });
       const json = await res.json();
       if (json.success) {
-        showToast("Comentario publicado.", "ok");
+        showToast(json.message || "Comentario publicado.", "ok");
         setNuevoComentario("");
         setRespondiendo(null);
+        cargarComentarios();
       } else {
         showToast(json.message || "Error al enviar el comentario", "err");
       }
@@ -233,6 +296,10 @@ export default function BlogDetalle() {
         .side-nav-link:hover { color: #E8640C; gap: 14px; }
         .side-nav-link:hover::before { width: 22px; }
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 10px; }
+        .reaccion-pill { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 100px; border: 1.5px solid rgba(0,0,0,0.1); background: #fff; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reaccion-pill:hover { border-color: ${C.orange}; transform: translateY(-2px); }
+        .reaccion-pill.active { border-color: ${C.orange}; background: ${C.orange}12; box-shadow: 0 2px 10px rgba(232,100,12,0.18); }
+        .reaccion-pill:disabled { opacity: 0.6; cursor: wait; transform: none; }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
       `}</style>
 
@@ -329,14 +396,49 @@ export default function BlogDetalle() {
             </div>
           )}
 
-          <div className="prose fade-up" dangerouslySetInnerHTML={{ __html: post.contenido }} />
+          <div className="prose fade-up" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.contenido) }} />
+
+          {/* ── Reacciones ── */}
+          {emojis.length > 0 && (
+            <section style={{ marginTop: 48, paddingTop: 32, borderTop: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.sub, marginBottom: 14 }}>
+                ¿Qué te pareció esta publicación?
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {emojis.map((e) => {
+                  const total = conteos.find((c) => c.emoji === e)?.total || 0;
+                  const activa = miReaccion === e;
+                  return (
+                    <button
+                      key={e}
+                      onClick={() => toggleReaccion(e)}
+                      onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                      disabled={reaccionando}
+                      title={activa ? "Quitar mi reacción" : "Reaccionar"}
+                      className={`reaccion-pill${activa ? " active" : ""}`}
+                    >
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>{e}</span>
+                      {total > 0 && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: activa ? C.orange : C.sub }}>{total}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {!isLoggedIn && (
+                <p style={{ fontSize: 12, color: C.sub, marginTop: 10 }}>
+                  Inicia sesión para reaccionar — solo una reacción por persona.
+                </p>
+              )}
+            </section>
+          )}
 
           {/* ── Sección de comentarios ── */}
-          <section style={{ marginTop: 64, paddingTop: 48, borderTop: `1px solid ${C.border}` }}>
+          <section style={{ marginTop: 48, paddingTop: 48, borderTop: `1px solid ${C.border}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 36 }}>
               <img src={estrellaImg} alt="NUB" style={{ width: 28, height: 28, objectFit: "contain" }} />
               <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 800, color: C.ink, margin: 0 }}>
-                {loadingComents ? "Cargando comentarios…" : `${comentarios.length} comentario${comentarios.length !== 1 ? "s" : ""}`}
+                {loadingComents ? "Cargando comentarios…" : `${contarComentarios(comentarios)} comentario${contarComentarios(comentarios) !== 1 ? "s" : ""}`}
               </h2>
             </div>
 
@@ -470,7 +572,7 @@ function ComentarioItem({
                 <MessageCircle size={12} /> Responder
               </button>
             )}
-            {idUsuarioActual > 0 && (
+            {idUsuarioActual > 0 && comentario.id_usuario === idUsuarioActual && (
               <button
                 onClick={() => onEliminar(comentario.id_comentario)}
                 onMouseEnter={cursorOn} onMouseLeave={cursorOff}

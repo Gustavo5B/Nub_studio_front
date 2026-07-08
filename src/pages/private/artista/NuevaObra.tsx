@@ -13,7 +13,6 @@ const C = {
   green: "#0E8A50", red: "#C4304A", bg: "#F9F8FC",
   card: "#FFFFFF",
 };
-const CS = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.055)";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
@@ -165,6 +164,8 @@ export default function NuevaObra() {
   const [step,            setStep]            = useState(1);
   const [perfilFaltantes, setPerfilFaltantes] = useState<string[]>([]);
   const [checkingPerfil,  setCheckingPerfil]  = useState(true);
+  const [programar,       setProgramar]       = useState(false);
+  const [fechaProg,       setFechaProg]       = useState("");
   const [fieldErrors,     setFieldErrors]     = useState<Partial<Record<keyof FormData, string>>>({});
 
   const [form, setForm] = useState<FormData>({
@@ -325,6 +326,12 @@ export default function NuevaObra() {
     if (!form.stock || parseInt(form.stock) < 1) {
       showToast("La cantidad disponible debe ser al menos 1", "warn"); setStep(2); return;
     }
+    if (programar) {
+      if (!fechaProg) { showToast("Indica la fecha de publicación programada", "warn"); return; }
+      if (new Date(fechaProg).getTime() <= Date.now()) {
+        showToast("La fecha de publicación debe ser futura", "warn"); return;
+      }
+    }
 
     // ── Validación de seguridad final antes de enviar ──
     const camposTexto = ["titulo", "descripcion", "historia", "tecnica"] as const;
@@ -354,6 +361,9 @@ export default function NuevaObra() {
       Object.entries(formSanitizado).forEach(([k, v]) =>
         fd.append(k, k === "etiquetas" ? JSON.stringify(v) : String(v))
       );
+      if (programar && fechaProg) {
+        fd.append("fecha_publicacion_programada", new Date(fechaProg).toISOString());
+      }
       if (imageFile) fd.append("imagen", imageFile);
 
       const res = await fetch(`${API}/api/artista-portal/nueva-obra`, {
@@ -664,6 +674,28 @@ export default function NuevaObra() {
                     Incluye certificado de autenticidad
                   </label>
                 </div>
+              </div>
+
+              <div className="no-section">
+                <div className="no-section-title"><span>⏱</span> Publicación programada <span style={{fontWeight:400, textTransform:"none", fontSize:".75rem"}}>— opcional</span></div>
+                <div className="no-checks">
+                  <label className="no-check-label">
+                    <input type="checkbox" checked={programar} onChange={e => setProgramar(e.target.checked)} />
+                    <span className="no-check-box" />
+                    Programar la publicación para una fecha futura
+                  </label>
+                </div>
+                {programar && (
+                  <div className="no-field" style={{ marginTop: 14, maxWidth: 280 }}>
+                    <label className="no-field-label">Fecha y hora de publicación</label>
+                    <input className="no-input" type="datetime-local" value={fechaProg}
+                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                      onChange={e => setFechaProg(e.target.value)} />
+                    <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
+                      Tras la aprobación del equipo, la obra se publicará automáticamente en esta fecha.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="no-section no-summary">

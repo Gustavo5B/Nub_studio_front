@@ -56,6 +56,7 @@ export default function NuevaColeccion() {
   const [nombre,       setNombre]       = useState("");
   const [historia,     setHistoria]     = useState("");
   const [estado,       setEstado]       = useState("borrador");
+  const [fechaProg,    setFechaProg]    = useState("");
   const [imgFile,      setImgFile]      = useState<File | null>(null);
   const [imgPreview,   setImgPreview]   = useState<string>("");
   const [imgActual,    setImgActual]    = useState<string>("");
@@ -106,6 +107,12 @@ export default function NuevaColeccion() {
         setNombre(col.nombre || "");
         setHistoria(col.historia || "");
         setEstado(col.estado || "borrador");
+        if (col.fecha_publicacion_programada) {
+          // datetime-local espera hora local sin zona: YYYY-MM-DDTHH:mm
+          const f = new Date(col.fecha_publicacion_programada);
+          const pad = (n: number) => String(n).padStart(2, "0");
+          setFechaProg(`${f.getFullYear()}-${pad(f.getMonth() + 1)}-${pad(f.getDate())}T${pad(f.getHours())}:${pad(f.getMinutes())}`);
+        }
         setImgActual(col.imagen_portada || "");
       } catch (err) {
         showToast(handleNetworkError(err), "err");
@@ -131,7 +138,7 @@ export default function NuevaColeccion() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, irASubirObras = false) => {
     e.preventDefault();
 
     // Validar todos los campos antes de enviar
@@ -143,6 +150,12 @@ export default function NuevaColeccion() {
       showToast("Corrige los errores antes de continuar", "warn");
       return;
     }
+    if (estado === "programada") {
+      if (!fechaProg) { showToast("Indica la fecha de publicación programada", "warn"); return; }
+      if (new Date(fechaProg).getTime() <= Date.now()) {
+        showToast("La fecha de publicación debe ser futura", "warn"); return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -150,7 +163,10 @@ export default function NuevaColeccion() {
       const fd    = new FormData();
       fd.append("nombre", nombre.trim());
       if (historia.trim()) fd.append("historia", historia.trim());
-      if (esEdicion) fd.append("estado", estado);
+      fd.append("estado", estado);
+      if (estado === "programada" && fechaProg) {
+        fd.append("fecha_publicacion_programada", new Date(fechaProg).toISOString());
+      }
       if (imgFile) fd.append("imagen_portada", imgFile);
 
       const url    = esEdicion ? `${API}/api/colecciones/${id}` : `${API}/api/colecciones`;
@@ -161,7 +177,12 @@ export default function NuevaColeccion() {
       if (!res.ok) { showToast(data.message || "Error al guardar", "err"); return; }
 
       showToast(esEdicion ? "Colección actualizada" : "Colección creada", "ok");
-      navigate("/artista/colecciones");
+      const nuevaId = esEdicion ? id : data.data?.id_coleccion;
+      if (irASubirObras && nuevaId) {
+        navigate(`/artista/colecciones/${nuevaId}/obras`);
+      } else {
+        navigate("/artista/colecciones");
+      }
     } catch (err) {
       showToast(handleNetworkError(err), "err");
     } finally {
@@ -219,13 +240,28 @@ export default function NuevaColeccion() {
               {errors.historia && <span className="nc-error">{errors.historia}</span>}
             </div>
 
-            {esEdicion && (
+            <div className="nc-field">
+              <label className="nc-label">Estado</label>
+              <select className="nc-select" value={estado} onChange={e => setEstado(e.target.value)}>
+                <option value="borrador">Borrador — solo tú la ves</option>
+                <option value="publicada">Publicada — visible al público</option>
+                <option value="programada">Programada — se publica automáticamente</option>
+              </select>
+            </div>
+
+            {estado === "programada" && (
               <div className="nc-field">
-                <label className="nc-label">Estado</label>
-                <select className="nc-select" value={estado} onChange={e => setEstado(e.target.value)}>
-                  <option value="borrador">Borrador</option>
-                  <option value="publicada">Publicada</option>
-                </select>
+                <label className="nc-label">Fecha y hora de publicación</label>
+                <input
+                  className="nc-input"
+                  type="datetime-local"
+                  value={fechaProg}
+                  min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                  onChange={e => setFechaProg(e.target.value)}
+                />
+                <span style={{ fontSize: 11.5, color: "#9896a8", fontStyle: "italic" }}>
+                  La colección se publicará sola en esa fecha. Ideal para lanzamientos o estrenos.
+                </span>
               </div>
             )}
           </div>
@@ -259,6 +295,12 @@ export default function NuevaColeccion() {
             <button type="button" className="nc-btn-cancel" onClick={() => navigate("/artista/colecciones")}>
               Cancelar
             </button>
+            {!esEdicion && (
+              <button type="button" className="nc-btn-save" style={{ background: "#1a1830" }}
+                disabled={saving} onClick={e => handleSubmit(e as unknown as React.FormEvent, true)}>
+                {saving ? "Guardando..." : "Crear y subir obras →"}
+              </button>
+            )}
             <button type="submit" className="nc-btn-save" disabled={saving}>
               {saving && <span className="nc-spin" />}
               {saving ? "Guardando..." : esEdicion ? "Guardar cambios" : "Crear colección"}

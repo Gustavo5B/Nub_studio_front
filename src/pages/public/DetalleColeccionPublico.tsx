@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { authService } from "../../services/authService";
 import { cacheGet, cacheSet, prefetchObra } from "../../utils/apiCache";
+import { useToast } from "../../context/ToastContext";
+import { emitCartUpdate } from "../../context/CartContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -36,7 +38,8 @@ interface Obra {
   dimensiones?: string;
   anio?: number;
   estado: string;
-  activa: boolean;
+  activa: boolean | number;
+  stock_disponible?: number;
 }
 
 interface Coleccion {
@@ -65,6 +68,66 @@ export default function DetalleColeccionPublico() {
   const [loading, setLoading]     = useState(true);
   const [obrasVisibles, setObrasVisibles] = useState(12);
   const [coleccionesRecomendadas, setColeccionesRecomendadas] = useState<any[]>([]);
+  const [agregandoId, setAgregandoId]   = useState<number | null>(null);
+  const [agregandoCol, setAgregandoCol] = useState(false);
+  const [enCarrito, setEnCarrito]       = useState<number[]>([]);
+  const { showToast } = useToast();
+
+  // ═══ CARRITO ═══
+  const irALogin = () =>
+    navigate(`/login?redirect=${encodeURIComponent(`/colecciones/${slug}`)}`);
+
+  const agregarObraAlCarrito = async (obra: Obra) => {
+    if (!isLoggedIn || userRol !== "cliente") { irALogin(); return; }
+    if (obra.stock_disponible !== undefined && Number(obra.stock_disponible) <= 0) {
+      showToast("Esta obra está agotada", "warn");
+      return;
+    }
+    setAgregandoId(obra.id_obra);
+    try {
+      const token = authService.getToken();
+      const res = await fetch(`${API_URL}/api/carrito`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id_obra: obra.id_obra, cantidad: 1 }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Error al agregar al carrito", "err"); return; }
+      setEnCarrito(prev => [...prev, obra.id_obra]);
+      showToast("Obra agregada al carrito", "ok");
+      emitCartUpdate();
+    } catch {
+      showToast("Sin conexión con el servidor", "err");
+    } finally {
+      setAgregandoId(null);
+    }
+  };
+
+  const agregarColeccionAlCarrito = async () => {
+    if (!coleccion) return;
+    if (!isLoggedIn || userRol !== "cliente") { irALogin(); return; }
+    setAgregandoCol(true);
+    try {
+      const token = authService.getToken();
+      const res = await fetch(`${API_URL}/api/carrito/coleccion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id_coleccion: coleccion.id_coleccion }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Error al agregar la colección", "err"); return; }
+      setEnCarrito(prev => [
+        ...prev,
+        ...(coleccion.obras || []).map(o => o.id_obra).filter(idObra => !prev.includes(idObra)),
+      ]);
+      showToast(data.message || "Colección agregada al carrito", "ok");
+      emitCartUpdate();
+    } catch {
+      showToast("Sin conexión con el servidor", "err");
+    } finally {
+      setAgregandoCol(false);
+    }
+  };
 
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -183,6 +246,9 @@ export default function DetalleColeccionPublico() {
   const obrasActivas  = coleccion.obras?.filter(o => o.estado === "publicada" && o.activa !== false && o.activa !== 0) || [];
   const obrasMostradas = obrasActivas.slice(0, obrasVisibles);
   const hasMore    = obrasVisibles < obrasActivas.length;
+  const obrasDisponibles = obrasActivas.filter(o => o.stock_disponible === undefined || Number(o.stock_disponible) > 0);
+  const precioColeccion  = obrasDisponibles.reduce((sum, o) => sum + (Number(o.precio_base) || Number(o.precio_minimo) || 0), 0);
+  const esCliente = !isLoggedIn || userRol === "cliente";
   const artistaNombre = coleccion.artista_nombre || "";
   const artistaAlias  = coleccion.artista_alias;
   const artistaFoto   = coleccion.artista_foto;
@@ -370,15 +436,33 @@ export default function DetalleColeccionPublico() {
                 )}
               </div>
 
-              {/* CTA scroll a obras */}
+              {/* CTA scroll a obras + adquirir colección completa */}
               {obrasActivas.length > 0 && (
-                <button
-                  onClick={() => document.getElementById("sec-obras")?.scrollIntoView({ behavior:"smooth" })}
-                  onMouseEnter={cursorOn} onMouseLeave={cursorOff}
-                  style={{ marginTop:44, display:"inline-flex", alignItems:"center", gap:10, padding:"11px 24px", borderRadius:100, background:"transparent", border:`1px solid ${color}`, color:color, fontSize:9, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .28s" }}
-                  onMouseOver={e => { (e.currentTarget as HTMLElement).style.background=color; (e.currentTarget as HTMLElement).style.color="white"; }}
-                  onMouseOut={e => { (e.currentTarget as HTMLElement).style.background="transparent"; (e.currentTarget as HTMLElement).style.color=color; }}
-                >Ver obras de la colección ↓</button>
+                <div style={{ marginTop:44, display:"flex", flexWrap:"wrap", alignItems:"center", gap:14 }}>
+                  <button
+                    onClick={() => document.getElementById("sec-obras")?.scrollIntoView({ behavior:"smooth" })}
+                    onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                    style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"11px 24px", borderRadius:100, background:"transparent", border:`1px solid ${color}`, color:color, fontSize:9, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:"pointer", transition:"all .28s" }}
+                    onMouseOver={e => { (e.currentTarget as HTMLElement).style.background=color; (e.currentTarget as HTMLElement).style.color="white"; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLElement).style.background="transparent"; (e.currentTarget as HTMLElement).style.color=color; }}
+                  >Ver obras de la colección ↓</button>
+
+                  {esCliente && obrasDisponibles.length > 0 && (
+                    <button
+                      onClick={agregarColeccionAlCarrito}
+                      disabled={agregandoCol}
+                      onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                      style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"11px 24px", borderRadius:100, background:color, border:`1px solid ${color}`, color:"white", fontSize:9, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", fontFamily:NEXA_HEAVY, cursor:agregandoCol ? "wait" : "pointer", transition:"all .28s", opacity:agregandoCol ? .7 : 1 }}
+                    >
+                      {agregandoCol ? "Agregando…" : `🛒 Adquirir colección · ${fmt(precioColeccion)}`}
+                    </button>
+                  )}
+                </div>
+              )}
+              {esCliente && obrasDisponibles.length > 1 && (
+                <p style={{ fontSize:10, color:"rgba(0,0,0,.3)", fontFamily:SANS, margin:"12px 0 0" }}>
+                  Agrega las {obrasDisponibles.length} obras disponibles al carrito en un solo clic.
+                </p>
               )}
             </div>
           </div>
@@ -430,14 +514,40 @@ export default function DetalleColeccionPublico() {
 
                     <div className="col-obra-cta">Ver obra →</div>
 
-                    {/* Info abajo */}
-                    <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"14px 18px" }}>
-                      <div style={{ fontSize:14, fontWeight:800, color:"white", fontFamily:NEXA_HEAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{obra.titulo}</div>
-                      <div style={{ fontSize:11, color:"rgba(255,255,255,.55)", fontFamily:SANS, marginTop:4 }}>
-                        {fmt(Number(obra.precio_base) || Number(obra.precio_minimo) || 0)}
+                    {/* Agotada */}
+                    {obra.stock_disponible !== undefined && Number(obra.stock_disponible) <= 0 && (
+                      <div style={{ position:"absolute", top:14, left:14, fontSize:8, fontWeight:800, color:"white", letterSpacing:".16em", textTransform:"uppercase", background:"rgba(13,11,20,.75)", padding:"4px 10px", borderRadius:100, fontFamily:NEXA_HEAVY }}>
+                        Agotada
                       </div>
-                      {obra.tecnica && (
-                        <div style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontFamily:SANS, marginTop:2 }}>{obra.tecnica}</div>
+                    )}
+
+                    {/* Info abajo */}
+                    <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"14px 18px", display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:10 }}>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ fontSize:14, fontWeight:800, color:"white", fontFamily:NEXA_HEAVY, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{obra.titulo}</div>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,.55)", fontFamily:SANS, marginTop:4 }}>
+                          {fmt(Number(obra.precio_base) || Number(obra.precio_minimo) || 0)}
+                        </div>
+                        {obra.tecnica && (
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontFamily:SANS, marginTop:2 }}>{obra.tecnica}</div>
+                        )}
+                      </div>
+                      {esCliente && (obra.stock_disponible === undefined || Number(obra.stock_disponible) > 0) && (
+                        <button
+                          title={enCarrito.includes(obra.id_obra) ? "Ya está en tu carrito" : "Agregar al carrito"}
+                          disabled={agregandoId === obra.id_obra || enCarrito.includes(obra.id_obra)}
+                          onClick={e => { e.stopPropagation(); agregarObraAlCarrito(obra); }}
+                          onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                          style={{
+                            flexShrink:0, width:36, height:36, borderRadius:"50%",
+                            border:`1.5px solid ${enCarrito.includes(obra.id_obra) ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.55)"}`,
+                            background: enCarrito.includes(obra.id_obra) ? "rgba(255,255,255,.15)" : color,
+                            color:"white", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center",
+                            cursor: enCarrito.includes(obra.id_obra) ? "default" : "pointer", transition:"all .25s",
+                          }}
+                        >
+                          {agregandoId === obra.id_obra ? "…" : enCarrito.includes(obra.id_obra) ? "✓" : "🛒"}
+                        </button>
                       )}
                     </div>
                   </div>

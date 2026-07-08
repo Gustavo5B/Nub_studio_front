@@ -1,5 +1,5 @@
 // src/pages/private/admin/AdminColecciones.tsx
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
 import { handleNetworkError } from "../../../utils/handleApiError";
@@ -51,11 +51,24 @@ interface Coleccion {
   destacada: boolean;
   imagen_portada: string | null;
   fecha_creacion: string;
+  fecha_publicacion_programada?: string | null;
+  historia?: string | null;
   activa: boolean;
   id_artista: number;
   artista_alias: string;
   artista_nombre: string;
   total_obras: number;
+}
+
+interface ObraDetalle {
+  id_obra: number;
+  titulo: string;
+  slug: string;
+  imagen_principal: string | null;
+  precio_base: number | null;
+  estado: string;
+  activa: boolean;
+  stock_disponible: number;
 }
 
 interface Pagination {
@@ -73,6 +86,29 @@ export default function AdminColecciones() {
   const [loading,     setLoading]     = useState(true);
   const [filterEstado, setFilterEstado] = useState("");
   const [updating,    setUpdating]    = useState<number | null>(null);
+  const [expandedId,  setExpandedId]  = useState<number | null>(null);
+  const [detalleObras, setDetalleObras] = useState<Record<number, ObraDetalle[]>>({});
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
+
+  const toggleDetalle = async (id: number) => {
+    if (expandedId === id) { setExpandedId(null); return; }
+    setExpandedId(id);
+    if (detalleObras[id]) return;
+    setLoadingDetalle(true);
+    try {
+      const token = authService.getToken();
+      const res   = await fetch(`${API}/api/admin/colecciones/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Error al cargar el detalle", "err"); return; }
+      setDetalleObras(prev => ({ ...prev, [id]: data.data?.obras || [] }));
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
 
   const cargar = async (page = 1) => {
     setLoading(true);
@@ -110,7 +146,9 @@ export default function AdminColecciones() {
       if (!res.ok) { showToast(data.message || "Error al actualizar", "err"); return; }
 
       setColecciones(prev => prev.map(c =>
-        c.id_coleccion === id ? { ...c, ...body } : c
+        c.id_coleccion === id
+          ? { ...c, ...body, ...(body.estado ? { fecha_publicacion_programada: null } : {}) }
+          : c
       ));
       showToast("Colección actualizada", "ok");
     } catch (err) {
@@ -154,6 +192,7 @@ export default function AdminColecciones() {
             <option value="">Todos los estados</option>
             <option value="publicada">Publicada</option>
             <option value="borrador">Borrador</option>
+            <option value="programada">Programada</option>
           </select>
         </div>
 
@@ -178,11 +217,13 @@ export default function AdminColecciones() {
                   <th style={{ textAlign: "center" }}>Obras</th>
                   <th style={{ textAlign: "center" }}>Destacada</th>
                   <th>Creada</th>
+                  <th style={{ textAlign: "center" }}>Obras de la colección</th>
                 </tr>
               </thead>
               <tbody>
                 {colecciones.map(col => (
-                  <tr key={col.id_coleccion}>
+                  <Fragment key={col.id_coleccion}>
+                  <tr>
                     {/* Portada */}
                     <td>
                       {col.imagen_portada
@@ -194,6 +235,11 @@ export default function AdminColecciones() {
                     {/* Nombre */}
                     <td>
                       <div style={{ fontWeight: 600, color: C.cream, fontSize: 13.5 }}>{col.nombre}</div>
+                      {col.estado === "programada" && col.fecha_publicacion_programada && (
+                        <div style={{ fontSize: 11, color: C.purple, marginTop: 2 }}>
+                          ⏱ Se publica el {new Date(col.fecha_publicacion_programada).toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      )}
                     </td>
 
                     {/* Artista */}
@@ -212,6 +258,7 @@ export default function AdminColecciones() {
                       >
                         <option value="borrador">Borrador</option>
                         <option value="publicada">Publicada</option>
+                        {col.estado === "programada" && <option value="programada" disabled>Programada</option>}
                       </select>
                     </td>
 
@@ -236,7 +283,65 @@ export default function AdminColecciones() {
                     <td style={{ color: C.creamSub, fontSize: 12.5, fontFamily: FM, whiteSpace: "nowrap" }}>
                       {formatFecha(col.fecha_creacion)}
                     </td>
+
+                    {/* Revisar obras */}
+                    <td style={{ textAlign: "center" }}>
+                      <button
+                        className="ac-page-btn"
+                        style={{ padding: "4px 12px", fontSize: 12 }}
+                        onClick={() => toggleDetalle(col.id_coleccion)}
+                      >
+                        {expandedId === col.id_coleccion ? "▲ Cerrar" : "▼ Revisar"}
+                      </button>
+                    </td>
                   </tr>
+
+                  {/* Detalle expandible: obras de la colección */}
+                  {expandedId === col.id_coleccion && (
+                    <tr>
+                      <td colSpan={8} style={{ background: C.bg, padding: "16px 20px" }}>
+                        {col.historia && (
+                          <p style={{ fontSize: 12.5, color: C.creamSub, margin: "0 0 12px", fontStyle: "italic" }}>
+                            "{col.historia}"
+                          </p>
+                        )}
+                        {loadingDetalle && !detalleObras[col.id_coleccion] ? (
+                          <div style={{ display: "flex", justifyContent: "center", padding: 20 }}>
+                            <div className="ac-spinner" style={{ width: 22, height: 22 }} />
+                          </div>
+                        ) : (detalleObras[col.id_coleccion] || []).length === 0 ? (
+                          <div style={{ fontSize: 13, color: C.creamMut, textAlign: "center", padding: "10px 0" }}>
+                            Esta colección no tiene obras
+                          </div>
+                        ) : (
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 10 }}>
+                            {(detalleObras[col.id_coleccion] || []).map(o => (
+                              <div key={o.id_obra} style={{ display: "flex", alignItems: "center", gap: 10, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 10px" }}>
+                                {o.imagen_principal
+                                  ? <img src={o.imagen_principal} alt="" style={{ width: 42, height: 42, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+                                  : <div className="ac-thumb-placeholder" style={{ width: 42, height: 42 }}>🖼</div>
+                                }
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: C.cream, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {o.titulo}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: C.creamSub, fontFamily: FM }}>
+                                    {o.precio_base ? `$${Number(o.precio_base).toLocaleString("es-MX")}` : "Sin precio"}
+                                    {" · stock "}{o.stock_disponible}
+                                  </div>
+                                </div>
+                                <span className={`ac-badge ac-badge-${o.estado === "publicada" ? "publicada" : "borrador"}`}
+                                  style={o.estado === "pendiente" ? { background: "#fff8e6", color: "#a87006" } : o.estado === "programada" ? { background: "#f2ecfc", color: C.purple } : o.estado === "rechazada" ? { background: "#fff0f2", color: C.red } : undefined}>
+                                  {o.estado}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
