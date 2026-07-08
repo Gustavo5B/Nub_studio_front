@@ -62,6 +62,7 @@ export default function MisPedidos() {
   const [pedidos,     setPedidos]     = useState<Pedido[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [banner,      setBanner]      = useState<string|null>(null);
+  const [countdown,   setCountdown]   = useState(5);
 
   const nombre = localStorage.getItem("userName") || "Cliente";
 
@@ -72,6 +73,18 @@ export default function MisPedidos() {
       window.history.replaceState({}, "", "/mi-cuenta/pedidos");
     }
   }, []); // eslint-disable-line
+
+  useEffect(() => {
+    if (!banner) return;
+    setCountdown(5);
+    const iv = setInterval(() => {
+      setCountdown(p => {
+        if (p <= 1) { clearInterval(iv); setBanner(null); return 0; }
+        return p - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [banner]);
 
   useEffect(() => {
     const token = authService.getToken();
@@ -106,6 +119,7 @@ export default function MisPedidos() {
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
         @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display:swap; }
         @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); font-display:swap; }
+
 
         /* Navbar */
         .mp-nav-logo { background:none; border:none; cursor:pointer; padding:0;
@@ -170,14 +184,15 @@ export default function MisPedidos() {
           border-top:1px solid ${C.border};
         }
 
-        .banner-close { background:none; border:none; cursor:pointer;
-          opacity:.5; font-size:17px; padding:3px 5px; border-radius:4px; transition:opacity .15s; }
-        .banner-close:hover { opacity:1; }
-
         @keyframes fadeUp {
           from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)}
         }
         .reveal { animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both; }
+
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes scaleIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+        .overlay-btn { transition:all .18s; }
+        .overlay-btn:hover { transform:translateY(-1px); }
 
         @keyframes shimmer {
           0%{background-position:200% 0} 100%{background-position:-200% 0}
@@ -188,6 +203,111 @@ export default function MisPedidos() {
         }
       `}</style>
 
+
+      {/* ══════════════════════════════
+          PAYMENT RESULT OVERLAY
+      ══════════════════════════════ */}
+      {banner && STATUS_BANNER[banner] && (() => {
+        const isSuccess = banner === "success";
+        const isFailure = banner === "failure";
+        const accent = isSuccess ? "#16A34A" : isFailure ? "#DC2626" : "#D97706";
+        const bg     = isSuccess ? "#DCFCE7"  : isFailure ? "#FEE2E2"  : "#FEF3C7";
+        const icon   = isSuccess
+          ? <CheckCircle size={44} strokeWidth={1.6} color={accent}/>
+          : isFailure
+          ? <XCircle    size={44} strokeWidth={1.6} color={accent}/>
+          : <Clock      size={44} strokeWidth={1.6} color={accent}/>;
+        const title = isSuccess ? "¡Pago exitoso!" : isFailure ? "Pago rechazado" : "Pago en revisión";
+        const msg   = isSuccess
+          ? "Tu compra fue procesada con éxito. Recibirás confirmación por correo y nos contactaremos contigo para coordinar el envío de tu obra."
+          : isFailure
+          ? "No pudimos procesar tu pago. Puedes intentarlo de nuevo o elegir otro método de pago."
+          : "Tu pago está siendo verificado. Te notificaremos en cuanto la institución bancaria lo confirme.";
+        const recentOrder = ordenes[0];
+        const codigo = recentOrder ? `NUB-${String(recentOrder.id_pedido).padStart(5,"0")}` : null;
+
+        return (
+          <div
+            style={{
+              position:"fixed", inset:0, zIndex:2000,
+              background:"rgba(20,18,30,.82)",
+              backdropFilter:"blur(10px)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              padding:24, animation:"fadeIn .25s ease both",
+            }}
+            onClick={() => setBanner(null)}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background:"#fff", borderRadius:28, padding:"52px 44px 44px",
+                maxWidth:480, width:"100%",
+                boxShadow:"0 32px 80px rgba(20,18,30,.32), 0 0 0 1px rgba(20,18,30,.06)",
+                textAlign:"center",
+                animation:"scaleIn .38s cubic-bezier(.34,1.56,.64,1) both",
+              }}
+            >
+              {/* Ícono */}
+              <div style={{
+                width:96, height:96, borderRadius:"50%",
+                background:bg, display:"flex", alignItems:"center", justifyContent:"center",
+                margin:"0 auto 28px",
+              }}>{icon}</div>
+
+              {/* Título */}
+              <h2 style={{
+                fontFamily:SERIF, fontStyle:"italic", fontSize:"clamp(30px,5vw,40px)", fontWeight:900,
+                color:C.ink, letterSpacing:"-.03em", margin:"0 0 12px", lineHeight:1,
+              }}>{title}</h2>
+
+              {/* Mensaje */}
+              <p style={{ fontSize:14, color:C.sub, lineHeight:1.75, margin:"0 0 28px", maxWidth:360, marginInline:"auto" }}>
+                {msg}
+              </p>
+
+              {/* Código de orden (solo éxito) */}
+              {isSuccess && (
+                <div style={{
+                  background:"#F9F8FC", border:`1px solid ${C.border}`, borderRadius:14,
+                  padding:"14px 24px", marginBottom:28,
+                  display:"inline-flex", alignItems:"center", gap:12,
+                }}>
+                  <Package size={15} color={C.sub} strokeWidth={1.8}/>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontSize:9.5, fontWeight:700, color:C.sub, letterSpacing:".15em", textTransform:"uppercase"}}>
+                      {codigo ? "Número de orden" : "Estado"}
+                    </div>
+                    <div style={{fontFamily:MONO, fontSize:17, fontWeight:700, color:C.ink, letterSpacing:".04em"}}>
+                      {codigo || "Confirmado ✓"}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botones */}
+              <div style={{display:"flex", flexDirection:"column", gap:10}}>
+                {isFailure && (
+                  <button className="overlay-btn" onClick={() => { setBanner(null); navigate("/mi-cuenta/carrito"); }} style={{
+                    background:accent, color:"#fff", border:"none", borderRadius:100,
+                    padding:"14px 28px", fontSize:12, fontWeight:700, cursor:"pointer",
+                    fontFamily:SANS, letterSpacing:".1em", textTransform:"uppercase",
+                  }}>
+                    Reintentar pago
+                  </button>
+                )}
+                <button className="overlay-btn" onClick={() => setBanner(null)} style={{
+                  background:"none", border:`1.5px solid ${C.border}`, borderRadius:100,
+                  padding:"13px 28px", fontSize:11.5, fontWeight:600, cursor:"pointer",
+                  fontFamily:SANS, color:C.sub, letterSpacing:".04em",
+                  display:"inline-flex", alignItems:"center", justifyContent:"center", gap:8,
+                }}>
+                  {isFailure ? `Cerrar (${countdown}s)` : `Ver mis pedidos (${countdown}s)`}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ══════════════════════════════
           HERO / PAGE TITLE
@@ -242,26 +362,6 @@ export default function MisPedidos() {
           MAIN
       ══════════════════════════════ */}
       <main style={{flex:1, maxWidth:1100, width:"100%", margin:"0 auto", padding:"40px 40px 80px"}}>
-
-        {/* Banner */}
-        {banner && STATUS_BANNER[banner] && (() => {
-          const b = STATUS_BANNER[banner];
-          return (
-            <div style={{
-              background:b.bg, border:`1px solid ${b.border}`, borderRadius:14,
-              padding:"16px 20px", marginBottom:28,
-              display:"flex", alignItems:"flex-start", gap:14, color:b.color,
-              animation:"fadeUp .3s ease both",
-            }}>
-              <span style={{flexShrink:0, marginTop:1}}>{b.icon}</span>
-              <div style={{flex:1}}>
-                <div style={{fontWeight:800, fontSize:15, marginBottom:3}}>{b.title}</div>
-                <div style={{fontSize:13, opacity:.85, lineHeight:1.5}}>{b.msg}</div>
-              </div>
-              <button className="banner-close" onClick={() => setBanner(null)}>✕</button>
-            </div>
-          );
-        })()}
 
         {/* Skeleton */}
         {loading ? (

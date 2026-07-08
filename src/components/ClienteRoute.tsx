@@ -18,7 +18,8 @@ export default function ClienteRoute({ children }: ClienteRouteProps) {
   // Autenticado pero con otro rol → redirigir a su dashboard correcto
   if (rol === 'admin') return <Navigate to="/admin" replace />;
   if (rol === 'artista') return <Navigate to="/artista/dashboard" replace />;
-  if (rol !== 'cliente') return <Navigate to="/unauthorized" replace />;
+  // "usuario" es el rol base del backend, equivale a cliente
+  if (rol !== 'cliente' && rol !== 'usuario') return <Navigate to="/unauthorized" replace />;
 
   return <>{children}</>;
 }
