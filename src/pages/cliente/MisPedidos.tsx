@@ -55,6 +55,15 @@ const STATUS_BANNER: Record<string, { bg:string; border:string; color:string; ic
   pending: { bg:"#FFFBEB", border:"#FCD34D", color:"#92400E", icon:<Clock       size={20} strokeWidth={2}/>, title:"Pago en revisión", msg:"Tu pago está siendo verificado. Te notificaremos cuando se confirme." },
 };
 
+type FiltroEstado = "todos" | "activos" | "completados" | "cancelados";
+
+const FILTROS: { key: FiltroEstado; label: string }[] = [
+  { key: "todos",       label: "Todos"       },
+  { key: "activos",     label: "En proceso"  },
+  { key: "completados", label: "Completados" },
+  { key: "cancelados",  label: "Cancelados"  },
+];
+
 export default function MisPedidos() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -63,6 +72,7 @@ export default function MisPedidos() {
   const [loading,     setLoading]     = useState(true);
   const [banner,      setBanner]      = useState<string|null>(null);
   const [countdown,   setCountdown]   = useState(5);
+  const [filtro,      setFiltro]      = useState<FiltroEstado>("todos");
 
   const nombre = localStorage.getItem("userName") || "Cliente";
 
@@ -112,6 +122,21 @@ export default function MisPedidos() {
   const totalGastado = ordenes
     .filter(o => o.estado === "pagado" || o.estado === "entregado")
     .reduce((s, o) => s + o.totalGrupo, 0);
+
+  const conteos = useMemo(() => ({
+    todos:       ordenes.length,
+    activos:     ordenes.filter(o => o.estado === "pendiente" || o.estado === "procesando" || o.estado === "enviado").length,
+    completados: ordenes.filter(o => o.estado === "pagado" || o.estado === "entregado").length,
+    cancelados:  ordenes.filter(o => o.estado === "cancelado").length,
+  }), [ordenes]);
+
+  const ordenesFiltradas = useMemo(() => {
+    if (filtro === "todos")       return ordenes;
+    if (filtro === "activos")     return ordenes.filter(o => o.estado === "pendiente" || o.estado === "procesando" || o.estado === "enviado");
+    if (filtro === "completados") return ordenes.filter(o => o.estado === "pagado" || o.estado === "entregado");
+    if (filtro === "cancelados")  return ordenes.filter(o => o.estado === "cancelado");
+    return ordenes;
+  }, [ordenes, filtro]);
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:SANS, display:"flex", flexDirection:"column" }}>
@@ -184,6 +209,27 @@ export default function MisPedidos() {
           padding:14px 24px; gap:16px; background:${C.bgOff};
           border-top:1px solid ${C.border};
         }
+
+        /* Filtros */
+        .filtro-tab {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 8px 16px; border-radius: 100px; cursor: pointer;
+          font-family: ${SANS}; font-size: 12px; font-weight: 600;
+          border: 1.5px solid ${C.border}; background: #fff;
+          color: ${C.sub}; transition: all .18s ease; white-space: nowrap;
+        }
+        .filtro-tab:hover { border-color: ${C.ink}; color: ${C.ink}; }
+        .filtro-tab.active { background: ${C.ink}; border-color: ${C.ink}; color: #fff; }
+        .filtro-tab .badge {
+          font-size: 10px; font-weight: 800; font-family: ${MONO};
+          background: rgba(255,255,255,.18); border-radius: 100px;
+          padding: 1px 6px; min-width: 18px; text-align: center;
+        }
+        .filtro-tab:not(.active) .badge { background: ${C.bg}; color: ${C.sub}; }
+
+        /* Card cancelada */
+        .orden-card.cancelada { opacity: .62; }
+        .orden-card.cancelada:hover { opacity: 1; }
 
         @keyframes fadeUp {
           from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)}
@@ -424,9 +470,50 @@ export default function MisPedidos() {
 
         ) : (
           <>
+            {/* ── Tabs de filtro ── */}
+            <div style={{
+              display:"flex", gap:8, marginBottom:20, flexWrap:"wrap",
+              overflowX:"auto", paddingBottom:2,
+            }}>
+              {FILTROS.map(f => (
+                <button
+                  key={f.key}
+                  className={`filtro-tab${filtro === f.key ? " active" : ""}`}
+                  onClick={() => setFiltro(f.key)}
+                >
+                  {f.label}
+                  {conteos[f.key] > 0 && (
+                    <span className="badge">{conteos[f.key]}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Sin resultados para el filtro */}
+            {ordenesFiltradas.length === 0 && (
+              <div style={{
+                textAlign:"center", padding:"48px 32px",
+                background:C.card, borderRadius:16, border:`1px solid ${C.border}`,
+              }}>
+                <div style={{fontSize:13, color:C.sub, marginBottom:12}}>
+                  No tienes órdenes en esta categoría
+                </div>
+                <button
+                  onClick={() => setFiltro("todos")}
+                  style={{
+                    background:"none", border:`1.5px solid ${C.border}`, borderRadius:100,
+                    padding:"8px 20px", fontSize:12, fontWeight:600, color:C.ink,
+                    cursor:"pointer", fontFamily:SANS,
+                  }}
+                >
+                  Ver todas las órdenes
+                </button>
+              </div>
+            )}
+
             {/* Lista de órdenes */}
             <div style={{display:"flex", flexDirection:"column", gap:12}}>
-              {ordenes.map((orden, idx) => {
+              {ordenesFiltradas.map((orden, idx) => {
                 const est    = ESTADO_CONFIG[orden.estado] ?? ESTADO_CONFIG.pendiente;
                 const fechaObj = new Date(orden.fecha);
                 const fecha = fechaObj.toLocaleDateString("es-MX", { year:"numeric", month:"short", day:"numeric" });
@@ -441,14 +528,17 @@ export default function MisPedidos() {
                 const extraCount = orden.items.length - 3;
 
                 return (
-                  <div key={orden.id_pedido} className="orden-card reveal" style={{animationDelay:`${idx*50}ms`}}>
-
+                  <div
+                    key={orden.id_pedido}
+                    className={`orden-card reveal${orden.estado === "cancelado" ? " cancelada" : ""}`}
+                    style={{animationDelay:`${idx*50}ms`}}
+                  >
                     {/* Franja de estado */}
                     <div style={{height:3, background:
                       orden.estado==="pagado"||orden.estado==="entregado"
                         ? `linear-gradient(90deg,${C.green},#16A34A)`
                         : orden.estado==="cancelado"
-                        ? `linear-gradient(90deg,#EF4444,#DC2626)`
+                        ? `linear-gradient(90deg,#9CA3AF,#6B7280)`
                         : `linear-gradient(90deg,${C.orange},${C.pink})`
                     }}/>
 
@@ -537,43 +627,55 @@ export default function MisPedidos() {
 
                         {/* Botones */}
                         <div style={{display:"flex", flexDirection:"column", gap:8, flexShrink:0, alignItems:"flex-end"}}>
-                          {orden.estado === "pendiente" && (
+                          {orden.estado === "cancelado" ? (
                             <div style={{
                               fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",
-                              color:"#92400E", background:"#FFFBEB", border:"1px solid #FDE68A",
+                              color:"#6B7280", background:"#F3F4F6", border:"1px solid #E5E7EB",
                               borderRadius:100, padding:"4px 12px",
                             }}>
-                              ⏳ En espera de confirmación
+                              Orden cancelada
                             </div>
+                          ) : (
+                            <>
+                              {orden.estado === "pendiente" && (
+                                <div style={{
+                                  fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",
+                                  color:"#92400E", background:"#FFFBEB", border:"1px solid #FDE68A",
+                                  borderRadius:100, padding:"4px 12px",
+                                }}>
+                                  ⏳ En espera de confirmación
+                                </div>
+                              )}
+                              <button
+                                onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
+                                className="ver-detalle-btn"
+                                style={{
+                                  display:"flex", alignItems:"center", gap:6,
+                                  background: orden.estado === "pendiente" ? C.orange : "none",
+                                  border: orden.estado === "pendiente" ? "none" : `1.5px solid ${C.border}`,
+                                  borderRadius:100, padding:"9px 20px", cursor:"pointer",
+                                  fontSize:11, fontWeight:700,
+                                  color: orden.estado === "pendiente" ? "#fff" : C.ink,
+                                  fontFamily:SANS, letterSpacing:".08em", textTransform:"uppercase",
+                                  transition:"all .2s",
+                                  boxShadow: orden.estado === "pendiente" ? `0 4px 14px ${C.orange}35` : "none",
+                                }}
+                                onMouseEnter={e => {
+                                  const el = e.currentTarget as HTMLElement;
+                                  if (orden.estado === "pendiente") { el.style.background="#d45a0a"; }
+                                  else { el.style.borderColor=C.orange; el.style.color=C.orange; }
+                                }}
+                                onMouseLeave={e => {
+                                  const el = e.currentTarget as HTMLElement;
+                                  if (orden.estado === "pendiente") { el.style.background=C.orange; }
+                                  else { el.style.borderColor=C.border; el.style.color=C.ink; }
+                                }}
+                              >
+                                {orden.estado === "pendiente" ? "Ver estado del pago" : "Ver detalle"}
+                                <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
+                              </button>
+                            </>
                           )}
-                          <button
-                            onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
-                            className="ver-detalle-btn"
-                            style={{
-                              display:"flex", alignItems:"center", gap:6,
-                              background: orden.estado === "pendiente" ? C.orange : "none",
-                              border: orden.estado === "pendiente" ? "none" : `1.5px solid ${C.border}`,
-                              borderRadius:100, padding:"9px 20px", cursor:"pointer",
-                              fontSize:11, fontWeight:700,
-                              color: orden.estado === "pendiente" ? "#fff" : C.ink,
-                              fontFamily:SANS, letterSpacing:".08em", textTransform:"uppercase",
-                              transition:"all .2s",
-                              boxShadow: orden.estado === "pendiente" ? `0 4px 14px ${C.orange}35` : "none",
-                            }}
-                            onMouseEnter={e => {
-                              const el = e.currentTarget as HTMLElement;
-                              if (orden.estado === "pendiente") { el.style.background="#d45a0a"; }
-                              else { el.style.borderColor=C.orange; el.style.color=C.orange; }
-                            }}
-                            onMouseLeave={e => {
-                              const el = e.currentTarget as HTMLElement;
-                              if (orden.estado === "pendiente") { el.style.background=C.orange; }
-                              else { el.style.borderColor=C.border; el.style.color=C.ink; }
-                            }}
-                          >
-                            {orden.estado === "pendiente" ? "Ver estado del pago" : "Ver detalle"}
-                            <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
-                          </button>
                         </div>
                       </div>
                     </div>
