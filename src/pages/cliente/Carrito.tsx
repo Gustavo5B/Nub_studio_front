@@ -316,7 +316,7 @@ export default function Carrito() {
           {!loading && items.length > 0 && (
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
-                <h1 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
+                <h1 style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 26, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
                   Mi carrito
                 </h1>
                 {search && (

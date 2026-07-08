@@ -206,7 +206,7 @@ export default function MisFavoritos() {
       {/* ── Hero title ── */}
       <div style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 0" }}>
         <h1 style={{
-          fontFamily: SERIF, fontSize: "clamp(28px,4vw,42px)", fontWeight: 900,
+          fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(28px,4vw,42px)", fontWeight: 900,
           color: C.ink, margin: "0 0 4px", letterSpacing: "-.03em",
         }}>
           Mis favoritos
