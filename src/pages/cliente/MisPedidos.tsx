@@ -370,22 +370,57 @@ export default function MisPedidos() {
           </div>
 
         ) : ordenes.length === 0 ? (
-          <div style={{textAlign:"center", padding:"100px 32px"}}>
-            <div style={{
-              width:80, height:80, borderRadius:"50%", background:"#F3F0F8",
-              display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px",
-            }}>
-              <Package size={32} color={C.subLight} strokeWidth={1.5}/>
+          <div style={{
+            display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+            minHeight:"52vh", textAlign:"center", padding:"60px 32px",
+          }}>
+            {/* Ícono decorativo */}
+            <div style={{position:"relative", marginBottom:36}}>
+              <div style={{
+                width:100, height:100, borderRadius:"50%",
+                background:"linear-gradient(135deg,#F3F0F8,#EDE9F4)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                boxShadow:"0 8px 32px rgba(20,18,30,.08)",
+              }}>
+                <Package size={40} color={C.subLight} strokeWidth={1.2}/>
+              </div>
+              {/* Estrella decorativa */}
+              <div style={{
+                position:"absolute", top:-6, right:-6,
+                width:22, height:22, borderRadius:"50%",
+                background:C.orange, display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:11, color:"#fff", fontWeight:900,
+              }}>★</div>
             </div>
-            <div style={{fontFamily:SERIF, fontStyle:"italic", fontSize:26, fontWeight:900, color:C.ink, marginBottom:10}}>
+
+            {/* Texto principal */}
+            <div style={{
+              fontFamily:SERIF, fontStyle:"italic",
+              fontSize:"clamp(28px,4vw,42px)", fontWeight:900,
+              color:C.ink, letterSpacing:"-.03em", lineHeight:1, marginBottom:16,
+            }}>
               Aún no tienes pedidos
             </div>
-            <div style={{fontSize:14, color:C.sub, marginBottom:36, lineHeight:1.7}}>
-              Cuando confirmes una compra, tus órdenes aparecerán aquí
+
+            {/* Línea decorativa */}
+            <div style={{
+              width:40, height:2, borderRadius:2,
+              background:`linear-gradient(90deg,${C.orange},${C.pink})`,
+              margin:"0 auto 20px",
+            }}/>
+
+            <div style={{fontSize:14, color:C.sub, marginBottom:40, lineHeight:1.75, maxWidth:360}}>
+              Cuando confirmes una compra, tus órdenes aparecerán aquí con todo el detalle de tu inversión en arte.
             </div>
+
             <button onClick={() => navigate("/catalogo")} className="mp-nav-cta">
               Explorar catálogo
             </button>
+
+            {/* Texto aspiracional */}
+            <div style={{marginTop:28, fontSize:11.5, color:C.subLight, letterSpacing:".04em", fontStyle:"italic"}}>
+              Arte auténtico de la Huasteca Hidalguense
+            </div>
           </div>
 
         ) : (
