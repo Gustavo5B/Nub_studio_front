@@ -372,44 +372,43 @@ export default function MisPedidos() {
         ) : ordenes.length === 0 ? (
           <div style={{
             display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-            minHeight:"52vh", textAlign:"center", padding:"60px 32px",
+            minHeight:"55vh", textAlign:"center", padding:"40px 32px",
           }}>
             {/* Ícono decorativo */}
-            <div style={{position:"relative", marginBottom:36}}>
+            <div style={{position:"relative", marginBottom:24}}>
               <div style={{
-                width:100, height:100, borderRadius:"50%",
+                width:84, height:84, borderRadius:"50%",
                 background:"linear-gradient(135deg,#F3F0F8,#EDE9F4)",
                 display:"flex", alignItems:"center", justifyContent:"center",
                 boxShadow:"0 8px 32px rgba(20,18,30,.08)",
               }}>
-                <Package size={40} color={C.subLight} strokeWidth={1.2}/>
+                <Package size={34} color={C.subLight} strokeWidth={1.2}/>
               </div>
-              {/* Estrella decorativa */}
               <div style={{
-                position:"absolute", top:-6, right:-6,
-                width:22, height:22, borderRadius:"50%",
+                position:"absolute", top:-5, right:-5,
+                width:20, height:20, borderRadius:"50%",
                 background:C.orange, display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:11, color:"#fff", fontWeight:900,
+                fontSize:10, color:"#fff", fontWeight:900,
               }}>★</div>
             </div>
 
             {/* Texto principal */}
             <div style={{
               fontFamily:SERIF, fontStyle:"italic",
-              fontSize:"clamp(28px,4vw,42px)", fontWeight:900,
-              color:C.ink, letterSpacing:"-.03em", lineHeight:1, marginBottom:16,
+              fontSize:"clamp(26px,4vw,38px)", fontWeight:900,
+              color:C.ink, letterSpacing:"-.03em", lineHeight:1, marginBottom:12,
             }}>
               Aún no tienes pedidos
             </div>
 
             {/* Línea decorativa */}
             <div style={{
-              width:40, height:2, borderRadius:2,
+              width:36, height:2, borderRadius:2,
               background:`linear-gradient(90deg,${C.orange},${C.pink})`,
-              margin:"0 auto 20px",
+              margin:"0 auto 16px",
             }}/>
 
-            <div style={{fontSize:14, color:C.sub, marginBottom:40, lineHeight:1.75, maxWidth:360}}>
+            <div style={{fontSize:13.5, color:C.sub, marginBottom:28, lineHeight:1.75, maxWidth:340}}>
               Cuando confirmes una compra, tus órdenes aparecerán aquí con todo el detalle de tu inversión en arte.
             </div>
 
@@ -417,8 +416,7 @@ export default function MisPedidos() {
               Explorar catálogo
             </button>
 
-            {/* Texto aspiracional */}
-            <div style={{marginTop:28, fontSize:11.5, color:C.subLight, letterSpacing:".04em", fontStyle:"italic"}}>
+            <div style={{marginTop:20, fontSize:11, color:C.subLight, letterSpacing:".04em", fontStyle:"italic"}}>
               Arte auténtico de la Huasteca Hidalguense
             </div>
           </div>
