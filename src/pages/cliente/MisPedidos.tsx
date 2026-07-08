@@ -133,11 +133,12 @@ export default function MisPedidos() {
         .mp-nav-link:hover { color:${C.ink}; }
         .mp-nav-link.active { color:${C.ink}; }
 
-        .mp-nav-cta { background:${C.ink}; border:none; border-radius:100px;
-          padding:9px 20px; cursor:pointer; font-family:${SANS};
+        .mp-nav-cta { background:${C.orange}; border:none; border-radius:100px;
+          padding:13px 28px; cursor:pointer; font-family:${SANS};
           font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-          color:#fff; transition:background .18s, transform .18s; }
-        .mp-nav-cta:hover { background:${C.orange}; transform:translateY(-1px); }
+          color:#fff; transition:background .18s, transform .18s;
+          box-shadow:0 8px 24px ${C.orange}35; }
+        .mp-nav-cta:hover { background:#d45a0a; transform:translateY(-1px); }
 
         /* Cards */
         .orden-card {
