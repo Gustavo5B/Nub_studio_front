@@ -1,6 +1,6 @@
 // src/pages/private/admin/AdminVentas.tsx
-import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, ShoppingBag, Clock, Truck, CheckCircle, XCircle, Package } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { RefreshCw, ShoppingBag, Clock, Truck, CheckCircle, XCircle, Package, Store } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
 
@@ -21,20 +21,22 @@ const fmtMXN = (n: number) =>
 function authH() { return { "Content-Type": "application/json", Authorization: `Bearer ${authService.getToken()}` }; }
 
 const ESTADOS = [
-  { value: "",           label: "Todos",       color: C.creamMut,  bg: "#F3F2F8" },
-  { value: "pendiente",  label: "Pendiente",   color: "#92400E",   bg: "#FEF3C7" },
-  { value: "procesando", label: "Procesando",  color: "#1E40AF",   bg: "#DBEAFE" },
-  { value: "enviado",    label: "Enviado",      color: "#065F46",   bg: "#D1FAE5" },
-  { value: "entregado",  label: "Entregado",   color: "#065F46",   bg: "#D1FAE5" },
-  { value: "cancelado",  label: "Cancelado",   color: "#991B1B",   bg: "#FEE2E2" },
+  { value: "",              label: "Todos",              color: C.creamMut,  bg: "#F3F2F8" },
+  { value: "pendiente",     label: "Pendiente",          color: "#92400E",   bg: "#FEF3C7" },
+  { value: "procesando",    label: "Procesando",         color: "#1E40AF",   bg: "#DBEAFE" },
+  { value: "enviado",       label: "Enviado",            color: "#065F46",   bg: "#D1FAE5" },
+  { value: "listo_recoger", label: "Listo para recoger", color: "#5B21B6",   bg: "#F5F3FF" },
+  { value: "entregado",     label: "Entregado",          color: "#065F46",   bg: "#D1FAE5" },
+  { value: "cancelado",     label: "Cancelado",          color: "#991B1B",   bg: "#FEE2E2" },
 ];
 
 const ESTADO_ICONS: Record<string, React.ReactNode> = {
-  pendiente:  <Clock     size={13} strokeWidth={2}/>,
-  procesando: <Package   size={13} strokeWidth={2}/>,
-  enviado:    <Truck     size={13} strokeWidth={2}/>,
-  entregado:  <CheckCircle size={13} strokeWidth={2}/>,
-  cancelado:  <XCircle   size={13} strokeWidth={2}/>,
+  pendiente:      <Clock       size={13} strokeWidth={2}/>,
+  procesando:     <Package     size={13} strokeWidth={2}/>,
+  enviado:        <Truck       size={13} strokeWidth={2}/>,
+  listo_recoger:  <Store       size={13} strokeWidth={2}/>,
+  entregado:      <CheckCircle size={13} strokeWidth={2}/>,
+  cancelado:      <XCircle     size={13} strokeWidth={2}/>,
 };
 
 interface Venta {
@@ -51,6 +53,12 @@ interface Venta {
   fecha_creacion: string;
 }
 
+interface GuiaModal {
+  id_venta:    number;
+  estadoPrev:  string;
+  nuevoEstado: string;
+}
+
 export default function AdminVentas() {
   const { showToast } = useToast();
   const [ventas,     setVentas]     = useState<Venta[]>([]);
@@ -60,6 +68,9 @@ export default function AdminVentas() {
   const [totalPages, setTotalPages] = useState(1);
   const [total,      setTotal]      = useState(0);
   const [updating,   setUpdating]   = useState<number | null>(null);
+  const [guiaModal,  setGuiaModal]  = useState<GuiaModal | null>(null);
+  const [guiaInput,  setGuiaInput]  = useState("");
+  const guiaRef = useRef<HTMLInputElement>(null);
 
   const fetchVentas = useCallback(async () => {
     setLoading(true);
@@ -81,12 +92,15 @@ export default function AdminVentas() {
 
   useEffect(() => { fetchVentas(); }, [fetchVentas]);
 
-  const cambiarEstado = async (id_venta: number, nuevoEstado: string) => {
+  const cambiarEstado = async (id_venta: number, nuevoEstado: string, numero_guia?: string) => {
     setUpdating(id_venta);
     try {
+      const body: Record<string, string> = { estado: nuevoEstado };
+      if (numero_guia) body.numero_guia = numero_guia;
+
       const res  = await fetch(`${API}/api/admin/ventas-admin/${id_venta}/estado`, {
         method: "PUT", headers: authH(),
-        body: JSON.stringify({ estado: nuevoEstado }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) {
@@ -100,6 +114,23 @@ export default function AdminVentas() {
     } finally {
       setUpdating(null);
     }
+  };
+
+  const onSelectEstado = (id_venta: number, estadoActual: string, nuevoEstado: string) => {
+    if (nuevoEstado === estadoActual) return;
+    if (nuevoEstado === "enviado") {
+      setGuiaInput("");
+      setGuiaModal({ id_venta, estadoPrev: estadoActual, nuevoEstado });
+      setTimeout(() => guiaRef.current?.focus(), 80);
+    } else {
+      cambiarEstado(id_venta, nuevoEstado);
+    }
+  };
+
+  const confirmarEnvio = () => {
+    if (!guiaModal) return;
+    cambiarEstado(guiaModal.id_venta, guiaModal.nuevoEstado, guiaInput || undefined);
+    setGuiaModal(null);
   };
 
   // ── Totales por estado (en la página actual) ─────────────────
@@ -214,7 +245,7 @@ export default function AdminVentas() {
                       className="av-select"
                       value={v.estado}
                       disabled={updating === v.id_venta}
-                      onChange={e => cambiarEstado(v.id_venta, e.target.value)}
+                      onChange={e => onSelectEstado(v.id_venta, v.estado, e.target.value)}
                       style={{ background: est.bg, color: est.color, borderColor: est.color + "44" }}
                     >
                       {ESTADOS.filter(e => e.value).map(e => (
@@ -239,6 +270,84 @@ export default function AdminVentas() {
           </div>
         )}
       </div>
+
+      {/* Modal: número de guía */}
+      {guiaModal && (
+        <div
+          onClick={() => setGuiaModal(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(13,11,20,.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: C.card, borderRadius: 16, padding: "32px 32px 28px",
+              width: 420, maxWidth: "90vw", boxShadow: "0 24px 64px rgba(0,0,0,.22)",
+              fontFamily: FB,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${C.blue}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Truck size={18} color={C.blue} strokeWidth={2} />
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.cream }}>Marcar como enviado</div>
+                <div style={{ fontSize: 12, color: C.creamSub, marginTop: 2 }}>Se notificará al cliente por correo</div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
+                Número de guía <span style={{ color: C.creamMut, fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>(opcional)</span>
+              </label>
+              <input
+                ref={guiaRef}
+                type="text"
+                value={guiaInput}
+                onChange={e => setGuiaInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") confirmarEnvio(); if (e.key === "Escape") setGuiaModal(null); }}
+                placeholder="Ej. 1Z999AA10123456784"
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  border: `1.5px solid ${C.border}`, borderRadius: 8,
+                  padding: "10px 14px", fontSize: 13, fontFamily: FM,
+                  color: C.cream, background: "#F9F8FC", outline: "none",
+                  letterSpacing: ".04em",
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = C.blue)}
+                onBlur={e => (e.currentTarget.style.borderColor = C.border)}
+              />
+              <div style={{ fontSize: 11, color: C.creamMut, marginTop: 6 }}>
+                Si no tienes el número de guía todavía, puedes dejarlo vacío.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setGuiaModal(null)}
+                style={{ padding: "9px 20px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, fontSize: 12, fontWeight: 600, color: C.creamSub, cursor: "pointer", fontFamily: FB }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEnvio}
+                style={{
+                  padding: "9px 22px", borderRadius: 8, border: "none",
+                  background: C.blue, fontSize: 12, fontWeight: 700,
+                  color: "#fff", cursor: "pointer", fontFamily: FB,
+                  display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                <Truck size={13} strokeWidth={2} />
+                Confirmar envío
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

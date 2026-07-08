@@ -29,12 +29,13 @@ const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style:"currency", currency:"MXN", maximumFractionDigits:0 }).format(p);
 
 const ESTADO_CONFIG: Record<string, { bg:string; color:string; border:string; dot:string; label:string }> = {
-  pendiente:  { bg:"#FFFBEB", color:"#92400E", border:"#FDE68A", dot:"#F59E0B", label:"Pendiente"  },
-  pagado:     { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Pagado"     },
-  procesando: { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Procesando" },
-  enviado:    { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Enviado"    },
-  entregado:  { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Entregado"  },
-  cancelado:  { bg:"#FEF2F2", color:"#991B1B", border:"#FCA5A5", dot:"#EF4444", label:"Cancelado"  },
+  pendiente:      { bg:"#FFFBEB", color:"#92400E", border:"#FDE68A", dot:"#F59E0B", label:"Pendiente"          },
+  pagado:         { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Pagado"             },
+  procesando:     { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Procesando"         },
+  enviado:        { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Enviado"            },
+  listo_recoger:  { bg:"#F5F3FF", color:"#5B21B6", border:"#C4B5FD", dot:"#7C3AED", label:"Listo para recoger" },
+  entregado:      { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Entregado"          },
+  cancelado:      { bg:"#FEF2F2", color:"#991B1B", border:"#FCA5A5", dot:"#EF4444", label:"Cancelado"          },
 };
 
 interface Pedido {
@@ -123,16 +124,19 @@ export default function MisPedidos() {
     .filter(o => o.estado === "pagado" || o.estado === "entregado")
     .reduce((s, o) => s + o.totalGrupo, 0);
 
+  const isActivo = (estado: string) =>
+    ["pendiente", "procesando", "enviado", "listo_recoger"].includes(estado);
+
   const conteos = useMemo(() => ({
     todos:       ordenes.length,
-    activos:     ordenes.filter(o => o.estado === "pendiente" || o.estado === "procesando" || o.estado === "enviado").length,
+    activos:     ordenes.filter(o => isActivo(o.estado)).length,
     completados: ordenes.filter(o => o.estado === "pagado" || o.estado === "entregado").length,
     cancelados:  ordenes.filter(o => o.estado === "cancelado").length,
   }), [ordenes]);
 
   const ordenesFiltradas = useMemo(() => {
     if (filtro === "todos")       return ordenes;
-    if (filtro === "activos")     return ordenes.filter(o => o.estado === "pendiente" || o.estado === "procesando" || o.estado === "enviado");
+    if (filtro === "activos")     return ordenes.filter(o => isActivo(o.estado));
     if (filtro === "completados") return ordenes.filter(o => o.estado === "pagado" || o.estado === "entregado");
     if (filtro === "cancelados")  return ordenes.filter(o => o.estado === "cancelado");
     return ordenes;
@@ -539,6 +543,8 @@ export default function MisPedidos() {
                         ? `linear-gradient(90deg,${C.green},#16A34A)`
                         : orden.estado==="cancelado"
                         ? `linear-gradient(90deg,#9CA3AF,#6B7280)`
+                        : orden.estado==="listo_recoger"
+                        ? `linear-gradient(90deg,#7C3AED,#5B21B6)`
                         : `linear-gradient(90deg,${C.orange},${C.pink})`
                     }}/>
 
