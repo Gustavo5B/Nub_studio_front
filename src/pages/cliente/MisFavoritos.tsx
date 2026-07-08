@@ -133,12 +133,14 @@ export default function MisFavoritos() {
         .fav-card:hover .fav-img img { transform: scale(1.06); }
 
         .fav-watermark {
-          position: absolute; bottom: 10px; right: 12px; z-index: 3;
+          position: absolute; inset: 0; z-index: 3;
           pointer-events: none;
-          font-family: ${NEXA}; font-size: 9px; font-weight: 900;
-          letter-spacing: .25em; text-transform: uppercase; color: #fff;
-          mix-blend-mode: difference; opacity: .55;
+          display: flex; align-items: center; justify-content: center;
+          font-family: ${NEXA}; font-size: 13px; font-weight: 900;
+          letter-spacing: .35em; text-transform: uppercase; color: #fff;
+          mix-blend-mode: difference; opacity: .75;
           white-space: nowrap;
+          transform: rotate(-25deg);
         }
 
         .fav-overlay {
