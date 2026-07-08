@@ -347,45 +347,41 @@ export default function Carrito() {
           ) : items.length === 0 ? (
             <div style={{
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              minHeight: "55vh", padding: "60px 32px", textAlign: "center",
+              minHeight: "55vh", textAlign: "center", padding: "40px 32px",
             }}>
-              {/* Icono con badge ★ */}
-              <div style={{ position: "relative", marginBottom: 28 }}>
+              <div style={{ position: "relative", marginBottom: 24 }}>
                 <div style={{
                   width: 84, height: 84, borderRadius: "50%",
-                  background: `${C.orange}10`, border: `1.5px solid ${C.orange}22`,
+                  background: "linear-gradient(135deg,#FDF3EC,#F9E8D8)",
                   display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 8px 32px rgba(20,18,30,.08)",
                 }}>
-                  <ShoppingBag size={36} color={C.orange} strokeWidth={1.2} style={{ opacity: .6 }} />
+                  <ShoppingBag size={34} color={C.orange} strokeWidth={1.2} />
                 </div>
                 <div style={{
-                  position: "absolute", top: -4, right: -4,
-                  width: 22, height: 22, borderRadius: "50%",
-                  background: C.orange, border: "2px solid #F9F8FC",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 9, color: "#fff", fontWeight: 900,
+                  position: "absolute", top: -5, right: -5,
+                  width: 20, height: 20, borderRadius: "50%",
+                  background: C.orange, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, color: "#fff", fontWeight: 900,
                 }}>★</div>
               </div>
 
-              {/* Título */}
               <div style={{
                 fontFamily: SERIF, fontStyle: "italic",
-                fontSize: "clamp(26px,4vw,36px)", fontWeight: 900,
-                color: C.ink, letterSpacing: "-.02em", marginBottom: 16,
-                lineHeight: 1.1,
+                fontSize: "clamp(26px,4vw,38px)", fontWeight: 900,
+                color: C.ink, letterSpacing: "-.03em", lineHeight: 1, marginBottom: 12,
               }}>
                 Tu carrito está vacío
               </div>
 
-              {/* Línea gradiente */}
               <div style={{
-                height: 2.5, width: 52, borderRadius: 2,
-                background: `linear-gradient(90deg, #A83B90, ${C.orange})`,
-                marginBottom: 20,
+                width: 36, height: 2, borderRadius: 2,
+                background: `linear-gradient(90deg,${C.orange},#A83B90)`,
+                margin: "0 auto 16px",
               }} />
 
-              <div style={{ fontSize: 14, color: C.sub, maxWidth: 300, lineHeight: 1.75, marginBottom: 36 }}>
-                Descubre obras únicas de artistas<br/>de la Huasteca Hidalguense
+              <div style={{ fontSize: 13.5, color: C.sub, marginBottom: 28, lineHeight: 1.75, maxWidth: 340 }}>
+                Descubre obras únicas de artistas de la Huasteca Hidalguense
               </div>
 
               <button
@@ -393,16 +389,20 @@ export default function Carrito() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
                   background: C.orange, color: "#fff", border: "none",
-                  borderRadius: 100, padding: "14px 32px",
-                  fontSize: 11, fontWeight: 700, letterSpacing: ".18em",
+                  borderRadius: 100, padding: "13px 28px",
+                  fontSize: 11, fontWeight: 700, letterSpacing: ".14em",
                   textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
-                  boxShadow: `0 8px 28px ${C.orange}40`, transition: "transform .18s, background .18s",
+                  boxShadow: `0 8px 24px ${C.orange}35`, transition: "background .18s, transform .18s",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.background = "#d45a0a"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.background = C.orange; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#d45a0a"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.orange; (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
               >
                 Explorar catálogo <ArrowRight size={13} strokeWidth={2.5} />
               </button>
+
+              <div style={{ marginTop: 20, fontSize: 11, color: C.subLight, letterSpacing: ".04em", fontStyle: "italic" }}>
+                Arte auténtico de la Huasteca Hidalguense
+              </div>
             </div>
 
           ) : filteredItems.length === 0 ? (
