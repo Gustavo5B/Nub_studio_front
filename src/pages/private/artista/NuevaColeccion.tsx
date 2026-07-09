@@ -126,13 +126,15 @@ export default function NuevaColeccion() {
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes", "warn"); return; }
     if (file.size > 10 * 1024 * 1024)   { showToast("La imagen no puede superar 10 MB", "warn"); return; }
-    if (imgPreview) URL.revokeObjectURL(imgPreview);
     setImgFile(file);
-    setImgPreview(URL.createObjectURL(file));
+    // FileReader (mismo patrón que NuevaObra): los blob URLs fallan en
+    // algunos navegadores/formatos y dejan la preview rota
+    const reader = new FileReader();
+    reader.onloadend = () => setImgPreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const removeImg = () => {
-    if (imgPreview) URL.revokeObjectURL(imgPreview);
     setImgFile(null);
     setImgPreview("");
     if (fileRef.current) fileRef.current.value = "";

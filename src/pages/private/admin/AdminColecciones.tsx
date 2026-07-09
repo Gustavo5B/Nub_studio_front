@@ -89,6 +89,39 @@ export default function AdminColecciones() {
   const [expandedId,  setExpandedId]  = useState<number | null>(null);
   const [detalleObras, setDetalleObras] = useState<Record<number, ObraDetalle[]>>({});
   const [loadingDetalle, setLoadingDetalle] = useState(false);
+  const [confirmToggle, setConfirmToggle] = useState<Coleccion | null>(null);
+  const [toggling, setToggling] = useState(false);
+
+  const cambiarActiva = async () => {
+    if (!confirmToggle) return;
+    const col = confirmToggle;
+    setToggling(true);
+    try {
+      const token = authService.getToken();
+      const res   = await fetch(`${API}/api/admin/colecciones/${col.id_coleccion}/activa`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ activa: !col.activa }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.message || "Error al cambiar la disponibilidad", "err"); return; }
+      setColecciones(prev => prev.map(c =>
+        c.id_coleccion === col.id_coleccion ? { ...c, activa: !col.activa } : c
+      ));
+      // El detalle cacheado queda obsoleto (las obras cambiaron de estado)
+      setDetalleObras(prev => {
+        const next = { ...prev };
+        delete next[col.id_coleccion];
+        return next;
+      });
+      showToast(data.message || "Disponibilidad actualizada", "ok");
+      setConfirmToggle(null);
+    } catch (err) {
+      showToast(handleNetworkError(err), "err");
+    } finally {
+      setToggling(false);
+    }
+  };
 
   const toggleDetalle = async (id: number) => {
     if (expandedId === id) { setExpandedId(null); return; }
@@ -216,6 +249,7 @@ export default function AdminColecciones() {
                   <th>Estado</th>
                   <th style={{ textAlign: "center" }}>Obras</th>
                   <th style={{ textAlign: "center" }}>Destacada</th>
+                  <th style={{ textAlign: "center" }}>Disponible</th>
                   <th>Creada</th>
                   <th style={{ textAlign: "center" }}>Obras de la colección</th>
                 </tr>
@@ -279,6 +313,24 @@ export default function AdminColecciones() {
                       </button>
                     </td>
 
+                    {/* Disponible (activa) toggle con cascada */}
+                    <td style={{ textAlign: "center" }}>
+                      <button
+                        onClick={() => setConfirmToggle(col)}
+                        title={col.activa ? "Desactivar colección (oculta también sus obras)" : "Reactivar colección y sus obras"}
+                        style={{
+                          border: `1px solid ${col.activa ? "rgba(14,138,80,0.35)" : "rgba(196,48,74,0.35)"}`,
+                          background: col.activa ? "#eafaf3" : "#fff0f2",
+                          color: col.activa ? C.green : C.red,
+                          borderRadius: 20, padding: "3px 12px",
+                          fontSize: 11, fontWeight: 700, cursor: "pointer",
+                          fontFamily: FB, whiteSpace: "nowrap",
+                        }}
+                      >
+                        {col.activa ? "● Activa" : "○ Desactivada"}
+                      </button>
+                    </td>
+
                     {/* Fecha */}
                     <td style={{ color: C.creamSub, fontSize: 12.5, fontFamily: FM, whiteSpace: "nowrap" }}>
                       {formatFecha(col.fecha_creacion)}
@@ -299,7 +351,7 @@ export default function AdminColecciones() {
                   {/* Detalle expandible: obras de la colección */}
                   {expandedId === col.id_coleccion && (
                     <tr>
-                      <td colSpan={8} style={{ background: C.bg, padding: "16px 20px" }}>
+                      <td colSpan={9} style={{ background: C.bg, padding: "16px 20px" }}>
                         {col.historia && (
                           <p style={{ fontSize: 12.5, color: C.creamSub, margin: "0 0 12px", fontStyle: "italic" }}>
                             "{col.historia}"
@@ -373,6 +425,58 @@ export default function AdminColecciones() {
           </div>
         )}
       </div>
+
+      {/* Confirmación de activar/desactivar con explicación de la cascada */}
+      {confirmToggle && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(20,18,30,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+          onClick={() => !toggling && setConfirmToggle(null)}
+        >
+          <div
+            style={{ background: C.card, borderRadius: 14, padding: "26px 30px", maxWidth: 430, width: "92%", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", fontFamily: FB }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 800, color: confirmToggle.activa ? C.red : C.green }}>
+              {confirmToggle.activa ? "¿Desactivar colección?" : "¿Reactivar colección?"}
+            </h3>
+            {confirmToggle.activa ? (
+              <div style={{ fontSize: 13, color: C.creamSub, lineHeight: 1.6, marginBottom: 20 }}>
+                Se desactivará <strong>"{confirmToggle.nombre}"</strong> y en cadena:
+                <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+                  <li>Sus <strong>obras activas</strong> se ocultan del catálogo</li>
+                  <li>Se <strong>retiran de los carritos</strong> de los clientes</li>
+                  <li>El artista la verá como "desactivada" y no podrá modificarla</li>
+                </ul>
+                <p style={{ margin: "10px 0 0", fontSize: 12, color: C.creamMut }}>
+                  Es reversible: al reactivarla vuelven exactamente las obras que se ocultaron por esta acción.
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: C.creamSub, lineHeight: 1.6, marginBottom: 20 }}>
+                Se reactivará <strong>"{confirmToggle.nombre}"</strong> y volverán a publicarse
+                las obras que fueron ocultadas al desactivarla (las que estaban inactivas por
+                otra razón no se tocan). Los carritos no se restauran.
+              </p>
+            )}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setConfirmToggle(null)}
+                disabled={toggling}
+                style={{ background: "#F3F2F8", color: C.creamSub, border: "none", padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FB }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={cambiarActiva}
+                disabled={toggling}
+                style={{ background: confirmToggle.activa ? C.red : C.green, color: "#fff", border: "none", padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FB }}
+              >
+                {toggling ? "Aplicando..." : confirmToggle.activa ? "Desactivar" : "Reactivar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

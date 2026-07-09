@@ -137,14 +137,14 @@ export default function SubirObrasLote() {
   const setImagen = (key: number, file: File) => {
     if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes", "warn"); return; }
     if (file.size > 10 * 1024 * 1024)    { showToast("La imagen no puede superar 10 MB", "warn"); return; }
-    const obra = obras.find(o => o.key === key);
-    if (obra?.preview) URL.revokeObjectURL(obra.preview);
-    updateObra(key, { file, preview: URL.createObjectURL(file) });
+    // FileReader (mismo patrón que NuevaObra): los blob URLs fallan en
+    // algunos navegadores/formatos y dejan la preview rota
+    const reader = new FileReader();
+    reader.onloadend = () => updateObra(key, { file, preview: reader.result as string });
+    reader.readAsDataURL(file);
   };
 
   const quitarImagen = (key: number) => {
-    const obra = obras.find(o => o.key === key);
-    if (obra?.preview) URL.revokeObjectURL(obra.preview);
     updateObra(key, { file: null, preview: "" });
   };
 
@@ -154,8 +154,6 @@ export default function SubirObrasLote() {
   };
 
   const quitarCard = (key: number) => {
-    const obra = obras.find(o => o.key === key);
-    if (obra?.preview) URL.revokeObjectURL(obra.preview);
     setObras(prev => prev.filter(o => o.key !== key));
   };
 

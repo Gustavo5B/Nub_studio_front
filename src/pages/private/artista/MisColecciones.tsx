@@ -13,6 +13,7 @@ interface Coleccion {
   imagen_portada: string | null;
   estado: string;
   destacada: boolean;
+  activa?: boolean;
   fecha_creacion: string;
   fecha_publicacion_programada?: string | null;
   total_obras: number;
@@ -269,26 +270,38 @@ export default function MisColecciones() {
           </div>
         ) : (
           <div className="mc-grid">
-            {colecciones.map(col => (
-              <div key={col.id_coleccion} className="mc-card">
+            {colecciones.map(col => {
+              const desactivada = col.activa === false;
+              return (
+              <div key={col.id_coleccion} className="mc-card" style={desactivada ? { opacity: .75, borderColor: "#f5c6cc" } : undefined}>
                 {col.imagen_portada
-                  ? <img src={col.imagen_portada} alt={col.nombre} className="mc-card-img" />
+                  ? <img src={col.imagen_portada} alt={col.nombre} className="mc-card-img" style={desactivada ? { filter: "grayscale(.8)" } : undefined} />
                   : <div className="mc-card-img-placeholder">🖼</div>
                 }
                 <div className="mc-card-body">
                   <div className="mc-card-top">
                     <p className="mc-card-nombre">{col.nombre}</p>
-                    <span className={`mc-badge mc-badge-${col.estado}`}>{ESTADO_LABEL[col.estado] || col.estado}</span>
+                    {desactivada
+                      ? <span className="mc-badge" style={{ background: "#fff0f2", color: "#c4304a" }}>Desactivada</span>
+                      : <span className={`mc-badge mc-badge-${col.estado}`}>{ESTADO_LABEL[col.estado] || col.estado}</span>
+                    }
                   </div>
                   <p className="mc-card-obras">
                     {col.total_obras} obra{Number(col.total_obras) !== 1 ? "s" : ""}
-                    {col.estado === "programada" && col.fecha_publicacion_programada && (
+                    {!desactivada && col.estado === "programada" && col.fecha_publicacion_programada && (
                       <span style={{ display: "block", color: "#6028aa", marginTop: 2 }}>
                         ⏱ Se publica el {fmtFechaProg(col.fecha_publicacion_programada)}
                       </span>
                     )}
+                    {desactivada && (
+                      <span style={{ display: "block", color: "#c4304a", marginTop: 2 }}>
+                        Desactivada por administración: la colección y sus obras no son visibles al público.
+                        Contacta al equipo de Nu-B Studio para más información.
+                      </span>
+                    )}
                   </p>
                   {col.historia && <p className="mc-card-historia">{col.historia}</p>}
+                  {!desactivada && (
                   <div className="mc-card-actions">
                     <button className="mc-btn-edit" onClick={() => navigate(`/artista/colecciones/${col.id_coleccion}/editar`)}>
                       Editar
@@ -301,6 +314,7 @@ export default function MisColecciones() {
                       Eliminar
                     </button>
                   </div>
+                  )}
 
                   {/* Panel de obras */}
                   {expandedId === col.id_coleccion && (
@@ -358,7 +372,8 @@ export default function MisColecciones() {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
