@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import ProtectedImage from "../../components/ProtectedImage";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 import { emitCartUpdate } from "../../context/CartContext";
@@ -125,8 +126,9 @@ export default function MisFavoritos() {
           transform: translateY(-3px);
           box-shadow: 0 16px 48px rgba(20,18,30,.12) !important;
         }
-        .fav-img img { transition: transform .55s cubic-bezier(.2,0,0,1); }
-        .fav-card:hover .fav-img img { transform: scale(1.06); }
+        .fav-img img, .fav-img-inner { transition: transform .55s cubic-bezier(.2,0,0,1); }
+        .fav-card:hover .fav-img img,
+        .fav-card:hover .fav-img-inner { transform: scale(1.06); }
 
         .fav-overlay {
           position: absolute; inset: 0;
@@ -206,7 +208,7 @@ export default function MisFavoritos() {
       {/* ── Hero title ── */}
       <div style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 0" }}>
         <h1 style={{
-          fontFamily: SERIF, fontSize: "clamp(28px,4vw,42px)", fontWeight: 900,
+          fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(28px,4vw,42px)", fontWeight: 900,
           color: C.ink, margin: "0 0 4px", letterSpacing: "-.03em",
         }}>
           Mis favoritos
@@ -239,34 +241,61 @@ export default function MisFavoritos() {
         {/* Vacío */}
         {!loading && favoritos.length === 0 && (
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            padding: "80px 32px", gap: 22, textAlign: "center",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            minHeight: "55vh", textAlign: "center", padding: "40px 32px",
           }}>
+            <div style={{ position: "relative", marginBottom: 24 }}>
+              <div style={{
+                width: 84, height: 84, borderRadius: "50%",
+                background: "linear-gradient(135deg,#F8F0F6,#F2E6F0)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 8px 32px rgba(20,18,30,.08)",
+              }}>
+                <Heart size={34} color={C.pink} strokeWidth={1.2} />
+              </div>
+              <div style={{
+                position: "absolute", top: -5, right: -5,
+                width: 20, height: 20, borderRadius: "50%",
+                background: C.orange, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, color: "#fff", fontWeight: 900,
+              }}>★</div>
+            </div>
+
             <div style={{
-              width: 80, height: 80, borderRadius: "50%",
-              background: `${C.pink}10`, border: `1px solid ${C.pink}20`,
-              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: SERIF, fontStyle: "italic",
+              fontSize: "clamp(26px,4vw,38px)", fontWeight: 900,
+              color: C.ink, letterSpacing: "-.03em", lineHeight: 1, marginBottom: 12,
             }}>
-              <Heart size={32} color={C.pink} strokeWidth={1.3} style={{ opacity: .5 }} />
+              Aún no tienes favoritos
             </div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: C.ink, fontFamily: SERIF, marginBottom: 10 }}>
-                Aún no tienes favoritos
-              </div>
-              <div style={{ fontSize: 14, color: C.sub, maxWidth: 280, lineHeight: 1.7 }}>
-                Explora el catálogo y guarda las obras que más te gusten tocando el ♥
-              </div>
+
+            <div style={{
+              width: 36, height: 2, borderRadius: 2,
+              background: `linear-gradient(90deg,${C.orange},${C.pink})`,
+              margin: "0 auto 16px",
+            }} />
+
+            <div style={{ fontSize: 13.5, color: C.sub, marginBottom: 28, lineHeight: 1.75, maxWidth: 340 }}>
+              Explora el catálogo y guarda las obras que más te gusten tocando el ♥
             </div>
+
             <button onClick={() => navigate("/catalogo")} style={{
-              display: "flex", alignItems: "center", gap: 8,
+              display: "inline-flex", alignItems: "center", gap: 8,
               padding: "13px 28px", borderRadius: 100,
               background: C.orange, border: "none", color: "#fff",
-              fontSize: 11, fontWeight: 700, letterSpacing: ".16em",
+              fontSize: 11, fontWeight: 700, letterSpacing: ".14em",
               textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
-              boxShadow: `0 8px 24px ${C.orange}35`,
-            }}>
+              boxShadow: `0 8px 24px ${C.orange}35`, transition: "background .18s, transform .18s",
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#d45a0a"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.orange; (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
+            >
               <Sparkles size={13} strokeWidth={2} /> Explorar galería
             </button>
+
+            <div style={{ marginTop: 20, fontSize: 11, color: C.subLight, letterSpacing: ".04em", fontStyle: "italic" }}>
+              Arte auténtico de la Huasteca Hidalguense
+            </div>
           </div>
         )}
 
@@ -292,8 +321,13 @@ export default function MisFavoritos() {
                   style={{ aspectRatio: "3/4", overflow: "hidden", position: "relative", background: "#EDE9E3" }}
                 >
                   {fav.imagen_principal
-                    ? <img src={fav.imagen_principal} alt={fav.titulo}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ? <ProtectedImage
+                        src={fav.imagen_principal}
+                        alt={fav.titulo}
+                        wrapStyle={{ position: "absolute", inset: 0 }}
+                        imgStyle={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        className="fav-img-inner"
+                      />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Heart size={32} color={C.subLight} strokeWidth={1} />
                       </div>

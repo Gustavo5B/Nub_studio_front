@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, ShieldCheck, Truck, ArrowLeft, Lock } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
@@ -19,6 +19,15 @@ interface ItemCarrito {
   id_carrito: number; id_obra: number; titulo: string; slug: string;
   imagen_principal: string; precio_base: string; cantidad: number;
   artista_alias: string; precio_unitario: number; subtotal: number;
+}
+
+interface Direccion {
+  id_direccion: number;
+  calle: string; numero_exterior: string; numero_interior?: string;
+  colonia: string; codigo_postal: string;
+  id_estado: number; id_municipio: number;
+  referencias?: string; telefono?: string;
+  nombre_estado?: string; nombre_municipio?: string;
 }
 
 // ── Íconos SVG de métodos de pago ──────────────────────────────
@@ -78,13 +87,16 @@ export default function Checkout() {
 
   const [direccion, setDireccion] = useState({
     calle: "", numero_exterior: "", numero_interior: "",
-    colonia: "", codigo_postal: "", id_estado: 0, id_municipio: 0, referencias: "",
+    colonia: "", codigo_postal: "", id_estado: 0, id_municipio: 0, referencias: "", telefono: "",
   });
 
   const [estados, setEstados]       = useState<{ id_estado: number; nombre: string }[]>([]);
   const [municipios, setMunicipios] = useState<{ id_municipio: number; nombre: string }[]>([]);
   const [cargandoMunicipios, setCargandoMunicipios] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<Direccion[]>([]);
+  const [selectedSavedId, setSelectedSavedId] = useState<number | "new">("new");
+  const targetMunicipioRef = useRef(0);
 
   const token   = authService.getToken();
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
@@ -126,10 +138,36 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
+    fetch(`${API_URL}/api/direcciones`, { headers })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && Array.isArray(d.data) && d.data.length > 0) {
+          setSavedAddresses(d.data);
+          const first = d.data[0] as Direccion;
+          setSelectedSavedId(first.id_direccion);
+          targetMunicipioRef.current = first.id_municipio || 0;
+          setDireccion({
+            calle: first.calle || "", numero_exterior: first.numero_exterior || "",
+            numero_interior: first.numero_interior || "", colonia: first.colonia || "",
+            codigo_postal: first.codigo_postal || "", id_estado: first.id_estado || 0,
+            id_municipio: first.id_municipio || 0, referencias: first.referencias || "",
+            telefono: first.telefono || "",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line
+
+  useEffect(() => {
     if (direccion.id_estado > 0) {
       setCargandoMunicipios(true);
       fetch(`${API_URL}/api/municipios/${direccion.id_estado}`).then(r => r.json())
-        .then(d => { setMunicipios(d.success ? d.data : []); setDireccion(p => ({ ...p, id_municipio: 0 })); })
+        .then(d => {
+          setMunicipios(d.success ? d.data : []);
+          const target = targetMunicipioRef.current;
+          setDireccion(p => ({ ...p, id_municipio: target || 0 }));
+          targetMunicipioRef.current = 0;
+        })
         .catch(() => setMunicipios([]))
         .finally(() => setCargandoMunicipios(false));
     } else {
@@ -139,12 +177,31 @@ export default function Checkout() {
 
   const total = items.reduce((sum, i) => sum + i.subtotal, 0);
 
+  const selectSavedAddress = (addr: Direccion) => {
+    setSelectedSavedId(addr.id_direccion);
+    targetMunicipioRef.current = addr.id_municipio || 0;
+    setDireccion({
+      calle: addr.calle || "", numero_exterior: addr.numero_exterior || "",
+      numero_interior: addr.numero_interior || "", colonia: addr.colonia || "",
+      codigo_postal: addr.codigo_postal || "", id_estado: addr.id_estado || 0,
+      id_municipio: addr.id_municipio || 0, referencias: addr.referencias || "",
+      telefono: addr.telefono || "",
+    });
+  };
+
+  const clearForNewAddress = () => {
+    setSelectedSavedId("new");
+    setDireccion({ calle:"", numero_exterior:"", numero_interior:"", colonia:"", codigo_postal:"", id_estado:0, id_municipio:0, referencias:"", telefono:"" });
+  };
+
   const validateForm = () => {
     if (!direccion.calle.trim() || !direccion.numero_exterior.trim() || !direccion.colonia.trim() || !direccion.codigo_postal.trim()) {
       showToast("Completa los campos obligatorios de la dirección", "err"); return false;
     }
     if (!direccion.id_estado) { showToast("Selecciona un estado", "err"); return false; }
     if (!direccion.id_municipio) { showToast("Selecciona un municipio", "err"); return false; }
+    const tel = direccion.telefono.replace(/\D/g, "");
+    if (!tel || tel.length !== 10) { showToast("Ingresa un teléfono de contacto válido (10 dígitos)", "err"); return false; }
     return true;
   };
 
@@ -161,6 +218,7 @@ export default function Checkout() {
           colonia: direccion.colonia.trim(), codigo_postal: direccion.codigo_postal.trim(),
           id_estado: direccion.id_estado, id_municipio: direccion.id_municipio,
           referencias: direccion.referencias.trim() || null,
+          telefono: direccion.telefono.replace(/\D/g, ""),
         }),
       });
       const dirData = await dirRes.json();
@@ -232,6 +290,14 @@ export default function Checkout() {
         }
         .method-icon { transition: transform .15s, box-shadow .15s; border-radius: 8px; }
         .method-icon:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+        .addr-scroll { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
+        .addr-scroll::-webkit-scrollbar { height:4px; }
+        .addr-scroll::-webkit-scrollbar-track { background:transparent; }
+        .addr-scroll::-webkit-scrollbar-thumb { background:#E6E4EF; border-radius:100px; }
+        .addr-card { flex-shrink:0; border-radius:14px; padding:12px 16px; cursor:pointer; text-align:left; max-width:210px; transition:all .15s; }
+        .addr-card:hover { transform:translateY(-1px); }
+        .addr-new { flex-shrink:0; border-radius:14px; padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .15s; white-space:nowrap; }
+        .addr-new:hover { transform:translateY(-1px); }
       `}</style>
 
 
@@ -239,6 +305,56 @@ export default function Checkout() {
 
         {/* ── Columna izquierda ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Selector de direcciones guardadas */}
+          {savedAddresses.length > 0 && (
+            <div style={{ background: C.card, borderRadius: 20, padding: "20px 24px", boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: C.sub, letterSpacing: ".14em", textTransform: "uppercase", marginBottom: 12 }}>
+                Mis direcciones guardadas
+              </div>
+              <div className="addr-scroll">
+                {savedAddresses.map(addr => (
+                  <button key={addr.id_direccion} className="addr-card" onClick={() => selectSavedAddress(addr)}
+                    style={{
+                      border: `2px solid ${selectedSavedId === addr.id_direccion ? C.orange : C.border}`,
+                      background: selectedSavedId === addr.id_direccion ? "#FFF5ED" : "#FAFAF9",
+                    }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink, marginBottom: 2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {addr.calle} {addr.numero_exterior}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.sub, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {addr.colonia}, C.P. {addr.codigo_postal}
+                    </div>
+                    {addr.nombre_municipio && (
+                      <div style={{ fontSize: 10.5, color: C.subLight, marginTop: 2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {addr.nombre_municipio}, {addr.nombre_estado}
+                      </div>
+                    )}
+                    {selectedSavedId === addr.id_direccion && (
+                      <div style={{ marginTop: 6, fontSize: 9.5, fontWeight: 700, color: C.orange, letterSpacing: ".06em", textTransform: "uppercase" }}>
+                        ✓ Seleccionada
+                      </div>
+                    )}
+                  </button>
+                ))}
+                <button className="addr-new" onClick={clearForNewAddress}
+                  style={{
+                    border: `2px dashed ${selectedSavedId === "new" ? C.orange : C.border}`,
+                    background: "transparent",
+                    color: selectedSavedId === "new" ? C.orange : C.sub,
+                    fontSize: 12, fontWeight: 700, fontFamily: SANS,
+                  }}>
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>＋</span>
+                  Nueva dirección
+                </button>
+              </div>
+              {selectedSavedId !== "new" && (
+                <div style={{ marginTop: 10, fontSize: 11, color: C.sub, display: "flex", alignItems: "center", gap: 5 }}>
+                  <MapPin size={11} strokeWidth={2} /> Puedes editar los campos si necesitas hacer cambios
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Tarjeta: Dirección */}
           <div style={{ background: C.card, borderRadius: 20, padding: "28px 28px 32px", boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)" }}>
@@ -327,6 +443,18 @@ export default function Checkout() {
                     <option value={0}>{cargandoMunicipios ? "Cargando..." : "Selecciona un municipio"}</option>
                     {municipios.map(m => <option key={m.id_municipio} value={m.id_municipio}>{m.nombre}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Teléfono de contacto *</label>
+                  <input type="tel" placeholder="Ej: 7712345678" value={direccion.telefono}
+                    onChange={e => setDireccion({ ...direccion, telefono: e.target.value })}
+                    onFocus={() => setFocusedField("tel")} onBlur={() => setFocusedField(null)}
+                    style={inputStyle("tel")} maxLength={15} required />
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-end" }}>
+                  <div style={{ fontSize: 11, color: C.sub, lineHeight: 1.5, paddingBottom: 4 }}>
+                    Para coordinar la entrega de tu obra. No se compartirá públicamente.
+                  </div>
                 </div>
                 <div style={{ gridColumn: "span 2" }}>
                   <label style={labelStyle}>Referencias <span style={{ fontWeight: 400, textTransform: "none" }}>(opcional)</span></label>

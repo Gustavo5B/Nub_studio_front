@@ -29,12 +29,13 @@ const fmt = (p: number) =>
   new Intl.NumberFormat("es-MX", { style:"currency", currency:"MXN", maximumFractionDigits:0 }).format(p);
 
 const ESTADO_CONFIG: Record<string, { bg:string; color:string; border:string; dot:string; label:string }> = {
-  pendiente:  { bg:"#FFFBEB", color:"#92400E", border:"#FDE68A", dot:"#F59E0B", label:"Pendiente"  },
-  pagado:     { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Pagado"     },
-  procesando: { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Procesando" },
-  enviado:    { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Enviado"    },
-  entregado:  { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Entregado"  },
-  cancelado:  { bg:"#FEF2F2", color:"#991B1B", border:"#FCA5A5", dot:"#EF4444", label:"Cancelado"  },
+  pendiente:      { bg:"#FFFBEB", color:"#92400E", border:"#FDE68A", dot:"#F59E0B", label:"Pendiente"          },
+  pagado:         { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Pagado"             },
+  procesando:     { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Procesando"         },
+  enviado:        { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Enviado"            },
+  listo_recoger:  { bg:"#F5F3FF", color:"#5B21B6", border:"#C4B5FD", dot:"#7C3AED", label:"Listo para recoger" },
+  entregado:      { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Entregado"          },
+  cancelado:      { bg:"#FEF2F2", color:"#991B1B", border:"#FCA5A5", dot:"#EF4444", label:"Cancelado"          },
 };
 
 interface Pedido {
@@ -55,6 +56,15 @@ const STATUS_BANNER: Record<string, { bg:string; border:string; color:string; ic
   pending: { bg:"#FFFBEB", border:"#FCD34D", color:"#92400E", icon:<Clock       size={20} strokeWidth={2}/>, title:"Pago en revisión", msg:"Tu pago está siendo verificado. Te notificaremos cuando se confirme." },
 };
 
+type FiltroEstado = "todos" | "activos" | "completados" | "cancelados";
+
+const FILTROS: { key: FiltroEstado; label: string }[] = [
+  { key: "todos",       label: "Todos"       },
+  { key: "activos",     label: "En proceso"  },
+  { key: "completados", label: "Completados" },
+  { key: "cancelados",  label: "Cancelados"  },
+];
+
 export default function MisPedidos() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,6 +72,8 @@ export default function MisPedidos() {
   const [pedidos,     setPedidos]     = useState<Pedido[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [banner,      setBanner]      = useState<string|null>(null);
+  const [countdown,   setCountdown]   = useState(5);
+  const [filtro,      setFiltro]      = useState<FiltroEstado>("todos");
 
   const nombre = localStorage.getItem("userName") || "Cliente";
 
@@ -72,6 +84,18 @@ export default function MisPedidos() {
       window.history.replaceState({}, "", "/mi-cuenta/pedidos");
     }
   }, []); // eslint-disable-line
+
+  useEffect(() => {
+    if (!banner) return;
+    setCountdown(5);
+    const iv = setInterval(() => {
+      setCountdown(p => {
+        if (p <= 1) { clearInterval(iv); setBanner(null); return 0; }
+        return p - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [banner]);
 
   useEffect(() => {
     const token = authService.getToken();
@@ -100,12 +124,31 @@ export default function MisPedidos() {
     .filter(o => o.estado === "pagado" || o.estado === "entregado")
     .reduce((s, o) => s + o.totalGrupo, 0);
 
+  const isActivo = (estado: string) =>
+    ["pendiente", "procesando", "enviado", "listo_recoger"].includes(estado);
+
+  const conteos = useMemo(() => ({
+    todos:       ordenes.length,
+    activos:     ordenes.filter(o => isActivo(o.estado)).length,
+    completados: ordenes.filter(o => o.estado === "pagado" || o.estado === "entregado").length,
+    cancelados:  ordenes.filter(o => o.estado === "cancelado").length,
+  }), [ordenes]);
+
+  const ordenesFiltradas = useMemo(() => {
+    if (filtro === "todos")       return ordenes;
+    if (filtro === "activos")     return ordenes.filter(o => isActivo(o.estado));
+    if (filtro === "completados") return ordenes.filter(o => o.estado === "pagado" || o.estado === "entregado");
+    if (filtro === "cancelados")  return ordenes.filter(o => o.estado === "cancelado");
+    return ordenes;
+  }, [ordenes, filtro]);
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:SANS, display:"flex", flexDirection:"column" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
         @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display:swap; }
         @font-face { font-family:'Nexa-Heavy'; src:url('/fonts/Nexa-Heavy.ttf') format('truetype'); font-display:swap; }
+
 
         /* Navbar */
         .mp-nav-logo { background:none; border:none; cursor:pointer; padding:0;
@@ -119,11 +162,12 @@ export default function MisPedidos() {
         .mp-nav-link:hover { color:${C.ink}; }
         .mp-nav-link.active { color:${C.ink}; }
 
-        .mp-nav-cta { background:${C.ink}; border:none; border-radius:100px;
-          padding:9px 20px; cursor:pointer; font-family:${SANS};
+        .mp-nav-cta { background:${C.orange}; border:none; border-radius:100px;
+          padding:13px 28px; cursor:pointer; font-family:${SANS};
           font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-          color:#fff; transition:background .18s, transform .18s; }
-        .mp-nav-cta:hover { background:${C.orange}; transform:translateY(-1px); }
+          color:#fff; transition:background .18s, transform .18s;
+          box-shadow:0 8px 24px ${C.orange}35; }
+        .mp-nav-cta:hover { background:#d45a0a; transform:translateY(-1px); }
 
         /* Cards */
         .orden-card {
@@ -170,14 +214,36 @@ export default function MisPedidos() {
           border-top:1px solid ${C.border};
         }
 
-        .banner-close { background:none; border:none; cursor:pointer;
-          opacity:.5; font-size:17px; padding:3px 5px; border-radius:4px; transition:opacity .15s; }
-        .banner-close:hover { opacity:1; }
+        /* Filtros */
+        .filtro-tab {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 8px 16px; border-radius: 100px; cursor: pointer;
+          font-family: ${SANS}; font-size: 12px; font-weight: 600;
+          border: 1.5px solid ${C.border}; background: #fff;
+          color: ${C.sub}; transition: all .18s ease; white-space: nowrap;
+        }
+        .filtro-tab:hover { border-color: ${C.ink}; color: ${C.ink}; }
+        .filtro-tab.active { background: ${C.ink}; border-color: ${C.ink}; color: #fff; }
+        .filtro-tab .badge {
+          font-size: 10px; font-weight: 800; font-family: ${MONO};
+          background: rgba(255,255,255,.18); border-radius: 100px;
+          padding: 1px 6px; min-width: 18px; text-align: center;
+        }
+        .filtro-tab:not(.active) .badge { background: ${C.bg}; color: ${C.sub}; }
+
+        /* Card cancelada */
+        .orden-card.cancelada { opacity: .62; }
+        .orden-card.cancelada:hover { opacity: 1; }
 
         @keyframes fadeUp {
           from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)}
         }
         .reveal { animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both; }
+
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes scaleIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+        .overlay-btn { transition:all .18s; }
+        .overlay-btn:hover { transform:translateY(-1px); }
 
         @keyframes shimmer {
           0%{background-position:200% 0} 100%{background-position:-200% 0}
@@ -188,6 +254,111 @@ export default function MisPedidos() {
         }
       `}</style>
 
+
+      {/* ══════════════════════════════
+          PAYMENT RESULT OVERLAY
+      ══════════════════════════════ */}
+      {banner && STATUS_BANNER[banner] && (() => {
+        const isSuccess = banner === "success";
+        const isFailure = banner === "failure";
+        const accent = isSuccess ? "#16A34A" : isFailure ? "#DC2626" : "#D97706";
+        const bg     = isSuccess ? "#DCFCE7"  : isFailure ? "#FEE2E2"  : "#FEF3C7";
+        const icon   = isSuccess
+          ? <CheckCircle size={44} strokeWidth={1.6} color={accent}/>
+          : isFailure
+          ? <XCircle    size={44} strokeWidth={1.6} color={accent}/>
+          : <Clock      size={44} strokeWidth={1.6} color={accent}/>;
+        const title = isSuccess ? "¡Pago exitoso!" : isFailure ? "Pago rechazado" : "Pago en revisión";
+        const msg   = isSuccess
+          ? "Tu compra fue procesada con éxito. Recibirás confirmación por correo y nos contactaremos contigo para coordinar el envío de tu obra."
+          : isFailure
+          ? "No pudimos procesar tu pago. Puedes intentarlo de nuevo o elegir otro método de pago."
+          : "Tu pago está siendo verificado. Te notificaremos en cuanto la institución bancaria lo confirme.";
+        const recentOrder = ordenes[0];
+        const codigo = recentOrder ? `NUB-${String(recentOrder.id_pedido).padStart(5,"0")}` : null;
+
+        return (
+          <div
+            style={{
+              position:"fixed", inset:0, zIndex:2000,
+              background:"rgba(20,18,30,.82)",
+              backdropFilter:"blur(10px)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              padding:24, animation:"fadeIn .25s ease both",
+            }}
+            onClick={() => setBanner(null)}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background:"#fff", borderRadius:28, padding:"52px 44px 44px",
+                maxWidth:480, width:"100%",
+                boxShadow:"0 32px 80px rgba(20,18,30,.32), 0 0 0 1px rgba(20,18,30,.06)",
+                textAlign:"center",
+                animation:"scaleIn .38s cubic-bezier(.34,1.56,.64,1) both",
+              }}
+            >
+              {/* Ícono */}
+              <div style={{
+                width:96, height:96, borderRadius:"50%",
+                background:bg, display:"flex", alignItems:"center", justifyContent:"center",
+                margin:"0 auto 28px",
+              }}>{icon}</div>
+
+              {/* Título */}
+              <h2 style={{
+                fontFamily:SERIF, fontStyle:"italic", fontSize:"clamp(30px,5vw,40px)", fontWeight:900,
+                color:C.ink, letterSpacing:"-.03em", margin:"0 0 12px", lineHeight:1,
+              }}>{title}</h2>
+
+              {/* Mensaje */}
+              <p style={{ fontSize:14, color:C.sub, lineHeight:1.75, margin:"0 0 28px", maxWidth:360, marginInline:"auto" }}>
+                {msg}
+              </p>
+
+              {/* Código de orden (solo éxito) */}
+              {isSuccess && (
+                <div style={{
+                  background:"#F9F8FC", border:`1px solid ${C.border}`, borderRadius:14,
+                  padding:"14px 24px", marginBottom:28,
+                  display:"inline-flex", alignItems:"center", gap:12,
+                }}>
+                  <Package size={15} color={C.sub} strokeWidth={1.8}/>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontSize:9.5, fontWeight:700, color:C.sub, letterSpacing:".15em", textTransform:"uppercase"}}>
+                      {codigo ? "Número de orden" : "Estado"}
+                    </div>
+                    <div style={{fontFamily:MONO, fontSize:17, fontWeight:700, color:C.ink, letterSpacing:".04em"}}>
+                      {codigo || "Confirmado ✓"}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botones */}
+              <div style={{display:"flex", flexDirection:"column", gap:10}}>
+                {isFailure && (
+                  <button className="overlay-btn" onClick={() => { setBanner(null); navigate("/mi-cuenta/carrito"); }} style={{
+                    background:accent, color:"#fff", border:"none", borderRadius:100,
+                    padding:"14px 28px", fontSize:12, fontWeight:700, cursor:"pointer",
+                    fontFamily:SANS, letterSpacing:".1em", textTransform:"uppercase",
+                  }}>
+                    Reintentar pago
+                  </button>
+                )}
+                <button className="overlay-btn" onClick={() => setBanner(null)} style={{
+                  background:"none", border:`1.5px solid ${C.border}`, borderRadius:100,
+                  padding:"13px 28px", fontSize:11.5, fontWeight:600, cursor:"pointer",
+                  fontFamily:SANS, color:C.sub, letterSpacing:".04em",
+                  display:"inline-flex", alignItems:"center", justifyContent:"center", gap:8,
+                }}>
+                  {isFailure ? `Cerrar (${countdown}s)` : `Ver mis pedidos (${countdown}s)`}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ══════════════════════════════
           HERO / PAGE TITLE
@@ -243,26 +414,6 @@ export default function MisPedidos() {
       ══════════════════════════════ */}
       <main style={{flex:1, maxWidth:1100, width:"100%", margin:"0 auto", padding:"40px 40px 80px"}}>
 
-        {/* Banner */}
-        {banner && STATUS_BANNER[banner] && (() => {
-          const b = STATUS_BANNER[banner];
-          return (
-            <div style={{
-              background:b.bg, border:`1px solid ${b.border}`, borderRadius:14,
-              padding:"16px 20px", marginBottom:28,
-              display:"flex", alignItems:"flex-start", gap:14, color:b.color,
-              animation:"fadeUp .3s ease both",
-            }}>
-              <span style={{flexShrink:0, marginTop:1}}>{b.icon}</span>
-              <div style={{flex:1}}>
-                <div style={{fontWeight:800, fontSize:15, marginBottom:3}}>{b.title}</div>
-                <div style={{fontSize:13, opacity:.85, lineHeight:1.5}}>{b.msg}</div>
-              </div>
-              <button className="banner-close" onClick={() => setBanner(null)}>✕</button>
-            </div>
-          );
-        })()}
-
         {/* Skeleton */}
         {loading ? (
           <div style={{display:"flex", flexDirection:"column", gap:12}}>
@@ -270,37 +421,103 @@ export default function MisPedidos() {
           </div>
 
         ) : ordenes.length === 0 ? (
-          <div style={{textAlign:"center", padding:"100px 32px"}}>
-            <div style={{
-              width:80, height:80, borderRadius:"50%", background:"#F3F0F8",
-              display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px",
-            }}>
-              <Package size={32} color={C.subLight} strokeWidth={1.5}/>
+          <div style={{
+            display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+            minHeight:"55vh", textAlign:"center", padding:"40px 32px",
+          }}>
+            {/* Ícono decorativo */}
+            <div style={{position:"relative", marginBottom:24}}>
+              <div style={{
+                width:84, height:84, borderRadius:"50%",
+                background:"linear-gradient(135deg,#F3F0F8,#EDE9F4)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                boxShadow:"0 8px 32px rgba(20,18,30,.08)",
+              }}>
+                <Package size={34} color={C.subLight} strokeWidth={1.2}/>
+              </div>
+              <div style={{
+                position:"absolute", top:-5, right:-5,
+                width:20, height:20, borderRadius:"50%",
+                background:C.orange, display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:10, color:"#fff", fontWeight:900,
+              }}>★</div>
             </div>
-            <div style={{fontFamily:SERIF, fontStyle:"italic", fontSize:26, fontWeight:900, color:C.ink, marginBottom:10}}>
+
+            {/* Texto principal */}
+            <div style={{
+              fontFamily:SERIF, fontStyle:"italic",
+              fontSize:"clamp(26px,4vw,38px)", fontWeight:900,
+              color:C.ink, letterSpacing:"-.03em", lineHeight:1, marginBottom:12,
+            }}>
               Aún no tienes pedidos
             </div>
-            <div style={{fontSize:14, color:C.sub, marginBottom:36, lineHeight:1.7}}>
-              Cuando confirmes una compra, tus órdenes aparecerán aquí
+
+            {/* Línea decorativa */}
+            <div style={{
+              width:36, height:2, borderRadius:2,
+              background:`linear-gradient(90deg,${C.orange},${C.pink})`,
+              margin:"0 auto 16px",
+            }}/>
+
+            <div style={{fontSize:13.5, color:C.sub, marginBottom:28, lineHeight:1.75, maxWidth:340}}>
+              Cuando confirmes una compra, tus órdenes aparecerán aquí con todo el detalle de tu inversión en arte.
             </div>
+
             <button onClick={() => navigate("/catalogo")} className="mp-nav-cta">
               Explorar catálogo
             </button>
+
+            <div style={{marginTop:20, fontSize:11, color:C.subLight, letterSpacing:".04em", fontStyle:"italic"}}>
+              Arte auténtico de la Huasteca Hidalguense
+            </div>
           </div>
 
         ) : (
           <>
-            {/* Encabezado de tabla */}
-            <div className="table-head" style={{marginBottom:0}}>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em"}}>Obra</span>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em"}}>Artista</span>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em", textAlign:"center"}}>Cant.</span>
-              <span style={{fontSize:10.5, fontWeight:700, color:C.subLight, textTransform:"uppercase", letterSpacing:".15em", textAlign:"right"}}>Precio</span>
+            {/* ── Tabs de filtro ── */}
+            <div style={{
+              display:"flex", gap:8, marginBottom:20, flexWrap:"wrap",
+              overflowX:"auto", paddingBottom:2,
+            }}>
+              {FILTROS.map(f => (
+                <button
+                  key={f.key}
+                  className={`filtro-tab${filtro === f.key ? " active" : ""}`}
+                  onClick={() => setFiltro(f.key)}
+                >
+                  {f.label}
+                  {conteos[f.key] > 0 && (
+                    <span className="badge">{conteos[f.key]}</span>
+                  )}
+                </button>
+              ))}
             </div>
 
+            {/* Sin resultados para el filtro */}
+            {ordenesFiltradas.length === 0 && (
+              <div style={{
+                textAlign:"center", padding:"48px 32px",
+                background:C.card, borderRadius:16, border:`1px solid ${C.border}`,
+              }}>
+                <div style={{fontSize:13, color:C.sub, marginBottom:12}}>
+                  No tienes órdenes en esta categoría
+                </div>
+                <button
+                  onClick={() => setFiltro("todos")}
+                  style={{
+                    background:"none", border:`1.5px solid ${C.border}`, borderRadius:100,
+                    padding:"8px 20px", fontSize:12, fontWeight:600, color:C.ink,
+                    cursor:"pointer", fontFamily:SANS,
+                  }}
+                >
+                  Ver todas las órdenes
+                </button>
+              </div>
+            )}
+
             {/* Lista de órdenes */}
-            <div style={{display:"flex", flexDirection:"column", gap:12, marginTop:8}}>
-              {ordenes.map((orden, idx) => {
+            <div style={{display:"flex", flexDirection:"column", gap:12}}>
+              {ordenesFiltradas.map((orden, idx) => {
                 const est    = ESTADO_CONFIG[orden.estado] ?? ESTADO_CONFIG.pendiente;
                 const fechaObj = new Date(orden.fecha);
                 const fecha = fechaObj.toLocaleDateString("es-MX", { year:"numeric", month:"short", day:"numeric" });
@@ -315,14 +532,19 @@ export default function MisPedidos() {
                 const extraCount = orden.items.length - 3;
 
                 return (
-                  <div key={orden.id_pedido} className="orden-card reveal" style={{animationDelay:`${idx*50}ms`}}>
-
+                  <div
+                    key={orden.id_pedido}
+                    className={`orden-card reveal${orden.estado === "cancelado" ? " cancelada" : ""}`}
+                    style={{animationDelay:`${idx*50}ms`}}
+                  >
                     {/* Franja de estado */}
                     <div style={{height:3, background:
                       orden.estado==="pagado"||orden.estado==="entregado"
                         ? `linear-gradient(90deg,${C.green},#16A34A)`
                         : orden.estado==="cancelado"
-                        ? `linear-gradient(90deg,#EF4444,#DC2626)`
+                        ? `linear-gradient(90deg,#9CA3AF,#6B7280)`
+                        : orden.estado==="listo_recoger"
+                        ? `linear-gradient(90deg,#7C3AED,#5B21B6)`
                         : `linear-gradient(90deg,${C.orange},${C.pink})`
                     }}/>
 
@@ -409,24 +631,58 @@ export default function MisPedidos() {
                           </div>
                         </div>
 
-                        {/* Botón ver detalle */}
-                        <button
-                          onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
-                          className="ver-detalle-btn"
-                          style={{
-                            display:"flex", alignItems:"center", gap:6,
-                            background:"none", border:`1.5px solid ${C.border}`,
-                            borderRadius:100, padding:"9px 20px", cursor:"pointer",
-                            fontSize:11, fontWeight:700, color:C.ink, fontFamily:SANS,
-                            letterSpacing:".08em", textTransform:"uppercase",
-                            transition:"all .2s", flexShrink:0,
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=C.orange; (e.currentTarget as HTMLElement).style.color=C.orange; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor=C.border; (e.currentTarget as HTMLElement).style.color=C.ink; }}
-                        >
-                          Ver detalle
-                          <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
-                        </button>
+                        {/* Botones */}
+                        <div style={{display:"flex", flexDirection:"column", gap:8, flexShrink:0, alignItems:"flex-end"}}>
+                          {orden.estado === "cancelado" ? (
+                            <div style={{
+                              fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",
+                              color:"#6B7280", background:"#F3F4F6", border:"1px solid #E5E7EB",
+                              borderRadius:100, padding:"4px 12px",
+                            }}>
+                              Orden cancelada
+                            </div>
+                          ) : (
+                            <>
+                              {orden.estado === "pendiente" && (
+                                <div style={{
+                                  fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",
+                                  color:"#92400E", background:"#FFFBEB", border:"1px solid #FDE68A",
+                                  borderRadius:100, padding:"4px 12px",
+                                }}>
+                                  ⏳ En espera de confirmación
+                                </div>
+                              )}
+                              <button
+                                onClick={() => navigate(`/mi-cuenta/pedidos/${orden.id_pedido}`)}
+                                className="ver-detalle-btn"
+                                style={{
+                                  display:"flex", alignItems:"center", gap:6,
+                                  background: orden.estado === "pendiente" ? C.orange : "none",
+                                  border: orden.estado === "pendiente" ? "none" : `1.5px solid ${C.border}`,
+                                  borderRadius:100, padding:"9px 20px", cursor:"pointer",
+                                  fontSize:11, fontWeight:700,
+                                  color: orden.estado === "pendiente" ? "#fff" : C.ink,
+                                  fontFamily:SANS, letterSpacing:".08em", textTransform:"uppercase",
+                                  transition:"all .2s",
+                                  boxShadow: orden.estado === "pendiente" ? `0 4px 14px ${C.orange}35` : "none",
+                                }}
+                                onMouseEnter={e => {
+                                  const el = e.currentTarget as HTMLElement;
+                                  if (orden.estado === "pendiente") { el.style.background="#d45a0a"; }
+                                  else { el.style.borderColor=C.orange; el.style.color=C.orange; }
+                                }}
+                                onMouseLeave={e => {
+                                  const el = e.currentTarget as HTMLElement;
+                                  if (orden.estado === "pendiente") { el.style.background=C.orange; }
+                                  else { el.style.borderColor=C.border; el.style.color=C.ink; }
+                                }}
+                              >
+                                {orden.estado === "pendiente" ? "Ver estado del pago" : "Ver detalle"}
+                                <ChevronDown size={13} strokeWidth={2.5} style={{transform:"rotate(-90deg)"}}/>
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

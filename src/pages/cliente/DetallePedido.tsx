@@ -1,7 +1,7 @@
 // src/pages/cliente/DetallePedido.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package, MapPin, CheckCircle, Clock, Truck, Star, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Package, MapPin, CheckCircle, Clock, Truck, Star, ShoppingBag, XCircle } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
 
@@ -40,6 +40,7 @@ interface VentaItem {
   subtotal:        string;
   total:           string;
   estado_venta:    string;
+  numero_guia:     string | null;
 }
 
 interface PedidoDetalle {
@@ -51,33 +52,37 @@ interface PedidoDetalle {
 }
 
 const ESTADO_CONFIG: Record<string, { bg:string; color:string; border:string; dot:string; label:string }> = {
-  pendiente:  { bg:"#FFFBEB", color:"#92400E", border:"#FDE68A", dot:"#F59E0B", label:"Pendiente"  },
-  pagado:     { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Pagado"     },
-  procesando: { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Procesando" },
-  enviado:    { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Enviado"    },
-  entregado:  { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Entregado"  },
-  cancelado:  { bg:"#FEF2F2", color:"#991B1B", border:"#FCA5A5", dot:"#EF4444", label:"Cancelado"  },
+  pendiente:      { bg:"#FFFBEB", color:"#92400E", border:"#FDE68A", dot:"#F59E0B", label:"Pendiente"          },
+  pagado:         { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Pagado"             },
+  procesando:     { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Procesando"         },
+  enviado:        { bg:"#EFF6FF", color:"#1E40AF", border:"#BFDBFE", dot:"#3B82F6", label:"Enviado"            },
+  listo_recoger:  { bg:"#F5F3FF", color:"#5B21B6", border:"#C4B5FD", dot:"#7C3AED", label:"Listo para recoger" },
+  entregado:      { bg:"#F0FDF4", color:"#166534", border:"#86EFAC", dot:"#22C55E", label:"Entregado"          },
+  cancelado:      { bg:"#FEF2F2", color:"#991B1B", border:"#FCA5A5", dot:"#EF4444", label:"Cancelado"          },
 };
 
 // Pasos del timeline según estado
+// El paso 3 (índice 3) cubre tanto "enviado" como "listo_recoger"
 const TIMELINE_STEPS = [
   { key:"pendiente",  icon:<Clock      size={16} strokeWidth={2}/>, label:"Pedido recibido",   desc:"Tu orden fue registrada" },
   { key:"pagado",     icon:<CheckCircle size={16} strokeWidth={2}/>, label:"Pago confirmado",  desc:"El pago fue procesado"   },
   { key:"procesando", icon:<Package    size={16} strokeWidth={2}/>, label:"En preparación",   desc:"Preparando tu pedido"    },
-  { key:"enviado",    icon:<Truck      size={16} strokeWidth={2}/>, label:"En camino",         desc:"Tu pedido fue enviado"   },
+  { key:"enviado",    icon:<Truck      size={16} strokeWidth={2}/>, label:"En camino / Listo", desc:"En tránsito o para recoger" },
   { key:"entregado",  icon:<Star       size={16} strokeWidth={2}/>, label:"Entregado",         desc:"¡Disfruta tu obra!"      },
 ];
 
 const ESTADO_STEP: Record<string, number> = {
-  pendiente: 0, pagado: 1, procesando: 2, enviado: 3, entregado: 4, cancelado: -1,
+  pendiente: 0, pagado: 1, procesando: 2, enviado: 3, listo_recoger: 3, entregado: 4, cancelado: -1,
 };
 
 export default function DetallePedido() {
   const navigate = useNavigate();
   const { id }   = useParams<{ id: string }>();
   const { showToast } = useToast();
-  const [pedido,  setPedido]  = useState<PedidoDetalle | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [pedido,         setPedido]        = useState<PedidoDetalle | null>(null);
+  const [loading,        setLoading]       = useState(true);
+  const [cancelModal,    setCancelModal]   = useState(false);
+  const [canceling,      setCanceling]     = useState(false);
 
   useEffect(() => {
     const token = authService.getToken();
@@ -105,6 +110,7 @@ export default function DetallePedido() {
             subtotal:         r.subtotal,
             total:            r.total,
             estado_venta:     r.estado_venta,
+            numero_guia:      r.numero_guia ?? null,
           })),
         };
         setPedido(p);
@@ -112,6 +118,30 @@ export default function DetallePedido() {
       .catch(() => showToast("Error al cargar el pedido", "err"))
       .finally(() => setLoading(false));
   }, [id]); // eslint-disable-line
+
+  const cancelarPedido = async () => {
+    if (!pedido) return;
+    setCanceling(true);
+    try {
+      const token = authService.getToken();
+      const res  = await fetch(`${API_URL}/api/ventas/mis-pedidos/${pedido.id_pedido}/cancelar`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Pedido cancelado correctamente", "ok");
+        setPedido(prev => prev ? { ...prev, estado: "cancelado" } : prev);
+        setCancelModal(false);
+      } else {
+        showToast(data.message || "Error al cancelar", "err");
+      }
+    } catch {
+      showToast("Sin conexión", "err");
+    } finally {
+      setCanceling(false);
+    }
+  };
 
   if (loading) return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -130,9 +160,10 @@ export default function DetallePedido() {
 
   if (!pedido) return null;
 
-  const est       = ESTADO_CONFIG[pedido.estado] ?? ESTADO_CONFIG.pendiente;
-  const stepIdx   = ESTADO_STEP[pedido.estado] ?? 0;
-  const cancelado = pedido.estado === "cancelado";
+  const est           = ESTADO_CONFIG[pedido.estado] ?? ESTADO_CONFIG.pendiente;
+  const stepIdx       = ESTADO_STEP[pedido.estado] ?? 0;
+  const cancelado     = pedido.estado === "cancelado";
+  const numeroGuia    = pedido.items.find(i => i.numero_guia)?.numero_guia ?? null;
   const codigo    = `NUB-${String(pedido.id_pedido).padStart(5,"0")}`;
   const fechaObj  = new Date(pedido.fecha_pedido);
   const fecha     = fechaObj.toLocaleDateString("es-MX", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
@@ -328,6 +359,74 @@ export default function DetallePedido() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Tarjeta: número de guía (estado enviado) */}
+        {pedido.estado === "enviado" && (
+          <div className="reveal" style={{
+            background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:16,
+            padding:"18px 24px", marginBottom:24,
+            display:"flex", alignItems:"flex-start", gap:14,
+            animationDelay:"90ms",
+          }}>
+            <div style={{
+              width:40, height:40, borderRadius:"50%", background:"#DBEAFE",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+            }}>
+              <Truck size={18} color="#1D4ED8" strokeWidth={2}/>
+            </div>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:14, fontWeight:700, color:"#1E40AF", marginBottom:3}}>Tu pedido está en camino</div>
+              {numeroGuia ? (
+                <>
+                  <div style={{fontSize:12.5, color:"#1D4ED8", marginBottom:10}}>
+                    Número de guía: <span style={{fontFamily:MONO, fontWeight:700, letterSpacing:".04em"}}>{numeroGuia}</span>
+                  </div>
+                  <a
+                    href={`https://rastreo.correosdemexico.gob.mx/#/?sgt=${numeroGuia}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display:"inline-flex", alignItems:"center", gap:6,
+                      padding:"8px 18px", borderRadius:100,
+                      background:"#1D4ED8", color:"#fff", textDecoration:"none",
+                      fontSize:10.5, fontWeight:700, letterSpacing:".14em", textTransform:"uppercase",
+                      fontFamily:SANS,
+                    }}
+                  >
+                    <Truck size={11} strokeWidth={2.5}/> Rastrear paquete
+                  </a>
+                </>
+              ) : (
+                <div style={{fontSize:12.5, color:"#1D4ED8", opacity:.85}}>
+                  Tu obra fue enviada. Pronto recibirás el número de guía para rastrear tu paquete.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tarjeta: listo para recoger en galería */}
+        {pedido.estado === "listo_recoger" && (
+          <div className="reveal" style={{
+            background:"#F5F3FF", border:"1px solid #C4B5FD", borderRadius:16,
+            padding:"18px 24px", marginBottom:24,
+            display:"flex", alignItems:"center", gap:14,
+            animationDelay:"90ms",
+          }}>
+            <div style={{
+              width:40, height:40, borderRadius:"50%", background:"#EDE9FE",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+            }}>
+              <MapPin size={18} color="#6D28D9" strokeWidth={2}/>
+            </div>
+            <div>
+              <div style={{fontSize:14, fontWeight:700, color:"#5B21B6", marginBottom:3}}>¡Tu pedido está listo para recoger!</div>
+              <div style={{fontSize:12.5, color:"#6D28D9", opacity:.85, lineHeight:1.6}}>
+                Pasa por la galería NU★B Studio para recoger tu obra. Presenta tu nombre o el código <strong style={{fontFamily:MONO}}>{codigo}</strong> al llegar.
+              </div>
             </div>
           </div>
         )}
@@ -530,8 +629,107 @@ export default function DetallePedido() {
           >
             <ShoppingBag size={12} strokeWidth={2}/> Seguir explorando
           </button>
+
+          {/* Botón cancelar — solo si el pedido está pendiente */}
+          {pedido.estado === "pendiente" && (
+            <button
+              onClick={() => setCancelModal(true)}
+              style={{
+                display:"flex", alignItems:"center", gap:8,
+                padding:"12px 24px", borderRadius:100,
+                border:"1.5px solid #FCA5A5", background:"transparent",
+                fontSize:11, fontWeight:700, letterSpacing:".16em", textTransform:"uppercase",
+                color:"#EF4444", cursor:"pointer", fontFamily:SANS, transition:"all .2s",
+              }}
+              onMouseEnter={e=>{ const el=e.currentTarget as HTMLElement; el.style.background="#FEF2F2"; }}
+              onMouseLeave={e=>{ const el=e.currentTarget as HTMLElement; el.style.background="transparent"; }}
+            >
+              <XCircle size={12} strokeWidth={2}/> Cancelar pedido
+            </button>
+          )}
         </div>
       </main>
+
+      {/* Modal de confirmación de cancelación */}
+      {cancelModal && (
+        <div
+          onClick={() => !canceling && setCancelModal(false)}
+          style={{
+            position:"fixed", inset:0, zIndex:9999,
+            background:"rgba(20,18,30,.6)", backdropFilter:"blur(5px)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            padding:"0 20px",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background:C.bg, borderRadius:22, padding:"36px 36px 28px",
+              maxWidth:420, width:"100%",
+              boxShadow:"0 32px 80px rgba(0,0,0,.22)",
+              fontFamily:SANS,
+            }}
+          >
+            <div style={{
+              width:52, height:52, borderRadius:"50%",
+              background:"#FEE2E2", border:"2px solid #FCA5A5",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              margin:"0 auto 20px",
+            }}>
+              <XCircle size={22} color="#EF4444" strokeWidth={2}/>
+            </div>
+
+            <h2 style={{
+              fontFamily:SERIF, fontStyle:"italic",
+              fontSize:"clamp(20px,4vw,26px)", fontWeight:900,
+              color:C.ink, margin:"0 0 10px", textAlign:"center", lineHeight:1.1,
+            }}>
+              ¿Cancelar pedido?
+            </h2>
+            <p style={{
+              fontSize:13.5, color:C.sub, textAlign:"center",
+              lineHeight:1.65, margin:"0 0 8px",
+            }}>
+              El pedido <strong style={{color:C.ink}}>{codigo}</strong> aún no ha sido pagado. Al cancelarlo, las obras quedarán disponibles para otros compradores.
+            </p>
+            <p style={{
+              fontSize:12, color:C.subLight, textAlign:"center",
+              fontStyle:"italic", margin:"0 0 28px",
+            }}>
+              Esta acción no se puede deshacer.
+            </p>
+
+            <div style={{display:"flex", gap:10, justifyContent:"center"}}>
+              <button
+                onClick={() => setCancelModal(false)}
+                disabled={canceling}
+                style={{
+                  flex:1, padding:"12px 0", borderRadius:100,
+                  border:`1.5px solid ${C.border}`, background:"transparent",
+                  fontSize:11, fontWeight:700, letterSpacing:".12em", textTransform:"uppercase",
+                  color:C.sub, cursor:"pointer", fontFamily:SANS,
+                  opacity: canceling ? .5 : 1,
+                }}
+              >
+                Conservar pedido
+              </button>
+              <button
+                onClick={cancelarPedido}
+                disabled={canceling}
+                style={{
+                  flex:1, padding:"12px 0", borderRadius:100,
+                  border:"none", background: canceling ? "#f87171" : "#EF4444",
+                  fontSize:11, fontWeight:700, letterSpacing:".12em", textTransform:"uppercase",
+                  color:"#fff", cursor: canceling ? "not-allowed" : "pointer", fontFamily:SANS,
+                  transition:"background .15s",
+                }}
+              >
+                {canceling ? "Cancelando..." : "Sí, cancelar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

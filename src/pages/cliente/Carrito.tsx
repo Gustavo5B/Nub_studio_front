@@ -316,7 +316,7 @@ export default function Carrito() {
           {!loading && items.length > 0 && (
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
-                <h1 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
+                <h1 style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 26, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
                   Mi carrito
                 </h1>
                 {search && (
@@ -345,31 +345,64 @@ export default function Carrito() {
             </div>
 
           ) : items.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "88px 32px" }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: "50%", background: "#F3F0F8",
-                display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px",
-              }}>
-                <ShoppingBag size={30} color={C.subLight} strokeWidth={1.5} />
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              minHeight: "55vh", textAlign: "center", padding: "40px 32px",
+            }}>
+              <div style={{ position: "relative", marginBottom: 24 }}>
+                <div style={{
+                  width: 84, height: 84, borderRadius: "50%",
+                  background: "linear-gradient(135deg,#FDF3EC,#F9E8D8)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 8px 32px rgba(20,18,30,.08)",
+                }}>
+                  <ShoppingBag size={34} color={C.orange} strokeWidth={1.2} />
+                </div>
+                <div style={{
+                  position: "absolute", top: -5, right: -5,
+                  width: 20, height: 20, borderRadius: "50%",
+                  background: C.orange, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, color: "#fff", fontWeight: 900,
+                }}>★</div>
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: C.ink, fontFamily: SERIF, marginBottom: 10 }}>
+
+              <div style={{
+                fontFamily: SERIF, fontStyle: "italic",
+                fontSize: "clamp(26px,4vw,38px)", fontWeight: 900,
+                color: C.ink, letterSpacing: "-.03em", lineHeight: 1, marginBottom: 12,
+              }}>
                 Tu carrito está vacío
               </div>
-              <div style={{ fontSize: 14, color: C.sub, marginBottom: 32, lineHeight: 1.6 }}>
+
+              <div style={{
+                width: 36, height: 2, borderRadius: 2,
+                background: `linear-gradient(90deg,${C.orange},#A83B90)`,
+                margin: "0 auto 16px",
+              }} />
+
+              <div style={{ fontSize: 13.5, color: C.sub, marginBottom: 28, lineHeight: 1.75, maxWidth: 340 }}>
                 Descubre obras únicas de artistas de la Huasteca Hidalguense
               </div>
+
               <button
                 onClick={() => navigate("/catalogo")}
                 style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
                   background: C.orange, color: "#fff", border: "none",
                   borderRadius: 100, padding: "13px 28px",
-                  fontSize: 11, fontWeight: 700, letterSpacing: ".16em",
+                  fontSize: 11, fontWeight: 700, letterSpacing: ".14em",
                   textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
-                  display: "inline-flex", alignItems: "center", gap: 8,
+                  boxShadow: `0 8px 24px ${C.orange}35`, transition: "background .18s, transform .18s",
                 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#d45a0a"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.orange; (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
               >
                 Explorar catálogo <ArrowRight size={13} strokeWidth={2.5} />
               </button>
+
+              <div style={{ marginTop: 20, fontSize: 11, color: C.subLight, letterSpacing: ".04em", fontStyle: "italic" }}>
+                Arte auténtico de la Huasteca Hidalguense
+              </div>
             </div>
 
           ) : filteredItems.length === 0 ? (

@@ -195,11 +195,14 @@ export default function Login() {
         localStorage.setItem("userEmail", response.usuario.correo);
         localStorage.setItem("userName", response.usuario.nombre);
         localStorage.setItem("userId", response.usuario.id.toString());
-        localStorage.setItem("userRol", response.usuario.rol || "cliente");
+        // "usuario" es el rol base del backend — se trata como "cliente" en el frontend
+        const rolNormalizado = (response.usuario.rol === "usuario" || !response.usuario.rol) ? "cliente" : response.usuario.rol;
+        localStorage.setItem("userRol", rolNormalizado);
       }
       localStorage.setItem("isLoggedIn", "true");
       showMessage("Acceso concedido", false);
-      const rol = response.usuario?.rol;
+      const rolRaw = response.usuario?.rol;
+      const rol = (rolRaw === "usuario" || !rolRaw) ? "cliente" : rolRaw;
       const artista_estado = response.usuario?.artista_estado;
       setTimeout(() => {
         if (rol === "admin") window.location.href = "/admin";

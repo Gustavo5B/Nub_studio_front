@@ -28,6 +28,7 @@ import SubirObrasLote       from "../pages/private/artista/SubirObrasLote";
 import DetalleObraArtista   from "../pages/private/artista/DetalleObraArtista";
 import MisBlogPosts         from "../pages/private/artista/MisBlogPosts";
 import NuevoPost            from "../pages/private/artista/NuevoPost";
+import ArtistaVentas        from "../pages/private/artista/ArtistaVentas";
 import RegistroArtista    from "../pages/public/RegistroArtista";
 import VerificarEmail     from "../pages/public/VerificarEmail";
 import NotFound           from "../pages/public/NotFound";
@@ -70,6 +71,7 @@ export default function AppRoutes() {
         <Route path="colecciones/:id/editar"       element={<NuevaColeccion />} />
         <Route path="colecciones/:id/obras"        element={<SubirObrasLote />} />
         <Route path="obra/:id"                     element={<DetalleObraArtista />} />
+        <Route path="ventas"                         element={<ArtistaVentas />} />
         <Route path="blog"                         element={<MisBlogPosts />} />
         <Route path="blog/nuevo"                   element={<NuevoPost />} />
         <Route path="blog/editar/:id"              element={<NuevoPost />} />

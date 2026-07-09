@@ -91,7 +91,8 @@ function storeUserSession(response: {
     localStorage.setItem("userEmail", response.usuario.correo);
     localStorage.setItem("userName", response.usuario.nombre);
     localStorage.setItem("userId", response.usuario.id.toString());
-    localStorage.setItem("userRol", response.usuario.rol || "cliente");
+    const rolNormalizado = (response.usuario.rol === "usuario" || !response.usuario.rol) ? "cliente" : response.usuario.rol;
+    localStorage.setItem("userRol", rolNormalizado);
   }
   localStorage.setItem("isLoggedIn", "true");
 }
@@ -101,7 +102,8 @@ function handleSuccessResponse(response: {
   token?: string;
   usuario?: { correo: string; nombre: string; id: number; rol?: string };
 }): LoginResult {
-  const redirectPath = response.usuario?.rol === "admin" ? "/admin" : "/";
+  const rolRaw = response.usuario?.rol;
+  const redirectPath = rolRaw === "admin" ? "/admin" : "/";
   return {
     mensaje: "¡Bienvenido de vuelta! ✓",
     isError: false,

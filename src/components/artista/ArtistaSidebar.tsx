@@ -1,6 +1,6 @@
 // src/components/artista/ArtistaSidebar.tsx
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Image, User, LogOut, Plus, ChevronRight, FolderOpen, BookOpen } from "lucide-react";
+import { LayoutDashboard, Image, User, LogOut, Plus, ChevronRight, FolderOpen, BookOpen, ShoppingBag } from "lucide-react";
 import { authService } from "../../services/authService";
 import logoImg from "../../assets/images/logo.png";
 
@@ -22,6 +22,7 @@ const NAV = [
   { id: "dashboard",   label: "Overview",        icon: LayoutDashboard, path: "/artista/dashboard"   },
   { id: "obras",       label: "Mis obras",        icon: Image,           path: "/artista/mis-obras"   },
   { id: "colecciones", label: "Mis colecciones",  icon: FolderOpen,      path: "/artista/colecciones" },
+  { id: "ventas",      label: "Mis ventas",       icon: ShoppingBag,     path: "/artista/ventas"      },
   { id: "blog",        label: "Mi blog",          icon: BookOpen,        path: "/artista/blog"        },
   { id: "perfil",      label: "Mi perfil",        icon: User,            path: "/artista/perfil"      },
 ];
