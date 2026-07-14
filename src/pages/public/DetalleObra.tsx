@@ -53,6 +53,9 @@ export default function DetalleObra() {
   const [enCarrito,  setEnCarrito]  = useState(false);
   const [cantidad,   setCantidad]   = useState(1);
   const [stockDisponible, setStockDisponible] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState<string | null>(null);
+  const [marcos,    setMarcos]    = useState<any[]>([]);
+  const [marcoSel,  setMarcoSel]  = useState<any>(null);
 
   const { showToast } = useToast();
   const isLoggedIn = authService.isAuthenticated();
@@ -73,7 +76,15 @@ export default function DetalleObra() {
       const res = await fetch(`${API_URL}/api/carrito`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id_obra: obra?.id_obra, cantidad }),
+        body: JSON.stringify({
+          id_obra: obra?.id_obra,
+          cantidad,
+          id_obra_tamano: (tamSel?.id_obra_tamano ?? tamSel?.id_obra_tamaño) || null,
+          id_tipo_marco:  marcoSel?.id_tipo_marco || null,
+          label_tamano:   (tamSel?.nombre ?? tamSel?.tamaño_nombre) || null,
+          label_marco:    marcoSel?.nombre || null,
+          precio_unitario: precioMostrar,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(data.message || "Error al agregar al carrito", "err"); return; }
@@ -187,6 +198,35 @@ export default function DetalleObra() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  // ── Cargar marcos cuando cambia el tamaño seleccionado
+  useEffect(() => {
+    setMarcoSel(null);
+    setMarcos([]);
+    const tamId = tamSel?.id_obra_tamano ?? tamSel?.id_obra_tamaño;
+    if (!tamId || !obra?.permite_marco) return;
+    fetch(`${API_URL}/api/obra-tamano/${tamId}/marcos`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setMarcos(d.data || []); })
+      .catch(() => {});
+  }, [tamSel?.id_obra_tamano, tamSel?.id_obra_tamaño, obra?.permite_marco]);
+
+  // ── Countdown para descuentos con expiración
+  useEffect(() => {
+    if (!obra?.descuento_expira || !obra?.precio_descuento) return;
+    const expira = new Date(obra.descuento_expira).getTime();
+    const tick = () => {
+      const diff = expira - Date.now();
+      if (diff <= 0) { setCountdown(null); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(`${h > 0 ? `${h}h ` : ""}${String(m).padStart(2,"0")}m ${String(s).padStart(2,"0")}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [obra?.descuento_expira, obra?.precio_descuento]);
+
   // ── Cargar estado de favorito al tener la obra
   useEffect(() => {
     if (!obra?.id_obra || !isLoggedIn || userRol !== "cliente") return;
@@ -247,7 +287,11 @@ export default function DetalleObra() {
     </div>
   );
 
-  const precio         = tamSel?.precio_base || obra.precio_base;
+  const precio         = marcoSel?.precio_total ?? (tamSel?.precio_base || obra.precio_base);
+  const precioOferta   = !tamSel && !marcoSel && obra.precio_descuento && (
+    !obra.descuento_expira || new Date(obra.descuento_expira) > new Date()
+  ) ? Number(obra.precio_descuento) : null;
+  const precioMostrar  = precioOferta ?? Number(precio);
   const obraPublicada  = obra.estado === "publicada" && obra.activa === true;
   const todasImg = [
     ...(obra.imagen_principal ? [{ url_imagen:obra.imagen_principal, id_imagen:"main" }] : []),
@@ -323,6 +367,7 @@ export default function DetalleObra() {
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
       `}</style>
 
       {/* Grain + cursor */}
@@ -493,12 +538,26 @@ export default function DetalleObra() {
 
             {/* Precio */}
             <div style={{ animation:"bounceUp .8s cubic-bezier(.16,1,.3,1) .5s both" }}>
-              <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", fontFamily:NEXA_HEAVY, marginBottom:6 }}>
+              <div style={{ fontSize:7.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", fontFamily:NEXA_HEAVY, marginBottom:6, display:"flex", alignItems:"center", gap:8 }}>
                 {tamSel ? tamSel.tamaño_nombre : "Precio base"}
+                {precioOferta && (
+                  <span style={{ background:"#0E8A50", color:"#fff", fontSize:7, fontWeight:800, letterSpacing:".1em", padding:"2px 8px", borderRadius:100, textTransform:"uppercase" }}>OFERTA</span>
+                )}
               </div>
-              <div style={{ fontSize:38, fontWeight:900, color:C.orange, fontFamily:NEXA_HEAVY, letterSpacing:"-.01em" }}>
-                {fmt(Number(precio || 0))}
+              {precioOferta && (
+                <div style={{ fontSize:18, fontFamily:NEXA_HEAVY, color:"rgba(0,0,0,.28)", textDecoration:"line-through", lineHeight:1, marginBottom:4 }}>
+                  {fmt(Number(precio))}
+                </div>
+              )}
+              <div style={{ fontSize:38, fontWeight:900, color:precioOferta ? "#0E8A50" : C.orange, fontFamily:NEXA_HEAVY, letterSpacing:"-.01em" }}>
+                {fmt(precioMostrar)}
               </div>
+              {precioOferta && countdown && (
+                <div style={{ display:"inline-flex", alignItems:"center", gap:6, marginTop:6, padding:"4px 12px", borderRadius:100, background:"rgba(14,138,80,.1)", border:"1px solid rgba(14,138,80,.22)" }}>
+                  <div style={{ width:5, height:5, borderRadius:"50%", background:"#0E8A50", animation:"pulse-dot 1s ease-in-out infinite" }}/>
+                  <span style={{ fontSize:10, fontWeight:700, color:"#0E8A50", fontFamily:NEXA_HEAVY, letterSpacing:".08em" }}>Termina en {countdown}</span>
+                </div>
+              )}
               <div style={{ fontSize:11, color:"rgba(0,0,0,.3)", fontFamily:SANS, marginTop:4 }}>IVA incluido · Envío a calcular</div>
 
               {/* Badge de stock */}
@@ -527,13 +586,16 @@ export default function DetalleObra() {
                 <div style={{ fontSize:8, fontWeight:800, letterSpacing:".22em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", fontFamily:NEXA_HEAVY, marginBottom:10 }}>Selecciona un tamaño</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                   {obra.tamaños.map((t: any) => {
-                    const sel = tamSel?.id_obra_tamaño === t.id_obra_tamaño;
+                    const tId  = t.id_obra_tamano ?? t.id_obra_tamaño;
+                    const sId  = tamSel?.id_obra_tamano ?? tamSel?.id_obra_tamaño;
+                    const sel  = sId === tId;
+                    const nom  = t.nombre ?? t.tamaño_nombre;
                     return (
-                      <button key={t.id_obra_tamaño} onClick={() => setTamSel(t)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                      <button key={tId} onClick={() => setTamSel(t)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                         className={`ob-tam-btn${sel ? " sel" : ""}`}
                       >
                         <div>
-                          <div style={{ fontSize:13, fontWeight:700 }}>{t.tamaño_nombre}</div>
+                          <div style={{ fontSize:13, fontWeight:700 }}>{nom}</div>
                           {t.ancho_cm && <div style={{ fontSize:11, opacity:.5, marginTop:1 }}>{t.ancho_cm} × {t.alto_cm} cm</div>}
                         </div>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -544,6 +606,48 @@ export default function DetalleObra() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Marcos */}
+            {obra.permite_marco && tamSel && marcos.length > 0 && (
+              <div>
+                <div style={{ fontSize:8, fontWeight:800, letterSpacing:".22em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", fontFamily:NEXA_HEAVY, marginBottom:10 }}>Marco (opcional)</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {/* Opción sin marco */}
+                  <button onClick={() => setMarcoSel(null)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                    className={`ob-tam-btn${!marcoSel ? " sel" : ""}`}
+                  >
+                    <div style={{ fontSize:13, fontWeight:700 }}>Sin marco</div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ fontSize:13, color:"rgba(0,0,0,.38)" }}>incluido</span>
+                      {!marcoSel && <CheckCircle size={14} color={C.orange} strokeWidth={2.5}/>}
+                    </div>
+                  </button>
+                  {marcos.map((m: any) => {
+                    const sel = marcoSel?.id_obra_marco === m.id_obra_marco;
+                    return (
+                      <button key={m.id_obra_marco} onClick={() => setMarcoSel(m)} onMouseEnter={cursorOn} onMouseLeave={cursorOff}
+                        className={`ob-tam-btn${sel ? " sel" : ""}`}
+                      >
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:700 }}>{m.nombre}</div>
+                          <div style={{ fontSize:11, opacity:.5, marginTop:1 }}>{m.material}{m.color ? ` · ${m.color}` : ""}</div>
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <span style={{ fontSize:14, fontWeight:700 }}>+{fmt(Number(m.precio_adicional))}</span>
+                          {sel && <CheckCircle size={14} color={C.orange} strokeWidth={2.5}/>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {marcoSel && (
+                  <div style={{ marginTop:8, padding:"8px 14px", borderRadius:100, background:`${C.orange}10`, border:`1px solid ${C.orange}30`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ fontSize:11, color:C.orange, fontFamily:SANS, fontWeight:600 }}>Subtotal con marco</span>
+                    <span style={{ fontSize:14, fontWeight:800, color:C.orange, fontFamily:NEXA_HEAVY }}>{fmt(precioMostrar)}</span>
+                  </div>
+                )}
               </div>
             )}
 

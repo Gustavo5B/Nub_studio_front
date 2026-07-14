@@ -150,6 +150,21 @@ const IcoMonitoreo = ({ size = 20, active }: IP) => (
   </svg>
 );
 
+const IcoCupones = ({ size = 20, active }: IP) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <rect x="2" y="6" width="16" height="8" rx="2"
+      fill={active ? "#E8640C" : "#0E8A50"} fillOpacity={active ? 0.15 : 0.12}
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.4"/>
+    <circle cx="6" cy="10" r="1.5" fill={active ? "#E8640C" : "#0E8A50"}/>
+    <line x1="9.5" y1="7.5" x2="9.5" y2="12.5"
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1" strokeLinecap="round" strokeDasharray="1.5 1.5"/>
+    <line x1="11" y1="8.5" x2="15" y2="8.5"
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.4" strokeLinecap="round"/>
+    <line x1="11" y1="11.5" x2="14" y2="11.5"
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>
+);
+
 const IcoBackups = ({ size = 20, active }: IP) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <ellipse cx="10" cy="5.5"  rx="7" ry="2.5"
@@ -168,13 +183,49 @@ const IcoBackups = ({ size = 20, active }: IP) => (
   </svg>
 );
 
+const IcoMarcos = ({ size = 20, active }: IP) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <rect x="2" y="2" width="16" height="16" rx="2"
+      fill={active ? "#E8640C" : "#A87006"} fillOpacity={active ? 0.12 : 0.1}
+      stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.4"/>
+    <rect x="5" y="5" width="10" height="10" rx="1"
+      fill="none" stroke={active ? "#E8640C" : "#A87006"} strokeWidth="1.2" strokeDasharray="2 1.5"/>
+  </svg>
+);
+
+const IcoTamanos = ({ size = 20, active }: IP) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <rect x="2" y="7" width="16" height="6" rx="1.5"
+      fill={active ? "#E8640C" : "#6028AA"} fillOpacity={active ? 0.12 : 0.1}
+      stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.4"/>
+    <line x1="5"  y1="7" x2="5"  y2="5"  stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="9"  y1="7" x2="9"  y2="6"  stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="13" y1="7" x2="13" y2="5"  stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="5"  y1="13" x2="5"  y2="15" stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="9"  y1="13" x2="9"  y2="14" stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="13" y1="13" x2="13" y2="15" stroke={active ? "#E8640C" : "#6028AA"} strokeWidth="1.3" strokeLinecap="round"/>
+  </svg>
+);
+
+const IcoLiquidaciones = ({ size = 20, active }: IP) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <rect x="2" y="5" width="16" height="11" rx="2"
+      fill={active ? "#E8640C" : "#0E8A50"} fillOpacity={active ? 0.12 : 0.1}
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.4"/>
+    <circle cx="10" cy="10.5" r="2.5"
+      fill={active ? "#E8640C" : "#0E8A50"} fillOpacity={active ? 0.2 : 0.15}
+      stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.2"/>
+    <line x1="10" y1="9" x2="10" y2="12" stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="5"  y1="5" x2="5"  y2="3"  stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.3" strokeLinecap="round"/>
+    <line x1="15" y1="5" x2="15" y2="3"  stroke={active ? "#E8640C" : "#0E8A50"} strokeWidth="1.3" strokeLinecap="round"/>
+  </svg>
+);
+
 const IcoSettings = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none"
-    stroke={C.creamSub} strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="10" cy="10" r="2.5"/>
-    <path d="M10 2 V4 M10 16 V18 M2 10 H4 M16 10 H18
-             M4.93 4.93 L6.34 6.34 M13.66 13.66 L15.07 15.07
-             M15.07 4.93 L13.66 6.34 M6.34 13.66 L4.93 15.07"/>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={C.creamSub} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 );
 
@@ -200,7 +251,11 @@ const NAV = [
   { id: "importar",     label: "Importar",     Icon: IcoImportar,     path: "/admin/importar"     },
   { id: "colecciones",  label: "Colecciones",  Icon: IcoColecciones,  path: "/admin/colecciones"  },
   { id: "monitoreo",    label: "Monitoreo",    Icon: IcoMonitoreo,    path: "/admin/monitoreo"    },
-  { id: "backups",      label: "Backups",      Icon: IcoBackups,      path: "/admin/backups"      },
+  { id: "cupones",        label: "Cupones",        Icon: IcoCupones,        path: "/admin/cupones"        },
+  { id: "marcos",         label: "Marcos",         Icon: IcoMarcos,         path: "/admin/marcos"         },
+  { id: "tamanos",        label: "Tamaños",        Icon: IcoTamanos,        path: "/admin/tamanos"        },
+  { id: "liquidaciones",  label: "Liquidar",       Icon: IcoLiquidaciones,  path: "/admin/liquidaciones"  },
+  { id: "backups",        label: "Backups",        Icon: IcoBackups,        path: "/admin/backups"        },
 ];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -363,7 +418,7 @@ export default function AdminSidebar() {
         gap: 4,
       }}>
         <button
-          onClick={() => navigate("/admin/config")}
+          onClick={() => navigate("/admin/configuracion")}
           title="Configuración"
           style={{
             width: 40, height: 40, borderRadius: 10,

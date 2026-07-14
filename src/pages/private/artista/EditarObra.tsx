@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, Image, X, Sparkles, Palette,
   Ruler, Tag, FileText, DollarSign, CheckCircle,
-  Loader2, Save, UploadCloud, FileImage,
+  Loader2, Save, UploadCloud, FileImage, Plus, Trash2, Edit2,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
@@ -14,6 +14,8 @@ import "../../../styles/nueva-obra.css";
 interface Categoria { id_categoria: number; nombre: string; }
 interface Etiqueta  { id_etiqueta: number;  nombre: string; }
 interface Coleccion { id_coleccion: number; nombre: string; estado: string; }
+interface TamanoCatalogo { id_tamaño: number; nombre: string; ancho_cm: string|null; alto_cm: string|null; }
+interface ObraTamano { id_obra_tamano: number; id_tamaño: number; nombre: string; ancho_cm: string|null; alto_cm: string|null; precio_base: string; cantidad_disponible: number; activo: boolean; }
 
 interface FormState {
   titulo: string; descripcion: string; historia: string; id_categoria: string; id_coleccion: string; tecnica: string;
@@ -75,6 +77,14 @@ export default function EditarObra() {
   const [imagenes,    setImagenes]    = useState<ImagenObra[]>([]);
   const [uploadingGaleria, setUploadingGaleria] = useState(false);
 
+  // Tamaños
+  const [tamanosCatalogo,   setTamanosCatalogo]   = useState<TamanoCatalogo[]>([]);
+  const [obraTamanos,       setObraTamanos]        = useState<ObraTamano[]>([]);
+  const [tamanoForm,        setTamanoForm]         = useState({ id_tamaño: "", precio_base: "", cantidad: "1" });
+  const [savingTamano,      setSavingTamano]       = useState(false);
+  const [editTamano,        setEditTamano]         = useState<ObraTamano | null>(null);
+  const [editTamanoForm,    setEditTamanoForm]     = useState({ precio_base: "", cantidad: "1" });
+
   const [form, setForm] = useState<FormState>({
     titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
     anio_creacion: new Date().getFullYear().toString(),
@@ -84,7 +94,7 @@ export default function EditarObra() {
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargarDatos(); }, [id]);
+  useEffect(() => { cargarDatos(); cargarTamanos(); }, [id]);
 
   const cargarDatos = async () => {
     try {
@@ -126,6 +136,71 @@ export default function EditarObra() {
     } catch (err) {
       showToast(handleNetworkError(err), "err");
     } finally { setLoading(false); }
+  };
+
+  const cargarTamanos = async () => {
+    const token = authService.getToken();
+    const h = { Authorization: `Bearer ${token}` };
+    const [catRes, obraRes] = await Promise.all([
+      fetch(`${API}/api/tamanos`, { headers: h }),
+      fetch(`${API}/api/artista-portal/obra/${id}/tamanos`, { headers: h }),
+    ]);
+    if (catRes.ok)  { const d = await catRes.json();  setTamanosCatalogo(d.data || []); }
+    if (obraRes.ok) { const d = await obraRes.json(); setObraTamanos(d.data || []); }
+  };
+
+  const agregarTamano = async () => {
+    if (!tamanoForm.id_tamaño || !tamanoForm.precio_base) {
+      showToast("Selecciona un tamaño e ingresa el precio", "err"); return;
+    }
+    setSavingTamano(true);
+    try {
+      const r = await fetch(`${API}/api/artista-portal/obra/${id}/tamanos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authService.getToken()}` },
+        body: JSON.stringify({
+          id_tamaño: Number(tamanoForm.id_tamaño),
+          precio_base: Number(tamanoForm.precio_base),
+          cantidad_disponible: Number(tamanoForm.cantidad) || 1,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) { showToast("Tamaño agregado", "ok"); setTamanoForm({ id_tamaño: "", precio_base: "", cantidad: "1" }); cargarTamanos(); }
+      else showToast(d.message, "err");
+    } catch { showToast("Error al agregar tamaño", "err"); }
+    finally { setSavingTamano(false); }
+  };
+
+  const guardarEditTamano = async () => {
+    if (!editTamano) return;
+    setSavingTamano(true);
+    try {
+      const r = await fetch(`${API}/api/artista-portal/obra-tamano/${editTamano.id_obra_tamano}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authService.getToken()}` },
+        body: JSON.stringify({
+          precio_base: Number(editTamanoForm.precio_base),
+          cantidad_disponible: Number(editTamanoForm.cantidad) || 1,
+          activo: true,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) { showToast("Actualizado", "ok"); setEditTamano(null); cargarTamanos(); }
+      else showToast(d.message, "err");
+    } catch { showToast("Error al actualizar", "err"); }
+    finally { setSavingTamano(false); }
+  };
+
+  const eliminarTamano = async (otId: number) => {
+    if (!confirm("¿Desactivar este tamaño de la obra?")) return;
+    try {
+      const r = await fetch(`${API}/api/artista-portal/obra-tamano/${otId}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${authService.getToken()}` },
+      });
+      const d = await r.json();
+      if (d.success) { showToast("Tamaño desactivado", "ok"); cargarTamanos(); }
+      else showToast(d.message, "err");
+    } catch { showToast("Error al eliminar", "err"); }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -612,6 +687,136 @@ export default function EditarObra() {
             <p style={{ fontSize:11, color:"#999", margin:0 }}>
               La foto principal no se puede eliminar desde aquí. Para cambiarla sube una nueva imagen arriba.
             </p>
+          </div>
+
+          {/* TAMAÑOS */}
+          <div className="form-section">
+            <h3 className="section-title" style={{ color:"#333" }}><Ruler size={18} /> Tamaños y variantes de precio</h3>
+            <p style={{ fontSize:12, color:"#888", margin:"0 0 14px" }}>
+              Define versiones de esta obra con diferentes tamaños y precios. El cliente podrá elegir al comprar.
+            </p>
+
+            {/* Formulario agregar tamaño */}
+            <div style={{ background:"#f9f9f9", borderRadius:10, padding:14, border:"1px solid #eee", marginBottom:16 }}>
+              <p style={{ fontSize:12, fontWeight:700, color:"#555", margin:"0 0 10px", textTransform:"uppercase", letterSpacing:".04em" }}>Agregar tamaño</p>
+              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr auto", gap:10, alignItems:"flex-end" }}>
+                <div>
+                  <label style={{ fontSize:11, color:"#666", fontWeight:600, display:"block", marginBottom:4 }}>Tamaño del catálogo</label>
+                  <select value={tamanoForm.id_tamaño}
+                    onChange={e => setTamanoForm(f => ({ ...f, id_tamaño: e.target.value }))}
+                    style={{ width:"100%", border:"1px solid #ddd", borderRadius:7, padding:"8px 10px", fontSize:13, background:"#fff" }}>
+                    <option value="">Seleccionar...</option>
+                    {tamanosCatalogo
+                      .filter(t => !obraTamanos.some(ot => ot.id_tamaño === t.id_tamaño && ot.activo))
+                      .map(t => (
+                        <option key={t.id_tamaño} value={t.id_tamaño}>
+                          {t.nombre}{t.ancho_cm && t.alto_cm ? ` (${t.ancho_cm}×${t.alto_cm} cm)` : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:11, color:"#666", fontWeight:600, display:"block", marginBottom:4 }}>Precio (MXN)</label>
+                  <input type="number" min="0" step="0.01" placeholder="0.00"
+                    value={tamanoForm.precio_base}
+                    onChange={e => setTamanoForm(f => ({ ...f, precio_base: e.target.value }))}
+                    style={{ width:"100%", border:"1px solid #ddd", borderRadius:7, padding:"8px 10px", fontSize:13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:11, color:"#666", fontWeight:600, display:"block", marginBottom:4 }}>Stock</label>
+                  <input type="number" min="1" step="1" placeholder="1"
+                    value={tamanoForm.cantidad}
+                    onChange={e => setTamanoForm(f => ({ ...f, cantidad: e.target.value }))}
+                    style={{ width:"100%", border:"1px solid #ddd", borderRadius:7, padding:"8px 10px", fontSize:13 }} />
+                </div>
+                <button type="button" onClick={agregarTamano} disabled={savingTamano}
+                  style={{ background:"#FF840E", color:"#fff", border:"none", borderRadius:7, padding:"8px 14px", fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap" }}>
+                  <Plus size={14}/>{savingTamano ? "..." : "Agregar"}
+                </button>
+              </div>
+            </div>
+
+            {/* Tabla de tamaños asignados */}
+            {obraTamanos.filter(t => t.activo).length > 0 ? (
+              <div style={{ border:"1px solid #eee", borderRadius:10, overflow:"hidden" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                  <thead>
+                    <tr style={{ background:"#f5f5f5" }}>
+                      <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, fontSize:11, color:"#888", textTransform:"uppercase" }}>Tamaño</th>
+                      <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, fontSize:11, color:"#888", textTransform:"uppercase" }}>Dimensiones</th>
+                      <th style={{ padding:"8px 12px", textAlign:"right", fontWeight:700, fontSize:11, color:"#888", textTransform:"uppercase" }}>Precio</th>
+                      <th style={{ padding:"8px 12px", textAlign:"center", fontWeight:700, fontSize:11, color:"#888", textTransform:"uppercase" }}>Stock</th>
+                      <th style={{ padding:"8px 12px" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {obraTamanos.filter(t => t.activo).map(ot => (
+                      <tr key={ot.id_obra_tamano} style={{ borderTop:"1px solid #eee" }}>
+                        {editTamano?.id_obra_tamano === ot.id_obra_tamano ? (
+                          <>
+                            <td style={{ padding:"8px 12px", fontWeight:600 }}>{ot.nombre}</td>
+                            <td style={{ padding:"8px 12px", color:"#999", fontSize:12 }}>
+                              {ot.ancho_cm && ot.alto_cm ? `${ot.ancho_cm}×${ot.alto_cm} cm` : "—"}
+                            </td>
+                            <td style={{ padding:"8px 6px" }}>
+                              <input type="number" min="0" step="0.01"
+                                value={editTamanoForm.precio_base}
+                                onChange={e => setEditTamanoForm(f => ({ ...f, precio_base: e.target.value }))}
+                                style={{ width:90, border:"1px solid #FF840E", borderRadius:6, padding:"5px 8px", fontSize:13, textAlign:"right" }} />
+                            </td>
+                            <td style={{ padding:"8px 6px", textAlign:"center" }}>
+                              <input type="number" min="1" step="1"
+                                value={editTamanoForm.cantidad}
+                                onChange={e => setEditTamanoForm(f => ({ ...f, cantidad: e.target.value }))}
+                                style={{ width:60, border:"1px solid #FF840E", borderRadius:6, padding:"5px 8px", fontSize:13, textAlign:"center" }} />
+                            </td>
+                            <td style={{ padding:"8px 12px" }}>
+                              <div style={{ display:"flex", gap:6 }}>
+                                <button type="button" onClick={guardarEditTamano} disabled={savingTamano}
+                                  style={{ background:"#27ae60", color:"#fff", border:"none", borderRadius:6, padding:"5px 10px", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                                  {savingTamano ? "..." : "Guardar"}
+                                </button>
+                                <button type="button" onClick={() => setEditTamano(null)}
+                                  style={{ background:"none", border:"1px solid #ddd", borderRadius:6, padding:"5px 10px", fontSize:12, color:"#666", cursor:"pointer" }}>
+                                  Cancelar
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={{ padding:"10px 12px", fontWeight:600 }}>{ot.nombre}</td>
+                            <td style={{ padding:"10px 12px", color:"#999", fontSize:12 }}>
+                              {ot.ancho_cm && ot.alto_cm ? `${ot.ancho_cm}×${ot.alto_cm} cm` : "—"}
+                            </td>
+                            <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, color:"#27ae60" }}>
+                              ${Number(ot.precio_base).toLocaleString("es-MX")}
+                            </td>
+                            <td style={{ padding:"10px 12px", textAlign:"center", color:"#555" }}>{ot.cantidad_disponible}</td>
+                            <td style={{ padding:"10px 12px" }}>
+                              <div style={{ display:"flex", gap:6, justifyContent:"flex-end" }}>
+                                <button type="button" onClick={() => { setEditTamano(ot); setEditTamanoForm({ precio_base: ot.precio_base, cantidad: String(ot.cantidad_disponible) }); }}
+                                  style={{ background:"none", border:"1px solid #ddd", borderRadius:6, padding:"5px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
+                                  <Edit2 size={13} color="#666"/>
+                                </button>
+                                <button type="button" onClick={() => eliminarTamano(ot.id_obra_tamano)}
+                                  style={{ background:"none", border:"1px solid #fdd", borderRadius:6, padding:"5px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
+                                  <Trash2 size={13} color="#e74c3c"/>
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign:"center", padding:"24px", border:"1px dashed #ddd", borderRadius:10, color:"#aaa", fontSize:13 }}>
+                Sin tamaños asignados. Agrega el primero arriba.
+              </div>
+            )}
           </div>
 
           {/* RESUMEN */}

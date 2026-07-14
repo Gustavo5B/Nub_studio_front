@@ -19,6 +19,7 @@ interface ItemCarrito {
   id_carrito: number; id_obra: number; titulo: string; slug: string;
   imagen_principal: string; precio_base: string; cantidad: number;
   artista_alias: string; precio_unitario: number; subtotal: number;
+  precio_efectivo?: number; tiene_descuento?: boolean;
 }
 
 interface Direccion {
@@ -84,6 +85,11 @@ export default function Checkout() {
   const [items, setItems]         = useState<ItemCarrito[]>([]);
   const [loading, setLoading]     = useState(true);
   const [procesando, setProcesando] = useState(false);
+  const [cuponCodigo,      setCuponCodigo]      = useState("");
+  const [cuponAplicado,    setCuponAplicado]    = useState<{ codigo:string; descuento:number; mensaje:string } | null>(null);
+  const [cuponLoading,     setCuponLoading]     = useState(false);
+  const [empaqueReforzado, setEmpaqueReforzado] = useState(false);
+  const [precioEmpaque,    setPrecioEmpaque]    = useState(0);
 
   const [direccion, setDireccion] = useState({
     calle: "", numero_exterior: "", numero_interior: "",
@@ -94,6 +100,7 @@ export default function Checkout() {
   const [municipios, setMunicipios] = useState<{ id_municipio: number; nombre: string }[]>([]);
   const [cargandoMunicipios, setCargandoMunicipios] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors]   = useState<Record<string, string>>({});
   const [savedAddresses, setSavedAddresses] = useState<Direccion[]>([]);
   const [selectedSavedId, setSelectedSavedId] = useState<number | "new">("new");
   const targetMunicipioRef = useRef(0);
@@ -109,11 +116,10 @@ export default function Checkout() {
         if (data.success) {
           const idsRaw = sessionStorage.getItem("ids_carrito_checkout");
           const idsSeleccionados: number[] | null = idsRaw ? JSON.parse(idsRaw) : null;
-          const todos = data.data.map((item: ItemCarrito) => ({
-            ...item,
-            precio_unitario: Number(item.precio_base),
-            subtotal: Number(item.precio_base) * item.cantidad,
-          }));
+          const todos = data.data.map((item: ItemCarrito) => {
+            const unitario = Number(item.precio_efectivo ?? item.precio_base);
+            return { ...item, precio_unitario: unitario, subtotal: unitario * item.cantidad };
+          });
           const filtrados = idsSeleccionados
             ? todos.filter((i: ItemCarrito) => idsSeleccionados.includes(i.id_carrito))
             : todos;
@@ -135,6 +141,11 @@ export default function Checkout() {
   useEffect(() => {
     fetch(`${API_URL}/api/estados`).then(r => r.json())
       .then(d => { if (d.success) setEstados(d.data); }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/configuracion/precio_empaque_reforzado`).then(r => r.json())
+      .then(d => { if (d.success) setPrecioEmpaque(Number(d.data.valor) || 0); }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -175,7 +186,8 @@ export default function Checkout() {
     }
   }, [direccion.id_estado]);
 
-  const total = items.reduce((sum, i) => sum + i.subtotal, 0);
+  const subtotalBruto = items.reduce((sum, i) => sum + i.subtotal, 0);
+  const total = Math.max(0, subtotalBruto - (cuponAplicado?.descuento ?? 0) + (empaqueReforzado ? precioEmpaque : 0));
 
   const selectSavedAddress = (addr: Direccion) => {
     setSelectedSavedId(addr.id_direccion);
@@ -195,14 +207,42 @@ export default function Checkout() {
   };
 
   const validateForm = () => {
-    if (!direccion.calle.trim() || !direccion.numero_exterior.trim() || !direccion.colonia.trim() || !direccion.codigo_postal.trim()) {
-      showToast("Completa los campos obligatorios de la dirección", "err"); return false;
-    }
-    if (!direccion.id_estado) { showToast("Selecciona un estado", "err"); return false; }
-    if (!direccion.id_municipio) { showToast("Selecciona un municipio", "err"); return false; }
+    const errs: Record<string, string> = {};
+    if (!direccion.calle.trim())           errs.calle       = "Campo obligatorio";
+    if (!direccion.numero_exterior.trim()) errs.num_ext     = "Campo obligatorio";
+    if (!direccion.colonia.trim())         errs.colonia     = "Campo obligatorio";
+    if (!direccion.codigo_postal.trim())   errs.cp          = "Campo obligatorio";
+    if (!direccion.id_estado)              errs.estado      = "Selecciona un estado";
+    if (!direccion.id_municipio)           errs.municipio   = "Selecciona un municipio";
     const tel = direccion.telefono.replace(/\D/g, "");
-    if (!tel || tel.length !== 10) { showToast("Ingresa un teléfono de contacto válido (10 dígitos)", "err"); return false; }
-    return true;
+    if (!tel || tel.length !== 10)         errs.tel         = "Ingresa 10 dígitos";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const tieneDescuentoObra = items.some(i => i.tiene_descuento);
+
+  const aplicarCupon = async () => {
+    if (!cuponCodigo.trim()) { showToast("Ingresa un código de cupón", "warn"); return; }
+    if (tieneDescuentoObra) { showToast("Uno o más artículos ya tienen descuento. Los cupones no son acumulables.", "warn"); return; }
+    setCuponLoading(true);
+    try {
+      const res  = await fetch(`${API_URL}/api/cupones/validar`, {
+        method: "POST", headers,
+        body: JSON.stringify({ codigo: cuponCodigo.trim().toUpperCase(), total: subtotalBruto }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const d = data.data;
+        const msg = `${d.tipo === "porcentaje" ? `${d.valor}% de descuento` : `${fmt(d.descuento)} de descuento`}`;
+        setCuponAplicado({ codigo: d.codigo, descuento: d.descuento, mensaje: msg });
+        showToast(`Cupón ${d.codigo} aplicado — ${fmt(d.descuento)} de descuento`, "ok");
+      } else {
+        showToast(data.message || "Cupón inválido", "err");
+        setCuponAplicado(null);
+      }
+    } catch { showToast("Sin conexión", "err"); }
+    finally { setCuponLoading(false); }
   };
 
   const handlePagar = async (e: React.FormEvent) => {
@@ -230,7 +270,13 @@ export default function Checkout() {
 
       const res  = await fetch(`${API_URL}/api/ventas/checkout`, {
         method: "POST", headers,
-        body: JSON.stringify({ id_direccion_envio: dirData.id_direccion, ...(ids_carrito ? { ids_carrito } : {}) }),
+        body: JSON.stringify({
+          id_direccion_envio: dirData.id_direccion,
+          ...(ids_carrito ? { ids_carrito } : {}),
+          ...(cuponAplicado ? { codigo_cupon: cuponAplicado.codigo } : {}),
+          empaque_reforzado: empaqueReforzado,
+          precio_empaque: empaqueReforzado ? precioEmpaque : 0,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Error al procesar el checkout");
@@ -245,11 +291,14 @@ export default function Checkout() {
 
   const inputStyle = (field: string): React.CSSProperties => ({
     width: "100%", padding: "13px 14px", borderRadius: 12, boxSizing: "border-box",
-    border: `1.5px solid ${focusedField === field ? C.orange : C.border}`,
+    border: `1.5px solid ${fieldErrors[field] ? "#C4304A" : focusedField === field ? C.orange : C.border}`,
     fontSize: 14, fontFamily: SANS, outline: "none", background: "#fff",
-    transition: "border-color .18s",
-    color: C.ink,
+    transition: "border-color .18s", color: C.ink,
   });
+  const clearErr = (field: string) => fieldErrors[field] && setFieldErrors(p => { const n = { ...p }; delete n[field]; return n; });
+  const ErrMsg = ({ field }: { field: string }) => fieldErrors[field]
+    ? <div style={{ fontSize: 11, color: "#C4304A", marginTop: 4, fontFamily: SANS }}>{fieldErrors[field]}</div>
+    : null;
 
   const labelStyle: React.CSSProperties = {
     display: "block", fontSize: 11, fontWeight: 700, marginBottom: 6,
@@ -391,16 +440,18 @@ export default function Checkout() {
                 <div style={{ gridColumn: "span 2" }}>
                   <label style={labelStyle}>Calle *</label>
                   <input type="text" placeholder="Ej: Av. Insurgentes Sur" value={direccion.calle}
-                    onChange={e => setDireccion({ ...direccion, calle: e.target.value })}
+                    onChange={e => { setDireccion({ ...direccion, calle: e.target.value }); clearErr("calle"); }}
                     onFocus={() => setFocusedField("calle")} onBlur={() => setFocusedField(null)}
-                    style={inputStyle("calle")} required />
+                    style={inputStyle("calle")} />
+                  <ErrMsg field="calle" />
                 </div>
                 <div>
                   <label style={labelStyle}>Número exterior *</label>
                   <input type="text" placeholder="Ej: 1234" value={direccion.numero_exterior}
-                    onChange={e => setDireccion({ ...direccion, numero_exterior: e.target.value })}
+                    onChange={e => { setDireccion({ ...direccion, numero_exterior: e.target.value }); clearErr("num_ext"); }}
                     onFocus={() => setFocusedField("num_ext")} onBlur={() => setFocusedField(null)}
-                    style={inputStyle("num_ext")} required />
+                    style={inputStyle("num_ext")} />
+                  <ErrMsg field="num_ext" />
                 </div>
                 <div>
                   <label style={labelStyle}>Número interior <span style={{ fontWeight: 400, textTransform: "none" }}>(opcional)</span></label>
@@ -412,44 +463,49 @@ export default function Checkout() {
                 <div>
                   <label style={labelStyle}>Colonia *</label>
                   <input type="text" placeholder="Ej: Del Valle" value={direccion.colonia}
-                    onChange={e => setDireccion({ ...direccion, colonia: e.target.value })}
+                    onChange={e => { setDireccion({ ...direccion, colonia: e.target.value }); clearErr("colonia"); }}
                     onFocus={() => setFocusedField("colonia")} onBlur={() => setFocusedField(null)}
-                    style={inputStyle("colonia")} required />
+                    style={inputStyle("colonia")} />
+                  <ErrMsg field="colonia" />
                 </div>
                 <div>
                   <label style={labelStyle}>Código postal *</label>
                   <input type="text" placeholder="Ej: 03100" value={direccion.codigo_postal}
-                    onChange={e => setDireccion({ ...direccion, codigo_postal: e.target.value })}
+                    onChange={e => { setDireccion({ ...direccion, codigo_postal: e.target.value }); clearErr("cp"); }}
                     onFocus={() => setFocusedField("cp")} onBlur={() => setFocusedField(null)}
-                    style={inputStyle("cp")} required />
+                    style={inputStyle("cp")} />
+                  <ErrMsg field="cp" />
                 </div>
                 <div>
                   <label style={labelStyle}>Estado *</label>
                   <select value={direccion.id_estado}
-                    onChange={e => setDireccion({ ...direccion, id_estado: Number(e.target.value), id_municipio: 0 })}
+                    onChange={e => { setDireccion({ ...direccion, id_estado: Number(e.target.value), id_municipio: 0 }); clearErr("estado"); }}
                     onFocus={() => setFocusedField("estado")} onBlur={() => setFocusedField(null)}
-                    style={{ ...inputStyle("estado"), background: "#fff" }} required>
+                    style={{ ...inputStyle("estado"), background: "#fff" }}>
                     <option value={0}>Selecciona un estado</option>
                     {estados.map(est => <option key={est.id_estado} value={est.id_estado}>{est.nombre}</option>)}
                   </select>
+                  <ErrMsg field="estado" />
                 </div>
                 <div>
                   <label style={labelStyle}>Municipio *</label>
                   <select value={direccion.id_municipio}
-                    onChange={e => setDireccion({ ...direccion, id_municipio: Number(e.target.value) })}
+                    onChange={e => { setDireccion({ ...direccion, id_municipio: Number(e.target.value) }); clearErr("municipio"); }}
                     disabled={!direccion.id_estado || cargandoMunicipios}
                     onFocus={() => setFocusedField("municipio")} onBlur={() => setFocusedField(null)}
-                    style={{ ...inputStyle("municipio"), background: "#fff", opacity: !direccion.id_estado ? 0.5 : 1 }} required>
+                    style={{ ...inputStyle("municipio"), background: "#fff", opacity: !direccion.id_estado ? 0.5 : 1 }}>
                     <option value={0}>{cargandoMunicipios ? "Cargando..." : "Selecciona un municipio"}</option>
                     {municipios.map(m => <option key={m.id_municipio} value={m.id_municipio}>{m.nombre}</option>)}
                   </select>
+                  <ErrMsg field="municipio" />
                 </div>
                 <div>
                   <label style={labelStyle}>Teléfono de contacto *</label>
                   <input type="tel" placeholder="Ej: 7712345678" value={direccion.telefono}
-                    onChange={e => setDireccion({ ...direccion, telefono: e.target.value })}
+                    onChange={e => { setDireccion({ ...direccion, telefono: e.target.value }); clearErr("tel"); }}
                     onFocus={() => setFocusedField("tel")} onBlur={() => setFocusedField(null)}
-                    style={inputStyle("tel")} maxLength={15} required />
+                    style={inputStyle("tel")} maxLength={15} />
+                  <ErrMsg field="tel" />
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-end" }}>
                   <div style={{ fontSize: 11, color: C.sub, lineHeight: 1.5, paddingBottom: 4 }}>
@@ -507,13 +563,96 @@ export default function Checkout() {
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
                 <span style={{ color: C.sub }}>Subtotal</span>
-                <span style={{ fontWeight: 600, color: C.ink }}>{fmt(total)}</span>
+                <span style={{ fontWeight: 600, color: C.ink }}>{fmt(subtotalBruto)}</span>
               </div>
+              {cuponAplicado && (
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+                  <span style={{ color: "#0E8A50", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46", padding: "1px 6px", borderRadius: 4, fontWeight: 700 }}>{cuponAplicado.codigo}</span>
+                    Descuento
+                  </span>
+                  <span style={{ fontWeight: 700, color: "#0E8A50" }}>-{fmt(cuponAplicado.descuento)}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                 <span style={{ color: C.sub }}>Envío</span>
                 <span style={{ color: C.subLight, fontSize: 12 }}>A coordinar</span>
               </div>
             </div>
+
+            {/* Campo cupón */}
+            {!cuponAplicado && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>¿Tienes un cupón?</div>
+                {tieneDescuentoObra ? (
+                  <div style={{ fontSize: 11, color: C.sub, padding: "8px 12px", background: "#FFF5ED", border: `1px solid ${C.orange}22`, borderRadius: 10 }}>
+                    Uno o más artículos ya tienen descuento. Los cupones no son acumulables.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      type="text"
+                      value={cuponCodigo}
+                      onChange={e => setCuponCodigo(e.target.value.toUpperCase())}
+                      onFocus={() => setFocusedField("cupon")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="CÓDIGO"
+                      style={{ ...inputStyle("cupon"), fontFamily: "'Outfit',monospace", letterSpacing: ".06em", fontWeight: 700, flex: 1, padding: "10px 12px", fontSize: 13 }}
+                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); aplicarCupon(); } }}
+                    />
+                    <button onClick={aplicarCupon} disabled={cuponLoading} style={{ flexShrink: 0, background: C.ink, color: "#fff", border: "none", borderRadius: 12, padding: "10px 16px", cursor: cuponLoading ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 700, fontFamily: SANS, opacity: cuponLoading ? .6 : 1, transition: "all .2s" }}>
+                      {cuponLoading ? "…" : "Aplicar"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {cuponAplicado && (
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#F0FDF4", border: "1px solid rgba(14,138,80,.2)", borderRadius: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#0E8A50" }}>✓ {cuponAplicado.mensaje}</span>
+                <button onClick={() => { setCuponAplicado(null); setCuponCodigo(""); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: C.sub, fontFamily: SANS, textDecoration: "underline" }}>Quitar</button>
+              </div>
+            )}
+
+            {/* Empaque reforzado */}
+            {precioEmpaque > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+                <button type="button"
+                  onClick={() => setEmpaqueReforzado(v => !v)}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "12px 14px", borderRadius: 12, cursor: "pointer",
+                    border: `1.5px solid ${empaqueReforzado ? C.orange : C.border}`,
+                    background: empaqueReforzado ? "#FFF5ED" : "#FAFAF9",
+                    fontFamily: SANS, transition: "all .18s",
+                  }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <ShieldCheck size={18} color={empaqueReforzado ? C.orange : C.sub} strokeWidth={1.8}/>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: empaqueReforzado ? C.ink : C.sub }}>Empaque reforzado</div>
+                      <div style={{ fontSize: 11, color: C.subLight, marginTop: 1 }}>Protección extra para tu obra en el envío</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: empaqueReforzado ? C.orange : C.sub }}>+{fmt(precioEmpaque)}</span>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                      border: `2px solid ${empaqueReforzado ? C.orange : C.border}`,
+                      background: empaqueReforzado ? C.orange : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {empaqueReforzado && <span style={{ color: "#fff", fontSize: 10, fontWeight: 900 }}>✓</span>}
+                    </div>
+                  </div>
+                </button>
+                {empaqueReforzado && (
+                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, fontSize:13 }}>
+                    <span style={{ color:C.sub }}>Empaque reforzado</span>
+                    <span style={{ fontWeight:600, color:C.ink }}>{fmt(precioEmpaque)}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: `2px solid ${C.orange}`, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>Total</span>

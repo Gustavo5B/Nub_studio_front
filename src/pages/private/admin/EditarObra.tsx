@@ -888,6 +888,10 @@ export default function EditarObra() {
                 </div>
               </Card>
 
+            </div>
+
+            {/* Columna derecha */}
+            <div style={{ animation: "fadeUp 0.5s ease both", animationDelay: "0.1s" }}>
               <RevisionPanel
                 estadoActual={estadoActual}
                 estadoSelected={estadoSelected}
@@ -901,10 +905,6 @@ export default function EditarObra() {
                 focused={focused}
                 fi={fi}
               />
-            </div>
-
-            {/* Columna derecha */}
-            <div style={{ animation: "fadeUp 0.5s ease both", animationDelay: "0.1s" }}>
               <ObraPreviewCard form={form} previewSrc={previewSrc} currentArt={currentArt} currentCat={currentCat} />
               <PrecioCard form={form} onChange={onChange} focused={focused} loading={loading} fi={fi} />
               <ImagenCard

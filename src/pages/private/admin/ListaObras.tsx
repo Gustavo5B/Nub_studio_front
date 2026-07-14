@@ -301,6 +301,8 @@ export default function ListaObras() {
     try {
       const params: Record<string, string> = { page: String(page), limit: "12", solo_publicadas: "false", ordenar: "admin" };
       if (filtroCategoria !== "todas") params.categoria = filtroCategoria;
+      if (filtroEstado !== "todos") params.estado = filtroEstado;
+      if (search.trim()) params.buscar = search.trim();
       const res = await fetch(`${API_URL}/api/obras?${new URLSearchParams(params)}`, {
         headers: { Authorization: `Bearer ${authService.getToken()}` },
       });
@@ -308,11 +310,6 @@ export default function ListaObras() {
         const json = await res.json();
         let data: ObraItem[] = json.data || [];
         setAllObras(data);
-        if (filtroEstado !== "todos") data = data.filter(o => o.estado === filtroEstado);
-        if (search.trim()) {
-          const q = search.toLowerCase();
-          data = data.filter(o => o.titulo?.toLowerCase().includes(q) || o.artista_nombre?.toLowerCase().includes(q));
-        }
         setObras(data);
         setTotal(json.pagination?.total ?? data.length);
         setTotalPages(json.pagination?.totalPages ?? 1);
