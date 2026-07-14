@@ -1,8 +1,17 @@
 // src/layout/ClienteLayout.tsx
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Heart, ShoppingBag, User, LogOut, Palette, Package } from "lucide-react";
+import { Heart, ShoppingBag, User, LogOut, Palette, Package, Tag, X } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { authService } from "../services/authService";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+interface CuponPublico {
+  codigo: string; descripcion: string | null;
+  tipo: "porcentaje" | "monto"; valor: string;
+  monto_minimo: string; fecha_fin: string | null;
+}
 
 const C = {
   orange: "#E8640C", pink: "#A83B90", blue: "#2D6FBE",
@@ -16,6 +25,38 @@ export default function ClienteLayout() {
   const location  = useLocation();
   const { cartCount } = useCart();
   const nombre = localStorage.getItem("userName") || "Mi cuenta";
+
+  const [cupones,        setCupones]        = useState<CuponPublico[]>([]);
+  const [bannerVisible,  setBannerVisible]  = useState(false);
+  const [bannerIdx,      setBannerIdx]      = useState(0);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    const token = authService.getToken();
+    if (!token) return;
+    fetch(`${API_URL}/api/cupones/publicos`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data?.length > 0) {
+          setCupones(d.data);
+          setBannerVisible(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (cupones.length <= 1) return;
+    const id = setInterval(() => setBannerIdx(i => (i + 1) % cupones.length), 4000);
+    return () => clearInterval(id);
+  }, [cupones.length]);
+
+  const fmtValor = (c: CuponPublico) =>
+    c.tipo === "porcentaje" ? `${c.valor}% OFF` : `$${Number(c.valor).toLocaleString("es-MX")} MXN OFF`;
+
+  const cupon = cupones[bannerIdx] ?? null;
 
   const handleLogout = () => {
     authService.logout();
@@ -37,7 +78,47 @@ export default function ClienteLayout() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS }}>
+      {/* Banner flotante de cupones */}
+      {bannerVisible && !bannerDismissed && cupon && (
+        <div style={{
+          position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
+          zIndex: 9990, display: "flex", alignItems: "center", gap: 12,
+          background: "rgba(14,138,80,.96)", backdropFilter: "blur(12px)",
+          borderRadius: 100, padding: "10px 18px 10px 14px",
+          boxShadow: "0 8px 32px rgba(14,138,80,.35)",
+          border: "1px solid rgba(255,255,255,.18)", whiteSpace: "nowrap",
+          animation: "cl-banner-in .4s cubic-bezier(.16,1,.3,1) both",
+        }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Tag size={13} color="#fff" strokeWidth={2.5}/>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", letterSpacing: ".04em" }}>
+              Código <span style={{ fontFamily: "'Outfit',sans-serif", background: "rgba(255,255,255,.2)", borderRadius: 4, padding: "1px 7px", letterSpacing: ".08em" }}>{cupon.codigo}</span>
+              {" — "}<span style={{ color: "#bbf7d0" }}>{fmtValor(cupon)}</span>
+            </div>
+            {cupon.descripcion && (
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,.65)", marginTop: 1 }}>{cupon.descripcion}</div>
+            )}
+          </div>
+          {cupones.length > 1 && (
+            <div style={{ display: "flex", gap: 4, marginLeft: 4 }}>
+              {cupones.map((_, i) => (
+                <div key={i} style={{ width: i === bannerIdx ? 12 : 5, height: 5, borderRadius: 100, background: i === bannerIdx ? "#fff" : "rgba(255,255,255,.35)", transition: "all .3s" }}/>
+              ))}
+            </div>
+          )}
+          <button onClick={() => setBannerDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 0 2px 6px", display: "flex", alignItems: "center", opacity: .65 }}>
+            <X size={14} color="#fff" strokeWidth={2.5}/>
+          </button>
+        </div>
+      )}
+
       <style>{`
+        @keyframes cl-banner-in {
+          from { opacity:0; transform:translateX(-50%) translateY(20px); }
+          to   { opacity:1; transform:translateX(-50%) translateY(0); }
+        }
         @font-face { font-family:'SolveraLorvane'; src:url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display:swap; }
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
         .cl-logo { background:none; border:none; cursor:pointer; padding:0;

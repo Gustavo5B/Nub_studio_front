@@ -25,6 +25,7 @@ const NEXA_HEAVY = "'Nexa-Heavy', sans-serif";
 interface Obra {
   id_obra: number; titulo: string; slug: string;
   imagen_principal: string; precio_base: number; precio_minimo: number;
+  precio_oferta: number | null;
   categoria_nombre: string; artista_nombre: string; artista_alias: string;
   anio_creacion: number; vistas: number; estado: string;
 }
@@ -96,7 +97,9 @@ function DetallePanel({
   readonly navigate: ReturnType<typeof useNavigate>;
 }) {
   if (!obra) return null;
-  const precio = obra.precio_minimo || obra.precio_base;
+  const precioBase  = obra.precio_minimo || obra.precio_base;
+  const precioMost  = obra.precio_oferta || precioBase;
+  const tieneOferta = !!obra.precio_oferta;
 
   return (
     <>
@@ -175,14 +178,24 @@ function DetallePanel({
           <div style={{ marginBottom: 8 }}>
             <div style={{
               fontSize: 8, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase",
-              color: "rgba(0,0,0,.22)", fontFamily: SANS, marginBottom: 6,
-            }}>Precio base</div>
+              color: "rgba(0,0,0,.22)", fontFamily: SANS, marginBottom: 6, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              {tieneOferta ? "Precio en oferta" : "Precio base"}
+              {tieneOferta && (
+                <span style={{ background: C.green, color: "#fff", fontSize: 7, fontWeight: 800, letterSpacing: ".1em", padding: "2px 7px", borderRadius: 100 }}>OFERTA</span>
+              )}
+            </div>
+            {tieneOferta && (
+              <div style={{ fontSize: 13, color: C.sub, textDecoration: "line-through", fontFamily: SANS, marginBottom: 2 }}>
+                ${Number(precioBase).toLocaleString("es-MX")} MXN
+              </div>
+            )}
             <div style={{
-              fontFamily: SERIF, fontSize: 32, fontWeight: 900, color: C.ink,
+              fontFamily: SERIF, fontSize: 32, fontWeight: 900, color: tieneOferta ? C.green : C.ink,
               letterSpacing: "-.025em", lineHeight: 1,
             }}>
-              <span style={{ color: C.orange }}>$</span>
-              {Number(precio || 0).toLocaleString("es-MX")}
+              <span style={{ color: tieneOferta ? C.green : C.orange }}>$</span>
+              {Number(precioMost || 0).toLocaleString("es-MX")}
               <span style={{ fontSize: 12, fontWeight: 400, color: C.sub, fontFamily: SANS, marginLeft: 6 }}>MXN</span>
             </div>
           </div>
@@ -909,6 +922,11 @@ export default function Catalogo() {
                       <ImageIcon size={28} strokeWidth={1} color="rgba(0,0,0,.12)" />
                     </div>
                   )}
+                  {obra.precio_oferta && (
+                    <div style={{ position: "absolute", top: 8, left: 8, background: C.green, color: "#fff", fontSize: 8, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 100, fontFamily: SANS, pointerEvents: "none" }}>
+                      OFERTA
+                    </div>
+                  )}
                   <button
                     className={`cat-fav-btn${favoritos.has(obra.id_obra) ? " fav-active" : ""}`}
                     onClick={e => toggleFavorito(e, obra.id_obra)}
@@ -923,9 +941,27 @@ export default function Catalogo() {
                 </div>
                 <div className="cat-obra-card-info">
                   <div className="cat-obra-card-desc">{obra.titulo}</div>
-                  <div className="cat-obra-card-link">
-                    <span className="cat-obra-card-link-line" />
-                    {obra.categoria_nombre || "Ver obra"}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+                    <div className="cat-obra-card-link">
+                      <span className="cat-obra-card-link-line" />
+                      {obra.categoria_nombre || "Ver obra"}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {obra.precio_oferta ? (
+                        <>
+                          <span style={{ fontSize: 9, color: C.sub, textDecoration: "line-through", fontFamily: SANS }}>
+                            ${Number(obra.precio_base).toLocaleString("es-MX")}
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: C.green, fontFamily: SANS }}>
+                            ${Number(obra.precio_oferta).toLocaleString("es-MX")}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,.4)", fontFamily: SANS }}>
+                          ${Number(obra.precio_base).toLocaleString("es-MX")}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

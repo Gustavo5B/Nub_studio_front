@@ -1,7 +1,7 @@
 // src/pages/cliente/MiCuenta.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Package, Heart, ArrowUpRight, Mic } from "lucide-react";
+import { ShoppingCart, Package, Heart, ArrowUpRight, Mic, Tag } from "lucide-react";
 import { authService } from "../../services/authService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -27,6 +27,7 @@ export default function MiCuenta() {
   const [orderCount, setOrderCount] = useState(0);
   const [favCount,   setFavCount]   = useState(0);
   const [loading,    setLoading]    = useState(true);
+  const [cupones,    setCupones]    = useState<{ codigo:string; descripcion:string|null; tipo:string; valor:string; monto_minimo:string; fecha_fin:string|null }[]>([]);
 
   const nombre   = localStorage.getItem("userName")  || "Coleccionista";
   const correo   = localStorage.getItem("userEmail") || "";
@@ -48,6 +49,8 @@ export default function MiCuenta() {
       fetch(`${API_URL}/api/favoritos`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json()).then(d => { if (d.success) setFavCount(d.data?.length ?? 0); }),
     ]).finally(() => setLoading(false));
+    fetch(`${API_URL}/api/cupones/publicos`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.success) setCupones(d.data ?? []); }).catch(() => {});
   }, []);
 
   const handleLogout = () => { authService.logout(); navigate("/"); };
@@ -450,6 +453,42 @@ export default function MiCuenta() {
             </span>
           </div>
         </div>
+
+        {/* ── Cupones disponibles ── */}
+        {cupones.length > 0 && (
+          <>
+            <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:".28em", textTransform:"uppercase", color:C.sub, fontFamily:SANS, marginTop:40, marginBottom:16, display:"flex", alignItems:"center", gap:12 }}>
+              <span>Cupones disponibles</span>
+              <div style={{flex:1, height:1, background:C.border}}/>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))", gap:14 }} className="reveal">
+              {cupones.map(c => (
+                <div key={c.codigo} style={{ background:C.card, borderRadius:16, boxShadow:"0 2px 12px rgba(20,18,30,.06), 0 0 0 1px rgba(20,18,30,.05)", overflow:"hidden", borderLeft:"3px solid #0E8A50" }}>
+                  <div style={{ padding:"16px 18px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                      <div style={{ width:28, height:28, borderRadius:8, background:"rgba(14,138,80,.12)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        <Tag size={13} color="#0E8A50" strokeWidth={2}/>
+                      </div>
+                      <span style={{ fontFamily:"'Outfit',monospace", fontSize:14, fontWeight:800, color:C.ink, letterSpacing:".04em" }}>{c.codigo}</span>
+                    </div>
+                    <div style={{ fontSize:20, fontWeight:800, color:"#0E8A50", fontFamily:NEXA, lineHeight:1, marginBottom:4 }}>
+                      {c.tipo === "porcentaje" ? `${c.valor}% OFF` : `$${Number(c.valor).toLocaleString("es-MX")} MXN`}
+                    </div>
+                    {c.descripcion && <div style={{ fontSize:11, color:C.sub, marginBottom:6 }}>{c.descripcion}</div>}
+                    {Number(c.monto_minimo) > 0 && (
+                      <div style={{ fontSize:10, color:C.sub }}>Compra mínima: ${Number(c.monto_minimo).toLocaleString("es-MX")} MXN</div>
+                    )}
+                    {c.fecha_fin && (
+                      <div style={{ fontSize:10, color:"#A87006", marginTop:4 }}>
+                        Válido hasta {new Date(c.fecha_fin).toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
       </main>
     </div>

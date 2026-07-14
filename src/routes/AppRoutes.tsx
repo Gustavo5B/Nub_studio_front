@@ -39,6 +39,11 @@ import AdminColecciones   from "../pages/private/admin/AdminColecciones";
 import AdminClientes      from "../pages/private/admin/AdminClientes";
 import AdminVentas        from "../pages/private/admin/AdminVentas";
 import AdminBlog          from "../pages/private/admin/AdminBlog";
+import AdminCupones       from "../pages/private/admin/AdminCupones";
+import AdminMarcos        from "../pages/private/admin/AdminMarcos";
+import AdminTamanos       from "../pages/private/admin/AdminTamaños";
+import AdminLiquidaciones from "../pages/private/admin/AdminLiquidaciones";
+import AdminConfiguracion from "../pages/private/admin/AdminConfiguracion";
 import ClienteRoute       from "../components/ClienteRoute";
 import ClienteLayout      from "../layout/ClienteLayout";
 import MiCuenta           from "../pages/cliente/MiCuenta";
@@ -103,6 +108,11 @@ export default function AppRoutes() {
         <Route path="blog"           element={<AdminBlog />} />
         <Route path="blog/nuevo"     element={<NuevoPost />} />
         <Route path="blog/editar/:id" element={<NuevoPost />} />
+        <Route path="cupones"        element={<AdminCupones />} />
+        <Route path="marcos"         element={<AdminMarcos />} />
+        <Route path="tamanos"        element={<AdminTamanos />} />
+        <Route path="liquidaciones"  element={<AdminLiquidaciones />} />
+        <Route path="configuracion"  element={<AdminConfiguracion />} />
       </Route>
 
       {/* ── Cliente ── */}
