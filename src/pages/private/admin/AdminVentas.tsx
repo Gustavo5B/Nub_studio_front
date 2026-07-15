@@ -51,6 +51,10 @@ interface Venta {
   total: string;
   estado: string;
   fecha_creacion: string;
+  id_pedido: number;
+  estado_pedido: string;
+  descuento_cupon: string;
+  total_pedido: string;
 }
 
 interface GuiaModal {
@@ -241,6 +245,28 @@ export default function AdminVentas() {
                     {new Date(v.fecha_creacion).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}
                   </td>
                   <td style={{ padding: "10px 14px" }}>
+                    {/* Badge de pago */}
+                    {(() => {
+                      const ep = v.estado_pedido;
+                      const pagoStyle: Record<string, { bg: string; color: string; label: string }> = {
+                        pagado:     { bg: "#D1FAE5", color: "#065F46", label: "✓ Pagado"     },
+                        pendiente:  { bg: "#FEF3C7", color: "#92400E", label: "⏳ Sin pagar"  },
+                        procesando: { bg: "#DBEAFE", color: "#1E40AF", label: "↻ Procesando" },
+                        enviado:    { bg: "#DBEAFE", color: "#1E40AF", label: "↑ Enviado"    },
+                        entregado:  { bg: "#D1FAE5", color: "#065F46", label: "✓ Entregado"  },
+                        cancelado:  { bg: "#FEE2E2", color: "#991B1B", label: "✕ Cancelado"  },
+                      };
+                      const ps = pagoStyle[ep] ?? pagoStyle.pendiente;
+                      return (
+                        <div style={{
+                          fontSize: 9.5, fontWeight: 700, background: ps.bg, color: ps.color,
+                          borderRadius: 4, padding: "2px 7px", marginBottom: 6,
+                          display: "inline-block", letterSpacing: ".04em",
+                        }}>
+                          {ps.label}
+                        </div>
+                      );
+                    })()}
                     <select
                       className="av-select"
                       value={v.estado}
