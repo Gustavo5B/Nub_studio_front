@@ -55,6 +55,7 @@ interface Venta {
   estado_pedido: string;
   descuento_cupon: string;
   total_pedido: string;
+  codigo_cupon: string | null;
 }
 
 interface GuiaModal {
@@ -240,7 +241,22 @@ export default function AdminVentas() {
                   </td>
                   <td style={{ padding: "10px 14px", fontSize: 12, color: C.creamSub }}>{v.artista_alias}</td>
                   <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: C.cream, fontFamily: FM, textAlign: "center" }}>{v.cantidad}</td>
-                  <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: C.green, fontFamily: FM, whiteSpace: "nowrap" }}>{fmtMXN(Number(v.total))}</td>
+                  <td style={{ padding: "10px 14px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.green, fontFamily: FM, whiteSpace: "nowrap" }}>{fmtMXN(Number(v.total))}</div>
+                    {Number(v.descuento_cupon) > 0 && (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3, fontSize: 10, fontWeight: 700, color: "#065F46", background: "#D1FAE5", borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap" }}>
+                        🏷 -{fmtMXN(Number(v.descuento_cupon))}{v.codigo_cupon ? ` · ${v.codigo_cupon}` : ""}
+                      </div>
+                    )}
+                    {(() => {
+                      const empaque = Math.round((Number(v.total_pedido) - Number(v.total) + Number(v.descuento_cupon)) * 100) / 100;
+                      return empaque > 0 ? (
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3, marginLeft: Number(v.descuento_cupon) > 0 ? 4 : 0, fontSize: 10, fontWeight: 700, color: "#1E40AF", background: "#DBEAFE", borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap" }}>
+                          📦 +{fmtMXN(empaque)} empaque
+                        </div>
+                      ) : null;
+                    })()}
+                  </td>
                   <td style={{ padding: "10px 14px", fontSize: 11, color: C.creamMut, whiteSpace: "nowrap" }}>
                     {new Date(v.fecha_creacion).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}
                   </td>
