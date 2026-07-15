@@ -261,7 +261,7 @@ export default function AdminVentas() {
                         <div style={{
                           fontSize: 9.5, fontWeight: 700, background: ps.bg, color: ps.color,
                           borderRadius: 4, padding: "2px 7px", marginBottom: 6,
-                          display: "inline-block", letterSpacing: ".04em",
+                          display: "block", width: "fit-content", letterSpacing: ".04em",
                         }}>
                           {ps.label}
                         </div>
