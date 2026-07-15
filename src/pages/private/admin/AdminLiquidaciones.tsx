@@ -24,6 +24,7 @@ interface Pendiente {
   id_artista: number; nombre: string; correo: string;
   porcentaje_comision: number; ventas_pendientes: number;
   monto_pendiente: string; venta_mas_antigua: string;
+  clabe?: string; banco?: string;
 }
 interface Liquidacion {
   id_liquidacion: number; monto_total: string; fecha_liquidacion: string;
@@ -165,6 +166,15 @@ export default function AdminLiquidaciones() {
               <div>
                 <h1 style={{ fontSize:22, fontWeight:700, color:C.cream, margin:0 }}>{detalleArtista.nombre}</h1>
                 <p style={{ fontSize:12, color:C.creamSub, margin:0 }}>{detalleArtista.correo}</p>
+                {detalleArtista.clabe ? (
+                  <p style={{ fontSize:12, margin:"2px 0 0", color:C.cream }}>
+                    <span style={{ color:C.creamMut, marginRight:4 }}>CLABE:</span>
+                    <span style={{ fontFamily:FM, fontWeight:600, letterSpacing:".06em" }}>{detalleArtista.clabe}</span>
+                    {detalleArtista.banco && <span style={{ color:C.creamSub, marginLeft:8 }}>· {detalleArtista.banco}</span>}
+                  </p>
+                ) : (
+                  <p style={{ fontSize:11, margin:"2px 0 0", color:"#C4304A", fontWeight:600 }}>⚠ Sin CLABE registrada — pedir al artista que la registre en su perfil</p>
+                )}
               </div>
             </div>
 
@@ -362,8 +372,16 @@ export default function AdminLiquidaciones() {
             <div className="modal-body">
               <div className="monto-box">
                 <div>
-                  <div style={{ fontSize:11, color:"#166534", fontWeight:600, marginBottom:2 }}>Monto a pagar</div>
+                  <div style={{ fontSize:11, color:"#166534", fontWeight:600, marginBottom:2 }}>Monto a transferir</div>
                   <div style={{ fontFamily:FM, fontSize:24, fontWeight:700, color:C.green }}>{fmtMXN(detalleTotal)}</div>
+                  {detalleArtista.clabe ? (
+                    <div style={{ fontSize:11, color:"#166534", marginTop:4 }}>
+                      CLABE: <span style={{ fontFamily:FM, fontWeight:700, letterSpacing:".06em" }}>{detalleArtista.clabe}</span>
+                      {detalleArtista.banco && <span> · {detalleArtista.banco}</span>}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:11, color:C.red, fontWeight:600, marginTop:4 }}>⚠ Sin CLABE registrada</div>
+                  )}
                 </div>
                 <DollarSign size={28} color={C.green}/>
               </div>

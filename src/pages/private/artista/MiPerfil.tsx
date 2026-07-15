@@ -31,7 +31,7 @@ export interface ArtistaInfo {
   ciudad?: string; direccion_taller?: string;
   codigo_postal?: string; id_estado_base?: number; nombre_estado?: string; dias_preparacion_default?: number;
   acepta_envios?: boolean; solo_entrega_personal?: boolean; politica_envios?: string; politica_devoluciones?: string;
-  email_usuario?: string;
+  email_usuario?: string; clabe?: string; banco?: string;
 }
 interface Estado { id_estado: number; nombre: string; codigo: string; }
 interface Categoria { id_categoria: number; nombre: string; }
@@ -687,6 +687,55 @@ function SeccionEnviosReadOnly({ artista }: { artista: ArtistaInfo }) {
   );
 }
 
+function SeccionBancariaReadOnly({ artista }: { artista: ArtistaInfo }) {
+  return (
+    <div className="mp-sec" style={{ animationDelay: "0.30s" }}>
+      <SectionHeader icon={Icons.Lock} title="Datos bancarios" />
+      <div className="mp-fld-grid">
+        <div>
+          <div className="mp-label">CLABE interbancaria</div>
+          <div className="mp-input-ro" style={{ fontFamily:"monospace", letterSpacing:".04em" }}>{artista.clabe || "—"}</div>
+        </div>
+        <div>
+          <div className="mp-label">Banco</div>
+          <div className="mp-input-ro">{artista.banco || "—"}</div>
+        </div>
+      </div>
+      <div className="mp-note">
+        <Icons.Info />
+        <p style={{ margin:0, fontSize:12, lineHeight:1.6 }}>Tus datos bancarios solo son visibles para el equipo de Nu★B Studio para procesar tus pagos.</p>
+      </div>
+    </div>
+  );
+}
+
+function SeccionBancariaEditable({ form, set }: { form: Record<string, any>; set: (k: string, v: string) => void }) {
+  return (
+    <div className="mp-sec" style={{ animationDelay: "0.30s" }}>
+      <SectionHeader icon={Icons.Lock} title="Datos bancarios" />
+      <div className="mp-fld-grid">
+        <div>
+          <Label text="CLABE interbancaria (18 dígitos)" />
+          <input className="mp-input" value={form.clabe}
+            onChange={e => set("clabe", e.target.value.replace(/\D/g, "").slice(0, 18))}
+            placeholder="18 dígitos" maxLength={18} inputMode="numeric"
+            style={{ fontFamily:"monospace", letterSpacing:".04em" }} />
+        </div>
+        <div>
+          <Label text="Banco" />
+          <input className="mp-input" value={form.banco}
+            onChange={e => set("banco", e.target.value)}
+            placeholder="ej. BBVA, Santander, Banorte..." />
+        </div>
+      </div>
+      <div className="mp-note">
+        <Icons.Info />
+        <p style={{ margin:0, fontSize:12, lineHeight:1.6 }}>Solo visible para Nu★B Studio. Usamos esta información para transferirte tus pagos vía SPEI.</p>
+      </div>
+    </div>
+  );
+}
+
 function SeccionCuentaReadOnly({ artista }: { artista: ArtistaInfo }) {
   return (
     <div className="mp-sec" style={{ animationDelay: "0.36s" }}>
@@ -1097,6 +1146,8 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
     solo_entrega_personal: artista.solo_entrega_personal ?? false,
     politica_envios: artista.politica_envios ?? "",
     politica_devoluciones: artista.politica_devoluciones ?? "",
+    clabe: artista.clabe ?? "",
+    banco: artista.banco ?? "",
   });
 
   // Guardar respaldo al entrar en edición
@@ -1252,6 +1303,8 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
         solo_entrega_personal: data.solo_entrega_personal ?? form.solo_entrega_personal,
         politica_envios: data.politica_envios ?? form.politica_envios,
         politica_devoluciones: data.politica_devoluciones ?? form.politica_devoluciones,
+        clabe: data.clabe ?? form.clabe,
+        banco: data.banco ?? form.banco,
       });
       // Salir del modo edición
       setIsEditing(false);
@@ -1357,8 +1410,9 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
               </div>
               <div className="mp-grid-2">
                 <SeccionEnviosReadOnly artista={camposActuales} />
-                <SeccionCuentaReadOnly artista={artista} />
+                <SeccionBancariaReadOnly artista={artista} />
               </div>
+              <SeccionCuentaReadOnly artista={artista} />
               <button
                 type="button"
                 onClick={handleEdit}
@@ -1394,8 +1448,9 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
               </div>
               <div className="mp-grid-2">
                 <SeccionEnviosEditable form={form} set={set} fieldErrors={fieldErrors} />
-                <SeccionCuentaReadOnly artista={artista} />
+                <SeccionBancariaEditable form={form} set={set} />
               </div>
+              <SeccionCuentaReadOnly artista={artista} />
               <div style={{ display: "flex", gap: "16px" }}>
                 <button
                   type="button"
