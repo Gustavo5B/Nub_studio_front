@@ -350,7 +350,10 @@ export default function AdminLiquidaciones() {
 
       {/* Modal confirmar liquidacion */}
       {modalLiq && detalleArtista && (
-        <div className="overlay" onClick={e => e.target === e.currentTarget && setModalLiq(false)}>
+        <div
+          onClick={e => e.target === e.currentTarget && setModalLiq(false)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:99999, padding:20 }}
+        >
           <div className="modal">
             <div className="modal-header">
               <span className="modal-title">Registrar pago a {detalleArtista.nombre}</span>
