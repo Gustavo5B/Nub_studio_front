@@ -161,19 +161,21 @@ export default function AdminLiquidaciones() {
       <div className="adm-liq">
         {vista === "detalle" && detalleArtista ? (
           <>
-            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-              <button className="icon-btn" onClick={() => setVista("pendientes")}><ArrowLeft size={14}/></button>
-              <div>
-                <h1 style={{ fontSize:22, fontWeight:700, color:C.cream, margin:0 }}>{detalleArtista.nombre}</h1>
-                <p style={{ fontSize:12, color:C.creamSub, margin:0 }}>{detalleArtista.correo}</p>
+            <div style={{ display:"flex", alignItems:"flex-start", gap:12, marginBottom:20 }}>
+              <button className="icon-btn" style={{ marginTop:4, flexShrink:0 }} onClick={() => setVista("pendientes")}><ArrowLeft size={14}/></button>
+              <div style={{ flex:1 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+                  <h1 style={{ fontSize:20, fontWeight:700, color:C.cream, margin:0 }}>{detalleArtista.nombre}</h1>
+                  <span style={{ fontSize:12, color:C.creamSub }}>{detalleArtista.correo}</span>
+                </div>
                 {detalleArtista.clabe ? (
-                  <p style={{ fontSize:12, margin:"2px 0 0", color:C.cream }}>
-                    <span style={{ color:C.creamMut, marginRight:4 }}>CLABE:</span>
-                    <span style={{ fontFamily:FM, fontWeight:600, letterSpacing:".06em" }}>{detalleArtista.clabe}</span>
-                    {detalleArtista.banco && <span style={{ color:C.creamSub, marginLeft:8 }}>· {detalleArtista.banco}</span>}
-                  </p>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6, flexWrap:"wrap" }}>
+                    <span style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", color:C.creamMut }}>CLABE</span>
+                    <span style={{ fontFamily:FM, fontSize:13, fontWeight:600, color:C.cream, letterSpacing:".06em", background:C.bg, border:`1px solid ${C.border}`, borderRadius:5, padding:"2px 8px" }}>{detalleArtista.clabe}</span>
+                    {detalleArtista.banco && <span style={{ fontSize:12, color:C.creamSub, background:C.bg, border:`1px solid ${C.border}`, borderRadius:5, padding:"2px 8px" }}>{detalleArtista.banco}</span>}
+                  </div>
                 ) : (
-                  <p style={{ fontSize:11, margin:"2px 0 0", color:"#C4304A", fontWeight:600 }}>⚠ Sin CLABE registrada — pedir al artista que la registre en su perfil</p>
+                  <div style={{ fontSize:11, marginTop:5, color:C.red, fontWeight:600 }}>⚠ Sin CLABE registrada — pedir al artista que la registre en su perfil</div>
                 )}
               </div>
             </div>
