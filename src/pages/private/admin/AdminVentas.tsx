@@ -1,6 +1,6 @@
 // src/pages/private/admin/AdminVentas.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
-import { RefreshCw, ShoppingBag, Clock, Truck, CheckCircle, XCircle, Package, Store } from "lucide-react";
+import { RefreshCw, ShoppingBag, Clock, Truck, CheckCircle, XCircle, Package, Store, Tag, PackageCheck } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
 
@@ -209,7 +209,7 @@ export default function AdminVentas() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["#", "Obra", "Cliente", "Artista", "Cant.", "Total", "Fecha", "Estado"].map(h => (
+              {["#", "Obra", "Cliente", "Artista", "Cant.", "Total pedido", "Fecha", "Estado"].map(h => (
                 <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.creamMut, textTransform: "uppercase", letterSpacing: ".1em", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
@@ -223,7 +223,14 @@ export default function AdminVentas() {
               const est = ESTADOS.find(e => e.value === v.estado) ?? ESTADOS[1];
               return (
                 <tr key={v.id_venta} className="av-row" style={{ borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: "10px 14px", fontSize: 12, fontFamily: FM, color: C.creamMut }}>#{v.id_venta}</td>
+                  <td style={{ padding: "10px 14px" }}>
+                    <div style={{ fontSize: 11, fontFamily: FM, fontWeight: 700, color: C.cream }}>
+                      NUB-{String(v.id_pedido).padStart(5, "0")}
+                    </div>
+                    <div style={{ fontSize: 10, fontFamily: FM, color: C.creamMut, marginTop: 1 }}>
+                      venta #{v.id_venta}
+                    </div>
+                  </td>
                   <td style={{ padding: "10px 14px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 36, height: 44, borderRadius: 6, overflow: "hidden", flexShrink: 0, background: "#ece9e4" }}>
@@ -242,20 +249,32 @@ export default function AdminVentas() {
                   <td style={{ padding: "10px 14px", fontSize: 12, color: C.creamSub }}>{v.artista_alias}</td>
                   <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: C.cream, fontFamily: FM, textAlign: "center" }}>{v.cantidad}</td>
                   <td style={{ padding: "10px 14px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: C.green, fontFamily: FM, whiteSpace: "nowrap" }}>{fmtMXN(Number(v.total))}</div>
-                    {Number(v.descuento_cupon) > 0 && (
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3, fontSize: 10, fontWeight: 700, color: "#065F46", background: "#D1FAE5", borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap" }}>
-                        🏷 -{fmtMXN(Number(v.descuento_cupon))}{v.codigo_cupon ? ` · ${v.codigo_cupon}` : ""}
+                    {/* Total real pagado */}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.cream, fontFamily: FM, whiteSpace: "nowrap" }}>
+                      {fmtMXN(Number(v.total_pedido))}
+                    </div>
+                    {/* Desglose: subtotal si hay modificadores */}
+                    {(Number(v.descuento_cupon) > 0 || Number(v.total_pedido) !== Number(v.total)) && (
+                      <div style={{ fontSize: 10, color: C.creamMut, fontFamily: FM, marginTop: 1 }}>
+                        subtotal {fmtMXN(Number(v.total))}
                       </div>
                     )}
-                    {(() => {
-                      const empaque = Math.round((Number(v.total_pedido) - Number(v.total) + Number(v.descuento_cupon)) * 100) / 100;
-                      return empaque > 0 ? (
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3, marginLeft: Number(v.descuento_cupon) > 0 ? 4 : 0, fontSize: 10, fontWeight: 700, color: "#1E40AF", background: "#DBEAFE", borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap" }}>
-                          📦 +{fmtMXN(empaque)} empaque
+                    {/* Tags de modificadores */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 4 }}>
+                      {Number(v.descuento_cupon) > 0 && (
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: "#166534", background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 5, padding: "2px 7px", width: "fit-content" }}>
+                          <Tag size={9} strokeWidth={2.5}/> -{fmtMXN(Number(v.descuento_cupon))}{v.codigo_cupon ? ` ${v.codigo_cupon}` : ""}
                         </div>
-                      ) : null;
-                    })()}
+                      )}
+                      {(() => {
+                        const empaque = Math.round((Number(v.total_pedido) - Number(v.total) + Number(v.descuento_cupon)) * 100) / 100;
+                        return empaque > 0 ? (
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: "#1e3a5f", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 5, padding: "2px 7px", width: "fit-content" }}>
+                            <PackageCheck size={9} strokeWidth={2.5}/> +{fmtMXN(empaque)} empaque
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
                   </td>
                   <td style={{ padding: "10px 14px", fontSize: 11, color: C.creamMut, whiteSpace: "nowrap" }}>
                     {new Date(v.fecha_creacion).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}
