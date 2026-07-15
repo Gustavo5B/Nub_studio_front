@@ -160,22 +160,39 @@ export default function AdminLiquidaciones() {
       <div className="adm-liq">
         {vista === "detalle" && detalleArtista ? (
           <>
-            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
               <button className="icon-btn" onClick={() => setVista("pendientes")}><ArrowLeft size={14}/></button>
               <div>
                 <h1 style={{ fontSize:22, fontWeight:700, color:C.cream, margin:0 }}>{detalleArtista.nombre}</h1>
-                <p style={{ fontSize:12, color:C.creamSub, margin:0 }}>{detalleArtista.correo} &middot; Comision {detalleArtista.porcentaje_comision}%</p>
+                <p style={{ fontSize:12, color:C.creamSub, margin:0 }}>{detalleArtista.correo}</p>
               </div>
             </div>
 
-            <div className="monto-box" style={{ marginBottom:20 }}>
-              <div>
-                <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em", color:"#166534", marginBottom:4 }}>Total pendiente</div>
-                <div style={{ fontFamily:FM, fontSize:28, fontWeight:700, color:C.green }}>{fmtMXN(detalleTotal)}</div>
-                <div style={{ fontSize:11, color:"#166534" }}>{detalleVentas.length} ventas sin liquidar</div>
+            {/* Tarjeta resumen de pago */}
+            <div style={{ background:C.card, borderRadius:12, boxShadow:CS, padding:"18px 20px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
+              <div style={{ display:"flex", gap:32, flexWrap:"wrap" }}>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", color:C.creamMut, marginBottom:4 }}>Ventas por liquidar</div>
+                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:C.cream }}>{detalleVentas.length}</div>
+                </div>
+                <div style={{ width:1, background:C.border }}/>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", color:C.creamMut, marginBottom:4 }}>Comisión plataforma ({detalleArtista.porcentaje_comision}%)</div>
+                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:C.creamSub }}>
+                    {fmtMXN(detalleVentas.reduce((s,v) => s + Number(v.subtotal) * (detalleArtista!.porcentaje_comision/100), 0))}
+                  </div>
+                </div>
+                <div style={{ width:1, background:C.border }}/>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", color:"#166534", marginBottom:4 }}>A transferir al artista</div>
+                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:C.green }}>{fmtMXN(detalleTotal)}</div>
+                </div>
               </div>
-              <button className="btn-liq" style={{ padding:"10px 20px", fontSize:13 }} onClick={() => setModalLiq(true)} disabled={detalleVentas.length === 0}>
-                <CheckCircle size={14}/>Registrar pago
+              <button
+                style={{ background:C.green, color:"#fff", border:"none", borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:700, cursor:detalleVentas.length===0?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:7, fontFamily:FB, opacity:detalleVentas.length===0?0.5:1 }}
+                onClick={() => setModalLiq(true)} disabled={detalleVentas.length === 0}
+              >
+                <CheckCircle size={15}/> Registrar transferencia
               </button>
             </div>
 
@@ -188,22 +205,26 @@ export default function AdminLiquidaciones() {
                     <thead>
                       <tr>
                         <th>Obra</th>
-                        <th>Fecha venta</th>
-                        <th>Subtotal</th>
-                        <th>Le corresponde</th>
-                        <th>Estado</th>
+                        <th>Fecha entrega</th>
+                        <th>Venta total</th>
+                        <th>Comisión NU★B ({detalleArtista.porcentaje_comision}%)</th>
+                        <th>Pago al artista ({100 - detalleArtista.porcentaje_comision}%)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {detalleVentas.map(v => (
                         <tr key={v.id_venta}>
-                          <td style={{ fontWeight:500 }}>{v.obra_titulo}</td>
+                          <td style={{ fontWeight:600 }}>{v.obra_titulo}</td>
                           <td style={{ color:C.creamSub, fontSize:12 }}>{fmtDate(v.fecha_venta)}</td>
-                          <td style={{ fontFamily:FM, fontSize:13 }}>{fmtMXN(v.subtotal)}</td>
+                          <td style={{ fontFamily:FM, fontSize:13, color:C.cream }}>{fmtMXN(v.subtotal)}</td>
+                          <td style={{ fontFamily:FM, fontSize:13, color:C.creamSub }}>- {fmtMXN(Number(v.subtotal) * (detalleArtista!.porcentaje_comision/100))}</td>
                           <td><span style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.green }}>{fmtMXN(v.monto_artista)}</span></td>
-                          <td><span style={{ fontSize:11, fontWeight:600, padding:"2px 8px", borderRadius:4, background:"#D1FAE5", color:"#065F46" }}>{v.estado}</span></td>
                         </tr>
                       ))}
+                      <tr style={{ background:"#F0FDF4" }}>
+                        <td colSpan={4} style={{ fontWeight:700, fontSize:13, textAlign:"right", color:"#166534" }}>Total a transferir</td>
+                        <td><span style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:C.green }}>{fmtMXN(detalleTotal)}</span></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
