@@ -389,7 +389,7 @@ export default function DetallePedido() {
                     Número de guía: <span style={{fontFamily:MONO, fontWeight:700, letterSpacing:".04em"}}>{numeroGuia}</span>
                   </div>
                   <a
-                    href={`https://rastreo.correosdemexico.gob.mx/#/?sgt=${numeroGuia}`}
+                    href={`https://www.google.com/search?q=rastrear+guia+${encodeURIComponent(numeroGuia)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
