@@ -552,23 +552,23 @@ export default function MisPedidos() {
 
                       {/* Fila superior: badge + código + total */}
                       <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:8}}>
-                        <div style={{display:"flex", alignItems:"center", gap:8}}>
+                        <div style={{display:"flex", alignItems:"center", gap:10, flexWrap:"wrap"}}>
                           <span style={{
                             display:"inline-flex", alignItems:"center", gap:5,
                             background:est.bg, border:`1px solid ${est.border}`,
-                            borderRadius:100, padding:"3px 10px",
-                            fontSize:9.5, fontWeight:700, color:est.color, letterSpacing:".1em", textTransform:"uppercase",
+                            borderRadius:100, padding:"4px 12px",
+                            fontSize:10.5, fontWeight:700, color:est.color, letterSpacing:".1em", textTransform:"uppercase",
                           }}>
-                            <span style={{width:5,height:5,borderRadius:"50%",background:est.dot}}/>
+                            <span style={{width:6,height:6,borderRadius:"50%",background:est.dot}}/>
                             {est.label}
                           </span>
-                          <span style={{fontSize:10.5, color:C.subLight, fontFamily:MONO, letterSpacing:".06em"}}>
+                          <span style={{fontSize:13, fontWeight:700, color:C.ink, fontFamily:MONO, letterSpacing:".04em"}}>
                             {codigo}
                           </span>
-                          <span style={{fontSize:11.5, color:C.subLight}}>·</span>
-                          <span style={{fontSize:11.5, color:C.sub}}>{rel}</span>
+                          <span style={{fontSize:12, color:C.subLight}}>·</span>
+                          <span style={{fontSize:12.5, color:C.sub, fontWeight:500}}>{rel}</span>
                         </div>
-                        <div style={{fontFamily:NEXA, fontSize:22, fontWeight:900, color:C.orange, letterSpacing:"-.02em"}}>
+                        <div style={{fontFamily:NEXA, fontSize:24, fontWeight:900, color:C.orange, letterSpacing:"-.02em"}}>
                           {fmt(orden.totalGrupo)}
                         </div>
                       </div>
@@ -626,7 +626,7 @@ export default function MisPedidos() {
                               +{orden.items.length-2} obra{orden.items.length-2>1?"s":""} más
                             </div>
                           )}
-                          <div style={{fontSize:11, color:C.subLight, marginTop:6}}>
+                          <div style={{fontSize:12, color:C.sub, fontWeight:500, marginTop:6}}>
                             {fecha} · {hora}
                           </div>
                         </div>
