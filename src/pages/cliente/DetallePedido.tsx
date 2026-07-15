@@ -44,11 +44,13 @@ interface VentaItem {
 }
 
 interface PedidoDetalle {
-  id_pedido:    number;
-  estado:       string;
-  total:        number;
-  fecha_pedido: string;
-  items:        VentaItem[];
+  id_pedido:       number;
+  estado:          string;
+  total:           number;
+  fecha_pedido:    string;
+  descuento_cupon: number;
+  codigo_cupon:    string | null;
+  items:           VentaItem[];
 }
 
 const ESTADO_CONFIG: Record<string, { bg:string; color:string; border:string; dot:string; label:string }> = {
@@ -95,10 +97,12 @@ export default function DetallePedido() {
         const rows = d.data.filter((r: any) => r.id_pedido === idNum);
         if (rows.length === 0) { showToast("Pedido no encontrado", "err"); navigate("/mi-cuenta/pedidos"); return; }
         const p: PedidoDetalle = {
-          id_pedido:    rows[0].id_pedido,
-          estado:       rows[0].estado_pedido,
-          total:        Number(rows[0].total_pedido),
-          fecha_pedido: rows[0].fecha_pedido,
+          id_pedido:       rows[0].id_pedido,
+          estado:          rows[0].estado_pedido,
+          total:           Number(rows[0].total_pedido),
+          fecha_pedido:    rows[0].fecha_pedido,
+          descuento_cupon: Number(rows[0].descuento_cupon ?? 0),
+          codigo_cupon:    rows[0].codigo_cupon ?? null,
           items: rows.map((r: any) => ({
             id_venta:         r.id_venta,
             titulo:           r.titulo,
@@ -529,17 +533,52 @@ export default function DetallePedido() {
             </div>
           ))}
 
-          {/* Footer total */}
-          <div style={{
-            display:"flex", justifyContent:"flex-end", alignItems:"baseline",
-            gap:16, padding:"18px 26px",
-            background:C.bgOff, borderTop:`1px solid ${C.border}`,
-          }}>
-            <span style={{fontSize:12,color:C.sub,fontWeight:600}}>Total del pedido</span>
-            <span style={{fontFamily:NEXA,fontSize:26,fontWeight:900,color:C.orange,letterSpacing:"-.02em"}}>
-              {fmt(pedido.total)}
-            </span>
-          </div>
+          {/* Footer — desglose */}
+          {(() => {
+            const subtotalItems = pedido.items.reduce((s, i) => s + Number(i.total), 0);
+            const montoEmpaque  = Math.round((pedido.total - subtotalItems + pedido.descuento_cupon) * 100) / 100;
+            const showEmpaque   = montoEmpaque >= 1;
+            const showDescuento = pedido.descuento_cupon > 0;
+            const rowStyle: React.CSSProperties = {
+              display:"flex", justifyContent:"space-between", alignItems:"center",
+              padding:"8px 0", borderBottom:`1px solid ${C.border}`,
+            };
+            return (
+              <div style={{ padding:"18px 26px", background:C.bgOff, borderTop:`1px solid ${C.border}` }}>
+                <div style={{ maxWidth:280, marginLeft:"auto" }}>
+                  <div style={rowStyle}>
+                    <span style={{fontSize:12,color:C.sub,fontWeight:500}}>Subtotal</span>
+                    <span style={{fontSize:13,color:C.ink,fontWeight:600,fontFamily:MONO}}>{fmt(subtotalItems)}</span>
+                  </div>
+                  {showDescuento && (
+                    <div style={rowStyle}>
+                      <span style={{fontSize:12,color:"#0E8A50",fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:9,background:"#D1FAE5",color:"#065F46",padding:"1px 6px",borderRadius:4,fontWeight:700,fontFamily:MONO}}>
+                          {pedido.codigo_cupon}
+                        </span>
+                        Descuento
+                      </span>
+                      <span style={{fontSize:13,color:"#0E8A50",fontWeight:700,fontFamily:MONO}}>
+                        -{fmt(pedido.descuento_cupon)}
+                      </span>
+                    </div>
+                  )}
+                  {showEmpaque && (
+                    <div style={rowStyle}>
+                      <span style={{fontSize:12,color:C.sub,fontWeight:500}}>Empaque reforzado</span>
+                      <span style={{fontSize:13,color:C.ink,fontWeight:600,fontFamily:MONO}}>+{fmt(montoEmpaque)}</span>
+                    </div>
+                  )}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:12,marginTop:4}}>
+                    <span style={{fontSize:12,color:C.sub,fontWeight:600}}>Total</span>
+                    <span style={{fontFamily:NEXA,fontSize:26,fontWeight:900,color:C.orange,letterSpacing:"-.02em"}}>
+                      {fmt(pedido.total)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Info adicional ── */}
