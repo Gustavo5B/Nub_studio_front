@@ -539,42 +539,63 @@ export default function DetallePedido() {
             const montoEmpaque  = Math.round((pedido.total - subtotalItems + pedido.descuento_cupon) * 100) / 100;
             const showEmpaque   = montoEmpaque >= 1;
             const showDescuento = pedido.descuento_cupon > 0;
-            const rowStyle: React.CSSProperties = {
-              display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"8px 0", borderBottom:`1px solid ${C.border}`,
-            };
             return (
-              <div style={{ padding:"18px 26px", background:C.bgOff, borderTop:`1px solid ${C.border}` }}>
-                <div style={{ maxWidth:280, marginLeft:"auto" }}>
-                  <div style={rowStyle}>
-                    <span style={{fontSize:12,color:C.sub,fontWeight:500}}>Subtotal</span>
-                    <span style={{fontSize:13,color:C.ink,fontWeight:600,fontFamily:MONO}}>{fmt(subtotalItems)}</span>
+              <div style={{ padding:"24px 28px 28px", background:C.bgOff, borderTop:`1px solid ${C.border}` }}>
+                <div style={{ maxWidth:320, marginLeft:"auto", display:"flex", flexDirection:"column", gap:0 }}>
+
+                  {/* Subtotal */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 0", borderBottom:`1px solid ${C.border}` }}>
+                    <span style={{ fontSize:14, color:"#6B6880", fontWeight:500 }}>Subtotal</span>
+                    <span style={{ fontSize:15, color:C.ink, fontWeight:700, fontFamily:MONO }}>{fmt(subtotalItems)}</span>
                   </div>
+
+                  {/* Cupón */}
                   {showDescuento && (
-                    <div style={rowStyle}>
-                      <span style={{fontSize:12,color:"#0E8A50",fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
-                        <span style={{fontSize:9,background:"#D1FAE5",color:"#065F46",padding:"1px 6px",borderRadius:4,fontWeight:700,fontFamily:MONO}}>
-                          {pedido.codigo_cupon}
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#0E8A50", fontWeight:600 }}>
+                        <span style={{
+                          fontSize:10, fontWeight:800, fontFamily:MONO, letterSpacing:".06em",
+                          background:"#D1FAE5", color:"#065F46",
+                          padding:"3px 8px", borderRadius:6, border:"1px solid #A7F3D0",
+                        }}>
+                          {pedido.codigo_cupon ?? "CUPÓN"}
                         </span>
-                        Descuento
+                        Descuento aplicado
                       </span>
-                      <span style={{fontSize:13,color:"#0E8A50",fontWeight:700,fontFamily:MONO}}>
-                        -{fmt(pedido.descuento_cupon)}
+                      <span style={{ fontSize:15, color:"#0E8A50", fontWeight:700, fontFamily:MONO }}>
+                        −{fmt(pedido.descuento_cupon)}
                       </span>
                     </div>
                   )}
+
+                  {/* Empaque reforzado */}
                   {showEmpaque && (
-                    <div style={rowStyle}>
-                      <span style={{fontSize:12,color:C.sub,fontWeight:500}}>Empaque reforzado</span>
-                      <span style={{fontSize:13,color:C.ink,fontWeight:600,fontFamily:MONO}}>+{fmt(montoEmpaque)}</span>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#6B6880", fontWeight:500 }}>
+                        <span style={{
+                          fontSize:10, fontWeight:700, background:`${C.orange}15`,
+                          color:C.orange, padding:"3px 8px", borderRadius:6,
+                          border:`1px solid ${C.orange}30`,
+                        }}>
+                          PROTECCIÓN
+                        </span>
+                        Empaque reforzado
+                      </span>
+                      <span style={{ fontSize:15, color:C.ink, fontWeight:700, fontFamily:MONO }}>+{fmt(montoEmpaque)}</span>
                     </div>
                   )}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",paddingTop:12,marginTop:4}}>
-                    <span style={{fontSize:12,color:C.sub,fontWeight:600}}>Total</span>
-                    <span style={{fontFamily:NEXA,fontSize:26,fontWeight:900,color:C.orange,letterSpacing:"-.02em"}}>
+
+                  {/* Total */}
+                  <div style={{
+                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                    paddingTop:18, marginTop:4,
+                  }}>
+                    <span style={{ fontSize:15, color:C.ink, fontWeight:700, letterSpacing:".02em" }}>Total pagado</span>
+                    <span style={{ fontFamily:NEXA, fontSize:32, fontWeight:900, color:C.orange, letterSpacing:"-.03em", lineHeight:1 }}>
                       {fmt(pedido.total)}
                     </span>
                   </div>
+
                 </div>
               </div>
             );
