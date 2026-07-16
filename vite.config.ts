@@ -19,7 +19,7 @@ export default defineConfig({
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com",
         "font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
-        "connect-src 'self' http://localhost:4000",
+        "connect-src 'self' http://localhost:4000 https://nubstudio-precio-api.onrender.com",
         "frame-ancestors 'none'"
       ].join('; '),
       'X-Frame-Options': 'DENY',

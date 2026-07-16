@@ -5,7 +5,20 @@ import { authService }        from "../../../services/authService";
 import { useToast }           from "../../../context/ToastContext";
 import { handleNetworkError } from "../../../utils/handleApiError";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API    = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const ML_API = "https://nubstudio-precio-api.onrender.com";
+
+const CATS_3D = ["Escultura", "Artesanía", "Cerámica"];
+
+const TECNICAS_POR_CAT: Record<string, string[]> = {
+  "Pintura":     ["Óleo sobre lienzo", "Acrílico sobre tela", "Acuarela", "Gouache", "Tempera", "Técnica mixta"],
+  "Fotografía":  ["Fotografía digital", "Fotografía analógica", "Blanco y negro", "HDR"],
+  "Escultura":   ["Modelado en barro", "Talla en madera", "Talla en piedra", "Fundición en bronce", "Resina"],
+  "Grabado":     ["Serigrafía", "Litografía", "Aguafuerte", "Xilografía", "Linóleo"],
+  "Ilustración": ["Ilustración digital", "Acuarela", "Tinta china", "Lápiz", "Gouache"],
+  "Cerámica":    ["Torno", "Modelado a mano", "Colada", "Raku"],
+  "Artesanía":   ["Tejido", "Bordado", "Barro negro", "Madera tallada", "Papel amate"],
+};
 
 const C = {
   orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
@@ -95,6 +108,20 @@ const css = `
   .no-perfil-chip { font-size:.75rem; font-weight:700; background:rgba(196,48,74,0.08); border:1px solid rgba(196,48,74,0.2); color:${C.red}; padding:3px 10px; border-radius:20px; }
   .no-perfil-link { display:inline-flex; align-items:center; gap:6px; font-size:.82rem; font-weight:700; color:${C.orange}; cursor:pointer; background:rgba(232,100,12,0.08); border:1.5px solid rgba(232,100,12,0.2); padding:7px 16px; border-radius:10px; transition:all .2s; text-decoration:none; }
   .no-perfil-link:hover { background:rgba(232,100,12,0.14); border-color:rgba(232,100,12,0.35); }
+  .no-tec-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .no-tec-chip { background:#F3F2F8; border:1.5px solid #E6E4EF; color:#5A5870; padding:4px 12px; border-radius:20px; cursor:pointer; font-size:.75rem; font-family:'Outfit',sans-serif; transition:all .2s; font-weight:500; }
+  .no-tec-chip:hover { border-color:rgba(232,100,12,0.4); color:${C.text}; }
+  .no-tec-chip.sel { background:rgba(232,100,12,0.1); border-color:${C.orange}; color:${C.orange}; font-weight:700; }
+  .no-ml-widget { background:linear-gradient(135deg,rgba(232,100,12,0.05),rgba(96,40,170,0.05)); border:1.5px solid rgba(232,100,12,0.2); border-radius:16px; padding:18px 20px; margin-bottom:18px; }
+  .no-ml-title { font-size:.72rem; font-weight:800; color:#5A5870; text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:8px; margin:0 0 12px; }
+  .no-ml-badge { background:rgba(96,40,170,0.1); color:#6028AA; padding:2px 8px; border-radius:20px; font-size:.65rem; font-weight:700; letter-spacing:.08em; }
+  .no-ml-range { font-size:1.35rem; font-weight:900; color:${C.orange}; letter-spacing:-.5px; margin:0 0 4px; }
+  .no-ml-sub { font-size:.75rem; color:${C.muted}; margin:0 0 14px; }
+  .no-ml-use { background:${C.orange}; color:#fff; border:none; padding:9px 20px; border-radius:10px; font-size:.82rem; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; transition:all .2s; }
+  .no-ml-use:hover { background:#d4570a; transform:translateY(-1px); }
+  .no-ml-loading { display:flex; align-items:center; gap:10px; color:${C.muted}; font-size:.85rem; }
+  .no-ml-spinner { width:18px; height:18px; border:2.5px solid rgba(232,100,12,0.2); border-top-color:${C.orange}; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+  .no-ml-warn { font-size:.72rem; color:#9896A8; margin:6px 0 0; font-style:italic; }
   .no-actions { padding-top:6px; }
   .no-actions.two { display:flex; gap:12px; }
   .no-btn-next { width:100%; background:${C.orange}; border:none; color:#fff; padding:14px 24px; border-radius:13px; font-size:.95rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; box-shadow:0 4px 16px rgba(232,100,12,0.28); transition:all .25s; }
@@ -167,6 +194,9 @@ export default function NuevaObra() {
   const [programar,       setProgramar]       = useState(false);
   const [fechaProg,       setFechaProg]       = useState("");
   const [fieldErrors,     setFieldErrors]     = useState<Partial<Record<keyof FormData, string>>>({});
+  const [mlSugerencia,    setMlSugerencia]    = useState<{ precio:number; min:number; max:number; loading:boolean; error:boolean }>({ precio:0, min:0, max:0, loading:false, error:false });
+  const [mlRetry,         setMlRetry]         = useState(0);
+  const mlTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [form, setForm] = useState<FormData>({
     titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
@@ -206,6 +236,39 @@ export default function NuevaObra() {
       }
     }).catch(() => {}).finally(() => setCheckingPerfil(false));
   }, []);
+
+  useEffect(() => {
+    if (step !== 2 || !form.id_categoria) return;
+    if (mlTimerRef.current) clearTimeout(mlTimerRef.current);
+    mlTimerRef.current = setTimeout(async () => {
+      const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+      if (!catNombre) return;
+      setMlSugerencia(prev => ({ ...prev, loading: true, error: false }));
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 65000);
+      try {
+        const res = await fetch(`${ML_API}/predecir`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            categoria:     catNombre,
+            tecnica:       form.tecnica.trim().toLowerCase() || "otra",
+            anio_creacion: parseInt(form.anio_creacion) || 2023,
+            alto_cm:       parseFloat(form.dimensiones_alto)  || 0,
+            ancho_cm:      parseFloat(form.dimensiones_ancho) || 0,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setMlSugerencia({ precio: data.precio, min: data.precio_min, max: data.precio_max, loading: false, error: false });
+      } catch {
+        clearTimeout(timer);
+        setMlSugerencia(prev => ({ ...prev, loading: false, error: true }));
+      }
+    }, 600);
+  }, [step, form.id_categoria, form.tecnica, form.anio_creacion, form.dimensiones_alto, form.dimensiones_ancho, mlRetry]);
 
   const getFieldError = (name: string, value: string): string => {
     if (hasSuspiciousContent(value)) return "Contenido no permitido";
@@ -581,6 +644,21 @@ export default function NuevaObra() {
                       name="tecnica" value={form.tecnica} onChange={handleChange}
                       placeholder="Óleo sobre lienzo" />
                     {fieldErrors.tecnica && <span className="no-field-error">⚠ {fieldErrors.tecnica}</span>}
+                    {form.id_categoria && (() => {
+                      const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+                      const sugs = TECNICAS_POR_CAT[catNombre] || [];
+                      return sugs.length > 0 ? (
+                        <div className="no-tec-chips">
+                          {sugs.map(t => (
+                            <button key={t} type="button"
+                              className={`no-tec-chip${form.tecnica === t ? " sel" : ""}`}
+                              onClick={() => setForm(p => ({ ...p, tecnica: t }))}>
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="no-field">
                     <label className="no-field-label">Año</label>
@@ -616,19 +694,70 @@ export default function NuevaObra() {
 
           {step === 2 && (
             <>
-              <div className="no-section">
-                <div className="no-section-title"><span>📐</span> Dimensiones (cm)</div>
-                <div className="no-grid-3">
-                  {([["dimensiones_alto","Alto"],["dimensiones_ancho","Ancho"],["dimensiones_profundidad","Profundidad"]] as const).map(([name,label]) => (
-                    <div key={name} className="no-field">
-                      <label className="no-field-label">{label}</label>
-                      <input className="no-input" type="number" name={name}
-                        value={String(form[name as keyof typeof form])}
-                        onChange={handleChange} placeholder="0" min={0} step="0.1" />
+              {(() => {
+                const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+                const is3D = CATS_3D.includes(catNombre);
+                const campos = is3D
+                  ? [["dimensiones_alto","Alto"],["dimensiones_ancho","Ancho"],["dimensiones_profundidad","Profundidad"]] as const
+                  : [["dimensiones_alto","Alto"],["dimensiones_ancho","Ancho"]] as const;
+                return (
+                  <div className="no-section">
+                    <div className="no-section-title">
+                      <span>📐</span> Dimensiones (cm)
+                      {catNombre && <span style={{ fontWeight:400, textTransform:"none", fontSize:".72rem", color:C.muted }}>— {is3D ? "Alto × Ancho × Profundidad" : "Alto × Ancho"}</span>}
                     </div>
-                  ))}
+                    <div className={is3D ? "no-grid-3" : "no-grid-2"}>
+                      {campos.map(([name, label]) => (
+                        <div key={name} className="no-field">
+                          <label className="no-field-label">{label}</label>
+                          <input className="no-input" type="number" name={name}
+                            value={String(form[name as keyof typeof form])}
+                            onChange={handleChange} placeholder="0" min={0} step="0.1" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {(mlSugerencia.loading || mlSugerencia.precio > 0 || mlSugerencia.error) && (
+                <div className="no-ml-widget">
+                  <div className="no-ml-title">
+                    ✦ Sugerencia de precio
+                    <span className="no-ml-badge">IA · Gradient Boosting</span>
+                  </div>
+                  {mlSugerencia.loading && (
+                    <div className="no-ml-loading">
+                      <div className="no-ml-spinner" />
+                      <span>Calculando rango sugerido…</span>
+                    </div>
+                  )}
+                  {!mlSugerencia.loading && mlSugerencia.precio > 0 && (
+                    <>
+                      <p className="no-ml-range">
+                        ${mlSugerencia.min.toLocaleString("es-MX", { maximumFractionDigits: 0 })} – ${mlSugerencia.max.toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN
+                      </p>
+                      <p className="no-ml-sub">
+                        Basado en obras similares de la plataforma (±${Math.round(mlSugerencia.max - mlSugerencia.precio).toLocaleString()} MXN de margen)
+                      </p>
+                      <button type="button" className="no-ml-use"
+                        onClick={() => setForm(p => ({ ...p, precio_base: mlSugerencia.precio.toFixed(2) }))}>
+                        Usar precio sugerido
+                      </button>
+                      <p className="no-ml-warn">Esta sugerencia es orientativa. Tú decides el precio final.</p>
+                    </>
+                  )}
+                  {!mlSugerencia.loading && mlSugerencia.error && (
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      <p style={{ margin:0, fontSize:".8rem", color:C.muted }}>No se pudo obtener la sugerencia en este momento.</p>
+                      <button type="button" onClick={() => setMlRetry(n => n + 1)}
+                        style={{ fontSize:".75rem", color:C.orange, background:"none", border:"1px solid rgba(232,100,12,0.3)", borderRadius:8, padding:"4px 10px", cursor:"pointer", whiteSpace:"nowrap", fontFamily:"'Outfit',sans-serif" }}>
+                        Reintentar
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               <div className="no-section">
                 <div className="no-section-title"><span>💰</span> Precio y Stock</div>
@@ -648,7 +777,12 @@ export default function NuevaObra() {
                     placeholder="1" min={1} step="1"
                     style={{ maxWidth: 120 }} />
                   <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
-                    Piezas únicas generalmente tienen stock 1. Para impresiones o reproducciones puedes poner más.
+                    {(() => {
+                      const cat = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+                      if (["Fotografía", "Grabado"].includes(cat))
+                        return "Indica el número de ejemplares de la edición (ej. 10 para una edición de 10 copias).";
+                      return "Obra única: se recomienda stock 1. Para reproducciones autorizadas puedes indicar más.";
+                    })()}
                   </p>
                 </div>
                 {precio > 0 && (
@@ -663,11 +797,13 @@ export default function NuevaObra() {
               <div className="no-section">
                 <div className="no-section-title"><span>🎨</span> Extras</div>
                 <div className="no-checks">
-                  <label className="no-check-label">
-                    <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
-                    <span className="no-check-box" />
-                    Permite enmarcar
-                  </label>
+                  {!CATS_3D.includes(categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "") && (
+                    <label className="no-check-label">
+                      <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
+                      <span className="no-check-box" />
+                      Permite enmarcar
+                    </label>
+                  )}
                   <label className="no-check-label">
                     <input type="checkbox" name="con_certificado" checked={form.con_certificado} onChange={handleChange} />
                     <span className="no-check-box" />
@@ -705,8 +841,17 @@ export default function NuevaObra() {
                   <div>
                     <p className="no-summary-title">{form.titulo || "Sin título"}</p>
                     <p className="no-summary-cat">{categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}</p>
-                    {form.tecnica && <p className="no-summary-tech">{form.tecnica}</p>}
-                    {precio > 0   && <p className="no-summary-price">${precio.toLocaleString()} MXN</p>}
+                    {form.tecnica && <p className="no-summary-tech">{form.tecnica} · {form.anio_creacion}</p>}
+                    {(parseFloat(form.dimensiones_alto) > 0 || parseFloat(form.dimensiones_ancho) > 0) && (
+                      <p className="no-summary-tech">
+                        {[
+                          form.dimensiones_alto  && `${form.dimensiones_alto} cm alto`,
+                          form.dimensiones_ancho && `${form.dimensiones_ancho} cm ancho`,
+                          form.dimensiones_profundidad && parseFloat(form.dimensiones_profundidad) > 0 && `${form.dimensiones_profundidad} cm prof.`,
+                        ].filter(Boolean).join(" × ")}
+                      </p>
+                    )}
+                    {precio > 0 && <p className="no-summary-price">${precio.toLocaleString()} MXN</p>}
                   </div>
                 </div>
               </div>
