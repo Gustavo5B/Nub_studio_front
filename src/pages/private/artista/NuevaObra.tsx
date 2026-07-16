@@ -202,8 +202,6 @@ export default function NuevaObra() {
   const [step,            setStep]            = useState(1);
   const [perfilFaltantes, setPerfilFaltantes] = useState<string[]>([]);
   const [checkingPerfil,  setCheckingPerfil]  = useState(true);
-  const [programar,       setProgramar]       = useState(false);
-  const [fechaProg,       setFechaProg]       = useState("");
   const [fieldErrors,     setFieldErrors]     = useState<Partial<Record<keyof FormData, string>>>({});
   const [mlSugerencia,    setMlSugerencia]    = useState<{ precio:number; min:number; max:number; loading:boolean; error:boolean }>({ precio:0, min:0, max:0, loading:false, error:false });
   const [mlRetry,         setMlRetry]         = useState(0);
@@ -400,13 +398,6 @@ export default function NuevaObra() {
     if (!form.stock || parseInt(form.stock) < 1) {
       showToast("La cantidad disponible debe ser al menos 1", "warn"); setStep(2); return;
     }
-    if (programar) {
-      if (!fechaProg) { showToast("Indica la fecha de publicación programada", "warn"); return; }
-      if (new Date(fechaProg).getTime() <= Date.now()) {
-        showToast("La fecha de publicación debe ser futura", "warn"); return;
-      }
-    }
-
     // ── Validación de seguridad final antes de enviar ──
     const camposTexto = ["titulo", "descripcion", "historia", "tecnica"] as const;
     for (const campo of camposTexto) {
@@ -435,9 +426,6 @@ export default function NuevaObra() {
       Object.entries(formSanitizado).forEach(([k, v]) =>
         fd.append(k, k === "etiquetas" ? JSON.stringify(v) : String(v))
       );
-      if (programar && fechaProg) {
-        fd.append("fecha_publicacion_programada", new Date(fechaProg).toISOString());
-      }
       if (imageFile) fd.append("imagen", imageFile);
 
       const res = await fetch(`${API}/api/artista-portal/nueva-obra`, {
@@ -494,6 +482,7 @@ export default function NuevaObra() {
   const precio   = parseFloat(form.precio_base || "0");
   const comision = precio * 0.15;
   const neto     = precio * 0.85;
+  const fmtMXN   = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (checkingPerfil) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh", flexDirection:"column", gap:16 }}>
@@ -818,9 +807,9 @@ export default function NuevaObra() {
                 </div>
                 {precio > 0 && (
                   <div className="no-breakdown">
-                    <div className="no-breakdown-row"><span>Tu precio</span><strong>${precio.toLocaleString()} MXN</strong></div>
-                    <div className="no-breakdown-row comm"><span>Comisión Nu-B (15%)</span><strong>- ${comision.toLocaleString()} MXN</strong></div>
-                    <div className="no-breakdown-row total"><span>Tú recibes</span><strong className="no-receive">${neto.toLocaleString()} MXN</strong></div>
+                    <div className="no-breakdown-row"><span>Tu precio</span><strong>${fmtMXN(precio)} MXN</strong></div>
+                    <div className="no-breakdown-row comm"><span>Comisión Nu-B (15%)</span><strong>- ${fmtMXN(comision)} MXN</strong></div>
+                    <div className="no-breakdown-row total"><span>Tú recibes</span><strong className="no-receive">${fmtMXN(neto)} MXN</strong></div>
                   </div>
                 )}
               </div>
@@ -851,28 +840,6 @@ export default function NuevaObra() {
                     </span>
                   </label>
                 </div>
-              </div>
-
-              <div className="no-section">
-                <div className="no-section-title"><span>⏱</span> Publicación programada <span style={{fontWeight:400, textTransform:"none", fontSize:".75rem"}}>— opcional</span></div>
-                <div className="no-checks">
-                  <label className="no-check-label">
-                    <input type="checkbox" checked={programar} onChange={e => setProgramar(e.target.checked)} />
-                    <span className="no-check-box" />
-                    Programar la publicación para una fecha futura
-                  </label>
-                </div>
-                {programar && (
-                  <div className="no-field" style={{ marginTop: 14, maxWidth: 280 }}>
-                    <label className="no-field-label">Fecha y hora de publicación</label>
-                    <input className="no-input" type="datetime-local" value={fechaProg}
-                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                      onChange={e => setFechaProg(e.target.value)} />
-                    <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
-                      Tras la aprobación del equipo, la obra se publicará automáticamente en esta fecha.
-                    </p>
-                  </div>
-                )}
               </div>
 
               <div className="no-section no-summary">
