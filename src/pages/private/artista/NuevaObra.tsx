@@ -10,6 +10,16 @@ const ML_API = "https://nubstudio-precio-api.onrender.com";
 
 const CATS_3D = ["Escultura", "Artesanía", "Cerámica"];
 
+const MATERIALES_POR_CAT: Record<string, string[]> = {
+  "Pintura":     ["Lienzo", "Tabla de madera", "Papel", "Cartón", "Tela"],
+  "Fotografía":  ["Papel fotográfico", "Papel de algodón", "Aluminio", "Lienzo"],
+  "Escultura":   ["Barro", "Madera", "Piedra", "Bronce", "Resina", "Mármol"],
+  "Grabado":     ["Papel de grabado", "Papel japonés", "Papel de algodón"],
+  "Ilustración": ["Papel", "Cartulina", "Papel acuarela", "Impresión digital"],
+  "Cerámica":    ["Barro rojo", "Barro blanco", "Porcelana", "Gres"],
+  "Artesanía":   ["Fibras naturales", "Madera", "Barro", "Papel amate", "Tela", "Cuero"],
+};
+
 const TECNICAS_POR_CAT: Record<string, string[]> = {
   "Pintura":     ["Óleo sobre lienzo", "Acrílico sobre tela", "Acuarela", "Gouache", "Tempera", "Técnica mixta"],
   "Fotografía":  ["Fotografía digital", "Fotografía analógica", "Blanco y negro", "HDR"],
@@ -149,9 +159,10 @@ interface Etiqueta   { id_etiqueta:  number; nombre: string; }
 interface Coleccion  { id_coleccion: number; nombre: string; estado: string; }
 interface FormData {
   titulo: string; descripcion: string; historia: string; id_categoria: string;
-  id_coleccion: string; tecnica: string; anio_creacion: string;
+  id_coleccion: string; tecnica: string; material: string; anio_creacion: string;
   dimensiones_alto: string; dimensiones_ancho: string; dimensiones_profundidad: string;
-  precio_base: string; stock: string; permite_marco: boolean; con_certificado: boolean; etiquetas: number[];
+  precio_base: string; stock: string; permite_marco: boolean; con_certificado: boolean;
+  disponible_envio: boolean; etiquetas: number[];
 }
 
 // ── Sanitización frontend ─────────────────────────────────────────────────────
@@ -199,10 +210,10 @@ export default function NuevaObra() {
   const mlTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [form, setForm] = useState<FormData>({
-    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
+    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "", material: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
-    precio_base: "", stock: "1", permite_marco: false, con_certificado: false, etiquetas: [],
+    precio_base: "", stock: "1", permite_marco: false, con_certificado: false, disponible_envio: false, etiquetas: [],
   });
 
   useEffect(() => {
@@ -262,7 +273,7 @@ export default function NuevaObra() {
         clearTimeout(timer);
         if (!res.ok) throw new Error();
         const data = await res.json();
-        setMlSugerencia({ precio: data.precio, min: data.precio_min, max: data.precio_max, loading: false, error: false });
+        setMlSugerencia({ precio: data.precio, min: Math.round(data.precio - data.mae / 2), max: Math.round(data.precio + data.mae / 2), loading: false, error: false });
       } catch {
         clearTimeout(timer);
         setMlSugerencia(prev => ({ ...prev, loading: false, error: true }));
@@ -661,6 +672,26 @@ export default function NuevaObra() {
                     })()}
                   </div>
                   <div className="no-field">
+                    <label className="no-field-label">Material / Soporte</label>
+                    <input className="no-input" name="material" value={form.material} onChange={handleChange}
+                      placeholder="Ej: Lienzo, Papel, Barro…" />
+                    {form.id_categoria && (() => {
+                      const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+                      const mats = MATERIALES_POR_CAT[catNombre] || [];
+                      return mats.length > 0 ? (
+                        <div className="no-tec-chips">
+                          {mats.map(m => (
+                            <button key={m} type="button"
+                              className={`no-tec-chip${form.material === m ? " sel" : ""}`}
+                              onClick={() => setForm(p => ({ ...p, material: m }))}>
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div className="no-field">
                     <label className="no-field-label">Año</label>
                     <input className="no-input" type="number" name="anio_creacion"
                       value={form.anio_creacion} onChange={handleChange}
@@ -738,7 +769,7 @@ export default function NuevaObra() {
                         ${mlSugerencia.min.toLocaleString("es-MX", { maximumFractionDigits: 0 })} – ${mlSugerencia.max.toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN
                       </p>
                       <p className="no-ml-sub">
-                        Basado en obras similares de la plataforma (±${Math.round(mlSugerencia.max - mlSugerencia.precio).toLocaleString()} MXN de margen)
+                        Estimación orientativa basada en obras similares de la plataforma
                       </p>
                       <button type="button" className="no-ml-use"
                         onClick={() => setForm(p => ({ ...p, precio_base: mlSugerencia.precio.toFixed(2) }))}>
@@ -809,6 +840,16 @@ export default function NuevaObra() {
                     <span className="no-check-box" />
                     Incluye certificado de autenticidad
                   </label>
+                  <label className="no-check-label">
+                    <input type="checkbox" name="disponible_envio" checked={form.disponible_envio} onChange={handleChange} />
+                    <span className="no-check-box" />
+                    <span>
+                      Disponible para envío nacional
+                      <span style={{ display:"block", fontSize:".72rem", color:C.muted, fontWeight:400 }}>
+                        El costo se cotiza al momento de la venta según destino y seguro
+                      </span>
+                    </span>
+                  </label>
                 </div>
               </div>
 
@@ -841,7 +882,7 @@ export default function NuevaObra() {
                   <div>
                     <p className="no-summary-title">{form.titulo || "Sin título"}</p>
                     <p className="no-summary-cat">{categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}</p>
-                    {form.tecnica && <p className="no-summary-tech">{form.tecnica} · {form.anio_creacion}</p>}
+                    {(form.tecnica || form.material) && <p className="no-summary-tech">{[form.tecnica, form.material].filter(Boolean).join(" · ")} · {form.anio_creacion}</p>}
                     {(parseFloat(form.dimensiones_alto) > 0 || parseFloat(form.dimensiones_ancho) > 0) && (
                       <p className="no-summary-tech">
                         {[
