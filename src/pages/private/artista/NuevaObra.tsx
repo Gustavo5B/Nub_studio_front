@@ -271,7 +271,7 @@ export default function NuevaObra() {
         clearTimeout(timer);
         if (!res.ok) throw new Error();
         const data = await res.json();
-        setMlSugerencia({ precio: data.precio, min: Math.round(data.precio - data.mae / 2), max: Math.round(data.precio + data.mae / 2), loading: false, error: false });
+        setMlSugerencia({ precio: data.precio, min: Math.round(data.precio_min ?? data.precio * 0.8), max: Math.round(data.precio_max ?? data.precio * 1.2), loading: false, error: false });
       } catch {
         clearTimeout(timer);
         setMlSugerencia(prev => ({ ...prev, loading: false, error: true }));
