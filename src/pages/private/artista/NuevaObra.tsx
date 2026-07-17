@@ -271,6 +271,7 @@ export default function NuevaObra() {
         clearTimeout(timer);
         if (!res.ok) throw new Error();
         const data = await res.json();
+        console.log("ML API response:", JSON.stringify(data));
         setMlSugerencia({ precio: data.precio, min: Math.round(data.precio_min ?? data.precio * 0.8), max: Math.round(data.precio_max ?? data.precio * 1.2), loading: false, error: false });
       } catch {
         clearTimeout(timer);
@@ -755,7 +756,7 @@ export default function NuevaObra() {
                   {!mlSugerencia.loading && mlSugerencia.precio > 0 && (
                     <>
                       <p className="no-ml-range">
-                        ${mlSugerencia.min.toLocaleString("es-MX", { maximumFractionDigits: 0 })} – ${mlSugerencia.max.toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN
+                        ${(Number.isFinite(mlSugerencia.min) ? mlSugerencia.min : Math.round(mlSugerencia.precio * 0.8)).toLocaleString("es-MX", { maximumFractionDigits: 0 })} – ${(Number.isFinite(mlSugerencia.max) ? mlSugerencia.max : Math.round(mlSugerencia.precio * 1.2)).toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN
                       </p>
                       <p className="no-ml-sub">
                         Estimación orientativa basada en obras similares de la plataforma
