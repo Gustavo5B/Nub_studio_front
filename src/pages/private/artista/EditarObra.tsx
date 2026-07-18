@@ -12,18 +12,21 @@ import { handleApiError, handleNetworkError } from "../../../utils/handleApiErro
 import "../../../styles/nueva-obra.css";
 
 interface Categoria { id_categoria: number; nombre: string; }
+interface Tecnica   { id_tecnica:   number; nombre: string; }
 interface Etiqueta  { id_etiqueta: number;  nombre: string; }
 interface Coleccion { id_coleccion: number; nombre: string; estado: string; }
 interface TamanoCatalogo { id_tamaño: number; nombre: string; ancho_cm: string|null; alto_cm: string|null; }
 interface ObraTamano { id_obra_tamano: number; id_tamaño: number; nombre: string; ancho_cm: string|null; alto_cm: string|null; precio_base: string; cantidad_disponible: number; activo: boolean; }
 
 interface FormState {
-  titulo: string; descripcion: string; historia: string; id_categoria: string; id_coleccion: string; tecnica: string;
-  anio_creacion: string; dimensiones_alto: string; dimensiones_ancho: string;
+  titulo: string; descripcion: string; historia: string; id_categoria: string; id_coleccion: string; id_tecnica: string;
+  id_material: string; anio_creacion: string; dimensiones_alto: string; dimensiones_ancho: string;
   dimensiones_profundidad: string; precio_base: string; stock: string;
   permite_marco: boolean; con_certificado: boolean;
+  es_original: boolean; numero_edicion: string; peso_kg: string;
   imagen_principal: string; etiquetas: number[];
 }
+interface Material { id_material: number; nombre: string; }
 
 interface ImagenObra { id_imagen: number; url_imagen: string; es_principal: boolean; orden: number; }
 
@@ -49,7 +52,6 @@ const sanitizeText = (value: string): string =>
 const validaciones: Partial<Record<keyof FormState, (v: string) => string | null>> = {
   titulo:      v => !v.trim() ? "El título es requerido" : v.trim().length < 3 ? "Mínimo 3 caracteres" : null,
   descripcion: v => !v.trim() ? null : v.trim().length < 20 ? "Mínimo 20 caracteres" : null,
-  tecnica:     v => !v.trim() ? null : v.trim().length < 3 ? "Mínimo 3 caracteres" : null,
   precio_base: v => !v ? "El precio es requerido" : parseFloat(v) <= 0 ? "El precio debe ser mayor a 0" : null,
   stock:       v => !v || parseInt(v) < 1 ? "La cantidad debe ser al menos 1" : null,
 };
@@ -63,6 +65,8 @@ export default function EditarObra() {
 
   const galeriaRef                            = useRef<HTMLInputElement>(null);
   const [categorias,  setCategorias]  = useState<Categoria[]>([]);
+  const [tecnicas,    setTecnicas]    = useState<Tecnica[]>([]);
+  const [materiales,  setMateriales]  = useState<Material[]>([]);
   const [etiquetas,   setEtiquetas]   = useState<Etiqueta[]>([]);
   const [colecciones, setColecciones] = useState<Coleccion[]>([]);
   const [imgFile,     setImgFile]     = useState<File | null>(null);
@@ -86,7 +90,8 @@ export default function EditarObra() {
   const [editTamanoForm,    setEditTamanoForm]     = useState({ precio_base: "", cantidad: "1" });
 
   const [form, setForm] = useState<FormState>({
-    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
+    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", id_tecnica: "", id_material: "",
+    es_original: true, numero_edicion: "", peso_kg: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
     precio_base: "", stock: "1", permite_marco: false, con_certificado: false,
@@ -95,6 +100,17 @@ export default function EditarObra() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDatos(); cargarTamanos(); }, [id]);
+
+  useEffect(() => {
+    if (!form.id_categoria) { setTecnicas([]); setMateriales([]); return; }
+    const token = authService.getToken();
+    const h = { Authorization: `Bearer ${token}` };
+    fetch(`${API}/api/tecnicas?categoria=${form.id_categoria}`, { headers: h })
+      .then(r => r.json()).then(d => setTecnicas(d.tecnicas || d.data || [])).catch(() => setTecnicas([]));
+    fetch(`${API}/api/materiales?categoria=${form.id_categoria}`, { headers: h })
+      .then(r => r.json()).then(d => setMateriales(d.data || [])).catch(() => setMateriales([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.id_categoria]);
 
   const cargarDatos = async () => {
     try {
@@ -108,6 +124,7 @@ export default function EditarObra() {
       ]);
       if (!obraRes.ok) { showToast(await handleApiError(obraRes), "err"); setLoading(false); return; }
       const obra = await obraRes.json();
+
       setObraEstado(obra.estado || "");
       setImagenes(obra.imagenes || []);
       setForm({
@@ -116,7 +133,11 @@ export default function EditarObra() {
         historia:                obra.historia       || "",
         id_categoria:            String(obra.id_categoria  || ""),
         id_coleccion:            String(obra.id_coleccion  || ""),
-        tecnica:                 obra.tecnica        || "",
+        id_tecnica:              String(obra.id_tecnica    || ""),
+        id_material:             String(obra.id_material   || ""),
+        es_original:             obra.es_original !== false,
+        numero_edicion:          String(obra.numero_edicion || ""),
+        peso_kg:                 String(obra.peso_kg        || ""),
         anio_creacion:           String(obra.anio_creacion || new Date().getFullYear()),
         dimensiones_alto:        String(obra.dimensiones?.alto        ?? obra.alto_cm        ?? ""),
         dimensiones_ancho:       String(obra.dimensiones?.ancho       ?? obra.ancho_cm       ?? ""),
@@ -209,7 +230,7 @@ export default function EditarObra() {
 
     if (typeof newValue === "string") {
       // Validación seguridad (XSS/SQLi)
-      if (["titulo", "descripcion", "tecnica"].includes(name)) {
+      if (["titulo", "descripcion"].includes(name)) {
         if (hasSuspiciousContent(newValue)) {
           setFieldErrors(prev => ({ ...prev, [name as keyof FormState]: "Contenido no permitido" }));
           setForm(prev => ({ ...prev, [name]: newValue }));
@@ -226,7 +247,11 @@ export default function EditarObra() {
       }
     }
 
-    setForm(prev => ({ ...prev, [name]: newValue }));
+    if (name === "id_categoria") {
+      setForm(prev => ({ ...prev, id_categoria: String(newValue), id_tecnica: "", id_material: "" }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: newValue }));
+    }
   };
 
   const toggleEtiqueta = (id: number) => {
@@ -274,7 +299,7 @@ export default function EditarObra() {
     }
 
     // ── Validación de seguridad ──
-    const camposTexto = ["titulo", "descripcion", "historia", "tecnica"] as const;
+    const camposTexto = ["titulo", "descripcion", "historia"] as const;
     for (const campo of camposTexto) {
       if (hasSuspiciousContent(String(form[campo]))) {
         showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
@@ -295,7 +320,6 @@ export default function EditarObra() {
         titulo:      sanitizeText(form.titulo),
         descripcion: sanitizeText(form.descripcion),
         historia:    sanitizeText(form.historia),
-        tecnica:     sanitizeText(form.tecnica),
       };
 
       if (imgFile) {
@@ -546,12 +570,24 @@ export default function EditarObra() {
                 </select>
               </div>
               <div className="field-group">
-                <label style={{ color:"#333", fontWeight:600 }}>Técnica <span style={{ fontSize:10.5, color:"#999", fontWeight:400 }}>mínimo 3 caracteres</span></label>
-                <input type="text" name="tecnica" value={form.tecnica} onChange={handleChange}
-                  placeholder="Ej: Óleo sobre lienzo"
-                  style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }}
-                  className={`field-input${fieldErrors.tecnica ? " field-input-error" : ""}`} />
-                {fieldErrors.tecnica && <span style={{ fontSize:11.5, color:"#e74c3c", fontWeight:600, marginTop:4, display:"block" }}>⚠ {fieldErrors.tecnica}</span>}
+                <label style={{ color:"#333", fontWeight:600 }}>Técnica</label>
+                <select name="id_tecnica" value={form.id_tecnica} onChange={handleChange}
+                  style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%", background:"#fff" }}>
+                  <option value="">Seleccionar técnica…</option>
+                  {tecnicas.map(t => (
+                    <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field-group">
+                <label style={{ color:"#333", fontWeight:600 }}>Material / Soporte</label>
+                <select name="id_material" value={form.id_material} onChange={handleChange}
+                  style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%", background:"#fff" }}>
+                  <option value="">Seleccionar material…</option>
+                  {materiales.map(m => (
+                    <option key={m.id_material} value={m.id_material}>{m.nombre}</option>
+                  ))}
+                </select>
               </div>
               <div className="field-group">
                 <label style={{ color:"#333", fontWeight:600 }}>Año de creación</label>
@@ -577,6 +613,14 @@ export default function EditarObra() {
                 </div>
               ))}
             </div>
+            {["Escultura","Artesanía","Cerámica"].includes(categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "") && (
+              <div className="field-group" style={{ marginTop:16, maxWidth:200 }}>
+                <label style={{ color:"#333", fontWeight:600 }}>Peso (kg)</label>
+                <input type="number" name="peso_kg" value={form.peso_kg} onChange={handleChange}
+                  placeholder="0.0" min={0} step="0.1" style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }} />
+                <p style={{ fontSize:11, color:"#999", margin:"4px 0 0", fontStyle:"italic" }}>Útil para cotizar envío</p>
+              </div>
+            )}
           </div>
 
           {/* PRECIO Y STOCK */}
@@ -618,12 +662,27 @@ export default function EditarObra() {
                   </p>
               }
             </div>
+            {["Fotografía","Grabado","Ilustración"].includes(categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "") && (
+              <div className="field-group" style={{ marginTop:20, maxWidth:200 }}>
+                <label style={{ color:"#333", fontWeight:600 }}>Número de edición (tiraje total)</label>
+                <input type="number" name="numero_edicion" value={form.numero_edicion} onChange={handleChange}
+                  placeholder="Ej: 10" min={1} step="1" style={{ border:"1px solid #ddd", padding:"10px", borderRadius:8, width:"100%" }} />
+                <p style={{ fontSize:11, color:"#999", margin:"4px 0 0", fontStyle:"italic" }}>Total de copias (ej. "10" para 1/10)</p>
+              </div>
+            )}
           </div>
 
           {/* EXTRAS */}
           <div className="form-section">
             <h3 className="section-title" style={{ color:"#333" }}><Palette size={18} /> Extras</h3>
-            <div className="checkbox-group" style={{ display:"flex", gap:24 }}>
+            <div className="checkbox-group" style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <label className="checkbox-label" style={{ display:"flex", alignItems:"center", gap:8, color:"#333" }}>
+                <input type="checkbox" name="es_original" checked={form.es_original} onChange={handleChange} />
+                <span>
+                  Obra original
+                  <span style={{ display:"block", fontSize:11, color:"#999", fontWeight:400 }}>Pieza única hecha a mano — desmarca si es reproducción o edición múltiple</span>
+                </span>
+              </label>
               <label className="checkbox-label" style={{ display:"flex", alignItems:"center", gap:8, color:"#333" }}>
                 <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
                 Permite enmarcar
@@ -830,7 +889,7 @@ export default function EditarObra() {
               <div>
                 <p style={{ fontSize:16, fontWeight:700, color:"#333", margin:0 }}>{form.titulo || "Sin título"}</p>
                 <p style={{ fontSize:12, color:"#666", margin:"4px 0" }}>{categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}</p>
-                {form.tecnica     && <p style={{ fontSize:12, color:"#666", margin:"2px 0" }}>{form.tecnica}</p>}
+                {form.id_tecnica  && <p style={{ fontSize:12, color:"#666", margin:"2px 0" }}>{tecnicas.find(t => t.id_tecnica === parseInt(form.id_tecnica))?.nombre}</p>}
                 {form.precio_base && <p style={{ fontSize:14, fontWeight:700, color:"#27ae60", margin:"4px 0 0" }}>${parseFloat(form.precio_base).toLocaleString("es-MX")} MXN</p>}
               </div>
             </div>
