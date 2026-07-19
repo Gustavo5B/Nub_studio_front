@@ -971,7 +971,7 @@ export default function Catalogo() {
 
         {/* Paginación */}
         {totalPages > 1 && !loading && (
-          <div data-rv style={{
+          <div style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             gap: 6, padding: "0 72px", marginTop: 48,
           }}>

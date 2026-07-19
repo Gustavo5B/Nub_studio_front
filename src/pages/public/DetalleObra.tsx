@@ -891,7 +891,7 @@ export default function DetalleObra() {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
               {obra.obras_relacionadas.map((rel: any) => (
                 <div key={rel.id_obra}
-                  onClick={() => { navigate(`/obras/${rel.slug || rel.id_obra}`); globalThis.scrollTo(0,0); }}
+                  onClick={() => { navigate(`/obras/${rel.id_obra}`); globalThis.scrollTo(0,0); }}
                   onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                   style={{ height:280, position:"relative", overflow:"hidden", cursor:"pointer", borderRadius:2 }}
                 >

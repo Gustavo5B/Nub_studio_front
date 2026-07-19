@@ -5,7 +5,12 @@ import { authService }        from "../../../services/authService";
 import { useToast }           from "../../../context/ToastContext";
 import { handleNetworkError } from "../../../utils/handleApiError";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API    = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const ML_API = "https://nubstudio-precio-api.onrender.com";
+
+const CATS_3D = ["Escultura", "Artesanía", "Cerámica"];
+
+
 
 const C = {
   orange: "#E8640C", pink: "#A83B90", purple: "#6028AA",
@@ -95,6 +100,20 @@ const css = `
   .no-perfil-chip { font-size:.75rem; font-weight:700; background:rgba(196,48,74,0.08); border:1px solid rgba(196,48,74,0.2); color:${C.red}; padding:3px 10px; border-radius:20px; }
   .no-perfil-link { display:inline-flex; align-items:center; gap:6px; font-size:.82rem; font-weight:700; color:${C.orange}; cursor:pointer; background:rgba(232,100,12,0.08); border:1.5px solid rgba(232,100,12,0.2); padding:7px 16px; border-radius:10px; transition:all .2s; text-decoration:none; }
   .no-perfil-link:hover { background:rgba(232,100,12,0.14); border-color:rgba(232,100,12,0.35); }
+  .no-tec-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .no-tec-chip { background:#F3F2F8; border:1.5px solid #E6E4EF; color:#5A5870; padding:4px 12px; border-radius:20px; cursor:pointer; font-size:.75rem; font-family:'Outfit',sans-serif; transition:all .2s; font-weight:500; }
+  .no-tec-chip:hover { border-color:rgba(232,100,12,0.4); color:${C.text}; }
+  .no-tec-chip.sel { background:rgba(232,100,12,0.1); border-color:${C.orange}; color:${C.orange}; font-weight:700; }
+  .no-ml-widget { background:linear-gradient(135deg,rgba(232,100,12,0.05),rgba(96,40,170,0.05)); border:1.5px solid rgba(232,100,12,0.2); border-radius:16px; padding:18px 20px; margin-bottom:18px; }
+  .no-ml-title { font-size:.72rem; font-weight:800; color:#5A5870; text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:8px; margin:0 0 12px; }
+  .no-ml-badge { background:rgba(96,40,170,0.1); color:#6028AA; padding:2px 8px; border-radius:20px; font-size:.65rem; font-weight:700; letter-spacing:.08em; }
+  .no-ml-range { font-size:1.35rem; font-weight:900; color:${C.orange}; letter-spacing:-.5px; margin:0 0 4px; }
+  .no-ml-sub { font-size:.75rem; color:${C.muted}; margin:0 0 14px; }
+  .no-ml-use { background:${C.orange}; color:#fff; border:none; padding:9px 20px; border-radius:10px; font-size:.82rem; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; transition:all .2s; }
+  .no-ml-use:hover { background:#d4570a; transform:translateY(-1px); }
+  .no-ml-loading { display:flex; align-items:center; gap:10px; color:${C.muted}; font-size:.85rem; }
+  .no-ml-spinner { width:18px; height:18px; border:2.5px solid rgba(232,100,12,0.2); border-top-color:${C.orange}; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+  .no-ml-warn { font-size:.72rem; color:#9896A8; margin:6px 0 0; font-style:italic; }
   .no-actions { padding-top:6px; }
   .no-actions.two { display:flex; gap:12px; }
   .no-btn-next { width:100%; background:${C.orange}; border:none; color:#fff; padding:14px 24px; border-radius:13px; font-size:.95rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; box-shadow:0 4px 16px rgba(232,100,12,0.28); transition:all .25s; }
@@ -118,13 +137,17 @@ const css = `
 `;
 
 interface Categoria  { id_categoria: number; nombre: string; }
+interface Tecnica    { id_tecnica:   number; nombre: string; }
+interface Material   { id_material:  number; nombre: string; }
 interface Etiqueta   { id_etiqueta:  number; nombre: string; }
 interface Coleccion  { id_coleccion: number; nombre: string; estado: string; }
 interface FormData {
   titulo: string; descripcion: string; historia: string; id_categoria: string;
-  id_coleccion: string; tecnica: string; anio_creacion: string;
+  id_coleccion: string; id_tecnica: string; id_material: string; anio_creacion: string;
   dimensiones_alto: string; dimensiones_ancho: string; dimensiones_profundidad: string;
-  precio_base: string; stock: string; permite_marco: boolean; con_certificado: boolean; etiquetas: number[];
+  precio_base: string; stock: string; permite_marco: boolean; con_certificado: boolean;
+  disponible_envio: boolean; es_original: boolean; numero_edicion: string; peso_kg: string;
+  etiquetas: number[];
 }
 
 // ── Sanitización frontend ─────────────────────────────────────────────────────
@@ -151,6 +174,8 @@ export default function NuevaObra() {
   const { showToast } = useToast();
 
   const [categorias,      setCategorias]      = useState<Categoria[]>([]);
+  const [tecnicas,        setTecnicas]        = useState<Tecnica[]>([]);
+  const [materiales,      setMateriales]      = useState<Material[]>([]);
   const [etiquetas,       setEtiquetas]       = useState<Etiqueta[]>([]);
   const [colecciones,     setColecciones]     = useState<Coleccion[]>([]);
   const galeriaRef                            = useRef<HTMLInputElement>(null);
@@ -164,15 +189,17 @@ export default function NuevaObra() {
   const [step,            setStep]            = useState(1);
   const [perfilFaltantes, setPerfilFaltantes] = useState<string[]>([]);
   const [checkingPerfil,  setCheckingPerfil]  = useState(true);
-  const [programar,       setProgramar]       = useState(false);
-  const [fechaProg,       setFechaProg]       = useState("");
   const [fieldErrors,     setFieldErrors]     = useState<Partial<Record<keyof FormData, string>>>({});
+  const [mlSugerencia,    setMlSugerencia]    = useState<{ precio:number; min:number; max:number; loading:boolean; error:boolean }>({ precio:0, min:0, max:0, loading:false, error:false });
+  const [mlRetry,         setMlRetry]         = useState(0);
+  const mlTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [form, setForm] = useState<FormData>({
-    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", tecnica: "",
+    titulo: "", descripcion: "", historia: "", id_categoria: "", id_coleccion: "", id_tecnica: "", id_material: "",
     anio_creacion: new Date().getFullYear().toString(),
     dimensiones_alto: "", dimensiones_ancho: "", dimensiones_profundidad: "",
-    precio_base: "", stock: "1", permite_marco: false, con_certificado: false, etiquetas: [],
+    precio_base: "", stock: "1", permite_marco: false, con_certificado: false, disponible_envio: false,
+    es_original: true, numero_edicion: "", peso_kg: "", etiquetas: [],
   });
 
   useEffect(() => {
@@ -207,6 +234,55 @@ export default function NuevaObra() {
     }).catch(() => {}).finally(() => setCheckingPerfil(false));
   }, []);
 
+  useEffect(() => {
+    if (!form.id_categoria) { setTecnicas([]); setMateriales([]); return; }
+    const token = authService.getToken();
+    const h = { Authorization: `Bearer ${token}` };
+    fetch(`${API}/api/tecnicas?categoria=${form.id_categoria}`, { headers: h })
+      .then(r => r.json())
+      .then(d => setTecnicas(d.tecnicas || d.data || []))
+      .catch(() => setTecnicas([]));
+    fetch(`${API}/api/materiales?categoria=${form.id_categoria}`, { headers: h })
+      .then(r => r.json())
+      .then(d => setMateriales(d.data || []))
+      .catch(() => setMateriales([]));
+    setForm(p => ({ ...p, id_tecnica: "", id_material: "" }));
+  }, [form.id_categoria]);
+
+  useEffect(() => {
+    if (step !== 2 || !form.id_categoria) return;
+    if (mlTimerRef.current) clearTimeout(mlTimerRef.current);
+    mlTimerRef.current = setTimeout(async () => {
+      const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+      if (!catNombre) return;
+      setMlSugerencia(prev => ({ ...prev, loading: true, error: false }));
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 65000);
+      try {
+        const res = await fetch(`${ML_API}/predecir`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            categoria:     catNombre,
+            tecnica:       tecnicas.find(t => t.id_tecnica === parseInt(form.id_tecnica))?.nombre?.toLowerCase() || "otra",
+            anio_creacion: parseInt(form.anio_creacion) || 2023,
+            alto_cm:       parseFloat(form.dimensiones_alto)  || 0,
+            ancho_cm:      parseFloat(form.dimensiones_ancho) || 0,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        console.log("ML API response:", JSON.stringify(data));
+        setMlSugerencia({ precio: data.precio, min: Math.round(data.precio_min ?? data.precio * 0.8), max: Math.round(data.precio_max ?? data.precio * 1.2), loading: false, error: false });
+      } catch {
+        clearTimeout(timer);
+        setMlSugerencia(prev => ({ ...prev, loading: false, error: true }));
+      }
+    }, 600);
+  }, [step, form.id_categoria, form.id_tecnica, form.anio_creacion, form.dimensiones_alto, form.dimensiones_ancho, mlRetry]);
+
   const getFieldError = (name: string, value: string): string => {
     if (hasSuspiciousContent(value)) return "Contenido no permitido";
     if (name === "titulo") {
@@ -219,8 +295,6 @@ export default function NuevaObra() {
     }
     if (name === "historia" && value.trim() && value.trim().length < 20)
       return `Mínimo 20 caracteres (${value.trim().length}/20)`;
-    if (name === "tecnica" && value.trim() && value.trim().length < 3)
-      return `Mínimo 3 caracteres (${value.trim().length}/3)`;
     return "";
   };
 
@@ -228,7 +302,7 @@ export default function NuevaObra() {
     const { name, value, type } = e.target;
     const newValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
 
-    if (typeof newValue === "string" && ["titulo", "descripcion", "historia", "tecnica"].includes(name)) {
+    if (typeof newValue === "string" && ["titulo", "descripcion", "historia"].includes(name)) {
       const err = getFieldError(name, newValue);
       setFieldErrors(prev => ({ ...prev, [name]: err || undefined }));
     }
@@ -297,15 +371,11 @@ export default function NuevaObra() {
       showToast("La historia debe tener al menos 20 caracteres si se escribe", "warn");
       setFieldErrors(prev => ({ ...prev, historia: "Mínimo 20 caracteres" })); return;
     }
-    if (form.tecnica.trim() && form.tecnica.trim().length < 3) {
-      showToast("La técnica debe tener al menos 3 caracteres", "warn");
-      setFieldErrors(prev => ({ ...prev, tecnica: "Mínimo 3 caracteres" })); return;
-    }
     if (!form.id_categoria) { showToast("Selecciona una categoría", "warn"); return; }
     if (!imageFile)         { showToast("Debes subir una imagen", "warn"); return; }
 
     // ── Validación de seguridad antes de avanzar al paso 2 ──
-    const camposTexto = ["titulo", "descripcion", "tecnica"] as const;
+    const camposTexto = ["titulo", "descripcion"] as const;
     for (const campo of camposTexto) {
       if (hasSuspiciousContent(String(form[campo]))) {
         showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
@@ -326,15 +396,8 @@ export default function NuevaObra() {
     if (!form.stock || parseInt(form.stock) < 1) {
       showToast("La cantidad disponible debe ser al menos 1", "warn"); setStep(2); return;
     }
-    if (programar) {
-      if (!fechaProg) { showToast("Indica la fecha de publicación programada", "warn"); return; }
-      if (new Date(fechaProg).getTime() <= Date.now()) {
-        showToast("La fecha de publicación debe ser futura", "warn"); return;
-      }
-    }
-
     // ── Validación de seguridad final antes de enviar ──
-    const camposTexto = ["titulo", "descripcion", "historia", "tecnica"] as const;
+    const camposTexto = ["titulo", "descripcion", "historia"] as const;
     for (const campo of camposTexto) {
       if (hasSuspiciousContent(String(form[campo]))) {
         showToast(`El campo "${campo}" contiene contenido no permitido`, "err");
@@ -355,15 +418,11 @@ export default function NuevaObra() {
         titulo:      sanitizeText(form.titulo),
         descripcion: sanitizeText(form.descripcion),
         historia:    sanitizeText(form.historia),
-        tecnica:     sanitizeText(form.tecnica),
       };
 
       Object.entries(formSanitizado).forEach(([k, v]) =>
         fd.append(k, k === "etiquetas" ? JSON.stringify(v) : String(v))
       );
-      if (programar && fechaProg) {
-        fd.append("fecha_publicacion_programada", new Date(fechaProg).toISOString());
-      }
       if (imageFile) fd.append("imagen", imageFile);
 
       const res = await fetch(`${API}/api/artista-portal/nueva-obra`, {
@@ -420,6 +479,7 @@ export default function NuevaObra() {
   const precio   = parseFloat(form.precio_base || "0");
   const comision = precio * 0.15;
   const neto     = precio * 0.85;
+  const fmtMXN   = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (checkingPerfil) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh", flexDirection:"column", gap:16 }}>
@@ -567,7 +627,7 @@ export default function NuevaObra() {
                     </select>
                   </div>
                 )}
-                <div className="no-grid-3">
+                <div className="no-grid-2">
                   <div className="no-field">
                     <label className="no-field-label">Categoría *</label>
                     <select className="no-select" name="id_categoria" value={form.id_categoria} onChange={handleChange}>
@@ -577,13 +637,26 @@ export default function NuevaObra() {
                   </div>
                   <div className="no-field">
                     <label className="no-field-label">Técnica</label>
-                    <input className={`no-input${fieldErrors.tecnica ? " error" : ""}`}
-                      name="tecnica" value={form.tecnica} onChange={handleChange}
-                      placeholder="Óleo sobre lienzo" />
-                    {fieldErrors.tecnica && <span className="no-field-error">⚠ {fieldErrors.tecnica}</span>}
+                    <select className="no-select" name="id_tecnica" value={form.id_tecnica} onChange={handleChange}>
+                      <option value="">Seleccionar técnica…</option>
+                      {tecnicas.map(t => (
+                        <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="no-grid-2" style={{ marginTop: 12 }}>
+                  <div className="no-field">
+                    <label className="no-field-label">Material / Soporte</label>
+                    <select className="no-select" name="id_material" value={form.id_material} onChange={handleChange}>
+                      <option value="">Seleccionar material…</option>
+                      {materiales.map(m => (
+                        <option key={m.id_material} value={m.id_material}>{m.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="no-field">
-                    <label className="no-field-label">Año</label>
+                    <label className="no-field-label">Año de creación</label>
                     <input className="no-input" type="number" name="anio_creacion"
                       value={form.anio_creacion} onChange={handleChange}
                       min={1900} max={new Date().getFullYear()} />
@@ -616,19 +689,81 @@ export default function NuevaObra() {
 
           {step === 2 && (
             <>
-              <div className="no-section">
-                <div className="no-section-title"><span>📐</span> Dimensiones (cm)</div>
-                <div className="no-grid-3">
-                  {([["dimensiones_alto","Alto"],["dimensiones_ancho","Ancho"],["dimensiones_profundidad","Profundidad"]] as const).map(([name,label]) => (
-                    <div key={name} className="no-field">
-                      <label className="no-field-label">{label}</label>
-                      <input className="no-input" type="number" name={name}
-                        value={String(form[name as keyof typeof form])}
-                        onChange={handleChange} placeholder="0" min={0} step="0.1" />
+              {(() => {
+                const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+                const is3D = CATS_3D.includes(catNombre);
+                const campos = is3D
+                  ? [["dimensiones_alto","Alto"],["dimensiones_ancho","Ancho"],["dimensiones_profundidad","Profundidad"]] as const
+                  : [["dimensiones_alto","Alto"],["dimensiones_ancho","Ancho"]] as const;
+                return (
+                  <div className="no-section">
+                    <div className="no-section-title">
+                      <span>📐</span> Dimensiones (cm)
+                      {catNombre && <span style={{ fontWeight:400, textTransform:"none", fontSize:".72rem", color:C.muted }}>— {is3D ? "Alto × Ancho × Profundidad" : "Alto × Ancho"}</span>}
                     </div>
-                  ))}
+                    <div className={is3D ? "no-grid-3" : "no-grid-2"}>
+                      {campos.map(([name, label]) => (
+                        <div key={name} className="no-field">
+                          <label className="no-field-label">{label}</label>
+                          <input className="no-input" type="number" name={name}
+                            value={String(form[name as keyof typeof form])}
+                            onChange={handleChange} placeholder="0" min={0} step="0.1" />
+                        </div>
+                      ))}
+                    </div>
+                    {CATS_3D.includes(catNombre) && (
+                      <div className="no-field" style={{ marginTop: 12 }}>
+                        <label className="no-field-label">Peso (kg)</label>
+                        <input className="no-input" type="number" name="peso_kg"
+                          value={form.peso_kg} onChange={handleChange}
+                          placeholder="0.0" min={0} step="0.1" style={{ maxWidth: 140 }} />
+                        <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
+                          Útil para cotizar el envío correctamente
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {(mlSugerencia.loading || mlSugerencia.precio > 0 || mlSugerencia.error) && (
+                <div className="no-ml-widget">
+                  <div className="no-ml-title">
+                    ✦ Sugerencia de precio
+                    <span className="no-ml-badge">IA · Gradient Boosting</span>
+                  </div>
+                  {mlSugerencia.loading && (
+                    <div className="no-ml-loading">
+                      <div className="no-ml-spinner" />
+                      <span>Calculando rango sugerido…</span>
+                    </div>
+                  )}
+                  {!mlSugerencia.loading && mlSugerencia.precio > 0 && (
+                    <>
+                      <p className="no-ml-range">
+                        ${(Number.isFinite(mlSugerencia.min) ? mlSugerencia.min : Math.round(mlSugerencia.precio * 0.8)).toLocaleString("es-MX", { maximumFractionDigits: 0 })} – ${(Number.isFinite(mlSugerencia.max) ? mlSugerencia.max : Math.round(mlSugerencia.precio * 1.2)).toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN
+                      </p>
+                      <p className="no-ml-sub">
+                        Estimación orientativa basada en obras similares de la plataforma
+                      </p>
+                      <button type="button" className="no-ml-use"
+                        onClick={() => setForm(p => ({ ...p, precio_base: mlSugerencia.precio.toFixed(2) }))}>
+                        Usar precio sugerido
+                      </button>
+                      <p className="no-ml-warn">Esta sugerencia es orientativa. Tú decides el precio final.</p>
+                    </>
+                  )}
+                  {!mlSugerencia.loading && mlSugerencia.error && (
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      <p style={{ margin:0, fontSize:".8rem", color:C.muted }}>No se pudo obtener la sugerencia en este momento.</p>
+                      <button type="button" onClick={() => setMlRetry(n => n + 1)}
+                        style={{ fontSize:".75rem", color:C.orange, background:"none", border:"1px solid rgba(232,100,12,0.3)", borderRadius:8, padding:"4px 10px", cursor:"pointer", whiteSpace:"nowrap", fontFamily:"'Outfit',sans-serif" }}>
+                        Reintentar
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               <div className="no-section">
                 <div className="no-section-title"><span>💰</span> Precio y Stock</div>
@@ -648,14 +783,30 @@ export default function NuevaObra() {
                     placeholder="1" min={1} step="1"
                     style={{ maxWidth: 120 }} />
                   <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
-                    Piezas únicas generalmente tienen stock 1. Para impresiones o reproducciones puedes poner más.
+                    {(() => {
+                      const cat = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+                      if (["Fotografía", "Grabado"].includes(cat))
+                        return "Indica el número de ejemplares de la edición (ej. 10 para una edición de 10 copias).";
+                      return "Obra única: se recomienda stock 1. Para reproducciones autorizadas puedes indicar más.";
+                    })()}
                   </p>
                 </div>
+                {["Fotografía", "Grabado", "Ilustración"].includes(categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "") && (
+                  <div className="no-field" style={{ marginTop: 12 }}>
+                    <label className="no-field-label">Número de edición (tiraje total)</label>
+                    <input className="no-input" type="number" name="numero_edicion"
+                      value={form.numero_edicion} onChange={handleChange}
+                      placeholder="Ej: 10" min={1} step="1" style={{ maxWidth: 140 }} />
+                    <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
+                      Total de copias de la edición (ej. "10" para una edición 1/10)
+                    </p>
+                  </div>
+                )}
                 {precio > 0 && (
                   <div className="no-breakdown">
-                    <div className="no-breakdown-row"><span>Tu precio</span><strong>${precio.toLocaleString()} MXN</strong></div>
-                    <div className="no-breakdown-row comm"><span>Comisión Nu-B (15%)</span><strong>- ${comision.toLocaleString()} MXN</strong></div>
-                    <div className="no-breakdown-row total"><span>Tú recibes</span><strong className="no-receive">${neto.toLocaleString()} MXN</strong></div>
+                    <div className="no-breakdown-row"><span>Tu precio</span><strong>${fmtMXN(precio)} MXN</strong></div>
+                    <div className="no-breakdown-row comm"><span>Comisión Nu-B (15%)</span><strong>- ${fmtMXN(comision)} MXN</strong></div>
+                    <div className="no-breakdown-row total"><span>Tú recibes</span><strong className="no-receive">${fmtMXN(neto)} MXN</strong></div>
                   </div>
                 )}
               </div>
@@ -663,39 +814,39 @@ export default function NuevaObra() {
               <div className="no-section">
                 <div className="no-section-title"><span>🎨</span> Extras</div>
                 <div className="no-checks">
-                  <label className="no-check-label">
-                    <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
-                    <span className="no-check-box" />
-                    Permite enmarcar
-                  </label>
+                  {!CATS_3D.includes(categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "") && (
+                    <label className="no-check-label">
+                      <input type="checkbox" name="permite_marco" checked={form.permite_marco} onChange={handleChange} />
+                      <span className="no-check-box" />
+                      Permite enmarcar
+                    </label>
+                  )}
                   <label className="no-check-label">
                     <input type="checkbox" name="con_certificado" checked={form.con_certificado} onChange={handleChange} />
                     <span className="no-check-box" />
                     Incluye certificado de autenticidad
                   </label>
-                </div>
-              </div>
-
-              <div className="no-section">
-                <div className="no-section-title"><span>⏱</span> Publicación programada <span style={{fontWeight:400, textTransform:"none", fontSize:".75rem"}}>— opcional</span></div>
-                <div className="no-checks">
                   <label className="no-check-label">
-                    <input type="checkbox" checked={programar} onChange={e => setProgramar(e.target.checked)} />
+                    <input type="checkbox" name="es_original" checked={form.es_original} onChange={handleChange} />
                     <span className="no-check-box" />
-                    Programar la publicación para una fecha futura
+                    <span>
+                      Obra original
+                      <span style={{ display:"block", fontSize:".72rem", color:C.muted, fontWeight:400 }}>
+                        Pieza única hecha a mano — desmarca si es reproducción o edición múltiple
+                      </span>
+                    </span>
+                  </label>
+                  <label className="no-check-label">
+                    <input type="checkbox" name="disponible_envio" checked={form.disponible_envio} onChange={handleChange} />
+                    <span className="no-check-box" />
+                    <span>
+                      Disponible para envío nacional
+                      <span style={{ display:"block", fontSize:".72rem", color:C.muted, fontWeight:400 }}>
+                        El costo se cotiza al momento de la venta según destino y seguro
+                      </span>
+                    </span>
                   </label>
                 </div>
-                {programar && (
-                  <div className="no-field" style={{ marginTop: 14, maxWidth: 280 }}>
-                    <label className="no-field-label">Fecha y hora de publicación</label>
-                    <input className="no-input" type="datetime-local" value={fechaProg}
-                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                      onChange={e => setFechaProg(e.target.value)} />
-                    <p style={{ fontSize: 11, color: "#9896A8", margin: "4px 0 0", fontStyle: "italic" }}>
-                      Tras la aprobación del equipo, la obra se publicará automáticamente en esta fecha.
-                    </p>
-                  </div>
-                )}
               </div>
 
               <div className="no-section no-summary">
@@ -705,8 +856,17 @@ export default function NuevaObra() {
                   <div>
                     <p className="no-summary-title">{form.titulo || "Sin título"}</p>
                     <p className="no-summary-cat">{categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "Sin categoría"}</p>
-                    {form.tecnica && <p className="no-summary-tech">{form.tecnica}</p>}
-                    {precio > 0   && <p className="no-summary-price">${precio.toLocaleString()} MXN</p>}
+                    {(form.id_tecnica || form.id_material) && <p className="no-summary-tech">{[tecnicas.find(t => t.id_tecnica === parseInt(form.id_tecnica))?.nombre, materiales.find(m => m.id_material === parseInt(form.id_material))?.nombre].filter(Boolean).join(" · ")} · {form.anio_creacion}</p>}
+                    {(parseFloat(form.dimensiones_alto) > 0 || parseFloat(form.dimensiones_ancho) > 0) && (
+                      <p className="no-summary-tech">
+                        {[
+                          form.dimensiones_alto  && `${form.dimensiones_alto} cm alto`,
+                          form.dimensiones_ancho && `${form.dimensiones_ancho} cm ancho`,
+                          form.dimensiones_profundidad && parseFloat(form.dimensiones_profundidad) > 0 && `${form.dimensiones_profundidad} cm prof.`,
+                        ].filter(Boolean).join(" × ")}
+                      </p>
+                    )}
+                    {precio > 0 && <p className="no-summary-price">${precio.toLocaleString()} MXN</p>}
                   </div>
                 </div>
               </div>
