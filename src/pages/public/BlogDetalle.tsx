@@ -37,6 +37,16 @@ interface Post {
   fecha_actualizacion: string;
 }
 
+interface PostRelacionado {
+  id_post: number;
+  slug: string;
+  titulo: string;
+  extracto: string | null;
+  imagen_destacada: string | null;
+  score: number;
+  etiquetas: string[];
+}
+
 interface Comentario {
   id_comentario: number;
   id_usuario: number;
@@ -75,6 +85,7 @@ export default function BlogDetalle() {
   const token = authService.getToken();
 
   const [post, setPost] = useState<Post | null>(null);
+  const [relacionados, setRelacionados] = useState<PostRelacionado[]>([]);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [loadingPost, setLoadingPost] = useState(true);
   const [loadingComents, setLoadingComents] = useState(true);
@@ -144,6 +155,16 @@ export default function BlogDetalle() {
       .catch(() => navigate("/blog"))
       .finally(() => setLoadingPost(false));
   }, [slug, navigate]);
+
+  // Posts relacionados (precalculados por el modelo, servidos desde la tabla)
+  useEffect(() => {
+    if (!slug) return;
+    setRelacionados([]);
+    fetch(`${API}/api/blog/posts/${slug}/relacionados`)
+      .then(r => r.json())
+      .then(json => { if (json.success) setRelacionados(json.data); })
+      .catch(() => {});
+  }, [slug]);
 
   const cargarComentarios = useCallback(() => {
     if (!post) return;
@@ -300,6 +321,9 @@ export default function BlogDetalle() {
         .reaccion-pill:hover { border-color: ${C.orange}; transform: translateY(-2px); }
         .reaccion-pill.active { border-color: ${C.orange}; background: ${C.orange}12; box-shadow: 0 2px 10px rgba(232,100,12,0.18); }
         .reaccion-pill:disabled { opacity: 0.6; cursor: wait; transform: none; }
+        .rel-card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s; }
+        .rel-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.10); }
+        .rel-card:hover h3 { color: ${C.orange}; }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
       `}</style>
 
@@ -430,6 +454,50 @@ export default function BlogDetalle() {
                   Inicia sesión para reaccionar — solo una reacción por persona.
                 </p>
               )}
+            </section>
+          )}
+
+          {/* ── Posts relacionados (modelo de clasificación) ── */}
+          {relacionados.length > 0 && (
+            <section style={{ marginTop: 48, paddingTop: 48, borderTop: `1px solid ${C.border}` }}>
+              <span style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.orange }}>
+                Sigue leyendo
+              </span>
+              <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 800, color: C.ink, margin: "10px 0 28px" }}>
+                Posts relacionados
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 18 }}>
+                {relacionados.map(rp => (
+                  <Link
+                    key={rp.id_post}
+                    to={`/blog/${rp.slug}`}
+                    className="rel-card"
+                    onMouseEnter={cursorOn}
+                    onMouseLeave={cursorOff}
+                    style={{ textDecoration: "none", display: "flex", flexDirection: "column", borderRadius: 14, overflow: "hidden", border: `1px solid ${C.border}`, background: "#fff" }}
+                  >
+                    <div style={{ aspectRatio: "16 / 10", background: C.dark, overflow: "hidden" }}>
+                      {rp.imagen_destacada && (
+                        <img src={rp.imagen_destacada} alt={rp.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      )}
+                    </div>
+                    <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+                      <h3 style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: C.ink, margin: 0, lineHeight: 1.25, transition: "color 0.2s" }}>
+                        {rp.titulo}
+                      </h3>
+                      {rp.etiquetas?.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: "auto" }}>
+                          {rp.etiquetas.slice(0, 3).map(et => (
+                            <span key={et} style={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: C.sub, border: `1px solid ${C.border}`, padding: "3px 9px", borderRadius: 100 }}>
+                              {et}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </section>
           )}
 

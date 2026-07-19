@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   PenSquare, Image, Save, Eye, ChevronLeft,
   Bold, Italic, Heading2, Heading3, List, ListOrdered,
-  Quote, Link as LinkIcon, Minus,
+  Quote, Link as LinkIcon, Minus, Sparkles,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useToast } from "../../../context/ToastContext";
@@ -25,6 +25,7 @@ const C = {
 const CS = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.055)";
 
 interface Categoria { id_categoria: number; nombre: string; }
+interface Etiqueta  { id_blog_etiqueta: number; nombre: string; slug: string; probabilidad?: number; }
 
 // ── Editor de texto enriquecido ──────────────────────────
 function RichEditor({
@@ -214,6 +215,9 @@ export default function NuevoPost() {
   const [imagenPreview,   setImagenPreview]   = useState<string | null>(null);
   const [guardando,       setGuardando]       = useState(false);
   const [errors,          setErrors]          = useState<Record<string, string>>({});
+  const [etiquetasDisp,   setEtiquetasDisp]   = useState<Etiqueta[]>([]);
+  const [etiquetasSel,    setEtiquetasSel]    = useState<Set<number>>(new Set());
+  const [sugiriendo,      setSugiriendo]      = useState(false);
 
   // ── Helpers de validación ────────────────────────────────
   const XSS_RE  = /<script|<iframe|<object|<embed|javascript:|on\w+\s*=|eval\(|vbscript:/i;
@@ -268,6 +272,13 @@ export default function NuevoPost() {
   }, []);
 
   useEffect(() => {
+    fetch(`${API}/api/blog/etiquetas`)
+      .then(r => r.json())
+      .then(json => { if (json.data) setEtiquetasDisp(json.data); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!isEditing || !id) return;
     setLoadingPost(true);
     fetch(`${API}/api/blog/posts/${id}/editar`, {
@@ -284,6 +295,7 @@ export default function NuevoPost() {
         setEstado(d.estado ?? "borrador");
         setMetaDescription(d.meta_description ?? "");
         setImagenActual(d.imagen_destacada ?? null);
+        if (Array.isArray(d.etiquetas)) setEtiquetasSel(new Set(d.etiquetas));
       })
       .catch(() => showToast("Error al cargar el post", "err"))
       .finally(() => setLoadingPost(false));
@@ -296,6 +308,43 @@ export default function NuevoPost() {
     const reader = new FileReader();
     reader.onload = (evt) => setImagenPreview(evt.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const toggleEtiqueta = (id: number) => {
+    setEtiquetasSel(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); return next; }
+      if (next.size >= 5) { showToast("Máximo 5 etiquetas por post", "warn"); return prev; }
+      next.add(id);
+      return next;
+    });
+  };
+
+  // Pide al modelo (vía backend) que sugiera etiquetas a partir del texto.
+  const sugerirEtiquetasIA = async () => {
+    if (stripHtml(contenido).length < 20) {
+      showToast("Escribe un poco más de contenido para sugerir etiquetas", "warn");
+      return;
+    }
+    setSugiriendo(true);
+    try {
+      const res = await fetch(`${API}/api/blog/sugerir-etiquetas`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo, extracto, contenido }),
+      });
+      const json = await res.json();
+      if (json.success && json.data?.length) {
+        setEtiquetasSel(new Set(json.data.slice(0, 5).map((e: Etiqueta) => e.id_blog_etiqueta)));
+        showToast(`${json.data.length} etiqueta(s) sugerida(s) — revísalas`, "ok");
+      } else {
+        showToast(json.message || "No se pudieron sugerir etiquetas", "warn");
+      }
+    } catch {
+      showToast("El servicio de sugerencias no está disponible", "err");
+    } finally {
+      setSugiriendo(false);
+    }
   };
 
   const guardar = async (estadoFinal: string) => {
@@ -316,6 +365,7 @@ export default function NuevoPost() {
       formData.append("contenido", contenido);
       formData.append("extracto", extracto.trim());
       formData.append("estado",   estadoFinal);
+      formData.append("etiquetas", JSON.stringify([...etiquetasSel]));
       if (idCategoria)             formData.append("id_categoria",    idCategoria);
       if (metaDescription.trim())  formData.append("meta_description", metaDescription.trim());
       if (imagenFile)              formData.append("imagen", imagenFile);
@@ -433,6 +483,57 @@ export default function NuevoPost() {
         <span className="np-label">Contenido * <span style={{ textTransform:"none", fontWeight:400, letterSpacing:0 }}>— mín. 50 caracteres</span></span>
         <RichEditor value={contenido} onChange={handleContenidoChange} />
         {errors.contenido && <span className="np-error" style={{ marginTop: 8 }}>{errors.contenido}</span>}
+      </div>
+
+      {/* Etiquetas */}
+      <div className="np-card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+          <span className="np-label" style={{ margin: 0 }}>
+            Etiquetas <span style={{ textTransform: "none", fontWeight: 400, letterSpacing: 0 }}>— hasta 5 ({etiquetasSel.size}/5)</span>
+          </span>
+          <button
+            type="button"
+            onClick={sugerirEtiquetasIA}
+            disabled={sugiriendo}
+            title="Sugiere etiquetas a partir del contenido del post"
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 15px", borderRadius: 100,
+              border: `1.5px solid ${C.orange}`, background: `${C.orange}0D`,
+              color: C.orange, fontFamily: SANS, fontSize: 11, fontWeight: 700,
+              letterSpacing: ".08em", textTransform: "uppercase",
+              cursor: sugiriendo ? "default" : "pointer", opacity: sugiriendo ? 0.6 : 1,
+              transition: "all .2s",
+            }}
+          >
+            <Sparkles size={13} /> {sugiriendo ? "Sugiriendo…" : "Sugerir"}
+          </button>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {etiquetasDisp.length === 0 && (
+            <span style={{ fontSize: 12.5, color: C.muted }}>No hay etiquetas disponibles</span>
+          )}
+          {etiquetasDisp.map(et => {
+            const activa = etiquetasSel.has(et.id_blog_etiqueta);
+            return (
+              <button
+                key={et.id_blog_etiqueta}
+                type="button"
+                onClick={() => toggleEtiqueta(et.id_blog_etiqueta)}
+                style={{
+                  padding: "7px 14px", borderRadius: 100, cursor: "pointer",
+                  border: `1.5px solid ${activa ? C.orange : C.border}`,
+                  background: activa ? C.orange : C.card,
+                  color: activa ? "#fff" : C.sub,
+                  fontFamily: SANS, fontSize: 12.5, fontWeight: activa ? 700 : 500,
+                  transition: "all .15s",
+                }}
+              >
+                {et.nombre}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Imagen de portada */}
