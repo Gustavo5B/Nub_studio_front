@@ -39,6 +39,17 @@ interface ItemCarrito {
   stock_disponible: number;
 }
 
+interface ObraRecomendada {
+  id_obra: number;
+  titulo: string;
+  slug: string;
+  imagen_principal: string;
+  precio_efectivo: string;
+  categoria: string;
+  artista_alias: string;
+  score: number;
+}
+
 function StockBadge({ stock, cantidad }: { stock: number; cantidad: number }) {
   const libre = Math.max(0, stock - cantidad);
   if (stock <= 0) {
@@ -100,6 +111,21 @@ export default function Carrito() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchCarrito(); }, [fetchCarrito]);
+
+  // ── Recomendaciones "Completa tu colección" (modelo SVD del ml_service) ──
+  const [recomendadas, setRecomendadas] = useState<ObraRecomendada[]>([]);
+  // Se recargan cuando cambian las obras del carrito (agregar/quitar)
+  const idsCarritoKey = useMemo(
+    () => items.map(i => i.id_obra).sort((a, b) => a - b).join(","),
+    [items]
+  );
+  useEffect(() => {
+    if (loading) return;
+    fetch(`${API_URL}/api/carrito/recomendaciones`, { headers })
+      .then(res => res.json())
+      .then(data => setRecomendadas(data.success ? data.data : []))
+      .catch(() => setRecomendadas([])); // si el servicio de ML no está, la sección no aparece
+  }, [loading, idsCarritoKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const actualizarCantidad = (id_carrito: number, nuevaCantidad: number) => {
     if (nuevaCantidad < 1) return;
@@ -296,6 +322,19 @@ export default function Carrito() {
           0%, 100% { opacity: 1; }
           50% { opacity: .4; }
         }
+
+        .rec-card {
+          background: ${C.card}; border: 1px solid ${C.border}; border-radius: 14px;
+          overflow: hidden; cursor: pointer; text-align: left; padding: 0;
+          transition: box-shadow .25s ease, transform .2s ease, border-color .2s ease;
+          animation: fadeSlideIn .28s ease both;
+        }
+        .rec-card:hover {
+          box-shadow: 0 8px 26px rgba(20,18,30,.10);
+          transform: translateY(-3px);
+          border-color: ${C.orange};
+        }
+        .rec-card:hover .img-thumb { transform: scale(1.05); }
       `}</style>
 
 
@@ -761,7 +800,68 @@ export default function Carrito() {
             </button>
           </div>
         )}
+
       </main>
+
+      {/* ── Completa tu colección (recomendaciones del modelo) ──
+          Fuera del grid del carrito: el panel resumen es sticky y se encimaría
+          sobre las tarjetas si la sección viviera dentro del mismo grid. */}
+      {recomendadas.length > 0 && (
+        <section style={{ maxWidth: 1020, margin: "0 auto", padding: "4px 24px 48px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4 }}>
+              <h2 style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 22, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
+                {items.length > 0 ? "Completa tu colección" : "Obras para ti"}
+              </h2>
+              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.orange }}>
+                ✦ Seleccionadas para ti
+              </span>
+            </div>
+            <p style={{ fontSize: 12.5, color: C.sub, margin: "0 0 16px", fontWeight: 500 }}>
+              Según tu carrito y las obras que te han gustado
+            </p>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(158px, 1fr))",
+              gap: 14,
+            }}>
+              {recomendadas.map(obra => (
+                <button
+                  key={obra.id_obra}
+                  className="rec-card"
+                  onClick={() => navigate(`/obras/${obra.slug}`)}
+                  title={obra.titulo}
+                >
+                  <div style={{ aspectRatio: "1 / 1", overflow: "hidden", background: "#F2F0F8" }}>
+                    <img
+                      src={obra.imagen_principal}
+                      alt={obra.titulo}
+                      className="img-thumb"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      loading="lazy"
+                    />
+                  </div>
+                  <div style={{ padding: "10px 12px 12px" }}>
+                    <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: C.sub, marginBottom: 3 }}>
+                      {obra.categoria}
+                    </div>
+                    <div style={{
+                      fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.ink,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {obra.titulo}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.subLight, fontWeight: 500, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {obra.artista_alias}
+                    </div>
+                    <div style={{ fontFamily: NEXA, fontSize: 13.5, color: C.ink, marginTop: 6 }}>
+                      {fmt(Number(obra.precio_efectivo))}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+        </section>
+      )}
     </div>
   );
 }
