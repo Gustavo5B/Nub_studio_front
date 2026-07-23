@@ -599,6 +599,10 @@ export default function Artistas() {
         [data-rv][data-d="5"]{transition-delay:.38s}
 
         input::placeholder { color: ${C.sub}; }
+        @media (max-width: 768px) {
+          .art-stats-section { padding: 40px 24px !important; }
+          .art-stats-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+        }
       `}</style>
 
       {/* ═══ MENÚ NAVEGACIÓN ═══ */}
@@ -747,8 +751,8 @@ export default function Artistas() {
       </section>
 
       {/* ═══ STATS ═══ */}
-      <section style={{ padding: "50px 72px 70px", borderTop: "1px solid rgba(0,0,0,.05)", borderBottom: "1px solid rgba(0,0,0,.05)", position: "relative" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 40 }}>
+      <section className="art-stats-section" style={{ padding: "50px 72px 70px", borderTop: "1px solid rgba(0,0,0,.05)", borderBottom: "1px solid rgba(0,0,0,.05)", position: "relative" }}>
+        <div className="art-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 40 }}>
           {[
             { val: artistas.length.toString(), label: "Artistas activos" },
             { val: totalObras.toString(), label: "Obras creadas" },

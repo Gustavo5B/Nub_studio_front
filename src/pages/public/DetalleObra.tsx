@@ -368,6 +368,17 @@ export default function DetalleObra() {
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
         @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+        @media (max-width: 768px) {
+          .ob-hero { grid-template-columns: 1fr !important; height: auto !important; }
+          .ob-hero-img { height: 55vw !important; min-height: 260px; }
+          .ob-hero-panel { height: auto !important; padding: 28px 20px 32px !important; overflow-y: visible !important; }
+          .ob-detail-grid { grid-template-columns: 1fr !important; padding: 28px 20px !important; gap: 32px !important; }
+          .ob-related-section { padding: 40px 20px !important; }
+          .ob-related-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .ob-banner { white-space: normal !important; flex-wrap: wrap !important; gap: 10px !important; border-radius: 16px !important; padding: 10px 14px !important; bottom: 16px !important; width: calc(100% - 32px) !important; left: 16px !important; transform: none !important; box-sizing: border-box !important; }
+          .ob-banner-text { display: none !important; }
+          .ob-auth-row a, .ob-auth-row button { font-size: 8px !important; padding: 5px 10px !important; }
+        }
       `}</style>
 
       {/* Grain + cursor */}
@@ -377,7 +388,7 @@ export default function DetalleObra() {
 
       {/* ── BANNER PREVISUALIZACIÓN (solo para artistas) ── */}
       {userRol === "artista" && (
-        <div style={{ position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)", zIndex:99996, display:"flex", alignItems:"center", gap:14, padding:"12px 20px 12px 16px", borderRadius:100, background:"rgba(20,18,30,.92)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,.12)", boxShadow:"0 8px 32px rgba(0,0,0,.35)", whiteSpace:"nowrap" }}>
+        <div className="ob-banner" style={{ position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)", zIndex:99996, display:"flex", alignItems:"center", gap:14, padding:"12px 20px 12px 16px", borderRadius:100, background:"rgba(20,18,30,.92)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,.12)", boxShadow:"0 8px 32px rgba(0,0,0,.35)", whiteSpace:"nowrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ width:7, height:7, borderRadius:"50%", background:"#E8640C", flexShrink:0, boxShadow:"0 0 6px #E8640C" }}/>
             <span style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.6)", fontFamily:"'Nexa-Heavy',sans-serif", letterSpacing:".12em", textTransform:"uppercase" }}>
@@ -385,7 +396,7 @@ export default function DetalleObra() {
             </span>
           </div>
           <div style={{ width:1, height:16, background:"rgba(255,255,255,.15)", flexShrink:0 }}/>
-          <span style={{ fontSize:12, color:"rgba(255,255,255,.5)", fontFamily:"'Outfit',sans-serif" }}>
+          <span className="ob-banner-text" style={{ fontSize:12, color:"rgba(255,255,255,.5)", fontFamily:"'Outfit',sans-serif" }}>
             Así ve el cliente tu obra
           </span>
           <button
@@ -407,10 +418,11 @@ export default function DetalleObra() {
         {/* ════════════════════════════════════
              HERO SPLIT — imagen izq | detalles der
         ════════════════════════════════════ */}
-        <section style={{ display:"grid", gridTemplateColumns:"55fr 45fr", height:"100vh", minHeight:600 }}>
+        <section className="ob-hero" style={{ display:"grid", gridTemplateColumns:"55fr 45fr", height:"100vh", minHeight:600 }}>
 
           {/* ── PANEL IZQUIERDO: imagen ── */}
           <div
+            className="ob-hero-img"
             style={{ position:"relative", overflow:"hidden", background:"#0a0910", cursor:"zoom-in" }}
             onClick={() => setZoomed(true)}
             onMouseEnter={() => { cursorOn(); dotRef.current?.classList.add("cur-light"); ringRef.current?.classList.add("cur-light"); }}
@@ -468,10 +480,10 @@ export default function DetalleObra() {
           </div>
 
           {/* ── PANEL DERECHO: detalles ── */}
-          <div style={{ background:"#fff", overflowY:"auto", overflowX:"hidden", padding:"40px 48px 48px", display:"flex", flexDirection:"column", gap:24, borderLeft:`3px solid ${color}` }}>
+          <div className="ob-hero-panel" style={{ background:"#fff", overflowY:"auto", overflowX:"hidden", padding:"40px 48px 48px", display:"flex", flexDirection:"column", gap:24, borderLeft:`3px solid ${color}` }}>
 
             {/* Auth */}
-            <div style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:10 }}>
+            <div className="ob-auth-row" style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:10 }}>
               {!isLoggedIn ? (
                 <>
                   <Link to="/login" style={{ fontSize:"9px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(0,0,0,.3)", textDecoration:"none", padding:"5px 13px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", transition:"all .22s", fontFamily:"'Nexa-Heavy',sans-serif" }}>Ingresar</Link>
@@ -766,7 +778,7 @@ export default function DetalleObra() {
         <section style={{ background:"#fff", borderTop:`3px solid ${color}`, position:"relative", overflow:"hidden" }}>
           <div style={{ position:"absolute", left:-4, top:"50%", transform:"translateY(-50%)", fontFamily:SERIF, fontSize:200, fontWeight:900, fontStyle:"italic", color:`${color}05`, lineHeight:1, userSelect:"none", pointerEvents:"none" }}>II</div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1.5fr 1fr", padding:"72px", gap:72 }}>
+          <div className="ob-detail-grid" style={{ display:"grid", gridTemplateColumns:"1.5fr 1fr", padding:"72px", gap:72 }}>
             {/* Izquierda */}
             <div>
               {obra.descripcion && (
@@ -882,13 +894,13 @@ export default function DetalleObra() {
              RELACIONADAS
         ════════════════════════════════════ */}
         {obra.obras_relacionadas && obra.obras_relacionadas.length > 0 && (
-          <section style={{ background:"#fff", padding:"72px", borderTop:`1px solid rgba(0,0,0,.06)` }}>
+          <section className="ob-related-section" style={{ background:"#fff", padding:"72px", borderTop:`1px solid rgba(0,0,0,.06)` }}>
             <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48 }}>
               <div style={{ height:1, flex:1, background:"rgba(0,0,0,.06)" }}/>
               <div style={{ fontSize:11, fontWeight:800, letterSpacing:".22em", textTransform:"uppercase", color:"rgba(0,0,0,.5)", whiteSpace:"nowrap", fontFamily:NEXA_HEAVY }}>Puede interesarte · Obras relacionadas</div>
               <div style={{ height:1, flex:1, background:"rgba(0,0,0,.06)" }}/>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
+            <div className="ob-related-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
               {obra.obras_relacionadas.map((rel: any) => (
                 <div key={rel.id_obra}
                   onClick={() => { navigate(`/obras/${rel.id_obra}`); globalThis.scrollTo(0,0); }}

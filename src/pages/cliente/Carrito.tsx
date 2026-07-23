@@ -39,17 +39,6 @@ interface ItemCarrito {
   stock_disponible: number;
 }
 
-interface ObraRecomendada {
-  id_obra: number;
-  titulo: string;
-  slug: string;
-  imagen_principal: string;
-  precio_efectivo: string;
-  categoria: string;
-  artista_alias: string;
-  score: number;
-}
-
 function StockBadge({ stock, cantidad }: { stock: number; cantidad: number }) {
   const libre = Math.max(0, stock - cantidad);
   if (stock <= 0) {
@@ -111,21 +100,6 @@ export default function Carrito() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchCarrito(); }, [fetchCarrito]);
-
-  // ── Recomendaciones "Completa tu colección" (modelo SVD del ml_service) ──
-  const [recomendadas, setRecomendadas] = useState<ObraRecomendada[]>([]);
-  // Se recargan cuando cambian las obras del carrito (agregar/quitar)
-  const idsCarritoKey = useMemo(
-    () => items.map(i => i.id_obra).sort((a, b) => a - b).join(","),
-    [items]
-  );
-  useEffect(() => {
-    if (loading) return;
-    fetch(`${API_URL}/api/carrito/recomendaciones`, { headers })
-      .then(res => res.json())
-      .then(data => setRecomendadas(data.success ? data.data : []))
-      .catch(() => setRecomendadas([])); // si el servicio de ML no está, la sección no aparece
-  }, [loading, idsCarritoKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const actualizarCantidad = (id_carrito: number, nuevaCantidad: number) => {
     if (nuevaCantidad < 1) return;
@@ -323,22 +297,22 @@ export default function Carrito() {
           50% { opacity: .4; }
         }
 
-        .rec-card {
-          background: ${C.card}; border: 1px solid ${C.border}; border-radius: 14px;
-          overflow: hidden; cursor: pointer; text-align: left; padding: 0;
-          transition: box-shadow .25s ease, transform .2s ease, border-color .2s ease;
-          animation: fadeSlideIn .28s ease both;
+        @media (max-width: 768px) {
+          .car-main { grid-template-columns: 1fr !important; padding: 14px 12px 40px !important; }
+          .car-col-header { display: none !important; }
+          .car-item { flex-wrap: wrap !important; padding: 12px 12px !important; gap: 10px !important; }
+          .car-item-price { display: none !important; }
+          .car-item-qty { min-width: 90px !important; order: 3; }
+          .car-item-total { min-width: 72px !important; order: 3; }
+          .car-item-del { order: 3; margin-left: auto !important; }
+          .car-item-info { flex: 1 1 0 !important; }
+          .car-sidebar { position: static !important; }
+          .car-related-grid { grid-template-columns: repeat(2,1fr) !important; }
         }
-        .rec-card:hover {
-          box-shadow: 0 8px 26px rgba(20,18,30,.10);
-          transform: translateY(-3px);
-          border-color: ${C.orange};
-        }
-        .rec-card:hover .img-thumb { transform: scale(1.05); }
       `}</style>
 
 
-      <main style={{
+      <main className="car-main" style={{
         maxWidth: 1020,
         margin: "0 auto",
         padding: "36px 24px",
@@ -471,7 +445,7 @@ export default function Carrito() {
               overflow: "hidden",
             }}>
               {/* ── Column headers ── */}
-              <div style={{
+              <div className="car-col-header" style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "0 20px", height: 40,
                 borderBottom: `1px solid ${C.border}`,
@@ -551,7 +525,7 @@ export default function Carrito() {
                     </div>
 
                     {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="car-item-info" style={{ flex: 1, minWidth: 0 }}>
                       <div
                         onClick={() => navigate(`/obras/${item.slug}`)}
                         style={{
@@ -569,14 +543,14 @@ export default function Carrito() {
                     </div>
 
                     {/* Precio */}
-                    <div style={{ textAlign: "center", flexShrink: 0, minWidth: 86 }}>
+                    <div className="car-item-price" style={{ textAlign: "center", flexShrink: 0, minWidth: 86 }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontFamily: NEXA }}>
                         {fmt(Number(item.precio_base))}
                       </div>
                     </div>
 
                     {/* Cantidad */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, minWidth: 110, justifyContent: "center" }}>
+                    <div className="car-item-qty" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, minWidth: 110, justifyContent: "center" }}>
                       <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1} aria-label="Reducir">
                         <Minus size={11} strokeWidth={2.5} />
                       </button>
@@ -589,7 +563,7 @@ export default function Carrito() {
                     </div>
 
                     {/* Total */}
-                    <div style={{ minWidth: 88, textAlign: "right", flexShrink: 0 }}>
+                    <div className="car-item-total" style={{ minWidth: 88, textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>
                         {fmt(Number(item.precio_base) * item.cantidad)}
                       </div>
@@ -597,7 +571,7 @@ export default function Carrito() {
 
                     {/* Eliminar */}
                     <button
-                      className="car-del-btn"
+                      className="car-del-btn car-item-del"
                       onClick={() => eliminar(item.id_carrito)}
                       disabled={deletingId === item.id_carrito}
                       aria-label="Eliminar"
@@ -613,7 +587,7 @@ export default function Carrito() {
 
         {/* ── Panel resumen ── */}
         {items.length > 0 && (
-          <div style={{ position: "sticky", top: 80 }}>
+          <div className="car-sidebar" style={{ position: "sticky", top: 80 }}>
             {/* Resumen card */}
             <div style={{
               background: C.card, borderRadius: 20, overflow: "hidden",
@@ -800,66 +774,65 @@ export default function Carrito() {
             </button>
           </div>
         )}
-
       </main>
 
-      {/* ── Completa tu colección (recomendaciones del modelo) ──
-          Fuera del grid del carrito: el panel resumen es sticky y se encimaría
-          sobre las tarjetas si la sección viviera dentro del mismo grid. */}
-      {recomendadas.length > 0 && (
-        <section style={{ maxWidth: 1020, margin: "0 auto", padding: "4px 24px 48px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4 }}>
-              <h2 style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 22, fontWeight: 900, color: C.ink, margin: 0, letterSpacing: "-.02em" }}>
-                {items.length > 0 ? "Completa tu colección" : "Obras para ti"}
-              </h2>
-              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.orange }}>
-                ✦ Seleccionadas para ti
+      {/* ── También te puede interesar ── */}
+      {!loading && items.length > 0 && (
+        <section style={{ maxWidth: 1020, margin: "0 auto 56px", padding: "0 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", color: C.orange }}>
+                IA · Recomendado
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: SERIF, fontStyle: "italic" }}>
+                También te puede interesar
               </span>
             </div>
-            <p style={{ fontSize: 12.5, color: C.sub, margin: "0 0 16px", fontWeight: 500 }}>
-              Según tu carrito y las obras que te han gustado
-            </p>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(158px, 1fr))",
-              gap: 14,
-            }}>
-              {recomendadas.map(obra => (
-                <button
-                  key={obra.id_obra}
-                  className="rec-card"
-                  onClick={() => navigate(`/obras/${obra.slug}`)}
-                  title={obra.titulo}
-                >
-                  <div style={{ aspectRatio: "1 / 1", overflow: "hidden", background: "#F2F0F8" }}>
-                    <img
-                      src={obra.imagen_principal}
-                      alt={obra.titulo}
-                      className="img-thumb"
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      loading="lazy"
-                    />
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+          </div>
+
+          <div className="car-related-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+            {[
+              { titulo: "Río Moctezuma", artista: "Lucía Hernández", tecnica: "Acuarela", precio: 2800, img: "https://picsum.photos/seed/rio/400/300" },
+              { titulo: "Sierra Huasteca", artista: "Marco Reyes", tecnica: "Óleo sobre lienzo", precio: 4100, img: "https://picsum.photos/seed/sierra/400/300" },
+              { titulo: "Xochitl", artista: "Ana Pérez", tecnica: "Ilustración digital", precio: 3200, img: "https://picsum.photos/seed/xochitl/400/300" },
+              { titulo: "Códice Huasteco", artista: "Ernesto Silva", tecnica: "Técnica mixta", precio: 5500, img: "https://picsum.photos/seed/codice/400/300" },
+            ].map((obra, i) => (
+              <div
+                key={i}
+                style={{
+                  background: C.card, borderRadius: 16, overflow: "hidden",
+                  boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)",
+                  cursor: "pointer", transition: "transform .22s ease, box-shadow .22s ease",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 28px rgba(20,18,30,.10), 0 0 0 1px rgba(20,18,30,.055)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)"; }}
+              >
+                <div style={{ height: 140, overflow: "hidden" }}>
+                  <img src={obra.img} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+                <div style={{ padding: "12px 14px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 2 }}>{obra.titulo}</div>
+                  <div style={{ fontSize: 11, color: C.sub, marginBottom: 2 }}>{obra.artista}</div>
+                  <div style={{ fontSize: 10.5, color: C.subLight, marginBottom: 10 }}>{obra.tecnica}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: C.orange, fontFamily: NEXA }}>{fmt(obra.precio)}</span>
+                    <button
+                      style={{
+                        background: C.orange, color: "#fff", border: "none",
+                        borderRadius: 100, padding: "5px 12px",
+                        fontSize: 9.5, fontWeight: 700, letterSpacing: ".14em",
+                        textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
+                      }}
+                    >
+                      Agregar
+                    </button>
                   </div>
-                  <div style={{ padding: "10px 12px 12px" }}>
-                    <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: C.sub, marginBottom: 3 }}>
-                      {obra.categoria}
-                    </div>
-                    <div style={{
-                      fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.ink,
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    }}>
-                      {obra.titulo}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: C.subLight, fontWeight: 500, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {obra.artista_alias}
-                    </div>
-                    <div style={{ fontFamily: NEXA, fontSize: 13.5, color: C.ink, marginTop: 6 }}>
-                      {fmt(Number(obra.precio_efectivo))}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
     </div>

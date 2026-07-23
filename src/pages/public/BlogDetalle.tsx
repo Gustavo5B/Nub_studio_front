@@ -325,6 +325,13 @@ export default function BlogDetalle() {
         .rel-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.10); }
         .rel-card:hover h3 { color: ${C.orange}; }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+        @media (max-width: 768px) {
+          .side-nav { display: none !important; }
+          .bd-hero-auth { display: none !important; }
+          .bd-article { padding: 72px 20px 60px !important; }
+          .bd-loading { padding: 80px 20px 60px !important; }
+        }
       `}</style>
 
       <div className="home-grain" />
@@ -340,7 +347,7 @@ export default function BlogDetalle() {
         <Link to="/contacto" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
       </nav>
 
-      <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, zIndex: 11 }}>
+      <div className="bd-hero-auth" style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, zIndex: 11 }}>
         {!isLoggedIn ? (
           <>
             <Link to="/login" style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none" }}>Ingresar</Link>
@@ -359,7 +366,7 @@ export default function BlogDetalle() {
       </a>
 
       {loadingPost ? (
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "140px 24px 80px" }}>
+        <div className="bd-loading" style={{ maxWidth: 760, margin: "0 auto", padding: "140px 24px 80px" }}>
           <div className="skeleton" style={{ height: 32, width: 160, marginBottom: 40 }} />
           <div className="skeleton" style={{ height: 56, marginBottom: 16 }} />
           <div className="skeleton" style={{ height: 56, width: "70%", marginBottom: 40 }} />
@@ -367,7 +374,7 @@ export default function BlogDetalle() {
           {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 20, marginBottom: 14 }} />)}
         </div>
       ) : post ? (
-        <article style={{ maxWidth: 760, margin: "0 auto", padding: "140px 24px 80px" }}>
+        <article className="bd-article" style={{ maxWidth: 760, margin: "0 auto", padding: "140px 24px 80px" }}>
           <div className="fade-up" style={{ marginBottom: 32 }}>
             <Link to="/blog" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", transition: "color 0.2s" }}>
               <ArrowLeft size={14} /> Blog

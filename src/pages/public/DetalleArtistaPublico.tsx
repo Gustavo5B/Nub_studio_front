@@ -258,6 +258,22 @@ export default function DetalleArtistaPublico() {
             55%  { opacity:1; transform:translateX(-7px); }
             100% { opacity:1; transform:translateX(0); }
           }
+
+          @media (max-width: 768px) {
+            .det-hero-nav, .det-hero-auth { display: none !important; }
+            .det-hero-bottom { padding: 0 20px 36px !important; flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+            .det-hero-bottom-right { display: none !important; }
+            .det-bio-grid { grid-template-columns: 1fr !important; }
+            .det-bio-left { padding: 40px 20px 32px !important; border-right: none !important; border-bottom: 1px solid rgba(0,0,0,.07) !important; }
+            .det-bio-right { padding: 28px 20px 32px !important; }
+            .det-stats-bar { padding: 14px 20px !important; gap: 20px !important; flex-wrap: wrap !important; justify-content: flex-start !important; }
+            .det-fotos-header { padding: 0 20px !important; }
+            .det-colecciones-section { padding: 52px 20px 56px !important; }
+            .det-obras-header { padding: 0 20px !important; }
+            .det-obras-scroll { padding: 24px 20px 40px !important; }
+            .det-rec-section { padding: 52px 20px 56px !important; }
+            .det-footer { padding: 16px 20px !important; }
+          }
         `}</style>
 
         <div className="det-grain"/>
@@ -286,13 +302,13 @@ export default function DetalleArtistaPublico() {
 
           <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg, transparent, ${color} 25%, ${color} 75%, transparent)`, animation:"barIn 1.8s cubic-bezier(.16,1,.3,1) both", zIndex:10 }}/>
 
-          <nav style={{ position:"absolute", top:30, left:52, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
+          <nav className="det-hero-nav" style={{ position:"absolute", top:30, left:52, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
             {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
               <Link key={l} to={to} className="det-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>{l}</Link>
             ))}
           </nav>
 
-          <div style={{ position:"absolute", top:30, right:52, display:"flex", alignItems:"center", gap:12, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
+          <div className="det-hero-auth" style={{ position:"absolute", top:30, right:52, display:"flex", alignItems:"center", gap:12, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
             {!isLoggedIn ? (
               <>
                 <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff}
@@ -310,7 +326,7 @@ export default function DetalleArtistaPublico() {
             )}
           </div>
 
-          <div style={{
+          <div className="det-hero-bottom" style={{
             position:"absolute", bottom:0, left:0, right:0,
             padding:"0 72px 60px",
             display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:40,
@@ -342,7 +358,7 @@ export default function DetalleArtistaPublico() {
               )}
             </div>
 
-            <div style={{ display:"flex", alignItems:"flex-end", gap:20, flexShrink:0, animation:"slideRightIn .85s cubic-bezier(.16,1,.3,1) .65s both" }}>
+            <div className="det-hero-bottom-right" style={{ display:"flex", alignItems:"flex-end", gap:20, flexShrink:0, animation:"slideRightIn .85s cubic-bezier(.16,1,.3,1) .65s both" }}>
               <div style={{ textAlign:"right" }}>
                 <div style={{ fontSize:"clamp(28px,4vw,44px)", fontWeight:900, color:"white", fontFamily:NEXA_HEAVY, lineHeight:1 }}>
                   {publicadas.length}
@@ -375,10 +391,10 @@ export default function DetalleArtistaPublico() {
           <div style={{ position:"absolute", top:0, right:0, width:"40%", height:"100%", background:`linear-gradient(135deg, ${color}08 0%, transparent 65%)`, pointerEvents:"none" }}/>
           <div style={{ position:"absolute", left:-4, top:"50%", transform:"translateY(-50%)", fontFamily:SERIF, fontSize:240, fontWeight:900, fontStyle:"italic", color:`${color}07`, lineHeight:1, userSelect:"none", pointerEvents:"none" }}>I</div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1.8fr 1fr" }}>
+          <div className="det-bio-grid" style={{ display:"grid", gridTemplateColumns:"1.8fr 1fr" }}>
             
             {/* COLUMNA IZQUIERDA */}
-            <div style={{ padding:"64px 72px 56px", borderRight:"1px solid rgba(0,0,0,.05)" }}>
+            <div className="det-bio-left" style={{ padding:"64px 72px 56px", borderRight:"1px solid rgba(0,0,0,.05)" }}>
               <div style={{ fontSize:8, fontWeight:800, letterSpacing:".3em", textTransform:"uppercase", color:color, marginBottom:22, fontFamily:NEXA_HEAVY }}>
                 I · Sobre el artista
               </div>
@@ -448,11 +464,11 @@ export default function DetalleArtistaPublico() {
             </div>
 
             {/* COLUMNA DERECHA */}
-            <div style={{
+            <div className="det-bio-right" style={{
               padding:"64px 44px 56px",
-              display:"flex", 
-              flexDirection:"column", 
-              gap:28, 
+              display:"flex",
+              flexDirection:"column",
+              gap:28,
               justifyContent:"center",
               background:`linear-gradient(135deg, ${color}04 0%, transparent 100%)`
             }}>
@@ -537,7 +553,7 @@ export default function DetalleArtistaPublico() {
           </div>
 
           {/* STATS BAR */}
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:48, padding:"20px 72px", background:"rgba(0,0,0,.025)", borderTop:"1px solid rgba(0,0,0,.04)" }}>
+          <div className="det-stats-bar" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:48, padding:"20px 72px", background:"rgba(0,0,0,.025)", borderTop:"1px solid rgba(0,0,0,.04)" }}>
             <button onClick={() => document.getElementById("sec-obras")?.scrollIntoView({ behavior:"smooth" })} onMouseEnter={e => { cursorOn(); (e.currentTarget.querySelector(".stat-num") as HTMLElement).style.color = C.orange; }} onMouseLeave={e => { cursorOff(); (e.currentTarget.querySelector(".stat-num") as HTMLElement).style.color = color; }}
               style={{ display:"flex", alignItems:"baseline", gap:8, background:"none", border:"none", cursor:"pointer", padding:0 }}>
               <span className="stat-num" style={{ fontFamily:NEXA_HEAVY, fontSize:28, fontWeight:900, color:color, lineHeight:1, transition:"color .2s" }}>{publicadas.length}</span>
@@ -566,7 +582,7 @@ export default function DetalleArtistaPublico() {
              II · FOTOS PERSONALES
         ══════════════════════════════════════ */}
         <section id="sec-fotos" style={{ padding:"80px 0 90px", background:"#fafaf9", borderTop:"1px solid rgba(0,0,0,.04)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom: fotosPersonales.length > 0 ? 48 : 0, padding:"0 72px" }}>
+          <div className="det-fotos-header" style={{ display:"flex", alignItems:"center", gap:14, marginBottom: fotosPersonales.length > 0 ? 48 : 0, padding:"0 72px" }}>
             <div style={{ height:1, flex:1, background:"rgba(0,0,0,.05)" }}/>
             <button
               onClick={() => fotosPersonales.length > 0 && setAccordionOpen(o => !o)}
@@ -610,7 +626,7 @@ export default function DetalleArtistaPublico() {
              III · COLECCIONES
         ══════════════════════════════════════ */}
         {colecciones.length > 0 && (
-          <section id="sec-colecciones" style={{ padding:"80px 72px 90px", borderTop:"1px solid rgba(0,0,0,.04)" }}>
+          <section id="sec-colecciones" className="det-colecciones-section" style={{ padding:"80px 72px 90px", borderTop:"1px solid rgba(0,0,0,.04)" }}>
             <div className="det-section-label"><span>III · Colecciones</span></div>
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:12 }}>
@@ -647,7 +663,7 @@ export default function DetalleArtistaPublico() {
         ══════════════════════════════════════ */}
         {publicadas.length > 0 && (
           <section id="sec-obras" style={{ padding:"80px 0 0", background:"#fafaf9", borderTop:"1px solid rgba(0,0,0,.04)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:32, padding:"0 72px" }}>
+            <div className="det-obras-header" style={{ display:"flex", alignItems:"center", gap:14, marginBottom:32, padding:"0 72px" }}>
               <div style={{ height:1, flex:1, background:"rgba(0,0,0,.05)" }}/>
               <div style={{ fontSize:13, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:C.ink, whiteSpace:"nowrap", fontFamily:NEXA_HEAVY }}>
                 {colecciones.length > 0 ? "IV" : "III"} · Obras de arte
@@ -659,7 +675,7 @@ export default function DetalleArtistaPublico() {
               </Link>
             </div>
 
-            <div style={{ display:"flex", gap:10, overflowX:"auto", padding:"40px 72px 60px", scrollSnapType:"x mandatory", scrollbarWidth:"thin", alignItems:"center" }}>
+            <div className="det-obras-scroll" style={{ display:"flex", gap:10, overflowX:"auto", padding:"40px 72px 60px", scrollSnapType:"x mandatory", scrollbarWidth:"thin", alignItems:"center" }}>
               {publicadas.map((obra: any) => (
                 <div key={obra.id_obra} className="det-obra-card"
                   style={{ flexShrink:0, width:220, height:280, scrollSnapAlign:"start", position:"relative" }}
@@ -690,7 +706,7 @@ export default function DetalleArtistaPublico() {
              ARTISTAS RECOMENDADOS
         ══════════════════════════════════════ */}
         {recomendados.length > 0 && (
-          <section style={{ padding:"80px 72px 90px", borderTop:"1px solid rgba(0,0,0,.04)" }}>
+          <section className="det-rec-section" style={{ padding:"80px 72px 90px", borderTop:"1px solid rgba(0,0,0,.04)" }}>
             <div className="det-section-label"><span>Descubre más · Otros artistas</span></div>
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))", gap:10 }}>
@@ -725,7 +741,7 @@ export default function DetalleArtistaPublico() {
         )}
 
         {/* Footer */}
-        <div style={{ padding:"22px 72px", borderTop:"1px solid rgba(0,0,0,.05)", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+        <div className="det-footer" style={{ padding:"22px 72px", borderTop:"1px solid rgba(0,0,0,.05)", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
           <div style={{ fontSize:11, fontWeight:900, color:"rgba(0,0,0,.14)", fontFamily:NEXA_HEAVY, letterSpacing:".1em" }}>NU★B STUDIO</div>
           <button onClick={() => navigate("/artistas")}
             onMouseEnter={e => { cursorOn(); (e.currentTarget as HTMLElement).style.color = C.orange; }}

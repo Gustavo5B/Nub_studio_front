@@ -445,6 +445,28 @@ export default function Home() {
           .home-cursor-dot, .home-cursor-ring { display: none !important; }
           body { cursor: auto !important; }
         }
+
+        /* ─── RESPONSIVE MÓVIL ─── */
+        @media (max-width: 768px) {
+          .scroll-horizontal { padding: 20px 16px 36px !important; gap: 28px !important; }
+          .home-manifiesto { padding: 44px 20px 52px !important; flex-wrap: wrap !important; gap: 20px !important; }
+          .home-section-pad { padding: 0 20px !important; }
+          .home-expo { grid-template-columns: 1fr !important; min-height: auto !important; }
+          .home-expo-left { padding: 48px 20px 36px !important; }
+          .home-expo-right { display: none !important; }
+          .home-cats-section { padding: 0 20px 72px !important; }
+          .home-cats-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; padding: 52px 0 36px !important; }
+          .home-artistas-header { padding: 0 20px !important; flex-wrap: wrap !important; gap: 8px !important; }
+          .home-stats { padding: 52px 20px !important; }
+          .home-stats-grid { grid-template-columns: 1fr 1fr !important; }
+          .home-cta { padding: 56px 20px !important; flex-direction: column !important; gap: 40px !important; }
+          .home-cta-art { display: none !important; }
+          .home-footer { padding: 40px 20px 32px !important; }
+          .home-footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+          .home-footer-bottom { flex-direction: column !important; gap: 8px !important; text-align: center !important; }
+          /* Hero: ocultar nav/auth en móvil — el Navbar de PublicLayout ya los tiene */
+          .home-hero-nav, .home-hero-auth { display: none !important; }
+        }
       `}</style>
 
       <div className="home-grain" />
@@ -469,7 +491,7 @@ export default function Home() {
 
         <div style={{ position: "absolute", bottom: 70, left: "50%", transform: "translateX(-50%)", fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(60px,8vw,110px)", fontWeight: 900, color: "rgba(0,0,0,.020)", whiteSpace: "nowrap", letterSpacing: "-.02em", userSelect: "none", pointerEvents: "none", animation: "fadeI 2s ease 2s both" }}>galería</div>
 
-        <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both" }}>
+        <nav className="home-hero-nav" style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both" }}>
           <Link to="/"               className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Inicio</Link>
           <Link to="/catalogo"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
           <Link to="/artistas"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
@@ -478,7 +500,7 @@ export default function Home() {
           <Link to="/contacto"       className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
         </nav>
 
-        <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both" }}>
+        <div className="home-hero-auth" style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both" }}>
           {!isLoggedIn ? (
             <>
               <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Ingresar</Link>
@@ -535,7 +557,7 @@ export default function Home() {
       </section>
 
       {/* ═══ MANIFIESTO ═══ */}
-      <section style={{ padding: "80px 72px 90px", borderTop: "1px solid rgba(0,0,0,.05)", display: "flex", alignItems: "center", gap: 72, position: "relative", overflow: "hidden" }}>
+      <section className="home-manifiesto" style={{ padding: "80px 72px 90px", borderTop: "1px solid rgba(0,0,0,.05)", display: "flex", alignItems: "center", gap: 72, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", left: -12, top: "50%", transform: "translateY(-50%)", fontFamily: SERIF, fontSize: 280, fontWeight: 900, fontStyle: "italic", color: "rgba(0,0,0,.025)", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>I</div>
         <div data-rv style={{ fontFamily: SERIF, fontSize: 10, fontStyle: "italic", color: "rgba(0,0,0,.18)", letterSpacing: ".04em", writingMode: "vertical-rl", transform: "rotate(180deg)", flexShrink: 0 }}>Manifiesto</div>
         <div data-rv data-d="1" style={{ fontFamily: SERIF, fontSize: "clamp(20px,2.8vw,34px)", fontStyle: "italic", fontWeight: 400, color: C.ink, lineHeight: 1.5, letterSpacing: "-.01em", maxWidth: 680 }}>
@@ -559,7 +581,7 @@ export default function Home() {
 
       {/* ═══ II · ACERVO ═══ */}
       <section style={{ padding: "100px 0 0", background: "#fafaf9", borderTop: "1px solid rgba(0,0,0,.04)" }}>
-        <div data-rv style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32, padding: "0 72px" }}>
+        <div data-rv className="home-section-pad" style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32, padding: "0 72px" }}>
           <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
           <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.16)", whiteSpace: "nowrap", fontFamily: SANS }}>II · Acervo</div>
           <div style={{ height: 1, flex: 1, background: "rgba(0,0,0,.05)" }} />
@@ -601,7 +623,7 @@ export default function Home() {
         <div style={{ position: "absolute", inset: 0, background: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E\")", backgroundSize: "200px 200px", opacity: .04, pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -20, left: 50, fontFamily: SERIF, fontSize: 280, fontWeight: 900, fontStyle: "italic", color: "rgba(255,255,255,.028)", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>II</div>
 
-        <div style={{ padding: "80px 64px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, borderRight: "1px solid rgba(255,255,255,.05)" }}>
+        <div className="home-expo-left" style={{ padding: "80px 64px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative", zIndex: 1, borderRight: "1px solid rgba(255,255,255,.05)" }}>
           <div data-rv style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 8, fontWeight: 800, letterSpacing: ".35em", textTransform: "uppercase", color: C.orange, marginBottom: 40, fontFamily: SANS }}>
             <span style={{ display: "block", width: 32, height: 1, background: C.orange }} />Ahora en sala
           </div>
@@ -625,7 +647,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 64px", zIndex: 1, overflow: "hidden" }}>
+        <div className="home-expo-right" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 64px", zIndex: 1, overflow: "hidden" }}>
           <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: "55%", height: "85%", background: "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255,248,235,.13) 0%, rgba(255,248,235,.05) 35%, transparent 70%)", pointerEvents: "none" }} />
           <div ref={expoFrameRef} className="home-expo-frame-wrap" style={{ position: "relative", zIndex: 1, willChange: "transform" }} onMouseEnter={cursorOn} onMouseLeave={cursorOff}>
             <div className="home-expo-frame">
@@ -652,8 +674,8 @@ export default function Home() {
       </section>
 
       {/* ═══ III · CATEGORÍAS ═══ */}
-      <section style={{ padding: "0 72px 120px", borderTop: "1px solid rgba(0,0,0,.05)" }}>
-        <div style={{ padding: "80px 0 60px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+      <section className="home-cats-section" style={{ padding: "0 72px 120px", borderTop: "1px solid rgba(0,0,0,.05)" }}>
+        <div className="home-cats-header" style={{ padding: "80px 0 60px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div data-rv>
             <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", marginBottom: 14, fontFamily: SANS }}>III · Explorar</div>
             <div style={{ fontFamily: NEXA_HEAVY, fontSize: "clamp(26px,3vw,38px)", fontWeight: 900, color: C.ink, letterSpacing: "-.02em", lineHeight: 1.1 }}>¿Qué quieres<br />descubrir hoy?</div>
@@ -690,7 +712,7 @@ export default function Home() {
 
       {/* ═══ IV · ARTISTAS ═══ */}
       <section style={{ padding: "100px 0 0", background: "#f7f5f2" }}>
-        <div data-rv style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 32, padding: "0 72px" }}>
+        <div data-rv className="home-artistas-header" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 32, padding: "0 72px" }}>
           <div>
             <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".28em", textTransform: "uppercase", color: "rgba(0,0,0,.18)", marginBottom: 10, fontFamily: SANS }}>IV · Voces</div>
             <div style={{ fontFamily: SERIF, fontSize: "clamp(26px,3vw,38px)", fontWeight: 900, color: C.ink, letterSpacing: "-.02em" }}>Los artistas</div>
@@ -730,8 +752,8 @@ export default function Home() {
       </section>
 
       {/* ═══ V · NÚMEROS ═══ */}
-      <section style={{ padding: "90px 72px", borderTop: "1px solid rgba(0,0,0,.05)", borderBottom: "1px solid rgba(0,0,0,.05)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
+      <section className="home-stats" style={{ padding: "90px 72px", borderTop: "1px solid rgba(0,0,0,.05)", borderBottom: "1px solid rgba(0,0,0,.05)" }}>
+        <div className="home-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
           {STATS.map((stat, i) => (
             <div key={stat.label} data-rv data-d={String(i + 1)} style={{ padding: "36px 0", textAlign: "center", position: "relative" }}>
               {i > 0 && <div style={{ position: "absolute", left: 0, top: "22%", height: "56%", width: 1, background: "rgba(0,0,0,.055)" }} />}
@@ -743,7 +765,7 @@ export default function Home() {
       </section>
 
       {/* ═══ VI · CTA ═══ */}
-      <section style={{ padding: "120px 72px", display: "flex", alignItems: "center", gap: 88, borderTop: "1px solid rgba(0,0,0,.05)", position: "relative", overflow: "hidden" }}>
+      <section className="home-cta" style={{ padding: "120px 72px", display: "flex", alignItems: "center", gap: 88, borderTop: "1px solid rgba(0,0,0,.05)", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)", fontFamily: SERIF, fontSize: 280, fontWeight: 900, fontStyle: "italic", color: "rgba(0,0,0,.022)", lineHeight: 1, userSelect: "none", pointerEvents: "none" }}>VI</div>
         <div data-rv style={{ flex: 1, position: "relative", zIndex: 1 }}>
           <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: C.orange, display: "flex", alignItems: "center", gap: 12, marginBottom: 22, fontFamily: SANS }}>
@@ -759,7 +781,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div data-rv data-d="2" style={{ flexShrink: 0, width: 300, position: "relative", height: 400 }}>
+        <div data-rv data-d="2" className="home-cta-art" style={{ flexShrink: 0, width: 300, position: "relative", height: 400 }}>
           {obras.slice(0, 3).map((obra, i) => {
             const configs = [
               { top: 0,    left: 0,  width: 162, height: 210, rotate: -2.5 },
@@ -779,8 +801,8 @@ export default function Home() {
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <footer style={{ background: "#fff", borderTop: "1px solid rgba(0,0,0,.07)", padding: "60px 72px 40px", fontFamily: SANS }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 48, marginBottom: 52 }}>
+      <footer className="home-footer" style={{ background: "#fff", borderTop: "1px solid rgba(0,0,0,.07)", padding: "60px 72px 40px", fontFamily: SANS }}>
+        <div className="home-footer-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 48, marginBottom: 52 }}>
           <div data-rv>
             <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 900, color: C.ink, letterSpacing: "-.03em", lineHeight: 1, marginBottom: 14 }}>
               ALTAR<span style={{ color: C.orange }}>★</span>
@@ -815,7 +837,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div data-rv style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 24, borderTop: "1px solid rgba(0,0,0,.05)" }}>
+        <div data-rv className="home-footer-bottom" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 24, borderTop: "1px solid rgba(0,0,0,.05)" }}>
           <span style={{ fontSize: 10, color: "rgba(0,0,0,.22)", letterSpacing: ".04em" }}>© 2025 ALTAR — Todos los derechos reservados</span>
           <span style={{ fontFamily: SERIF, fontSize: 10, fontStyle: "italic", color: "rgba(0,0,0,.16)" }}>Huasteca Hidalguense, México</span>
         </div>

@@ -254,6 +254,7 @@ export default function NuevaObra() {
     if (mlTimerRef.current) clearTimeout(mlTimerRef.current);
     mlTimerRef.current = setTimeout(async () => {
       const catNombre = categorias.find(c => c.id_categoria === parseInt(form.id_categoria))?.nombre || "";
+      const matNombre = materiales.find(m => m.id_material === parseInt(form.id_material))?.nombre  || "";
       if (!catNombre) return;
       setMlSugerencia(prev => ({ ...prev, loading: true, error: false }));
       const controller = new AbortController();
@@ -263,25 +264,28 @@ export default function NuevaObra() {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({
-            categoria:     catNombre,
-            tecnica:       tecnicas.find(t => t.id_tecnica === parseInt(form.id_tecnica))?.nombre?.toLowerCase() || "otra",
-            anio_creacion: parseInt(form.anio_creacion) || 2023,
-            alto_cm:       parseFloat(form.dimensiones_alto)  || 0,
-            ancho_cm:      parseFloat(form.dimensiones_ancho) || 0,
+            categoria:        catNombre,
+            material:         matNombre,
+            anio_creacion:    parseInt(form.anio_creacion) || 2023,
+            alto_cm:          parseFloat(form.dimensiones_alto)  || 0,
+            ancho_cm:         parseFloat(form.dimensiones_ancho) || 0,
+            con_certificado:  form.con_certificado  ? 1 : 0,
+            disponible_envio: form.disponible_envio ? 1 : 0,
+            es_original:      form.es_original      ? 1 : 0,
           }),
           signal: controller.signal,
         });
         clearTimeout(timer);
         if (!res.ok) throw new Error();
         const data = await res.json();
-        console.log("ML API response:", JSON.stringify(data));
-        setMlSugerencia({ precio: data.precio, min: Math.round(data.precio_min ?? data.precio * 0.8), max: Math.round(data.precio_max ?? data.precio * 1.2), loading: false, error: false });
+        const precio = data.precio_predicho;
+        setMlSugerencia({ precio, min: Math.round(precio * 0.85), max: Math.round(precio * 1.15), loading: false, error: false });
       } catch {
         clearTimeout(timer);
         setMlSugerencia(prev => ({ ...prev, loading: false, error: true }));
       }
     }, 600);
-  }, [step, form.id_categoria, form.id_tecnica, form.anio_creacion, form.dimensiones_alto, form.dimensiones_ancho, mlRetry]);
+  }, [step, form.id_categoria, form.id_material, form.anio_creacion, form.dimensiones_alto, form.dimensiones_ancho, form.con_certificado, form.disponible_envio, form.es_original, mlRetry]);
 
   const getFieldError = (name: string, value: string): string => {
     if (hasSuspiciousContent(value)) return "Contenido no permitido";
@@ -730,7 +734,7 @@ export default function NuevaObra() {
                 <div className="no-ml-widget">
                   <div className="no-ml-title">
                     ✦ Sugerencia de precio
-                    <span className="no-ml-badge">IA · Gradient Boosting</span>
+                    <span className="no-ml-badge">IA · Regresión Lineal</span>
                   </div>
                   {mlSugerencia.loading && (
                     <div className="no-ml-loading">

@@ -245,6 +245,21 @@ export default function MisPedidos() {
         .overlay-btn { transition:all .18s; }
         .overlay-btn:hover { transform:translateY(-1px); }
 
+        @media (max-width: 768px) {
+          .ped-hero-inner { padding: 24px 16px 20px !important; }
+          .ped-stats { display: none !important; }
+          .ped-main { padding: 20px 12px 60px !important; }
+          .orden-header { padding: 14px 16px !important; gap: 10px !important; }
+          .orden-card-pad { padding: 14px 16px !important; }
+          .ped-obras-row { flex-wrap: wrap !important; gap: 10px !important; }
+          .ped-thumbs { gap: 6px !important; }
+          .ped-thumbs > div { width: 52px !important; height: 64px !important; }
+          .ped-acciones { flex-direction: row !important; align-items: center !important; flex-wrap: wrap !important; gap: 6px !important; }
+          .filtro-tab { padding: 7px 12px !important; font-size: 11px !important; }
+          .item-row { flex-wrap: wrap !important; padding: 12px 16px !important; gap: 8px !important; }
+          .order-footer { flex-wrap: wrap !important; padding: 10px 16px !important; }
+        }
+
         @keyframes shimmer {
           0%{background-position:200% 0} 100%{background-position:-200% 0}
         }
@@ -364,7 +379,7 @@ export default function MisPedidos() {
           HERO / PAGE TITLE
       ══════════════════════════════ */}
       <div style={{borderBottom:`1px solid ${C.border}`, background:"#fff"}}>
-        <div style={{maxWidth:1100, margin:"0 auto", padding:"40px 40px 32px"}}>
+        <div className="ped-hero-inner" style={{maxWidth:1100, margin:"0 auto", padding:"40px 40px 32px"}}>
           <div style={{display:"flex", alignItems:"flex-end", justifyContent:"space-between", flexWrap:"wrap", gap:16}}>
             <div>
               <div style={{
@@ -384,7 +399,7 @@ export default function MisPedidos() {
 
             {/* Stats rápidos */}
             {!loading && ordenes.length > 0 && (
-              <div style={{display:"flex", gap:32, alignItems:"flex-end"}}>
+              <div className="ped-stats" style={{display:"flex", gap:32, alignItems:"flex-end"}}>
                 <div style={{textAlign:"right"}}>
                   <div style={{fontFamily:NEXA, fontSize:32, fontWeight:900, color:C.ink, lineHeight:1, letterSpacing:"-.03em"}}>
                     {ordenes.length}
@@ -412,7 +427,7 @@ export default function MisPedidos() {
       {/* ══════════════════════════════
           MAIN
       ══════════════════════════════ */}
-      <main style={{flex:1, maxWidth:1100, width:"100%", margin:"0 auto", padding:"40px 40px 80px"}}>
+      <main className="ped-main" style={{flex:1, maxWidth:1100, width:"100%", margin:"0 auto", padding:"40px 40px 80px"}}>
 
         {/* Skeleton */}
         {loading ? (
@@ -548,7 +563,7 @@ export default function MisPedidos() {
                         : `linear-gradient(90deg,${C.orange},${C.pink})`
                     }}/>
 
-                    <div style={{padding:"18px 24px"}}>
+                    <div className="orden-card-pad" style={{padding:"18px 24px"}}>
 
                       {/* Fila superior: badge + código + total */}
                       <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:8}}>
@@ -574,10 +589,10 @@ export default function MisPedidos() {
                       </div>
 
                       {/* Fila de obras: thumbnails + info + botón */}
-                      <div style={{display:"flex", alignItems:"center", gap:16}}>
+                      <div className="ped-obras-row" style={{display:"flex", alignItems:"center", gap:16}}>
 
                         {/* Thumbnails */}
-                        <div style={{display:"flex", gap:8, flexShrink:0}}>
+                        <div className="ped-thumbs" style={{display:"flex", gap:8, flexShrink:0}}>
                           {THUMBS.map((item, i) => (
                             <div key={i} style={{
                               width:68, height:84, borderRadius:10, overflow:"hidden",
@@ -632,7 +647,7 @@ export default function MisPedidos() {
                         </div>
 
                         {/* Botones */}
-                        <div style={{display:"flex", flexDirection:"column", gap:8, flexShrink:0, alignItems:"flex-end"}}>
+                        <div className="ped-acciones" style={{display:"flex", flexDirection:"column", gap:8, flexShrink:0, alignItems:"flex-end"}}>
                           {orden.estado === "cancelado" ? (
                             <div style={{
                               fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",

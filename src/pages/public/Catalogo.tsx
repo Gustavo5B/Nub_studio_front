@@ -626,15 +626,27 @@ export default function Catalogo() {
         input::placeholder { color: rgba(0,0,0,.25); }
 
         @media (max-width: 768px) {
-          .scroll-horizontal { padding: 24px 24px 40px; gap: 28px; }
-          .cat-filter-row { overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+          .scroll-horizontal { padding: 20px 16px 36px !important; gap: 28px !important; }
+          .cat-filter-row { overflow-x: auto !important; scrollbar-width: none !important; padding: 0 16px 16px !important; gap: 20px !important; }
           .cat-filter-row::-webkit-scrollbar { display: none; }
           .cat-filter-btn { flex-shrink: 0; }
+          .cat-obras-grid { grid-template-columns: 1fr 1fr !important; gap: 28px 14px !important; padding: 0 16px 80px !important; }
+          .cat-obras-header { padding: 0 16px !important; }
+          .cat-expo { grid-template-columns: 1fr !important; min-height: auto !important; }
+          .cat-expo-left { padding: 48px 20px 36px !important; }
+          .cat-expo-right { display: none !important; }
+          .cat-colecciones { padding: 0 20px 80px !important; }
+          .cat-colecciones-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; padding: 52px 0 36px !important; }
+          .cat-pagination { padding: 0 16px !important; }
+          /* Hero: ocultar nav/auth en móvil — el Navbar de PublicLayout ya los tiene */
+          .cat-hero-nav, .cat-hero-auth { display: none !important; }
+          .cat-hero { padding: 64px 20px 40px !important; }
+          .cat-hero-search-input { min-width: 0 !important; width: 100% !important; max-width: 300px !important; }
         }
       `}</style>
 
       {/* ═══ I · HERO ═══ */}
-      <section style={{
+      <section className="cat-hero" style={{
         position: "relative",
         padding: "100px 0 48px", minHeight: "unset",
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -642,7 +654,7 @@ export default function Catalogo() {
       }}>
 
         {/* Nav izquierda */}
-        <nav style={{
+        <nav className="cat-hero-nav" style={{
           position: "absolute", top: 30, left: 52,
           display: "flex", flexDirection: "column", gap: 10,
           animation: "fadeL 1.1s ease .4s both",
@@ -656,7 +668,7 @@ export default function Catalogo() {
         </nav>
 
         {/* Auth derecha */}
-        <div style={{
+        <div className="cat-hero-auth" style={{
           position: "absolute", top: 30, right: 52,
           display: "flex", alignItems: "center", gap: 12,
           animation: "fadeR 1.1s ease .4s both",
@@ -796,7 +808,7 @@ export default function Catalogo() {
       <section id="obras-section" style={{ padding: "40px 0 80px", borderTop: "1px solid rgba(0,0,0,.04)" }}>
 
         {/* Título sección + filtros */}
-        <div style={{ padding: "0 72px", marginBottom: 28 }}>
+        <div className="cat-obras-header" style={{ padding: "0 72px", marginBottom: 28 }}>
           <div data-rv style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
             <div>
               <div style={{
@@ -971,7 +983,7 @@ export default function Catalogo() {
 
         {/* Paginación */}
         {totalPages > 1 && !loading && (
-          <div style={{
+          <div className="cat-pagination" style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             gap: 6, padding: "0 72px", marginTop: 48,
           }}>
@@ -1064,7 +1076,7 @@ export default function Catalogo() {
             }}>II</div>
 
             {/* Izquierda — texto */}
-            <div style={{
+            <div className="cat-expo-left" style={{
               padding: "80px 64px", display: "flex", flexDirection: "column",
               justifyContent: "center", position: "relative", zIndex: 1,
               borderRight: "1px solid rgba(255,255,255,.05)",
@@ -1130,7 +1142,7 @@ export default function Catalogo() {
             </div>
 
             {/* Derecha — imagen portada */}
-            <div style={{
+            <div className="cat-expo-right" style={{
               position: "relative", display: "flex", alignItems: "center",
               justifyContent: "center", padding: "60px 64px", zIndex: 1, overflow: "hidden",
             }}>
@@ -1170,8 +1182,8 @@ export default function Catalogo() {
 
       {/* ═══ III · COLECCIONES ═══ */}
       {colecciones.length > 0 && (
-        <section style={{ padding: "0 72px 120px", borderTop: "1px solid rgba(0,0,0,.05)" }}>
-          <div style={{ padding: "80px 0 60px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <section className="cat-colecciones" style={{ padding: "0 72px 120px", borderTop: "1px solid rgba(0,0,0,.05)" }}>
+          <div className="cat-colecciones-header" style={{ padding: "80px 0 60px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
             <div>
               <div style={{
                 fontSize: 8.5, fontWeight: 800, letterSpacing: ".3em",

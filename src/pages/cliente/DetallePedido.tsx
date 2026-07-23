@@ -215,13 +215,25 @@ export default function DetallePedido() {
           display:flex; gap:40px; white-space:nowrap;
           animation:marquee 22s linear infinite; width:max-content;
         }
+
+        @media (max-width: 768px) {
+          .dp-main { padding: 24px 16px 80px !important; }
+          .dp-table-header { display: none !important; }
+          .dp-item-row { grid-template-columns: 1fr !important; padding: 14px 16px !important; gap: 10px !important; }
+          .dp-item-artista { font-size: 11px !important; }
+          .dp-item-qty::before { content: "Cant: "; font-size: 10px; font-weight: 600; color: #9896A8; text-transform: uppercase; letter-spacing: .1em; display: block; margin-bottom: 2px; }
+          .dp-item-total::before { content: "Total"; font-size: 10px; font-weight: 600; color: #9896A8; text-transform: uppercase; letter-spacing: .1em; display: block; margin-bottom: 2px; }
+          .dp-footer-summary { max-width: 100% !important; margin-left: 0 !important; }
+          .dp-hero-pad { padding: 20px 16px !important; }
+          .dp-steps { padding: 20px 16px !important; }
+        }
       `}</style>
 
 
       {/* Línea arcoíris */}
       <div style={{height:2.5, background:`linear-gradient(90deg,${C.orange},${C.pink},${C.blue},${C.orange})`}}/>
 
-      <main style={{maxWidth:860, margin:"0 auto", padding:"44px 32px 100px"}}>
+      <main className="dp-main" style={{maxWidth:860, margin:"0 auto", padding:"44px 32px 100px"}}>
 
         {/* Volver */}
         <div style={{ marginBottom: 20 }}>
@@ -258,7 +270,7 @@ export default function DetallePedido() {
               : `linear-gradient(90deg,${C.orange},${C.pink})`,
           }}/>
 
-          <div style={{padding:"28px 32px"}}>
+          <div className="dp-hero-pad" style={{padding:"28px 32px"}}>
             <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:20}}>
               <div>
                 {/* Badge estado */}
@@ -302,7 +314,7 @@ export default function DetallePedido() {
 
         {/* ── Timeline de estado ── */}
         {!cancelado && (
-          <div className="reveal" style={{
+          <div className="reveal dp-steps" style={{
             background:C.card, border:`1px solid ${C.border}`, borderRadius:22,
             padding:"28px 32px", marginBottom:24,
             boxShadow:"0 2px 16px rgba(20,18,30,.05)",
@@ -466,7 +478,7 @@ export default function DetallePedido() {
           animationDelay:"120ms",
         }}>
           {/* Header tabla */}
-          <div style={{
+          <div className="dp-table-header" style={{
             display:"grid", gridTemplateColumns:"1fr 110px 60px 110px",
             padding:"12px 26px", gap:12,
             background:C.bgOff, borderBottom:`1px solid ${C.border}`,
@@ -482,7 +494,7 @@ export default function DetallePedido() {
 
           {/* Filas */}
           {pedido.items.map((item) => (
-            <div key={item.id_venta} className="item-row" style={{
+            <div key={item.id_venta} className="item-row dp-item-row" style={{
               display:"grid", gridTemplateColumns:"1fr 110px 60px 110px",
               padding:"16px 26px", gap:12, alignItems:"center",
               borderBottom:`1px solid ${C.border}`,
@@ -516,18 +528,18 @@ export default function DetallePedido() {
               </div>
 
               {/* Artista */}
-              <div style={{fontSize:12.5,color:C.sub,
+              <div className="dp-item-artista" style={{fontSize:12.5,color:C.sub,
                 whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 {item.artista_alias}
               </div>
 
               {/* Cantidad */}
-              <div style={{textAlign:"right",fontSize:14,fontWeight:700,color:C.ink}}>
+              <div className="dp-item-qty" style={{textAlign:"right",fontSize:14,fontWeight:700,color:C.ink}}>
                 {item.cantidad}
               </div>
 
               {/* Total */}
-              <div style={{textAlign:"right",fontFamily:NEXA,fontSize:16,fontWeight:900,color:C.ink}}>
+              <div className="dp-item-total" style={{textAlign:"right",fontFamily:NEXA,fontSize:16,fontWeight:900,color:C.ink}}>
                 {fmt(Number(item.total))}
               </div>
             </div>
@@ -541,7 +553,7 @@ export default function DetallePedido() {
             const showDescuento = pedido.descuento_cupon > 0;
             return (
               <div style={{ padding:"24px 28px 28px", background:C.bgOff, borderTop:`1px solid ${C.border}` }}>
-                <div style={{ maxWidth:320, marginLeft:"auto", display:"flex", flexDirection:"column", gap:0 }}>
+                <div className="dp-footer-summary" style={{ maxWidth:320, marginLeft:"auto", display:"flex", flexDirection:"column", gap:0 }}>
 
                   {/* Subtotal */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 0", borderBottom:`1px solid ${C.border}` }}>

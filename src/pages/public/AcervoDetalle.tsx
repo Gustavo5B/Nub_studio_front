@@ -55,7 +55,7 @@ function SkeletonHorizontal() {
   return (
     <div style={{
       display: "flex", gap: 64,
-      padding: "80px 96px 100px 96px",
+      padding: "clamp(40px,8vw,80px) clamp(20px,8vw,96px) clamp(48px,8vw,100px)",
     }}>
       {[...Array(6)].map((_, i) => (
         <div key={i} style={{ flexShrink: 0, width: 238, animation: "pulse 1.5s ease-in-out infinite" }}>
@@ -378,7 +378,7 @@ export default function AcervoDetalle() {
       </div>
 
       {/* ══ CONTROLES ══ */}
-      <div ref={galRef} style={{ maxWidth: 1200, margin: "0 auto", padding: "60px 72px 0" }}>
+      <div ref={galRef} style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(32px,5vw,60px) clamp(16px,6vw,72px) 0" }}>
 
         {/* Buscador */}
         <div style={{
@@ -468,7 +468,7 @@ export default function AcervoDetalle() {
               scrollSnapType: "x mandatory",
               scrollbarWidth: "thin",
               scrollbarColor: "rgba(0,0,0,.15) rgba(0,0,0,0.08)",
-              padding: "80px 96px 100px 96px",
+              padding: "clamp(40px,8vw,80px) clamp(20px,8vw,96px) clamp(48px,8vw,100px)",
               WebkitOverflowScrolling: "touch",
               alignItems: "flex-start",
             }}

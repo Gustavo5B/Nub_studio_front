@@ -55,6 +55,7 @@ interface Coleccion {
   artista_alias?: string;
   artista_foto?: string;
   id_artista?: number;
+  artista_matricula?: string;
   obras: Obra[];
 }
 
@@ -297,6 +298,19 @@ export default function DetalleColeccionPublico() {
         ::-webkit-scrollbar { width:4px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(0,0,0,.1); border-radius:4px; }
+
+        @media (max-width: 768px) {
+          .col-hero { grid-template-columns: 1fr !important; height: auto !important; min-height: auto !important; }
+          .col-hero-left { height: 60vh !important; min-height: 380px !important; }
+          .col-hero-nav { display: none !important; }
+          .col-hero-auth { display: none !important; }
+          .col-hero-right { padding: 36px 20px 40px !important; border-left: none !important; border-top: 3px solid #E8640C; overflow-y: visible !important; }
+          .col-obras-header { padding: 0 20px !important; flex-wrap: wrap !important; }
+          .col-obras-grid { grid-template-columns: 1fr 1fr !important; padding: 0 16px !important; gap: 8px !important; }
+          .col-obras-grid .col-obra-card { height: 200px !important; }
+          .col-rec-section { padding: 52px 20px 56px !important; }
+          .col-footer { padding: 16px 20px !important; }
+        }
       `}</style>
 
       {/* Grain + cursor fuera del wrapper animado */}
@@ -309,10 +323,10 @@ export default function DetalleColeccionPublico() {
         {/* ════════════════════════════════════
              HERO SPLIT — imagen+nav+título | historia blanca
         ════════════════════════════════════ */}
-        <section style={{ display:"grid", gridTemplateColumns:"55fr 45fr", height:"100vh", minHeight:600, position:"relative" }}>
+        <section className="col-hero" style={{ display:"grid", gridTemplateColumns:"55fr 45fr", height:"100vh", minHeight:600, position:"relative" }}>
 
           {/* ── PANEL IZQUIERDO: imagen + nav + título ── */}
-          <div style={{ position:"relative", overflow:"hidden", background:"#0a0910" }}>
+          <div className="col-hero-left" style={{ position:"relative", overflow:"hidden", background:"#0a0910" }}>
             {coleccion.imagen_portada ? (
               <img
                 src={coleccion.imagen_portada}
@@ -332,7 +346,7 @@ export default function DetalleColeccionPublico() {
             <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg, transparent, ${color} 50%, transparent)`, animation:"barIn 1.8s cubic-bezier(.16,1,.3,1) both", zIndex:2 }}/>
 
             {/* NAV izquierda */}
-            <nav style={{ position:"absolute", top:30, left:44, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
+            <nav className="col-hero-nav" style={{ position:"absolute", top:30, left:44, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeI 1s ease .5s both" }}>
               {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
                 <Link key={l} to={to} className="col-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>{l}</Link>
               ))}
@@ -356,7 +370,7 @@ export default function DetalleColeccionPublico() {
 
               {/* Artista pill */}
               <Link
-                to={coleccion.id_artista ? `/artistas/${coleccion.id_artista}` : "/artistas"}
+                to={coleccion.artista_matricula ? `/artistas/${coleccion.artista_matricula}` : "/artistas"}
                 onMouseEnter={cursorOn} onMouseLeave={cursorOff}
                 style={{ display:"inline-flex", alignItems:"center", gap:10, textDecoration:"none", background:"rgba(255,255,255,.1)", backdropFilter:"blur(8px)", padding:"7px 18px 7px 9px", borderRadius:100, border:"1px solid rgba(255,255,255,.18)", transition:"all .25s" }}
                 onMouseOver={e => (e.currentTarget as HTMLElement).style.background="rgba(255,255,255,.18)"}
@@ -376,10 +390,10 @@ export default function DetalleColeccionPublico() {
           </div>
 
           {/* ── PANEL DERECHO: historia + stats — fondo BLANCO ── */}
-          <div style={{ background:"#fff", overflowY:"auto", display:"flex", flexDirection:"column", justifyContent:"center", padding:"52px 64px 52px 56px", position:"relative", borderLeft:`3px solid ${color}` }}>
+          <div className="col-hero-right" style={{ background:"#fff", overflowY:"auto", display:"flex", flexDirection:"column", justifyContent:"center", padding:"52px 64px 52px 56px", position:"relative", borderLeft:`3px solid ${color}` }}>
 
             {/* Nav derecha (cuenta) */}
-            <div style={{ position:"absolute", top:28, right:32, display:"flex", alignItems:"center", gap:12, animation:"fadeI 1s ease .5s both" }}>
+            <div className="col-hero-auth" style={{ position:"absolute", top:28, right:32, display:"flex", alignItems:"center", gap:12, animation:"fadeI 1s ease .5s both" }}>
               {!isLoggedIn ? (
                 <>
                   <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff}
@@ -472,7 +486,7 @@ export default function DetalleColeccionPublico() {
              II · OBRAS DE LA COLECCIÓN
         ════════════════════════════════════ */}
         <section id="sec-obras" style={{ padding:"80px 0 90px", background:"#fff", borderTop:"1px solid rgba(0,0,0,.04)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48, padding:"0 72px" }}>
+          <div className="col-obras-header" style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48, padding:"0 72px" }}>
             <div style={{ height:1, flex:1, background:"rgba(0,0,0,.06)" }}/>
             <div style={{ fontSize:13, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,0,0,.7)", whiteSpace:"nowrap", fontFamily:NEXA_HEAVY }}>
               II · Obras en la colección
@@ -492,7 +506,7 @@ export default function DetalleColeccionPublico() {
             </div>
           ) : (
             <>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:12, padding:"0 72px" }}>
+              <div className="col-obras-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:12, padding:"0 72px" }}>
                 {obrasMostradas.map((obra) => (
                   <div
                     key={obra.id_obra}
@@ -575,7 +589,7 @@ export default function DetalleColeccionPublico() {
              III · OTRAS COLECCIONES
         ════════════════════════════════════ */}
         {coleccionesRecomendadas.length > 0 && (
-          <section style={{ padding:"80px 72px 90px", background:C.offWhite, borderTop:"1px solid rgba(0,0,0,.04)" }}>
+          <section className="col-rec-section" style={{ padding:"80px 72px 90px", background:C.offWhite, borderTop:"1px solid rgba(0,0,0,.04)" }}>
             <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:48 }}>
               <div style={{ height:1, flex:1, background:"rgba(0,0,0,.06)" }}/>
               <div style={{ fontSize:13, fontWeight:800, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(0,0,0,.7)", whiteSpace:"nowrap", fontFamily:NEXA_HEAVY }}>
@@ -615,7 +629,7 @@ export default function DetalleColeccionPublico() {
         )}
 
         {/* Footer */}
-        <div style={{ padding:"22px 72px", borderTop:"1px solid rgba(0,0,0,.05)", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+        <div className="col-footer" style={{ padding:"22px 72px", borderTop:"1px solid rgba(0,0,0,.05)", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
           <div style={{ fontSize:11, fontWeight:900, color:"rgba(0,0,0,.12)", fontFamily:NEXA_HEAVY, letterSpacing:".1em" }}>NU★B STUDIO</div>
           <button
             onClick={() => navigate("/catalogo")}

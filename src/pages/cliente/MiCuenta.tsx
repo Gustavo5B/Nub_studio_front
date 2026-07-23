@@ -188,6 +188,16 @@ export default function MiCuenta() {
           padding:15px 26px; transition: background .16s;
         }
         .acct-row:hover { background:#FAFAFD; }
+
+        @media (max-width: 768px) {
+          .mc-hero-inner { padding: 28px 16px 0 !important; }
+          .mc-stats-strip { flex-direction: column !important; }
+          .mc-stats-strip > div { border-right: none !important; border-bottom: 1px solid ${C.border}; padding: 14px 0 !important; padding-left: 0 !important; }
+          .mc-stats-strip > div:last-child { border-bottom: none !important; }
+          .mc-main { padding: 28px 16px 80px !important; }
+          .mc-cards-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+          .mc-hero-cta { display: none !important; }
+        }
       `}</style>
 
       {/* Grain */}
@@ -209,7 +219,7 @@ export default function MiCuenta() {
         }}>N</div>
 
         {/* Content */}
-        <div style={{maxWidth:1040, margin:"0 auto", padding:"52px 40px 0", position:"relative", zIndex:2}}>
+        <div className="mc-hero-inner" style={{maxWidth:1040, margin:"0 auto", padding:"52px 40px 0", position:"relative", zIndex:2}}>
           <div style={{display:"flex", alignItems:"center", gap:32, flexWrap:"wrap"}}>
 
             {/* Avatar */}
@@ -260,6 +270,7 @@ export default function MiCuenta() {
 
             {/* CTA */}
             <button
+              className="mc-hero-cta"
               onClick={() => navigate("/catalogo")}
               style={{
                 display:"flex", alignItems:"center", gap:8,
@@ -278,7 +289,7 @@ export default function MiCuenta() {
           </div>
 
           {/* ── Stats strip ── */}
-          <div style={{
+          <div className="mc-stats-strip" style={{
             display:"flex", marginTop:40,
             borderTop:`1px solid ${C.border}`,
           }}>
@@ -328,7 +339,7 @@ export default function MiCuenta() {
       </div>
 
       {/* ── Main Content ── */}
-      <main style={{maxWidth:1040, margin:"0 auto", padding:"44px 40px 100px", position:"relative", zIndex:2}}>
+      <main className="mc-main" style={{maxWidth:1040, margin:"0 auto", padding:"44px 40px 100px", position:"relative", zIndex:2}}>
 
         {/* Section label */}
         <div style={{
@@ -342,7 +353,7 @@ export default function MiCuenta() {
         </div>
 
         {/* ── Cards ── */}
-        <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18, marginBottom:40}}>
+        <div className="mc-cards-grid" style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:18, marginBottom:40}}>
           {cards.map((card, idx) => (
             <div
               key={card.label}

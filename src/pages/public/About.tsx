@@ -312,6 +312,7 @@ export default function About() {
           .side-nav-link:hover { gap: 10px; }
           .side-nav-link:hover::before { width: 16px; }
           .stat-number { font-size: 32px; }
+          .about-grid-2 { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -533,6 +534,7 @@ export default function About() {
 
         {/* Sección Hero con imagen flotante */}
         <div
+          className="about-grid-2"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -722,6 +724,7 @@ export default function About() {
 
         {/* Misión + Visión con tarjetas decoradas */}
         <div
+          className="about-grid-2"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -925,6 +928,7 @@ export default function About() {
 
         {/* Región Huasteca con imagen y estadística */}
         <div
+          className="about-grid-2"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
