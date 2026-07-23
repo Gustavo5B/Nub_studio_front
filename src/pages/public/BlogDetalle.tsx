@@ -31,6 +31,7 @@ interface Post {
   autor_foto: string | null;
   autor_rol: string;
   autor_artista_id: number | null;
+  autor_matricula: string | null;
   categoria_nombre: string | null;
   vistas: number;
   fecha_publicacion: string;
@@ -414,8 +415,8 @@ export default function BlogDetalle() {
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Eye size={12} /> {post.vistas} vistas</span>
               </div>
             </div>
-            {post.autor_artista_id && (
-              <Link to={`/artistas/${post.autor_artista_id}`} style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: C.orange, textDecoration: "none", border: `1px solid ${C.orange}40`, borderRadius: 100, padding: "6px 14px" }}>
+            {post.autor_matricula && (
+              <Link to={`/artistas/${post.autor_matricula}`} style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: C.orange, textDecoration: "none", border: `1px solid ${C.orange}40`, borderRadius: 100, padding: "6px 14px" }}>
                 Ver perfil
               </Link>
             )}
