@@ -39,6 +39,18 @@ interface ItemCarrito {
   stock_disponible: number;
 }
 
+/** Obra sugerida por el modelo de recomendación (microservicio de ML). */
+interface ObraRecomendada {
+  id_obra: number;
+  titulo: string;
+  slug: string;
+  imagen_principal: string;
+  precio_efectivo: string;
+  categoria: string;
+  artista_alias: string;
+  score: number;
+}
+
 function StockBadge({ stock, cantidad }: { stock: number; cantidad: number }) {
   const libre = Math.max(0, stock - cantidad);
   if (stock <= 0) {
@@ -100,6 +112,23 @@ export default function Carrito() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchCarrito(); }, [fetchCarrito]);
+
+  // ── Recomendaciones del modelo (cascada SVD → coseno → popularidad) ──
+  // Express consulta el microservicio de ML, filtra por existencias y devuelve
+  // hasta 6 obras. Se recargan al cambiar el carrito porque la recomendación
+  // depende del contexto: el modelo pondera al doble lo que hay dentro.
+  const [recomendadas, setRecomendadas] = useState<ObraRecomendada[]>([]);
+  const idsCarritoKey = useMemo(
+    () => items.map(i => i.id_obra).sort((a, b) => a - b).join(","),
+    [items]
+  );
+  useEffect(() => {
+    if (loading) return;
+    fetch(`${API_URL}/api/carrito/recomendaciones`, { headers })
+      .then(res => res.json())
+      .then(data => setRecomendadas(data.success ? data.data : []))
+      .catch(() => setRecomendadas([])); // si el servicio de ML no responde, la sección no aparece
+  }, [loading, idsCarritoKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const actualizarCantidad = (id_carrito: number, nuevaCantidad: number) => {
     if (nuevaCantidad < 1) return;
@@ -776,8 +805,10 @@ export default function Carrito() {
         )}
       </main>
 
-      {/* ── También te puede interesar ── */}
-      {!loading && items.length > 0 && (
+      {/* ── También te puede interesar ──
+          Las obras las produce el modelo de recomendación en vivo; no hay nada
+          fijo en el código. El backend ya filtró las que están agotadas. */}
+      {!loading && recomendadas.length > 0 && (
         <section style={{ maxWidth: 1020, margin: "0 auto 56px", padding: "0 24px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
             <div style={{ flex: 1, height: 1, background: C.border }} />
@@ -793,14 +824,11 @@ export default function Carrito() {
           </div>
 
           <div className="car-related-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-            {[
-              { titulo: "Río Moctezuma", artista: "Lucía Hernández", tecnica: "Acuarela", precio: 2800, img: "https://picsum.photos/seed/rio/400/300" },
-              { titulo: "Sierra Huasteca", artista: "Marco Reyes", tecnica: "Óleo sobre lienzo", precio: 4100, img: "https://picsum.photos/seed/sierra/400/300" },
-              { titulo: "Xochitl", artista: "Ana Pérez", tecnica: "Ilustración digital", precio: 3200, img: "https://picsum.photos/seed/xochitl/400/300" },
-              { titulo: "Códice Huasteco", artista: "Ernesto Silva", tecnica: "Técnica mixta", precio: 5500, img: "https://picsum.photos/seed/codice/400/300" },
-            ].map((obra, i) => (
+            {recomendadas.map(obra => (
               <div
-                key={i}
+                key={obra.id_obra}
+                onClick={() => navigate(`/obras/${obra.slug}`)}
+                title={obra.titulo}
                 style={{
                   background: C.card, borderRadius: 16, overflow: "hidden",
                   boxShadow: "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)",
@@ -809,25 +837,38 @@ export default function Carrito() {
                 onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 28px rgba(20,18,30,.10), 0 0 0 1px rgba(20,18,30,.055)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 12px rgba(20,18,30,.05), 0 0 0 1px rgba(20,18,30,.055)"; }}
               >
-                <div style={{ height: 140, overflow: "hidden" }}>
-                  <img src={obra.img} alt={obra.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <div style={{ height: 140, overflow: "hidden", background: "#F2F0F8" }}>
+                  <img
+                    src={obra.imagen_principal}
+                    alt={obra.titulo}
+                    loading="lazy"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
                 </div>
                 <div style={{ padding: "12px 14px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 2 }}>{obra.titulo}</div>
-                  <div style={{ fontSize: 11, color: C.sub, marginBottom: 2 }}>{obra.artista}</div>
-                  <div style={{ fontSize: 10.5, color: C.subLight, marginBottom: 10 }}>{obra.tecnica}</div>
+                  <div style={{
+                    fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 2,
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>{obra.titulo}</div>
+                  <div style={{
+                    fontSize: 11, color: C.sub, marginBottom: 2,
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>{obra.artista_alias}</div>
+                  <div style={{ fontSize: 10.5, color: C.subLight, marginBottom: 10 }}>{obra.categoria}</div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: C.orange, fontFamily: NEXA }}>{fmt(obra.precio)}</span>
-                    <button
+                    <span style={{ fontSize: 15, fontWeight: 900, color: C.orange, fontFamily: NEXA }}>
+                      {fmt(Number(obra.precio_efectivo))}
+                    </span>
+                    <span
                       style={{
-                        background: C.orange, color: "#fff", border: "none",
+                        background: C.orange, color: "#fff",
                         borderRadius: 100, padding: "5px 12px",
                         fontSize: 9.5, fontWeight: 700, letterSpacing: ".14em",
-                        textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
+                        textTransform: "uppercase", fontFamily: SANS,
                       }}
                     >
-                      Agregar
-                    </button>
+                      Ver obra
+                    </span>
                   </div>
                 </div>
               </div>
