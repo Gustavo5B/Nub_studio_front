@@ -278,6 +278,7 @@ export default function Home() {
           font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
           letter-spacing: -.03em; pointer-events: none;
           transition: opacity .35s ease .8s;
+          animation: fadeI .01s ease .22s both;
         }
         .home-door-logo.open { opacity: 0; }
         .home-door-sub {
