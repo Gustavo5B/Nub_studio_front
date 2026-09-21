@@ -93,8 +93,6 @@ export default function Home() {
   const userRol    = localStorage.getItem("userRol") || "";
   const handleLogout = () => { authService.logout(); navigate("/"); };
 
-  const [doorOpen,     setDoorOpen]     = useState(false);
-  const [doorGone,     setDoorGone]     = useState(false);
   const [mobileMenu,   setMobileMenu]   = useState(false);
 
   const [obras,    setObras]    = useState<Obra[]>([]);
@@ -109,31 +107,6 @@ export default function Home() {
   const [hovCat, setHovCat] = useState<number | null>(null);
 
   const pageRef = useReveal(0.10);
-
-  // ─── DOOR ANIMATION — Solo primera visita por sesión ───
-  useEffect(() => {
-    const hasSeenIntro = sessionStorage.getItem('altar_intro_seen');
-    
-    if (hasSeenIntro) {
-      // Si ya vio la intro en esta sesión, saltar animación
-      setDoorGone(true);
-      setDoorOpen(true);
-      return;
-    }
-    
-    // Primera vez en esta sesión: mostrar animación completa
-    const t1 = setTimeout(() => setDoorOpen(true),  1600);
-    const t2 = setTimeout(() => setDoorGone(true),  2900);
-    const t3 = setTimeout(() => {
-      sessionStorage.setItem('altar_intro_seen', 'true');
-    }, 3000);
-    
-    return () => { 
-      clearTimeout(t1); 
-      clearTimeout(t2); 
-      clearTimeout(t3); 
-    };
-  }, []);
 
   // ─── Custom Cursor ───
   useEffect(() => {
@@ -260,35 +233,6 @@ export default function Home() {
         .home-cursor-ring.cur-dark { border-color: rgba(255,255,255,.3); }
 
         /* ─── DOOR ANIMATION ─── */
-        .home-door-wrap {
-          position: fixed; inset: 0; z-index: 99990;
-          display: flex; pointer-events: none;
-        }
-        .home-door {
-          flex: 1; background: #F8F6F2;
-          transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .home-door.izq  { transform-origin: left  center; }
-        .home-door.der  { transform-origin: right center; }
-        .home-door-wrap.open .home-door.izq { transform: translateX(-100%); }
-        .home-door-wrap.open .home-door.der { transform: translateX(100%);  }
-        .home-door-logo {
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-          z-index: 99991; font-family: 'SolveraLorvane', serif;
-          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #14121E;
-          letter-spacing: -.03em; pointer-events: none;
-          transition: opacity .35s ease .8s;
-          animation: fadeI .01s ease .05s both;
-        }
-        .home-door-logo.open { opacity: 0; }
-        .home-door-sub {
-          position: fixed; top: calc(50% + clamp(48px, 8vw, 104px)); left: 50%;
-          transform: translateX(-50%);
-          z-index: 99991; font-size: 9px; font-weight: 700; letter-spacing: .44em;
-          text-transform: uppercase; color: rgba(20,18,30,.35);
-          pointer-events: none; transition: opacity .3s ease .7s;
-        }
-        .home-door-sub.open { opacity: 0; }
 
         @keyframes barIn    { from{opacity:0;transform:scaleX(0)} to{opacity:1;transform:scaleX(1)} }
         @keyframes fadeL    { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
@@ -436,7 +380,6 @@ export default function Home() {
 
         /* ─── ACCESIBILIDAD ─── */
         @media (prefers-reduced-motion: reduce) {
-          .home-door, .home-door-logo, .home-door-sub,
           .home-logo-estrella-link, [data-rv], [data-clip], [data-clip-h],
           .obra-item, .artista-item, .home-cat-item, .home-expo-frame,
           .home-nav-link, .home-footer-link, .home-footer-social {
@@ -475,18 +418,6 @@ export default function Home() {
       <div className="home-grain" />
       <div ref={dotRef}  className="home-cursor-dot"  />
       <div ref={ringRef} className="home-cursor-ring" />
-
-      {/* ─── DOOR OVERLAY ─── */}
-      {!doorGone && (
-        <>
-          <div className={`home-door-wrap${doorOpen ? " open" : ""}`}>
-            <div className="home-door izq" />
-            <div className="home-door der" />
-          </div>
-          <div className={`home-door-logo${doorOpen ? " open" : ""}`}>ALTAR</div>
-          <div className={`home-door-sub${doorOpen  ? " open" : ""}`}>Galería de Arte</div>
-        </>
-      )}
 
       {/* ═══ I · HERO ═══ */}
       <section style={{ position: "relative", height: "100vh", minHeight: 600, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", overflow: "hidden" }}>
