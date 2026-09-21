@@ -102,7 +102,7 @@ export default function MisBlogPosts() {
     new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div style={{ padding: "36px 40px", maxWidth: 940, fontFamily: SANS }}>
+    <div className="mbp-wrap" style={{ padding: "36px 40px", maxWidth: 940, fontFamily: SANS }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
         @font-face { font-family: 'SolveraLorvane'; src: url('/fonts/SolveraLorvane.ttf') format('truetype'); font-display: swap; }
@@ -119,11 +119,16 @@ export default function MisBlogPosts() {
         .fade-up { animation: fadeUp 0.4s ease forwards; }
         @media (max-width: 768px) {
           .mbp-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          .mbp-row { flex-wrap: wrap !important; }
-          .mbp-row-img { display: none !important; }
+          .mbp-row { flex-wrap: wrap !important; gap: 10px !important; padding: 12px 14px !important; }
+          .mbp-row-img { width: 44px !important; height: 44px !important; }
+          .mbp-row-title { white-space: normal !important; font-size: 13px !important; }
+          .mbp-row-meta { font-size: 10px !important; gap: 10px !important; }
+          .mbp-actions { width: 100% !important; justify-content: flex-end !important; border-top: 1px solid rgba(0,0,0,0.05) !important; padding-top: 8px !important; margin-top: 2px !important; }
+          .mbp-wrap { padding: 20px 16px !important; }
         }
         @media (max-width: 480px) {
           .mbp-filters { flex-wrap: wrap !important; gap: 6px !important; }
+          .mbp-wrap { padding: 16px 12px !important; }
         }
       `}</style>
 
@@ -191,28 +196,28 @@ export default function MisBlogPosts() {
             return (
               <div key={post.id_post} className="mbp-row fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
                 {post.imagen_destacada ? (
-                  <img src={post.imagen_destacada} alt={post.titulo} style={{ width: 52, height: 52, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
+                  <img className="mbp-row-img" src={post.imagen_destacada} alt={post.titulo} style={{ width: 52, height: 52, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 52, height: 52, borderRadius: 10, background: `${C.orange}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div className="mbp-row-img" style={{ width: 52, height: 52, borderRadius: 10, background: `${C.orange}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <PenSquare size={20} color={C.orange} />
                   </div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span className="mbp-row-title" style={{ fontSize: 14, fontWeight: 700, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {post.titulo}
                     </span>
                     <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: est.color, background: est.bg, borderRadius: 20, padding: "2px 10px", flexShrink: 0 }}>
                       {est.label}
                     </span>
                   </div>
-                  <div style={{ display: "flex", gap: 16, marginTop: 5, fontSize: 11, color: C.muted, flexWrap: "wrap" }}>
+                  <div className="mbp-row-meta" style={{ display: "flex", gap: 16, marginTop: 5, fontSize: 11, color: C.muted, flexWrap: "wrap" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Eye size={12} /> {post.vistas}</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MessageCircle size={12} /> {post.total_comentarios}</span>
                     <span>{formatFecha(post.fecha_creacion)}</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                <div className="mbp-actions" style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                   {post.estado === "publicado" && (
                     <Link to={`/blog/${post.slug}`} target="_blank" style={{ display: "flex" }}>
                       <button className="mbp-action" title="Ver en blog"><Eye size={16} /></button>
