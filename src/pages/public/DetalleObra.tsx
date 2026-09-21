@@ -499,7 +499,7 @@ export default function DetalleObra() {
             </div>
 
             {/* Like + Share */}
-            <div className="ob-like-share" style={{ position:"absolute", top:16, right:16, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both" }}>
+            <div className="ob-like-share" style={{ position:"absolute", top:16, right:16, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both", zIndex:10 }}>
               <button onClick={handleToggleFavorito}
                 title={liked ? "Quitar de favoritos" : "Agregar a favoritos"}
                 style={{ width:44, height:44, borderRadius:"50%", background: liked ? `${C.pink}22` : "rgba(13,11,20,.75)", border:`1px solid ${liked ? C.pink+"55" : "rgba(255,255,255,.15)"}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s", opacity: likingObra ? 0.6 : 1 }}>
