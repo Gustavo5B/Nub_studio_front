@@ -134,6 +134,25 @@ export default function ClienteLayout() {
           display:flex; align-items:center; justify-content:center;
           border:2px solid #fff;
         }
+        .cl-link-label { display:inline; }
+        @media (max-width: 640px) {
+          .cl-header-inner { padding: 0 12px !important; gap: 0 !important; height: 54px !important; }
+          .cl-nav { gap: 0 !important; flex: none !important; }
+          .cl-link-label { display: none !important; }
+          .cl-user-name { display: none !important; }
+          .cl-logo { font-size: 18px !important; }
+          .cl-link {
+            min-width: 44px; height: 44px;
+            padding: 0 !important; padding-bottom: 0 !important;
+            border-bottom: none !important;
+            justify-content: center;
+            border-radius: 10px;
+          }
+          .cl-link.active-link { border-bottom: none !important; background: rgba(232,100,12,.08); }
+          .cl-user-btn { padding: 0 !important; min-width: 44px; height: 44px; justify-content: center; border-bottom: none !important; }
+          .cl-logout-btn { min-width: 40px; height: 40px; padding: 0 !important; }
+          .cl-divider { display: none !important; }
+        }
       `}</style>
 
       {/* Navbar */}
@@ -145,7 +164,7 @@ export default function ClienteLayout() {
         {/* Línea arcoíris */}
         <div style={{ height: 2.5, background: `linear-gradient(90deg,${C.orange},${C.pink},${C.blue},${C.orange})` }} />
 
-        <div style={{
+        <div className="cl-header-inner" style={{
           maxWidth: 1100, margin: "0 auto",
           padding: "0 40px", height: 62,
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 40,
@@ -156,18 +175,18 @@ export default function ClienteLayout() {
           </button>
 
           {/* Nav links */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 34, flex: 1, justifyContent: "center" }}>
+          <nav className="cl-nav" style={{ display: "flex", alignItems: "center", gap: 34, flex: 1, justifyContent: "center" }}>
             <button className="cl-link" style={linkStyle(isActive("/catalogo"))} onClick={() => navigate("/catalogo")}>
-              <Palette size={14} strokeWidth={1.8} /> Galería
+              <Palette size={14} strokeWidth={1.8} /><span className="cl-link-label"> Galería</span>
             </button>
             <button className="cl-link" style={linkStyle(isActive("/mi-cuenta/pedidos"))} onClick={() => navigate("/mi-cuenta/pedidos")}>
-              <Package size={14} strokeWidth={1.8} /> Mis Pedidos
+              <Package size={14} strokeWidth={1.8} /><span className="cl-link-label"> Mis Pedidos</span>
             </button>
             <button className="cl-link" style={linkStyle(isActive("/mi-cuenta/favoritos"))} onClick={() => navigate("/mi-cuenta/favoritos")}>
-              <Heart size={14} strokeWidth={1.8} /> Favoritos
+              <Heart size={14} strokeWidth={1.8} /><span className="cl-link-label"> Favoritos</span>
             </button>
             <button className="cl-link" style={{ ...linkStyle(isActive("/mi-cuenta/carrito") || isActive("/checkout")), position: "relative" }} onClick={() => navigate("/mi-cuenta/carrito")}>
-              <ShoppingBag size={14} strokeWidth={1.8} /> Carrito
+              <ShoppingBag size={14} strokeWidth={1.8} /><span className="cl-link-label"> Carrito</span>
               {cartCount > 0 && (
                 <span className="cl-cart-badge">{cartCount > 9 ? "9+" : cartCount}</span>
               )}
@@ -185,12 +204,13 @@ export default function ClienteLayout() {
               }}>
                 <User size={16} color="#fff" strokeWidth={1.8} />
               </div>
-              <span style={{ color: C.ink, fontSize: 13.5, fontWeight: 700 }}>
+              <span className="cl-user-name" style={{ color: C.ink, fontSize: 13.5, fontWeight: 700 }}>
                 {nombre.split(" ")[0]}
               </span>
             </button>
-            <div style={{ width: 1, height: 16, background: C.border }} />
+            <div className="cl-divider" style={{ width: 1, height: 16, background: C.border }} />
             <button
+              className="cl-logout-btn"
               title="Cerrar sesión"
               onClick={handleLogout}
               style={{

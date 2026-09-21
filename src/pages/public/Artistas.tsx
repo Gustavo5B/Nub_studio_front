@@ -480,6 +480,7 @@ function ArtistaCard({
 export default function Artistas() {
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [search, setSearch] = useState("");
   const [catActiva, setCatActiva] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -599,21 +600,31 @@ export default function Artistas() {
         [data-rv][data-d="5"]{transition-delay:.38s}
 
         input::placeholder { color: ${C.sub}; }
+        .art-nav { display: flex; }
+        .art-auth { display: flex; }
+        .art-hamburger { display: none; }
+        @keyframes artSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
         @media (max-width: 768px) {
+          .art-nav { display: none !important; }
+          .art-auth { display: none !important; }
+          .art-hamburger { display: flex !important; }
           .art-stats-section { padding: 40px 24px !important; }
-          .art-stats-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .art-stats-grid { grid-template-columns: repeat(2,1fr) !important; gap: 20px !important; }
+          .art-hero-section { padding: 80px 20px 60px !important; }
+          .art-filters-section { padding: 0 16px 16px !important; flex-wrap: wrap !important; }
+          .art-grid-section { padding: 0 16px 48px !important; }
         }
       `}</style>
 
       {/* ═══ MENÚ NAVEGACIÓN ═══ */}
-      <nav style={{ position:"absolute", top:40, left:52, display:"flex", flexDirection:"column", gap:10, zIndex:10, animation:"fadeL 1.1s ease .3s both" }}>
+      <nav className="art-nav" style={{ position:"absolute", top:40, left:52, flexDirection:"column", gap:10, zIndex:10, animation:"fadeL 1.1s ease .3s both" }}>
         {[{ l:"Inicio", to:"/" }, { l:"Galería", to:"/catalogo" }, { l:"Artistas", to:"/artistas" }, { l:"Blog", to:"/blog" }, { l:"Nosotros", to:"/sobre-nosotros" }, { l:"Contacto", to:"/contacto" }].map(({ l, to }) => (
           <Link key={l} to={to} className="art-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>{l}</Link>
         ))}
       </nav>
 
       {/* Auth top-right */}
-      <div style={{ position:"absolute", top:40, right:52, display:"flex", alignItems:"center", gap:12, zIndex:10, animation:"fadeL 1.1s ease .5s both" }}>
+      <div className="art-auth" style={{ position:"absolute", top:40, right:52, alignItems:"center", gap:12, zIndex:10, animation:"fadeL 1.1s ease .5s both" }}>
         {!isLoggedIn ? (
           <>
             <Link to="/login" style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"rgba(20,18,30,.35)", textDecoration:"none", padding:"6px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", transition:"all .22s", fontFamily:"'Nexa-Heavy',sans-serif" }}>Ingresar</Link>
@@ -627,8 +638,94 @@ export default function Artistas() {
         )}
       </div>
 
+      {/* Hamburger mobile */}
+      <button
+        className="art-hamburger"
+        onClick={() => setMobileMenu(true)}
+        style={{
+          position: "fixed", top: 16, left: 16, zIndex: 200,
+          width: 44, height: 44, background: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(0,0,0,.08)", borderRadius: 12,
+          flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5,
+          cursor: "pointer", backdropFilter: "blur(8px)",
+        }}
+        aria-label="Abrir menú"
+      >
+        <span style={{ display: "block", width: 18, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 18, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 12, height: 1.5, background: C.ink, borderRadius: 2, alignSelf: "flex-start", marginLeft: 13 }} />
+      </button>
+      {/* Ícono login DERECHA móvil */}
+      {!isLoggedIn ? (
+        <a href="/login" className="art-hamburger" style={{ position: "fixed", top: 16, right: 16, zIndex: 200, width: 44, height: 44, background: C.orange, border: "none", borderRadius: 12, display: "none", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </a>
+      ) : (
+        <a href={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} className="art-hamburger" style={{ position: "fixed", top: 16, right: 16, zIndex: 200, width: 44, height: 44, background: C.ink, border: "none", borderRadius: 12, display: "none", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
+      )}
+
+      {mobileMenu && (
+        <div onClick={() => setMobileMenu(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(20,18,30,0.45)", backdropFilter: "blur(4px)" }}
+        />
+      )}
+      <div style={{
+        position: "fixed", top: 0, left: mobileMenu ? 0 : "-320px", bottom: 0,
+        width: "min(280px, calc(100vw - 40px))",
+        background: "#fff", zIndex: 9001, padding: "48px 28px 32px",
+        display: "flex", flexDirection: "column", gap: 8,
+        boxShadow: "8px 0 32px rgba(0,0,0,0.12)",
+        transition: "left 0.32s cubic-bezier(0.16,1,0.3,1)",
+        animation: mobileMenu ? "artSlideIn 0.32s ease both" : "none",
+      }}>
+        <button onClick={() => setMobileMenu(false)}
+          style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", fontSize: 22, cursor: "pointer", color: C.sub, lineHeight: 1 }}
+          aria-label="Cerrar menú"
+        >✕</button>
+        {[
+          { to: "/", label: "Inicio" },
+          { to: "/catalogo", label: "Galería" },
+          { to: "/artistas", label: "Artistas" },
+          { to: "/blog", label: "Blog" },
+          { to: "/sobre-nosotros", label: "Nosotros" },
+          { to: "/contacto", label: "Contacto" },
+        ].map(({ to, label }) => (
+          <Link key={to} to={to} onClick={() => setMobileMenu(false)} className="art-nav-link"
+            style={{ fontSize: "10px", padding: "10px 0", color: C.sub }}>
+            {label}
+          </Link>
+        ))}
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+          {!isLoggedIn ? (
+            <>
+              <Link to="/login" onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "10px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", textAlign: "center" }}>
+                Ingresar
+              </Link>
+              <Link to="/register" onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", padding: "10px 16px", borderRadius: 100, background: C.orange, textDecoration: "none", textAlign: "center" }}>
+                Ser artista
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "10px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", textAlign: "center" }}>
+                Mi cuenta
+              </Link>
+              <button onClick={() => { handleLogout(); setMobileMenu(false); }}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "10px 16px", borderRadius: 100, cursor: "pointer", textAlign: "center" }}>
+                Salir
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* ═══ HERO VERTICAL CON BOTÓN DESCUBRE CENTRADO ═══ */}
-      <section style={{
+      <section className="art-hero-section" style={{
         padding: "80px 72px 100px",
         position: "relative",
         overflow: "visible",
@@ -768,7 +865,7 @@ export default function Artistas() {
       </section>
 
       {/* ═══ CONTENIDO ARTISTAS ═══ */}
-      <div ref={artistasRef} style={{ maxWidth: 1200, margin: "0 auto", padding: "60px 72px 100px" }}>
+      <div ref={artistasRef} className="art-grid-section" style={{ maxWidth: 1200, margin: "0 auto", padding: "60px 72px 100px" }}>
         
         {/* Buscador y filtros */}
         <div style={{ marginBottom: 40 }}>

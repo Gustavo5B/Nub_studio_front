@@ -75,6 +75,7 @@ export default function About() {
   const [trayectoria, setTrayectoria] = useState<TrayectoriaItem[]>([]);
   const [municipios, setMunicipios] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -305,14 +306,14 @@ export default function About() {
           margin-bottom: 8px;
         }
         
+        .about-hamburger { display: none; }
+        @keyframes aboutSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
         @media (max-width: 768px) {
-          .side-nav { left: 24px; top: 20px; gap: 8px; }
-          .side-nav-link { font-size: 8px; gap: 6px; }
-          .side-nav-link::before { width: 8px; }
-          .side-nav-link:hover { gap: 10px; }
-          .side-nav-link:hover::before { width: 16px; }
+          .side-nav { display: none !important; }
+          .about-hamburger { display: flex !important; }
           .stat-number { font-size: 32px; }
           .about-grid-2 { grid-template-columns: 1fr !important; }
+          .about-main-pad { padding: 32px 20px 60px !important; }
         }
       `}</style>
 
@@ -437,6 +438,109 @@ export default function About() {
               style={{ fontSize: "11px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "9px 20px", borderRadius: 100, cursor: "pointer", transition: "all .22s" }}>Salir</button>
           </>
         )}
+      </div>
+
+      {/* Hamburger mobile — IZQUIERDA */}
+      <button
+        className="about-hamburger"
+        onClick={() => setMobileMenu(true)}
+        style={{
+          position: "fixed", top: 16, left: 16, zIndex: 200,
+          width: 44, height: 44, background: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(0,0,0,.08)", borderRadius: 12,
+          flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5,
+          cursor: "pointer", backdropFilter: "blur(8px)",
+        }}
+        aria-label="Abrir menú"
+      >
+        <span style={{ display: "block", width: 18, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 18, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 12, height: 1.5, background: C.ink, borderRadius: 2, alignSelf: "flex-start", marginLeft: 13 }} />
+      </button>
+
+      {/* Ícono login/cuenta DERECHA (solo móvil) */}
+      {!isLoggedIn ? (
+        <a href="/login" className="about-hamburger" style={{ position: "fixed", top: 16, right: 16, zIndex: 200, width: 44, height: 44, background: C.orange, border: "none", borderRadius: 12, display: "none", alignItems: "center", justifyContent: "center", textDecoration: "none", backdropFilter: "blur(8px)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </a>
+      ) : (
+        <a href={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} className="about-hamburger" style={{ position: "fixed", top: 16, right: 16, zIndex: 200, width: 44, height: 44, background: C.ink, border: "none", borderRadius: 12, display: "none", alignItems: "center", justifyContent: "center", textDecoration: "none", backdropFilter: "blur(8px)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
+      )}
+
+      {/* Mobile menu panel */}
+      {mobileMenu && (
+        <div
+          onClick={() => setMobileMenu(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 9000,
+            background: "rgba(20,18,30,0.45)", backdropFilter: "blur(4px)",
+          }}
+        />
+      )}
+      <div
+        style={{
+          position: "fixed", top: 0, left: mobileMenu ? 0 : "-320px", bottom: 0,
+          width: "min(280px, calc(100vw - 40px))",
+          background: "#fff", zIndex: 9001, padding: "48px 28px 32px",
+          display: "flex", flexDirection: "column", gap: 8,
+          boxShadow: "8px 0 32px rgba(0,0,0,0.12)",
+          transition: "left 0.32s cubic-bezier(0.16,1,0.3,1)",
+          animation: mobileMenu ? "aboutSlideIn 0.32s ease both" : "none",
+        }}
+      >
+        <button
+          onClick={() => setMobileMenu(false)}
+          style={{
+            position: "absolute", top: 16, right: 16,
+            background: "none", border: "none", fontSize: 22,
+            cursor: "pointer", color: C.sub, lineHeight: 1,
+          }}
+          aria-label="Cerrar menú"
+        >✕</button>
+        {[
+          { to: "/", label: "Inicio" },
+          { to: "/catalogo", label: "Galería" },
+          { to: "/artistas", label: "Artistas" },
+          { to: "/blog", label: "Blog" },
+          { to: "/sobre-nosotros", label: "Nosotros" },
+          { to: "/contacto", label: "Contacto" },
+        ].map(({ to, label }) => (
+          <Link
+            key={to} to={to}
+            onClick={() => setMobileMenu(false)}
+            className="side-nav-link"
+            style={{ fontSize: "10px", padding: "10px 0" }}
+          >
+            {label}
+          </Link>
+        ))}
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+          {!isLoggedIn ? (
+            <>
+              <Link to="/login" onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "10px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", textAlign: "center" }}>
+                Ingresar
+              </Link>
+              <Link to="/register" onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", padding: "10px 16px", borderRadius: 100, background: C.orange, textDecoration: "none", textAlign: "center" }}>
+                Ser artista
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "10px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", textAlign: "center" }}>
+                Mi cuenta
+              </Link>
+              <button onClick={() => { authService.logout(); navigate("/"); }}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "10px 16px", borderRadius: 100, cursor: "pointer", textAlign: "center" }}>
+                Salir
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* WhatsApp flotante */}

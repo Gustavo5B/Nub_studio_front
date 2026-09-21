@@ -35,6 +35,7 @@ export default function Contact() {
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
 
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
@@ -190,6 +191,19 @@ export default function Contact() {
           transform: scale(1.1);
           box-shadow: 0 6px 16px rgba(0,0,0,0.2);
         }
+
+        .contact-nav, .contact-auth { display: flex; }
+        .contact-hamburger { display: none; }
+        @keyframes contactSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+        .contact-main { padding: 100px 24px 80px; }
+
+        @media (max-width: 900px) {
+          .contact-nav, .contact-auth { display: none !important; }
+          .contact-hamburger { display: flex !important; }
+          .contact-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .contact-main { padding: 32px 20px 60px !important; }
+        }
       `}</style>
 
       <div className="home-grain" />
@@ -199,7 +213,7 @@ export default function Contact() {
       
 
       {/* MENÚ DE NAVEGACIÓN */}
-      <nav style={{ position: "absolute", top: 30, left: 52, display: "flex", flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both", zIndex: 11 }}>
+      <nav className="contact-nav" style={{ position: "absolute", top: 30, left: 52, flexDirection: "column", gap: 10, animation: "fadeL 1.1s ease .4s both", zIndex: 11 }}>
         <Link to="/" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Inicio</Link>
         <Link to="/catalogo" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Galería</Link>
         <Link to="/artistas" className="home-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Artistas</Link>
@@ -209,7 +223,7 @@ export default function Contact() {
       </nav>
 
       {/* BOTONES DE AUTENTICACIÓN */}
-      <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both", zIndex: 11 }}>
+      <div className="contact-auth" style={{ position: "absolute", top: 30, right: 52, alignItems: "center", gap: 12, animation: "fadeR 1.1s ease .4s both", zIndex: 11 }}>
         {!isLoggedIn ? (
           <>
             <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", transition: "all .22s" }}>Ingresar</Link>
@@ -222,6 +236,56 @@ export default function Contact() {
           </>
         )}
       </div>
+
+      {/* Hamburger móvil */}
+      <button
+        className="contact-hamburger"
+        onClick={() => setMobileMenu(true)}
+        style={{ display: "none", position: "fixed", top: 16, left: 16, zIndex: 200, background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 10, padding: "10px 12px", cursor: "pointer", flexDirection: "column", gap: 5 }}
+      >
+        <span style={{ display: "block", width: 22, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 16, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 22, height: 1.5, background: C.ink, borderRadius: 2 }} />
+      </button>
+      {/* Ícono login DERECHA móvil */}
+      {!isLoggedIn ? (
+        <a href="/login" className="contact-hamburger" style={{ display: "none", position: "fixed", top: 16, right: 16, zIndex: 200, background: C.orange, border: "none", borderRadius: 10, width: 44, height: 44, alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </a>
+      ) : (
+        <a href={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} className="contact-hamburger" style={{ display: "none", position: "fixed", top: 16, right: 16, zIndex: 200, background: C.ink, border: "none", borderRadius: 10, width: 44, height: 44, alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
+      )}
+
+      {mobileMenu && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setMobileMenu(false)}>
+          <div style={{ position: "absolute", top: 0, left: 0, width: "min(280px, calc(100vw - 40px))", height: "100%", background: "#fff", borderRight: "1px solid rgba(0,0,0,0.08)", boxShadow: "8px 0 32px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", animation: "contactSlideIn .25s cubic-bezier(0.16,1,0.3,1)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
+              <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 900, color: C.ink, letterSpacing: "-.01em" }}>ALTAR</span>
+              <button onClick={() => setMobileMenu(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: C.sub, lineHeight: 1 }}>✕</button>
+            </div>
+            <nav style={{ padding: "32px 28px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+              {[["/" , "Inicio"], ["/catalogo","Galería"], ["/artistas","Artistas"], ["/blog","Blog"], ["/sobre-nosotros","Nosotros"], ["/contacto","Contacto"]].map(([to, label]) => (
+                <Link key={to} to={to} onClick={() => setMobileMenu(false)} className="home-nav-link">{label}</Link>
+              ))}
+            </nav>
+            <div style={{ padding: "20px 28px", borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", alignItems: "center", gap: 12 }}>
+              {!isLoggedIn ? (
+                <>
+                  <Link to="/login" onClick={() => setMobileMenu(false)} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)" }}>Ingresar</Link>
+                  <Link to="/register" onClick={() => setMobileMenu(false)} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", textDecoration: "none", padding: "7px 16px", borderRadius: 100, background: C.orange }}>Ser artista</Link>
+                </>
+              ) : (
+                <>
+                  <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onClick={() => setMobileMenu(false)} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, textDecoration: "none", padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)" }}>Mi cuenta</Link>
+                  <button onClick={() => { authService.logout(); navigate("/"); setMobileMenu(false); }} style={{ fontSize: "11px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "9px 20px", borderRadius: 100, cursor: "pointer" }}>Salir</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* WhatsApp flotante - esquina inferior DERECHA con número 7713338453 */}
       <a
@@ -240,7 +304,7 @@ export default function Contact() {
       </a>
 
       {/* Contenido principal */}
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "100px 24px 80px" }}>
+      <div className="contact-main" style={{ maxWidth: 1000, margin: "0 auto" }}>
 
         {/* Título CONTACTO */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -280,7 +344,7 @@ export default function Contact() {
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
+        <div className="contact-grid">
           
           {/* Formulario */}
           <div>

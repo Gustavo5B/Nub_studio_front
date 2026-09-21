@@ -67,6 +67,7 @@ export default function DetalleColeccionPublico() {
 
   const [coleccion, setColeccion] = useState<Coleccion | null>(null);
   const [loading, setLoading]     = useState(true);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [obrasVisibles, setObrasVisibles] = useState(12);
   const [coleccionesRecomendadas, setColeccionesRecomendadas] = useState<any[]>([]);
   const [agregandoId, setAgregandoId]   = useState<number | null>(null);
@@ -299,11 +300,14 @@ export default function DetalleColeccionPublico() {
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(0,0,0,.1); border-radius:4px; }
 
+        .col-hamburger { display: none; }
+        @keyframes colSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
         @media (max-width: 768px) {
           .col-hero { grid-template-columns: 1fr !important; height: auto !important; min-height: auto !important; }
           .col-hero-left { height: 60vh !important; min-height: 380px !important; }
           .col-hero-nav { display: none !important; }
           .col-hero-auth { display: none !important; }
+          .col-hamburger { display: flex !important; }
           .col-hero-right { padding: 36px 20px 40px !important; border-left: none !important; border-top: 3px solid #E8640C; overflow-y: visible !important; }
           .col-obras-header { padding: 0 20px !important; flex-wrap: wrap !important; }
           .col-obras-grid { grid-template-columns: 1fr 1fr !important; padding: 0 16px !important; gap: 8px !important; }
@@ -317,6 +321,97 @@ export default function DetalleColeccionPublico() {
       <div className="col-grain"/>
       <div ref={dotRef}  className="col-cursor-dot"/>
       <div ref={ringRef} className="col-cursor-ring"/>
+
+      {/* Hamburger mobile */}
+      <button
+        className="col-hamburger"
+        onClick={() => setMobileMenu(true)}
+        style={{
+          position: "fixed", top: 16, left: 16, zIndex: 200,
+          width: 44, height: 44, background: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(0,0,0,.08)", borderRadius: 12,
+          flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5,
+          cursor: "pointer", backdropFilter: "blur(8px)",
+        }}
+        aria-label="Abrir menú"
+      >
+        <span style={{ display: "block", width: 18, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 18, height: 1.5, background: C.ink, borderRadius: 2 }} />
+        <span style={{ display: "block", width: 12, height: 1.5, background: C.ink, borderRadius: 2, alignSelf: "flex-start", marginLeft: 13 }} />
+      </button>
+      {/* Ícono login DERECHA móvil */}
+      {!isLoggedIn ? (
+        <Link to="/login" className="col-hamburger" style={{ position: "fixed", top: 16, right: 16, zIndex: 200, width: 44, height: 44, background: C.orange, border: "none", borderRadius: 12, display: "none", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </Link>
+      ) : (
+        <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} className="col-hamburger" style={{ position: "fixed", top: 16, right: 16, zIndex: 200, width: 44, height: 44, background: C.ink, border: "none", borderRadius: 12, display: "none", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </Link>
+      )}
+
+      {/* Mobile menu overlay */}
+      {mobileMenu && (
+        <div
+          onClick={() => setMobileMenu(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(20,18,30,0.45)", backdropFilter: "blur(4px)" }}
+        />
+      )}
+      <div
+        style={{
+          position: "fixed", top: 0, left: mobileMenu ? 0 : "-320px", bottom: 0,
+          width: "min(280px, calc(100vw - 40px))",
+          background: "#fff", zIndex: 9001, padding: "48px 28px 32px",
+          display: "flex", flexDirection: "column", gap: 8,
+          boxShadow: "8px 0 32px rgba(0,0,0,0.12)",
+          transition: "left 0.32s cubic-bezier(0.16,1,0.3,1)",
+          animation: mobileMenu ? "colSlideIn 0.32s ease both" : "none",
+        }}
+      >
+        <button
+          onClick={() => setMobileMenu(false)}
+          style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", fontSize: 22, cursor: "pointer", color: C.sub, lineHeight: 1 }}
+          aria-label="Cerrar menú"
+        >✕</button>
+        {[
+          { to: "/", label: "Inicio" },
+          { to: "/catalogo", label: "Galería" },
+          { to: "/artistas", label: "Artistas" },
+          { to: "/blog", label: "Blog" },
+          { to: "/sobre-nosotros", label: "Nosotros" },
+          { to: "/contacto", label: "Contacto" },
+        ].map(({ to, label }) => (
+          <Link key={to} to={to} onClick={() => setMobileMenu(false)} className="col-nav-link"
+            style={{ fontSize: "10px", padding: "10px 0", color: C.sub, background: "none", backdropFilter: "none", border: "none" }}>
+            {label}
+          </Link>
+        ))}
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+          {!isLoggedIn ? (
+            <>
+              <Link to="/login" onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "10px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", textAlign: "center" }}>
+                Ingresar
+              </Link>
+              <Link to="/register" onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", padding: "10px 16px", borderRadius: 100, background: C.orange, textDecoration: "none", textAlign: "center" }}>
+                Ser artista
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} onClick={() => setMobileMenu(false)}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "10px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none", textAlign: "center" }}>
+                Mi cuenta
+              </Link>
+              <button onClick={() => { authService.logout(); navigate("/"); }}
+                style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#fff", background: C.ink, border: "none", padding: "10px 16px", borderRadius: 100, cursor: "pointer", textAlign: "center" }}>
+                Salir
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, overflowX:"hidden", animation:"museumIn .45s ease both" }}>
 

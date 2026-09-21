@@ -327,16 +327,57 @@ export default function Carrito() {
         }
 
         @media (max-width: 768px) {
-          .car-main { grid-template-columns: 1fr !important; padding: 14px 12px 40px !important; }
+          .car-main { grid-template-columns: 1fr !important; padding: 12px 12px 40px !important; }
           .car-col-header { display: none !important; }
-          .car-item { flex-wrap: wrap !important; padding: 12px 12px !important; gap: 10px !important; }
-          .car-item-price { display: none !important; }
-          .car-item-qty { min-width: 90px !important; order: 3; }
-          .car-item-total { min-width: 72px !important; order: 3; }
-          .car-item-del { order: 3; margin-left: auto !important; }
-          .car-item-info { flex: 1 1 0 !important; }
           .car-sidebar { position: static !important; }
           .car-related-grid { grid-template-columns: repeat(2,1fr) !important; }
+
+          /* Ítem: checkbox + imagen + columna de info */
+          .car-item {
+            padding: 14px 12px !important;
+            gap: 10px !important;
+            align-items: flex-start !important;
+          }
+          .car-item-price { display: none !important; }
+
+          /* La columna de info crece y apila todo en vertical */
+          .car-item-info {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+
+          /* Cantidad e importe van dentro del info en fila */
+          .car-item-qty {
+            min-width: unset !important;
+            order: unset !important;
+            justify-content: flex-start !important;
+          }
+          .car-item-total {
+            min-width: unset !important;
+            order: unset !important;
+            text-align: left !important;
+          }
+          .car-item-del {
+            order: unset !important;
+            margin-left: 0 !important;
+            align-self: flex-start !important;
+          }
+
+          /* Fila inferior dentro de info: cantidad + total + borrar */
+          .car-item-bottom-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin-top: 8px;
+          }
+
+          /* Ocultar los controles de desktop que están fuera del info */
+          .car-item-qty,
+          .car-item-total,
+          .car-item-del { display: none !important; }
         }
       `}</style>
 
@@ -553,7 +594,7 @@ export default function Carrito() {
                       }
                     </div>
 
-                    {/* Info */}
+                    {/* Info + controles (en móvil todo apila aquí) */}
                     <div className="car-item-info" style={{ flex: 1, minWidth: 0 }}>
                       <div
                         onClick={() => navigate(`/obras/${item.slug}`)}
@@ -565,20 +606,44 @@ export default function Carrito() {
                       >
                         {item.titulo}
                       </div>
-                      <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 8, fontWeight: 500 }}>
+                      <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 6, fontWeight: 500 }}>
                         {item.artista_alias}
                       </div>
                       <StockBadge stock={stock} cantidad={item.cantidad} />
+
+                      {/* Fila inferior: cantidad + total + eliminar (visible en móvil dentro de info) */}
+                      <div className="car-item-bottom-row" style={{ display: "none" }}>
+                        {/* Cantidad */}
+                        <div className="car-item-qty" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1} aria-label="Reducir">
+                            <Minus size={11} strokeWidth={2.5} />
+                          </button>
+                          <span style={{ fontSize: 14, fontWeight: 700, minWidth: 18, textAlign: "center", color: C.ink }}>
+                            {item.cantidad}
+                          </span>
+                          <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad + 1)} disabled={atLimit} aria-label="Aumentar">
+                            <Plus size={11} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                        {/* Total */}
+                        <div style={{ fontSize: 15, fontWeight: 800, color: C.orange, fontFamily: NEXA, marginLeft: "auto" }}>
+                          {fmt(Number(item.precio_base) * item.cantidad)}
+                        </div>
+                        {/* Eliminar */}
+                        <button className="car-del-btn" onClick={() => eliminar(item.id_carrito)} disabled={deletingId === item.id_carrito} aria-label="Eliminar">
+                          <Trash2 size={14} strokeWidth={1.8} />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Precio */}
+                    {/* Precio — solo desktop */}
                     <div className="car-item-price" style={{ textAlign: "center", flexShrink: 0, minWidth: 86 }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, fontFamily: NEXA }}>
                         {fmt(Number(item.precio_base))}
                       </div>
                     </div>
 
-                    {/* Cantidad */}
+                    {/* Cantidad — solo desktop */}
                     <div className="car-item-qty" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, minWidth: 110, justifyContent: "center" }}>
                       <button className="car-qty-btn" onClick={() => actualizarCantidad(item.id_carrito, item.cantidad - 1)} disabled={item.cantidad <= 1} aria-label="Reducir">
                         <Minus size={11} strokeWidth={2.5} />
@@ -591,14 +656,14 @@ export default function Carrito() {
                       </button>
                     </div>
 
-                    {/* Total */}
+                    {/* Total — solo desktop */}
                     <div className="car-item-total" style={{ minWidth: 88, textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: C.orange, fontFamily: NEXA }}>
                         {fmt(Number(item.precio_base) * item.cantidad)}
                       </div>
                     </div>
 
-                    {/* Eliminar */}
+                    {/* Eliminar — solo desktop */}
                     <button
                       className="car-del-btn car-item-del"
                       onClick={() => eliminar(item.id_carrito)}

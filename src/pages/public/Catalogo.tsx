@@ -261,6 +261,7 @@ export default function Catalogo() {
   const [ordenar, setOrdenar] = useState(searchParams.get("ordenar") || "recientes");
   const [page,    setPage]    = useState(Number(searchParams.get("page")) || 1);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const isLoggedIn = authService.isAuthenticated();
   const userRol    = localStorage.getItem("userRol") || "";
@@ -638,9 +639,10 @@ export default function Catalogo() {
           .cat-colecciones { padding: 0 20px 80px !important; }
           .cat-colecciones-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; padding: 52px 0 36px !important; }
           .cat-pagination { padding: 0 16px !important; }
-          /* Hero: ocultar nav/auth en móvil — el Navbar de PublicLayout ya los tiene */
           .cat-hero-nav, .cat-hero-auth { display: none !important; }
           .cat-hero { padding: 64px 20px 40px !important; }
+          .cat-hamburger { display: flex !important; }
+          @keyframes catSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
           .cat-hero-search-input { min-width: 0 !important; width: 100% !important; max-width: 300px !important; }
         }
       `}</style>
@@ -718,6 +720,51 @@ export default function Catalogo() {
             </>
           )}
         </div>
+
+        {/* Hamburger móvil */}
+        <button className="cat-hamburger" onClick={() => setMobileMenu(true)} style={{ display:"none", position:"fixed", top:16, left:16, zIndex:200, background:"rgba(0,0,0,0.06)", border:"1px solid rgba(0,0,0,0.10)", borderRadius:10, padding:"10px 12px", cursor:"pointer", flexDirection:"column", gap:5 }}>
+          <span style={{ display:"block", width:22, height:1.5, background:C.ink, borderRadius:2 }} />
+          <span style={{ display:"block", width:16, height:1.5, background:C.ink, borderRadius:2 }} />
+          <span style={{ display:"block", width:22, height:1.5, background:C.ink, borderRadius:2 }} />
+        </button>
+        {/* Ícono login DERECHA móvil */}
+        {!isLoggedIn ? (
+          <a href="/login" className="cat-hamburger" style={{ display:"none", position:"fixed", top:16, right:16, zIndex:200, background:C.orange, border:"none", borderRadius:10, width:44, height:44, alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          </a>
+        ) : (
+          <a href={userRol === "admin" ? "/admin" : userRol === "artista" ? "/artista/dashboard" : "/mi-cuenta"} className="cat-hamburger" style={{ display:"none", position:"fixed", top:16, right:16, zIndex:200, background:C.ink, border:"none", borderRadius:10, width:44, height:44, alignItems:"center", justifyContent:"center", textDecoration:"none" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </a>
+        )}
+        {mobileMenu && (
+          <div style={{ position:"fixed", inset:0, zIndex:1000 }} onClick={() => setMobileMenu(false)}>
+            <div style={{ position:"absolute", top:0, left:0, width:"min(280px, calc(100vw - 40px))", height:"100%", background:"#fff", borderRight:"1px solid rgba(0,0,0,0.08)", boxShadow:"8px 0 32px rgba(0,0,0,0.08)", display:"flex", flexDirection:"column", animation:"catSlideIn .25s cubic-bezier(0.16,1,0.3,1)" }} onClick={e => e.stopPropagation()}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"20px 24px", borderBottom:"1px solid rgba(0,0,0,0.07)" }}>
+                <span style={{ fontFamily:SERIF, fontSize:18, fontWeight:900, color:C.ink }}>ALTAR</span>
+                <button onClick={() => setMobileMenu(false)} style={{ background:"none", border:"none", cursor:"pointer", fontSize:20, color:C.sub }}>✕</button>
+              </div>
+              <nav style={{ padding:"32px 28px 20px", display:"flex", flexDirection:"column", gap:18 }}>
+                {[["/" , "Inicio"],["/catalogo","Galería"],["/artistas","Artistas"],["/blog","Blog"],["/sobre-nosotros","Nosotros"],["/contacto","Contacto"]].map(([to,label]) => (
+                  <Link key={to} to={to} onClick={() => setMobileMenu(false)} className="home-nav-link">{label}</Link>
+                ))}
+              </nav>
+              <div style={{ padding:"20px 28px", borderTop:"1px solid rgba(0,0,0,0.07)", display:"flex", alignItems:"center", gap:12 }}>
+                {!isLoggedIn ? (
+                  <>
+                    <Link to="/login" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.sub, textDecoration:"none", padding:"7px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.10)" }}>Ingresar</Link>
+                    <Link to="/register" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", textDecoration:"none", padding:"7px 16px", borderRadius:100, background:C.orange }}>Ser artista</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.sub, textDecoration:"none", padding:"7px 14px", borderRadius:100, border:"1px solid rgba(0,0,0,.10)" }}>Mi cuenta</Link>
+                    <button onClick={() => { handleLogout(); setMobileMenu(false); }} style={{ fontSize:"11px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#fff", background:C.ink, border:"none", padding:"9px 20px", borderRadius:100, cursor:"pointer" }}>Salir</button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Contenido central */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
