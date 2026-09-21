@@ -246,7 +246,11 @@ export default function DetalleObra() {
       navigate(`/login?redirect=${encodeURIComponent(`/obras/${slug}`)}`);
       return;
     }
-    if (userRol !== "cliente" || likingObra) return;
+    if (likingObra) return;
+    if (userRol !== "cliente") {
+      showToast("Solo clientes pueden guardar favoritos", "error");
+      return;
+    }
 
     // Actualización optimista — el UI responde inmediatamente sin esperar al servidor
     const nuevoLiked = !liked;
@@ -370,6 +374,7 @@ export default function DetalleObra() {
         ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
         @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
         .ob-mobile-btn { display: none; }
+        .ob-like-share { top: 16px; right: 16px; }
         @keyframes obSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
         @media (max-width: 1024px) {
           .ob-hero { grid-template-columns: 1fr !important; height: auto !important; }
@@ -379,6 +384,7 @@ export default function DetalleObra() {
           .ob-related-section { padding: 48px 28px !important; }
         }
         @media (max-width: 768px) {
+          .ob-like-share { top: 72px !important; }
           .ob-hero-img { height: 55vw !important; min-height: 260px; max-height: none; }
           .ob-hero-panel { padding: 28px 20px 32px !important; }
           .ob-detail-grid { grid-template-columns: 1fr !important; padding: 28px 20px !important; gap: 32px !important; }
@@ -493,13 +499,26 @@ export default function DetalleObra() {
             </div>
 
             {/* Like + Share */}
-            <div style={{ position:"absolute", top:16, right:16, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both" }}>
+            <div className="ob-like-share" style={{ position:"absolute", top:16, right:16, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both" }}>
               <button onClick={handleToggleFavorito}
                 title={liked ? "Quitar de favoritos" : "Agregar a favoritos"}
                 style={{ width:44, height:44, borderRadius:"50%", background: liked ? `${C.pink}22` : "rgba(13,11,20,.75)", border:`1px solid ${liked ? C.pink+"55" : "rgba(255,255,255,.15)"}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s", opacity: likingObra ? 0.6 : 1 }}>
                 <Heart size={16} color={liked ? C.pink : "rgba(255,255,255,.5)"} fill={liked ? C.pink : "none"} strokeWidth={2}/>
               </button>
-              <button onClick={e => { e.stopPropagation(); navigator.share?.({ title:obra.titulo, url:globalThis.location.href }); }}
+              <button onClick={async e => {
+                e.stopPropagation();
+                const url = globalThis.location.href;
+                if (navigator.share) {
+                  try { await navigator.share({ title: obra.titulo, url }); } catch {}
+                } else {
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    showToast("Enlace copiado al portapapeles", "ok");
+                  } catch {
+                    showToast("No se pudo copiar el enlace", "error");
+                  }
+                }
+              }}
                 style={{ width:44, height:44, borderRadius:"50%", background:"rgba(13,11,20,.75)", border:"1px solid rgba(255,255,255,.15)", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
                 <Share2 size={16} color="rgba(255,255,255,.5)" strokeWidth={2}/>
               </button>
