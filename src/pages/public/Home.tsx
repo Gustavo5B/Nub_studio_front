@@ -506,6 +506,7 @@ export default function Home() {
             color: C.ink,
             letterSpacing: "-.03em", lineHeight: .88,
             userSelect: "none", margin: 0,
+            animation: "fadeI .01s ease .15s both",
           }}>
             ALTAR
           </h1>
