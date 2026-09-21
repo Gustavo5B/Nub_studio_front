@@ -265,7 +265,7 @@ export default function Home() {
           display: flex; pointer-events: none;
         }
         .home-door {
-          flex: 1; background: #0D0B14;
+          flex: 1; background: #F8F6F2;
           transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .home-door.izq  { transform-origin: left  center; }
@@ -275,7 +275,7 @@ export default function Home() {
         .home-door-logo {
           position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
           z-index: 99991; font-family: 'SolveraLorvane', serif;
-          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #fff;
+          font-size: clamp(64px, 10vw, 130px); font-weight: 900; color: #14121E;
           letter-spacing: -.03em; pointer-events: none;
           transition: opacity .35s ease .8s;
           animation: fadeI .01s ease .05s both;
@@ -285,7 +285,7 @@ export default function Home() {
           position: fixed; top: calc(50% + clamp(48px, 8vw, 104px)); left: 50%;
           transform: translateX(-50%);
           z-index: 99991; font-size: 9px; font-weight: 700; letter-spacing: .44em;
-          text-transform: uppercase; color: rgba(255,255,255,.35);
+          text-transform: uppercase; color: rgba(20,18,30,.35);
           pointer-events: none; transition: opacity .3s ease .7s;
         }
         .home-door-sub.open { opacity: 0; }
