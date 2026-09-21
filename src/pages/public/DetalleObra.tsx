@@ -56,6 +56,7 @@ export default function DetalleObra() {
   const [countdown, setCountdown] = useState<string | null>(null);
   const [marcos,    setMarcos]    = useState<any[]>([]);
   const [marcoSel,  setMarcoSel]  = useState<any>(null);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const { showToast } = useToast();
   const isLoggedIn = authService.isAuthenticated();
@@ -368,16 +369,25 @@ export default function DetalleObra() {
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
         @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
-        @media (max-width: 768px) {
+        .ob-mobile-btn { display: none; }
+        @keyframes obSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+        @media (max-width: 1024px) {
           .ob-hero { grid-template-columns: 1fr !important; height: auto !important; }
-          .ob-hero-img { height: 55vw !important; min-height: 260px; }
-          .ob-hero-panel { height: auto !important; padding: 28px 20px 32px !important; overflow-y: visible !important; }
+          .ob-hero-img { height: 60vw !important; min-height: 300px; max-height: 520px; }
+          .ob-hero-panel { height: auto !important; padding: 32px 28px 40px !important; overflow-y: visible !important; }
+          .ob-detail-grid { padding: 36px 28px !important; gap: 36px !important; }
+          .ob-related-section { padding: 48px 28px !important; }
+        }
+        @media (max-width: 768px) {
+          .ob-hero-img { height: 55vw !important; min-height: 260px; max-height: none; }
+          .ob-hero-panel { padding: 28px 20px 32px !important; }
           .ob-detail-grid { grid-template-columns: 1fr !important; padding: 28px 20px !important; gap: 32px !important; }
           .ob-related-section { padding: 40px 20px !important; }
           .ob-related-grid { grid-template-columns: repeat(2,1fr) !important; }
           .ob-banner { white-space: normal !important; flex-wrap: wrap !important; gap: 10px !important; border-radius: 16px !important; padding: 10px 14px !important; bottom: 16px !important; width: calc(100% - 32px) !important; left: 16px !important; transform: none !important; box-sizing: border-box !important; }
           .ob-banner-text { display: none !important; }
-          .ob-auth-row a, .ob-auth-row button { font-size: 8px !important; padding: 5px 10px !important; }
+          .ob-auth-row { display: none !important; }
+          .ob-mobile-btn { display: flex !important; }
         }
       `}</style>
 
@@ -412,6 +422,38 @@ export default function DetalleObra() {
           </button>
         </div>
       )}
+
+      {/* Hamburguesa móvil IZQUIERDA */}
+      <button className="ob-mobile-btn" onClick={() => setMobileMenu(true)}
+        style={{ position:"fixed", top:16, left:16, zIndex:200, width:44, height:44, background:"rgba(255,255,255,0.92)", border:"1px solid rgba(0,0,0,.08)", borderRadius:12, flexDirection:"column", alignItems:"center", justifyContent:"center", gap:5, cursor:"pointer", backdropFilter:"blur(8px)" }}
+        aria-label="Abrir menú"
+      >
+        <span style={{ display:"block", width:18, height:1.5, background:C.ink, borderRadius:2 }}/>
+        <span style={{ display:"block", width:18, height:1.5, background:C.ink, borderRadius:2 }}/>
+        <span style={{ display:"block", width:12, height:1.5, background:C.ink, borderRadius:2, alignSelf:"flex-start", marginLeft:13 }}/>
+      </button>
+      {/* Login icon DERECHA móvil */}
+      {!isLoggedIn ? (
+        <Link to="/login" className="ob-mobile-btn" style={{ position:"fixed", top:16, right:16, zIndex:200, width:44, height:44, background:C.orange, borderRadius:12, display:"none", alignItems:"center", justifyContent:"center", textDecoration:"none", border:"none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </Link>
+      ) : (
+        <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} className="ob-mobile-btn" style={{ position:"fixed", top:16, right:16, zIndex:200, width:44, height:44, background:C.ink, borderRadius:12, display:"none", alignItems:"center", justifyContent:"center", textDecoration:"none", border:"none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </Link>
+      )}
+      {/* Panel móvil */}
+      {mobileMenu && (
+        <div style={{ position:"fixed", inset:0, zIndex:9000, background:"rgba(20,18,30,0.45)", backdropFilter:"blur(4px)" }} onClick={() => setMobileMenu(false)}/>
+      )}
+      <div style={{ position:"fixed", top:0, left:mobileMenu?0:"-320px", bottom:0, width:"min(280px, calc(100vw - 40px))", background:"#fff", zIndex:9001, padding:"48px 28px 32px", display:"flex", flexDirection:"column", gap:8, boxShadow:"8px 0 32px rgba(0,0,0,0.12)", transition:"left 0.32s cubic-bezier(0.16,1,0.3,1)", animation:mobileMenu?"obSlideIn 0.32s ease both":"none" }}>
+        <button onClick={() => setMobileMenu(false)} style={{ position:"absolute", top:16, right:16, background:"none", border:"none", fontSize:22, cursor:"pointer", color:C.sub, lineHeight:1 }}>✕</button>
+        <Link to="/" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.ink, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Inicio</Link>
+        <Link to="/catalogo" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.ink, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Catálogo</Link>
+        <Link to="/artistas" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.ink, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Artistas</Link>
+        <Link to="/about" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.ink, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Nosotros</Link>
+        <Link to="/contact" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.ink, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Contacto</Link>
+      </div>
 
       <div style={{ minHeight:"100vh", background:"#fff", fontFamily:SANS, animation:"museumIn .45s ease both" }}>
 
@@ -451,15 +493,15 @@ export default function DetalleObra() {
             </div>
 
             {/* Like + Share */}
-            <div style={{ position:"absolute", top:20, right:20, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both" }}>
+            <div style={{ position:"absolute", top:16, right:16, display:"flex", flexDirection:"column", gap:8, animation:"fadeI 1s ease .4s both" }}>
               <button onClick={handleToggleFavorito}
                 title={liked ? "Quitar de favoritos" : "Agregar a favoritos"}
-                style={{ width:38, height:38, borderRadius:"50%", background: liked ? `${C.pink}22` : "rgba(13,11,20,.75)", border:`1px solid ${liked ? C.pink+"55" : "rgba(255,255,255,.15)"}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s", opacity: likingObra ? 0.6 : 1 }}>
-                <Heart size={14} color={liked ? C.pink : "rgba(255,255,255,.5)"} fill={liked ? C.pink : "none"} strokeWidth={2}/>
+                style={{ width:44, height:44, borderRadius:"50%", background: liked ? `${C.pink}22` : "rgba(13,11,20,.75)", border:`1px solid ${liked ? C.pink+"55" : "rgba(255,255,255,.15)"}`, backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .2s", opacity: likingObra ? 0.6 : 1 }}>
+                <Heart size={16} color={liked ? C.pink : "rgba(255,255,255,.5)"} fill={liked ? C.pink : "none"} strokeWidth={2}/>
               </button>
               <button onClick={e => { e.stopPropagation(); navigator.share?.({ title:obra.titulo, url:globalThis.location.href }); }}
-                style={{ width:38, height:38, borderRadius:"50%", background:"rgba(13,11,20,.75)", border:"1px solid rgba(255,255,255,.15)", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-                <Share2 size={14} color="rgba(255,255,255,.5)" strokeWidth={2}/>
+                style={{ width:44, height:44, borderRadius:"50%", background:"rgba(13,11,20,.75)", border:"1px solid rgba(255,255,255,.15)", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                <Share2 size={16} color="rgba(255,255,255,.5)" strokeWidth={2}/>
               </button>
             </div>
 

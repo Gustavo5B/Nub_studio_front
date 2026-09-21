@@ -189,6 +189,11 @@ export default function MiCuenta() {
         }
         .acct-row:hover { background:#FAFAFD; }
 
+        @media (max-width: 1024px) {
+          .mc-hero-inner { padding: 36px 24px 0 !important; }
+          .mc-main { padding: 36px 24px 80px !important; }
+          .mc-cards-grid { grid-template-columns: repeat(2,1fr) !important; gap: 14px !important; }
+        }
         @media (max-width: 768px) {
           .mc-hero-inner { padding: 28px 16px 0 !important; }
           .mc-stats-strip { flex-direction: column !important; }
@@ -197,6 +202,9 @@ export default function MiCuenta() {
           .mc-main { padding: 28px 16px 80px !important; }
           .mc-cards-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
           .mc-hero-cta { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .mc-cards-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 

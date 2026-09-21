@@ -245,6 +245,10 @@ export default function MisPedidos() {
         .overlay-btn { transition:all .18s; }
         .overlay-btn:hover { transform:translateY(-1px); }
 
+        @media (max-width: 1024px) {
+          .ped-hero-inner { padding: 28px 24px 20px !important; }
+          .ped-main { padding: 24px 20px 80px !important; }
+        }
         @media (max-width: 768px) {
           .ped-hero-inner { padding: 24px 16px 20px !important; }
           .ped-stats { display: none !important; }

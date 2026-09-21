@@ -202,11 +202,23 @@ export default function MisFavoritos() {
           to   { opacity: 1; transform: translateY(0); }
         }
         .fav-card { animation: fadeUp .3s ease both; }
+        @media (max-width: 1024px) {
+          .fav-header-inner { padding: 28px 20px 0 !important; }
+          .fav-main-pad { padding: 0 20px 80px !important; }
+        }
+        @media (max-width: 768px) {
+          .fav-header-inner { padding: 20px 16px 0 !important; }
+          .fav-main-pad { padding: 0 16px 80px !important; }
+          .fav-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+        }
+        @media (max-width: 480px) {
+          .fav-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
 
       {/* ── Hero title ── */}
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 0" }}>
+      <div className="fav-header-inner" style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 0" }}>
         <h1 style={{
           fontFamily: SERIF, fontStyle: "italic", fontSize: "clamp(28px,4vw,42px)", fontWeight: 900,
           color: C.ink, margin: "0 0 4px", letterSpacing: "-.03em",
@@ -221,7 +233,7 @@ export default function MisFavoritos() {
       </div>
 
       {/* ── Contenido ── */}
-      <main style={{ maxWidth: 1040, margin: "0 auto", padding: "0 24px 80px" }}>
+      <main className="fav-main-pad" style={{ maxWidth: 1040, margin: "0 auto", padding: "0 24px 80px" }}>
 
         {/* Skeleton */}
         {loading && (
@@ -301,7 +313,7 @@ export default function MisFavoritos() {
 
         {/* Grid */}
         {!loading && favoritos.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20 }}>
+          <div className="fav-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20 }}>
             {favoritos.map((fav, idx) => (
               <div
                 key={fav.id_favorito}

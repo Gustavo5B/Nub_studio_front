@@ -633,10 +633,16 @@ export default function Register() {
         .reg-back-btn:hover { color: #14121E !important; }
         .reg-pill-outline:hover { border-color: rgba(0,0,0,0.22) !important; color: #14121E !important; }
 
+        @media (max-width: 1024px) {
+          .reg-left { flex: 0 0 42% !important; }
+        }
         @media (max-width: 768px) {
           .reg-left  { display: none !important; }
-          .reg-right { flex: 1 !important; padding: 80px 32px !important; }
+          .reg-right { flex: 1 !important; padding: 60px 28px 40px !important; }
           .fc { display: none; }
+        }
+        @media (max-width: 480px) {
+          .reg-right { padding: 48px 20px 32px !important; }
         }
       `}</style>
     </div>

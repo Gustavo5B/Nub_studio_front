@@ -593,11 +593,18 @@ export default function Login() {
           color: #14121E !important;
         }
 
+        /* ── Tablet ── */
+        @media (max-width: 1024px) {
+          .login-left { flex: 0 0 42% !important; }
+        }
         /* ── Mobile ── */
         @media (max-width: 768px) {
           .login-left  { display: none !important; }
-          .login-right { flex: 1 !important; padding: 80px 32px !important; }
+          .login-right { flex: 1 !important; padding: 60px 28px 40px !important; }
           .fc { display: none; }
+        }
+        @media (max-width: 480px) {
+          .login-right { padding: 48px 20px 32px !important; }
         }
       `}</style>
     </div>
