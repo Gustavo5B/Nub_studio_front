@@ -48,6 +48,7 @@ export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -214,13 +215,14 @@ export default function Blog() {
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 12px; }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        .blog-mobile-btn { display: none; }
+        @keyframes blogSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
         @media (max-width: 768px) {
           .card { border-radius: 24px; }
-          .side-nav { left: 24px; top: 20px; gap: 8px; }
-          .side-nav-link { font-size: 8px; gap: 6px; }
-          .side-nav-link::before { width: 8px; }
-          .side-nav-link:hover { gap: 10px; }
-          .side-nav-link:hover::before { width: 16px; }
+          .side-nav { display: none !important; }
+          .blog-auth-row { display: none !important; }
+          .blog-mobile-btn { display: flex !important; }
+          .blog-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
         }
       `}</style>
 
@@ -237,7 +239,40 @@ export default function Blog() {
         <Link to="/contacto" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Contacto</Link>
       </nav>
 
-      <div style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeSlideUp 0.8s ease 0.3s both", zIndex: 11 }}>
+      {/* Hamburguesa móvil IZQUIERDA */}
+      <button className="blog-mobile-btn" onClick={() => setMobileMenu(true)}
+        style={{ position:"fixed", top:16, left:16, zIndex:200, width:44, height:44, background:"rgba(255,255,255,0.92)", border:"1px solid rgba(0,0,0,.08)", borderRadius:12, flexDirection:"column", alignItems:"center", justifyContent:"center", gap:5, cursor:"pointer", backdropFilter:"blur(8px)" }}
+        aria-label="Abrir menú"
+      >
+        <span style={{ display:"block", width:18, height:1.5, background:"#14121E", borderRadius:2 }}/>
+        <span style={{ display:"block", width:18, height:1.5, background:"#14121E", borderRadius:2 }}/>
+        <span style={{ display:"block", width:12, height:1.5, background:"#14121E", borderRadius:2, alignSelf:"flex-start", marginLeft:13 }}/>
+      </button>
+      {/* Login icon DERECHA móvil */}
+      {!isLoggedIn ? (
+        <Link to="/login" className="blog-mobile-btn" style={{ position:"fixed", top:16, right:16, zIndex:200, width:44, height:44, background:C.orange, borderRadius:12, display:"none", alignItems:"center", justifyContent:"center", textDecoration:"none", border:"none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </Link>
+      ) : (
+        <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} className="blog-mobile-btn" style={{ position:"fixed", top:16, right:16, zIndex:200, width:44, height:44, background:"#14121E", borderRadius:12, display:"none", alignItems:"center", justifyContent:"center", textDecoration:"none", border:"none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </Link>
+      )}
+      {/* Panel móvil */}
+      {mobileMenu && (
+        <div style={{ position:"fixed", inset:0, zIndex:9000, background:"rgba(20,18,30,0.45)", backdropFilter:"blur(4px)" }} onClick={() => setMobileMenu(false)}/>
+      )}
+      <div style={{ position:"fixed", top:0, left:mobileMenu?0:"-320px", bottom:0, width:"min(280px, calc(100vw - 40px))", background:"#fff", zIndex:9001, padding:"48px 28px 32px", display:"flex", flexDirection:"column", gap:8, boxShadow:"8px 0 32px rgba(0,0,0,0.12)", transition:"left 0.32s cubic-bezier(0.16,1,0.3,1)" }}>
+        <button onClick={() => setMobileMenu(false)} style={{ position:"absolute", top:16, right:16, background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#9896A8", lineHeight:1 }}>✕</button>
+        <Link to="/" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Inicio</Link>
+        <Link to="/catalogo" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Catálogo</Link>
+        <Link to="/artistas" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Artistas</Link>
+        <Link to="/blog" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.orange, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Blog</Link>
+        <Link to="/about" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Nosotros</Link>
+        <Link to="/contact" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Contacto</Link>
+      </div>
+
+      <div className="blog-auth-row" style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeSlideUp 0.8s ease 0.3s both", zIndex: 11 }}>
         {!isLoggedIn ? (
           <>
             <Link to="/login" onMouseEnter={cursorOn} onMouseLeave={cursorOff} style={{ fontSize: "9.5px", fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: C.sub, padding: "7px 14px", borderRadius: 100, border: "1px solid rgba(0,0,0,.10)", textDecoration: "none" }}>Ingresar</Link>
@@ -345,7 +380,7 @@ export default function Blog() {
               </Link>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "clamp(28px, 4vw, 40px)" }}>
+            <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "clamp(28px, 4vw, 40px)" }}>
               {rest.map((post, idx) => (
                 <PostCard key={post.id_post} post={post} index={idx} cursorOn={cursorOn} cursorOff={cursorOff} />
               ))}

@@ -378,7 +378,7 @@ export default function AcervoDetalle() {
       </div>
 
       {/* ══ CONTROLES ══ */}
-      <div ref={galRef} style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(32px,5vw,60px) clamp(16px,6vw,72px) 0" }}>
+      <div ref={galRef} className="acer-controls" style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(32px,5vw,60px) clamp(16px,6vw,72px) 0" }}>
 
         {/* Buscador */}
         <div style={{
@@ -750,6 +750,19 @@ export default function AcervoDetalle() {
         @keyframes pulse {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.7; }
+        }
+
+        @media (max-width: 1024px) {
+          .acer-controls { padding: clamp(24px,4vw,40px) clamp(16px,4vw,40px) 0 !important; }
+          .acer-hero-content { padding: 0 24px !important; }
+        }
+        @media (max-width: 768px) {
+          .acer-hero { height: 60vh !important; min-height: 380px !important; }
+          .acer-hero-content { padding: 0 16px !important; }
+          .acer-hero-title { font-size: clamp(28px,8vw,48px) !important; }
+          .acer-controls { padding: 20px 16px 0 !important; }
+          .acer-search { max-width: 100% !important; }
+          .scroll-horizontal { gap: 32px !important; padding: clamp(24px,5vw,48px) clamp(12px,5vw,48px) clamp(32px,5vw,60px) !important; }
         }
       `}</style>
     </div>

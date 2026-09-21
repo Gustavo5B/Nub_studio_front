@@ -85,6 +85,7 @@ export default function BlogDetalle() {
   const userRol = localStorage.getItem("userRol") || "";
   const token = authService.getToken();
 
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
   const [relacionados, setRelacionados] = useState<PostRelacionado[]>([]);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
@@ -327,17 +328,53 @@ export default function BlogDetalle() {
         .rel-card:hover h3 { color: ${C.orange}; }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
+        .bd-mobile-btn { display: none; }
+        @keyframes bdSlideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
         @media (max-width: 768px) {
           .side-nav { display: none !important; }
           .bd-hero-auth { display: none !important; }
           .bd-article { padding: 72px 20px 60px !important; }
           .bd-loading { padding: 80px 20px 60px !important; }
+          .bd-mobile-btn { display: flex !important; }
         }
       `}</style>
 
       <div className="home-grain" />
       <div ref={dotRef} className="home-cursor-dot" />
       <div ref={ringRef} className="home-cursor-ring" />
+
+      {/* Hamburguesa móvil IZQUIERDA */}
+      <button className="bd-mobile-btn" onClick={() => setMobileMenu(true)}
+        style={{ position:"fixed", top:16, left:16, zIndex:200, width:44, height:44, background:"rgba(255,255,255,0.92)", border:"1px solid rgba(0,0,0,.08)", borderRadius:12, flexDirection:"column", alignItems:"center", justifyContent:"center", gap:5, cursor:"pointer", backdropFilter:"blur(8px)" }}
+        aria-label="Abrir menú"
+      >
+        <span style={{ display:"block", width:18, height:1.5, background:"#14121E", borderRadius:2 }}/>
+        <span style={{ display:"block", width:18, height:1.5, background:"#14121E", borderRadius:2 }}/>
+        <span style={{ display:"block", width:12, height:1.5, background:"#14121E", borderRadius:2, alignSelf:"flex-start", marginLeft:13 }}/>
+      </button>
+      {/* Login icon DERECHA móvil */}
+      {!isLoggedIn ? (
+        <Link to="/login" className="bd-mobile-btn" style={{ position:"fixed", top:16, right:16, zIndex:200, width:44, height:44, background:"#E8640C", borderRadius:12, display:"none", alignItems:"center", justifyContent:"center", textDecoration:"none", border:"none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </Link>
+      ) : (
+        <Link to={userRol==="admin"?"/admin":userRol==="artista"?"/artista/dashboard":"/mi-cuenta"} className="bd-mobile-btn" style={{ position:"fixed", top:16, right:16, zIndex:200, width:44, height:44, background:"#14121E", borderRadius:12, display:"none", alignItems:"center", justifyContent:"center", textDecoration:"none", border:"none" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </Link>
+      )}
+      {/* Panel móvil */}
+      {mobileMenu && (
+        <div style={{ position:"fixed", inset:0, zIndex:9000, background:"rgba(20,18,30,0.45)", backdropFilter:"blur(4px)" }} onClick={() => setMobileMenu(false)}/>
+      )}
+      <div style={{ position:"fixed", top:0, left:mobileMenu?0:"-320px", bottom:0, width:"min(280px, calc(100vw - 40px))", background:"#fff", zIndex:9001, padding:"48px 28px 32px", display:"flex", flexDirection:"column", gap:8, boxShadow:"8px 0 32px rgba(0,0,0,0.12)", transition:"left 0.32s cubic-bezier(0.16,1,0.3,1)" }}>
+        <button onClick={() => setMobileMenu(false)} style={{ position:"absolute", top:16, right:16, background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#9896A8", lineHeight:1 }}>✕</button>
+        <Link to="/" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Inicio</Link>
+        <Link to="/catalogo" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Catálogo</Link>
+        <Link to="/artistas" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Artistas</Link>
+        <Link to="/blog" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#E8640C", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Blog</Link>
+        <Link to="/about" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Nosotros</Link>
+        <Link to="/contact" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Contacto</Link>
+      </div>
 
       <nav className="side-nav">
         <Link to="/" className="side-nav-link" onMouseEnter={cursorOn} onMouseLeave={cursorOff}>Inicio</Link>
