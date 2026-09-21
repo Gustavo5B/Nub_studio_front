@@ -503,10 +503,9 @@ export default function Home() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
           <h1 style={{
             fontFamily: SERIF, fontSize: "clamp(96px,14vw,180px)", fontWeight: 900,
-            color: doorOpen ? C.ink : "#fff",
+            color: C.ink,
             letterSpacing: "-.03em", lineHeight: .88,
             userSelect: "none", margin: 0,
-            transition: "color 0.5s ease 0.3s",
           }}>
             ALTAR
           </h1>
