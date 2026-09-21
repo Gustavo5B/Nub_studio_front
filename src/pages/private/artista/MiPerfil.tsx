@@ -339,6 +339,20 @@ const css = `
   .mp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
   @media (max-width: 700px) { .mp-grid-2 { grid-template-columns: 1fr; } }
 
+  /* ── Responsive móvil ── */
+  @media (max-width: 640px) {
+    .mp-hero { grid-template-columns: 1fr !important; gap: 14px !important; margin-bottom: 28px !important; }
+    .mp-hero-meta { text-align: left !important; animation: none !important; opacity: 1 !important; }
+    .mp-hero-sub { margin-top: 8px !important; font-size: 13px !important; max-width: 100% !important; }
+    .mp-prog { flex-direction: column !important; align-items: flex-start !important; gap: 14px !important; padding: 18px 20px !important; }
+    .mp-prog-num { font-size: 44px !important; }
+    .mp-prog-badge { align-self: flex-start !important; }
+    .mp-prog-info { width: 100%; }
+    .mp-sec { padding: 18px 16px !important; border-radius: 20px !important; }
+    .mp-sec-hdr { margin-bottom: 18px !important; }
+    .mp-eyebrow { font-size: 9.5px !important; letter-spacing: 1.5px !important; }
+  }
+
   /* ── Fields ── */
   .mp-label {
     font-size: 10.5px; font-weight: 700; color: ${C.muted}; text-transform: uppercase;
@@ -1384,7 +1398,7 @@ export default function MiPerfil({ artista, token, onActualizar }: Props) {
         <div className="mp-hero">
           <div>
             <div className="mp-eyebrow">Nu-B Studio · Portal artista</div>
-            <h1 style={{ fontFamily: SERIF, fontSize: "clamp(48px,6.5vw,80px)", fontWeight: 900, lineHeight: .95, letterSpacing: "-.03em", color: C.ink, marginBottom: 0 }}>
+            <h1 style={{ fontFamily: SERIF, fontSize: "clamp(30px,6.5vw,80px)", fontWeight: 900, lineHeight: .95, letterSpacing: "-.03em", color: C.ink, marginBottom: 0 }}>
               {"Mi perfil".split("").map((l, i) => (
                 <span key={i} style={{
                   display: "inline-block", opacity: 0,
