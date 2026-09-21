@@ -117,10 +117,18 @@ export default function MisBlogPosts() {
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-up { animation: fadeUp 0.4s ease forwards; }
+        @media (max-width: 768px) {
+          .mbp-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .mbp-row { flex-wrap: wrap !important; }
+          .mbp-row-img { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .mbp-filters { flex-wrap: wrap !important; gap: 6px !important; }
+        }
       `}</style>
 
       {/* Encabezado */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+      <div className="mbp-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: 12, background: `${C.orange}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <PenSquare size={20} color={C.orange} />

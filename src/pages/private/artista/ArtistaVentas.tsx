@@ -90,6 +90,15 @@ export default function ArtistaVentas() {
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
         .av-row { transition: background .15s; }
         .av-row:hover { background: rgba(0,0,0,.018) !important; }
+        @media (max-width: 768px) {
+          .av-kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .av-table-wrap { overflow-x: auto !important; }
+          .av-table-wrap table { min-width: 600px; }
+          .av-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+        }
+        @media (max-width: 480px) {
+          .av-kpi-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* Header */}
@@ -103,7 +112,7 @@ export default function ArtistaVentas() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="av-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
         {[
           { label: "Ventas totales",  value: String(totalVentas), accent: C.orange, icon: <ShoppingBag size={17} color={C.orange} strokeWidth={1.8}/> },
           { label: "Monto cobrado",   value: fmt(montoTotal),     accent: C.green,  icon: <TrendingUp  size={17} color={C.green}  strokeWidth={1.8}/> },
@@ -162,7 +171,7 @@ export default function ArtistaVentas() {
       </div>
 
       {/* Tabla */}
-      <div style={{ background: C.card, borderRadius: 12, boxShadow: CS, overflow: "hidden" }}>
+      <div className="av-table-wrap" style={{ background: C.card, borderRadius: 12, boxShadow: CS, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
