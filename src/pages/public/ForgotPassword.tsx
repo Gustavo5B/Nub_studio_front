@@ -50,11 +50,14 @@ export default function ForgotPassword() {
   const handleRequestCode = async () => {
     if (!correo.trim()) { showMsg("Ingresa tu correo electrónico", true); return; }
     setIsLoading(true); clearMsg();
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
     try {
       const res = await fetch(`${API_BASE}/api/recovery/request-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo }),
+        signal: ctrl.signal,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -70,9 +73,14 @@ export default function ForgotPassword() {
       setResendCooldown(60);
       setStep("code");
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
-    } catch {
-      showMsg("No se pudo conectar con el servidor", true);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        showMsg("El servidor tardó demasiado. Intenta de nuevo.", true);
+      } else {
+        showMsg("No se pudo conectar con el servidor", true);
+      }
     } finally {
+      clearTimeout(t);
       setIsLoading(false);
     }
   };
@@ -80,10 +88,13 @@ export default function ForgotPassword() {
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     setIsLoading(true); clearMsg();
+    const ctrl2 = new AbortController();
+    const t2 = setTimeout(() => ctrl2.abort(), 15000);
     try {
       await fetch(`${API_BASE}/api/recovery/request-code`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo }),
+        signal: ctrl2.signal,
       });
       setCodeDigits(["", "", "", "", "", ""]);
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
@@ -92,6 +103,7 @@ export default function ForgotPassword() {
     } catch {
       showMsg("Error al reenviar", true);
     } finally {
+      clearTimeout(t2);
       setIsLoading(false);
     }
   };
@@ -231,12 +243,24 @@ export default function ForgotPassword() {
           box-shadow: 0 0 0 3px rgba(232,100,12,0.15) !important;
           background: rgba(232,100,12,0.08) !important;
         }
+        @media (max-width: 480px) {
+          .fp-card { padding: 24px 18px !important; }
+          .fp-code-row { gap: 6px !important; }
+          .fp-code-input { width: 38px !important; height: 46px !important; font-size: 17px !important; border-radius: 10px !important; }
+          .fp-orb { display: none !important; }
+          .fp-back { top: 12px !important; left: 12px !important; padding: 8px 14px !important; font-size: 12px !important; }
+          .fp-wrap { padding: 14px !important; }
+        }
+        @media (max-width: 360px) {
+          .fp-code-input { width: 33px !important; height: 42px !important; font-size: 15px !important; }
+          .fp-code-row { gap: 4px !important; }
+        }
       `}</style>
 
       {/* Orbs */}
-      <div style={{ position: "fixed", top: -120, left: -120, width: 450, height: 450, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}20, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: -120, right: -120, width: 550, height: 550, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}18, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", top: "40%", right: "20%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents: "none" }} />
+      <div className="fp-orb" style={{ position: "fixed", top: -120, left: -120, width: 450, height: 450, borderRadius: "50%", background: `radial-gradient(circle, ${C.pink}20, transparent 70%)`, pointerEvents: "none" }} />
+      <div className="fp-orb" style={{ position: "fixed", bottom: -120, right: -120, width: 550, height: 550, borderRadius: "50%", background: `radial-gradient(circle, ${C.purple}18, transparent 70%)`, pointerEvents: "none" }} />
+      <div className="fp-orb" style={{ position: "fixed", top: "40%", right: "20%", width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${C.orange}10, transparent 70%)`, pointerEvents: "none" }} />
 
       {/* Botón volver */}
       <button
@@ -246,6 +270,7 @@ export default function ForgotPassword() {
           else if (step === "password") { setStep("code"); clearMsg(); }
           else navigate("/login");
         }}
+        className="fp-back"
         style={{ position: "fixed", top: 20, left: 20, zIndex: 100, display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(16px)", border: "1px solid #E6E4EF", color: "#5A5870", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif", boxShadow: "0 1px 8px rgba(0,0,0,0.08)", transition: "all .22s ease" }}
         onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(232,100,12,0.08)"; el.style.borderColor = "rgba(232,100,12,0.30)"; el.style.color = C.orange; }}
         onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.97)"; el.style.borderColor = "#E6E4EF"; el.style.color = "#5A5870"; }}
@@ -254,7 +279,7 @@ export default function ForgotPassword() {
         {step === "email" ? "Volver al login" : "Paso anterior"}
       </button>
 
-      <div style={{ width: "100%", maxWidth: 440, padding: "20px" }}>
+      <div className="fp-wrap" style={{ width: "100%", maxWidth: 440, padding: "20px" }}>
 
         {/* Logo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
@@ -281,7 +306,7 @@ export default function ForgotPassword() {
         )}
 
         {/* Card */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E6E4EF", borderRadius: 20, padding: "36px 32px", boxShadow: "0 4px 24px rgba(0,0,0,0.07)" }}>
+        <div className="fp-card" style={{ background: "#FFFFFF", border: "1px solid #E6E4EF", borderRadius: 20, padding: "36px 32px", boxShadow: "0 4px 24px rgba(0,0,0,0.07)" }}>
 
           {/* ── PASO 1: Email ── */}
           {step === "email" && (
@@ -322,7 +347,7 @@ export default function ForgotPassword() {
               <p style={{ fontSize: 14, fontWeight: 700, color: C.orange, margin: "0 0 24px" }}>{maskedEmail}</p>
 
               {/* 6 inputs alfanuméricos */}
-              <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 8 }} onPaste={handleCodePaste}>
+              <div className="fp-code-row" style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 8 }} onPaste={handleCodePaste}>
                 {codeDigits.map((d, i) => (
                   <input
                     key={`cp${i}`}
