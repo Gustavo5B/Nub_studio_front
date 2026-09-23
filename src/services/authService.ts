@@ -107,26 +107,29 @@ class AuthService {
   }
 
   async register(nombre: string, correo: string, contrasena: string, aceptoTerminos: boolean = true): Promise<RegisterResponse> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const url = `${this.apiUrl}/api/auth/register`;
-      console.log('📡 Registrando en:', url);
-
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, correo, contrasena, aceptoTerminos }),
+        signal: controller.signal,
       });
-
       const data = await response.json();
-      console.log('📥 Respuesta registro:', response.status, data);
-
-      if (!response.ok) {
-        throw { status: response.status, error: data };
-      }
-
+      if (!response.ok) throw { status: response.status, error: data };
       return data;
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw { status: 0, error: { message: 'El servidor tardó demasiado. Intenta de nuevo.' } };
+      }
+      if (error instanceof TypeError) {
+        throw { status: 0, error: { message: 'No se pudo conectar con el servidor.' } };
+      }
       throw error;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

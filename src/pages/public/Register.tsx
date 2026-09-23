@@ -82,20 +82,25 @@ export default function Register() {
 
   // ─── Custom cursor ────────────────────────────────────────────
   useEffect(() => {
+    if (!window.matchMedia("(pointer: fine)").matches) return;
     document.body.style.cursor = "none";
     let rx = 0, ry = 0;
     let rafId: number;
     const onMove = (e: MouseEvent) => {
       const dot = dotRef.current;
       if (dot) { dot.style.left = e.clientX + "px"; dot.style.top = e.clientY + "px"; }
+      cancelAnimationFrame(rafId);
+      const tx = e.clientX, ty = e.clientY;
       const tick = () => {
-        rx += (e.clientX - rx) * 0.15;
-        ry += (e.clientY - ry) * 0.15;
+        const dx = tx - rx, dy = ty - ry;
+        rx += dx * 0.15;
+        ry += dy * 0.15;
         const ring = ringRef.current;
         if (ring) { ring.style.left = rx + "px"; ring.style.top = ry + "px"; }
-        rafId = requestAnimationFrame(tick);
+        if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+          rafId = requestAnimationFrame(tick);
+        }
       };
-      cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(tick);
     };
     window.addEventListener("mousemove", onMove);
