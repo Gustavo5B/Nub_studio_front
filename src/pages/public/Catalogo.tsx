@@ -120,6 +120,7 @@ function DetallePanel({
             <ProtectedImage
               src={obra.imagen_principal}
               alt={obra.titulo}
+              displayWidth={480}
               wrapStyle={{ position: "absolute", inset: 0 }}
               imgStyle={{ width: "100%", height: "100%", objectFit: "cover", filter: "saturate(.82) brightness(.94)" }}
             />

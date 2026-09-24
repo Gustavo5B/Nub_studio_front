@@ -1,6 +1,7 @@
 // src/components/ProtectedImage.tsx
 // Protección visual de obras de arte NU★B Studio
 import React, { useEffect, useRef, useState } from "react";
+import { clImg } from "../utils/cloudinaryUrl";
 
 interface Props {
   src: string;
@@ -10,6 +11,10 @@ interface Props {
   className?: string;
   /** En true usa canvas (sin <img> en DOM). Requiere CORS en el server. */
   useCanvas?: boolean;
+  /** Ancho de display en px — Cloudinary sirve la imagen a ese tamaño exacto */
+  displayWidth?: number;
+  /** true = imagen sobre el fold (no lazy load) */
+  priority?: boolean;
 }
 
 // ── Marca de agua ───────────────────────────────────────────────
@@ -88,7 +93,9 @@ function CanvasImage({ src, wrapStyle, imgStyle }: Props) {
 }
 
 // ── Versión estándar con overlay dual ────────────────────────────
-export default function ProtectedImage({ src, alt = "", imgStyle, wrapStyle, className, useCanvas = false }: Props) {
+export default function ProtectedImage({ src, alt = "", imgStyle, wrapStyle, className, useCanvas = false, displayWidth = 800, priority = false }: Props) {
+  // Optimizar URL de Cloudinary: formato automático (WebP/AVIF) + calidad auto + resize al display size
+  const optimizedSrc = clImg(src, { w: displayWidth });
   const [blurred, setBlurred] = useState(false);
 
   // Detectar PrintScreen y mostrar advertencia
@@ -116,7 +123,7 @@ export default function ProtectedImage({ src, alt = "", imgStyle, wrapStyle, cla
   }, []);
 
   if (useCanvas) {
-    return <CanvasImage src={src} wrapStyle={wrapStyle} imgStyle={imgStyle} />;
+    return <CanvasImage src={optimizedSrc} wrapStyle={wrapStyle} imgStyle={imgStyle} />;
   }
 
   return (
@@ -127,9 +134,11 @@ export default function ProtectedImage({ src, alt = "", imgStyle, wrapStyle, cla
       onTouchStart={prevent}
     >
       <img
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         draggable={false}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
         className={className}
         style={{
           ...imgStyle,
