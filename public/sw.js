@@ -91,8 +91,10 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // Sin red y sin cache: devolver la raíz del SPA (App Shell)
           if (request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match('/').then((r) => r || Response.error());
           }
+          // Para otros recursos (JS, CSS, img) dejar pasar sin respuesta SW
+          return Response.error();
         });
     })
   );
