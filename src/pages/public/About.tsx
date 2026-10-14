@@ -124,7 +124,7 @@ export default function About() {
   }, []);
 
   useEffect(() => {
-    Promise.all([getSobreNosotros(), getTrayectoria(), getMunicipiosHidalgo()])
+    Promise.all([getSobreNosotros<SobreNosotrosData>(), getTrayectoria<TrayectoriaItem[]>(), getMunicipiosHidalgo()])
       .then(([sobreNosotros, tray, totalMunicipios]) => {
         setInfo(sobreNosotros);
         setTrayectoria(tray);
