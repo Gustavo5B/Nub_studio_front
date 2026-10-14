@@ -67,8 +67,8 @@ export default defineConfig(({ mode }) => {
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
           "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com",
           "font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
-          // El Service Worker hace fetch() a CDN/imágenes para guardarlos en cache
-          "connect-src 'self' http://localhost:4000 https://nubstudio-precio-api.onrender.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://res.cloudinary.com https://images.unsplash.com",
+          // El Service Worker hace fetch() a CDN e imágenes estáticas para guardarlos en cache
+          "connect-src 'self' http://localhost:4000 https://nubstudio-precio-api.onrender.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://images.unsplash.com",
           "frame-ancestors 'none'"
         ].join('; '),
         'X-Frame-Options': 'DENY',

@@ -31,7 +31,17 @@ window.fetch = async (...args) => {
 };
 
 // ── Registro del Service Worker (PWA) ──────────
-if ("serviceWorker" in navigator) {
+// Solo en producción (build). En desarrollo se quita cualquier SW previo y
+// sus caches, para que no se sirvan versiones viejas de los componentes.
+if ("serviceWorker" in navigator && import.meta.env.DEV) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((reg) => reg.unregister());
+    if (regs.length) console.log("[PWA] Dev: Service Worker desregistrado");
+  });
+  caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
+}
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")

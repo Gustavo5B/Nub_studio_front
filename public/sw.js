@@ -6,13 +6,14 @@
 //   nub-static-<ver>  → App Shell + todo el build (JS, CSS, fuentes, iconos)
 //   nub-pages-<ver>   → páginas (HTML) visitadas
 //   nub-api-<ver>     → respuestas GET públicas del backend (datos de la BD)
-//   nub-cdn-<ver>     → Bootstrap, Google Fonts, imágenes de Cloudinary
+//   nub-cdn-<ver>     → Bootstrap, Google Fonts, imágenes estáticas de Sobre nosotros
 //
 // Estrategias:
 //   - Navegación (páginas) → Network First → cache → index.html (App Shell)
 //   - Estáticos propios    → Cache First → red
-//   - API pública          → Network First → cache
-//   - CDN / imágenes       → Stale While Revalidate
+//   - API (solo Sobre nosotros, municipios, categorías) → Network First → cache
+//   - CDN / imágenes estáticas → Stale While Revalidate
+//   Obras, artistas, colecciones e imágenes de Cloudinary NO se guardan.
 // ================================================
 
 // En el build, el plugin de vite.config.ts reemplaza estos valores
@@ -56,6 +57,11 @@ const CDN_FILES = [
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap',
 ];
 
+// Imágenes estáticas externas de "Sobre nosotros" (se descargan al instalar)
+const STATIC_IMAGES = [
+  'https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=900&q=80',
+];
+
 // Datos públicos de la BD que se respaldan desde la instalación
 const API_TO_PRECACHE = [
   '/api/sobre-nosotros',
@@ -64,21 +70,13 @@ const API_TO_PRECACHE = [
   '/api/categorias',
 ];
 
-// Endpoints que nunca se guardan (sesión, datos privados del usuario)
-const API_NO_CACHE = [
-  '/api/auth',
-  '/api/carrito',
-  '/api/favoritos',
-  '/api/pedidos',
-  '/api/admin',
-];
+// Solo estos datos de la API se guardan; obras, artistas, carrito, etc. NO
+const API_CACHEABLE = new Set(API_TO_PRECACHE);
 
 const CDN_HOSTS = [
   'cdn.jsdelivr.net',
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'res.cloudinary.com',
-  'images.unsplash.com',
 ];
 
 // Guarda cada URL por separado: si una falla, las demás sí se cachean
@@ -107,6 +105,7 @@ self.addEventListener('install', (event) => {
       cacheEach(STATIC_CACHE, staticFiles),
       cacheEach(PAGES_CACHE, PAGES_TO_PRECACHE),
       cacheEach(CDN_CACHE, CDN_FILES, { mode: 'cors' }),
+      cacheEach(CDN_CACHE, STATIC_IMAGES, { mode: 'no-cors' }),
       cacheEach(API_CACHE, API_TO_PRECACHE.map((p) => API_ORIGIN + p), { mode: 'cors' }),
     ]).then(() => {
       console.log(`[SW] Precache listo ✓ (${staticFiles.length} estáticos, ${PAGES_TO_PRECACHE.length} páginas)`);
@@ -201,18 +200,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Backend: solo datos públicos y sin token
-  if (url.origin === API_ORIGIN && url.pathname.startsWith('/api/')) {
-    const isPrivate =
-      request.headers.has('Authorization') ||
-      API_NO_CACHE.some((p) => url.pathname.startsWith(p));
-    if (isPrivate) return;
+  // 2. Backend: solo los datos públicos de la lista (Sobre nosotros, etc.)
+  if (url.origin === API_ORIGIN) {
+    if (!API_CACHEABLE.has(url.pathname) || request.headers.has('Authorization')) return;
     event.respondWith(networkFirst(request, API_CACHE).catch(() => Response.error()));
     return;
   }
 
-  // 3. CDN, fuentes e imágenes externas
-  if (CDN_HOSTS.includes(url.hostname)) {
+  // 3. CDN, fuentes e imágenes estáticas de la lista
+  if (CDN_HOSTS.includes(url.hostname) || STATIC_IMAGES.includes(request.url)) {
     event.respondWith(staleWhileRevalidate(request, CDN_CACHE));
     return;
   }

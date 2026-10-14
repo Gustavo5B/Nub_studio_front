@@ -1,6 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { MapPin, RefreshCw, X } from "lucide-react";
+import { ExternalLink, RefreshCw, X } from "lucide-react";
 import { useGeolocation } from "../../hooks/useGeolocation";
+
+// Pin de ubicación estilo Google Maps
+function MapsPin({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+        fill="#EA4335"
+      />
+      <path
+        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+        fill="none" stroke="#B31412" strokeWidth="0.8"
+      />
+      <circle cx="12" cy="9" r="2.6" fill="#7A0C0B" />
+    </svg>
+  );
+}
 
 // Sensor GPS (PWA): botón circular discreto con indicador de estado.
 // Al hacer clic muestra una tarjeta con las coordenadas.
@@ -57,14 +74,14 @@ export default function PwaSensor() {
           transition: border-color .2s, color .2s, box-shadow .2s, transform .2s;
         }
         .gps-btn:hover, .gps-btn.open {
-          border-color: #E8640C;
-          color: #E8640C;
-          box-shadow: 0 4px 16px rgba(232,100,12,0.18);
+          border-color: #EA4335;
+          box-shadow: 0 4px 16px rgba(234,67,53,0.18);
+          transform: translateY(-1px);
         }
-        .gps-btn:focus-visible { outline: 2px solid #E8640C; outline-offset: 2px; }
+        .gps-btn:focus-visible { outline: 2px solid #EA4335; outline-offset: 2px; }
         .gps-dot {
           position: absolute;
-          top: 7px; right: 7px;
+          top: 5px; right: 5px;
           width: 8px; height: 8px;
           border-radius: 50%;
           border: 1.5px solid #FFFFFF;
@@ -118,8 +135,18 @@ export default function PwaSensor() {
           line-height: 1.6;
         }
         .gps-coords span { color: #9896A8; font-weight: 400; margin-right: 6px; }
+        .gps-maps {
+          margin-top: 10px;
+          display: flex; align-items: center; justify-content: center; gap: 6px;
+          border: 1px solid #E6E4EF; border-radius: 100px;
+          padding: 7px 0;
+          font-size: 11.5px; font-weight: 600;
+          color: #14121E; text-decoration: none;
+          transition: border-color .2s, color .2s;
+        }
+        .gps-maps:hover { border-color: #EA4335; color: #B31412; }
         .gps-refresh {
-          margin-top: 12px; width: 100%;
+          margin-top: 8px; width: 100%;
           display: flex; align-items: center; justify-content: center; gap: 6px;
           border: 1px solid #14121E; background: #14121E; color: #FFFFFF;
           border-radius: 100px; padding: 7px 0;
@@ -156,6 +183,19 @@ export default function PwaSensor() {
               </div>
             )}
 
+            {hasCoords && (
+              <a
+                className="gps-maps"
+                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MapsPin size={14} />
+                Ver en Google Maps
+                <ExternalLink size={11} />
+              </a>
+            )}
+
             <button className="gps-refresh" onClick={getLocation} disabled={loading}>
               <RefreshCw size={12} className={loading ? "spin" : ""} />
               {loading ? "Buscando" : "Actualizar"}
@@ -169,7 +209,7 @@ export default function PwaSensor() {
           aria-label={`Sensor GPS: ${statusText}`}
           title={`Sensor GPS — ${statusText}`}
         >
-          <MapPin size={20} strokeWidth={1.8} />
+          <MapsPin size={24} />
           <span className={`gps-dot ${status}`} />
         </button>
       </div>
