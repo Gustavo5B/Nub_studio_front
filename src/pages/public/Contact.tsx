@@ -467,6 +467,10 @@ export default function Contact() {
         <p style={{ fontSize: 10, color: C.sub, letterSpacing: ".04em", margin: 0 }}>
           © 2025 ALTAR — Todos los derechos reservados
         </p>
+        <p style={{ fontSize: 10, margin: "12px 0 0", display: "flex", justifyContent: "center", gap: 20 }}>
+          <Link to="/terminos" style={{ color: C.sub, textDecoration: "none" }}>Términos y condiciones</Link>
+          <Link to="/privacidad" style={{ color: C.sub, textDecoration: "none" }}>Aviso de privacidad</Link>
+        </p>
       </footer>
     </div>
   );

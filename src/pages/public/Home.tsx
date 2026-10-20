@@ -820,6 +820,8 @@ export default function Home() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <Link to="/sobre-nosotros" className="home-footer-link">Acerca de ALTAR</Link>
               <Link to="/contacto"       className="home-footer-link">Contacto</Link>
+              <Link to="/terminos"       className="home-footer-link">Términos y condiciones</Link>
+              <Link to="/privacidad"     className="home-footer-link">Aviso de privacidad</Link>
             </div>
           </div>
         </div>
