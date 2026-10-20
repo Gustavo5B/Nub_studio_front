@@ -48,6 +48,8 @@ export default function Blog() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [email, setEmail] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
 
@@ -56,19 +58,22 @@ export default function Blog() {
 
   useEffect(() => {
     const fetchPosts = async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         const json = await fetchJsonWithBackup<{ success: boolean; data: Post[] }>(
           `${API}/api/blog/posts?limit=12`
         );
         if (json.success) setPosts(json.data);
+        else setLoadError(true);
       } catch {
-        // silently fail — show empty state
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
     fetchPosts();
-  }, []);
+  }, [attempt]);
 
   useEffect(() => {
     if (window.matchMedia("(pointer: fine)").matches) {
@@ -320,6 +325,18 @@ export default function Blog() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : loadError && posts.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "80px 24px", color: C.sub }}>
+            <p style={{ fontSize: 18, marginBottom: 20 }}>
+              No pudimos cargar las publicaciones. Revisa tu conexión e inténtalo de nuevo.
+            </p>
+            <button
+              onClick={() => setAttempt((n) => n + 1)}
+              style={{ padding: "12px 28px", background: C.ink, border: "none", borderRadius: 100, color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".22em", textTransform: "uppercase", cursor: "pointer" }}
+            >
+              Reintentar
+            </button>
           </div>
         ) : posts.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 24px", color: C.sub }}>

@@ -52,6 +52,11 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
         console.error("[PWA] Error al registrar SW:", err);
       });
   });
+
+  // Si el SW se instaló sin internet, al volver la conexión completa su precache
+  window.addEventListener("online", () => {
+    navigator.serviceWorker.controller?.postMessage({ type: "PRECACHE" });
+  });
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

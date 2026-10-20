@@ -96,7 +96,10 @@ function precacheBlog() {
         ]);
         return cacheEach(API_CACHE, urls, { mode: 'cors' });
       })
-      .catch((err) => console.warn('[SW] No se pudo cachear el blog:', err.message))
+      .catch((err) => {
+        precacheFailures++;
+        console.warn('[SW] No se pudo cachear el blog:', err.message);
+      })
   );
 }
 
@@ -105,6 +108,9 @@ const CDN_HOSTS = [
   'fonts.googleapis.com',
   'fonts.gstatic.com',
 ];
+
+// Cuántas descargas fallaron en el precache actual (para no decir "listo" si no lo está)
+let precacheFailures = 0;
 
 // Guarda cada URL por separado: si una falla, las demás sí se cachean
 function cacheEach(cacheName, urls, init) {
@@ -116,30 +122,40 @@ function cacheEach(cacheName, urls, init) {
             if (res.ok || res.type === 'opaque') return cache.put(url, res);
             throw new Error(`HTTP ${res.status}`);
           })
-          .catch((err) => console.warn('[SW] No se pudo cachear:', url, err.message))
+          .catch((err) => {
+            precacheFailures++;
+            console.warn('[SW] No se pudo cachear:', url, err.message);
+          })
       )
     )
   );
 }
 
+// Descarga todo lo que debe quedar disponible sin conexión
+function precacheAll() {
+  precacheFailures = 0;
+  const staticFiles = [...new Set([...APP_SHELL_FILES, ...PRECACHE_BUILD])];
+
+  return Promise.all([
+    cacheEach(STATIC_CACHE, staticFiles),
+    cacheEach(PAGES_CACHE, PAGES_TO_PRECACHE),
+    cacheEach(CDN_CACHE, CDN_FILES, { mode: 'cors' }),
+    cacheEach(CDN_CACHE, STATIC_IMAGES, { mode: 'no-cors' }),
+    cacheEach(API_CACHE, API_TO_PRECACHE.map((p) => API_ORIGIN + p), { mode: 'cors' }),
+    precacheBlog(),
+  ]).then(() => {
+    if (precacheFailures === 0) {
+      console.log(`[SW] Precache listo ✓ (${staticFiles.length} estáticos, ${PAGES_TO_PRECACHE.length} páginas)`);
+    } else {
+      console.warn(`[SW] Precache incompleto: ${precacheFailures} descargas fallaron. Se reintentará al volver la conexión.`);
+    }
+  });
+}
+
 // ── INSTALL ────────────────────────────────────
 self.addEventListener('install', (event) => {
   console.log('[SW] install → versión', BUILD_VERSION);
-  const staticFiles = [...new Set([...APP_SHELL_FILES, ...PRECACHE_BUILD])];
-
-  event.waitUntil(
-    Promise.all([
-      cacheEach(STATIC_CACHE, staticFiles),
-      cacheEach(PAGES_CACHE, PAGES_TO_PRECACHE),
-      cacheEach(CDN_CACHE, CDN_FILES, { mode: 'cors' }),
-      cacheEach(CDN_CACHE, STATIC_IMAGES, { mode: 'no-cors' }),
-      cacheEach(API_CACHE, API_TO_PRECACHE.map((p) => API_ORIGIN + p), { mode: 'cors' }),
-      precacheBlog(),
-    ]).then(() => {
-      console.log(`[SW] Precache listo ✓ (${staticFiles.length} estáticos, ${PAGES_TO_PRECACHE.length} páginas)`);
-      return self.skipWaiting();
-    })
-  );
+  event.waitUntil(precacheAll().then(() => self.skipWaiting()));
 });
 
 // ── ACTIVATE ───────────────────────────────────
@@ -252,5 +268,9 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  // La app avisa que volvió la conexión: se completa lo que faltó en el precache
+  if (event.data && event.data.type === 'PRECACHE') {
+    event.waitUntil(precacheAll());
   }
 });
