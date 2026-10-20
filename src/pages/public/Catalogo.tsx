@@ -252,6 +252,7 @@ export default function Catalogo() {
   const [categorias,  setCategorias]  = useState<Categoria[]>([]);
   const [colecciones, setColecciones] = useState<Coleccion[]>([]);
   const [loading,     setLoading]     = useState(true);
+  const [loadError,   setLoadError]   = useState(false);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -370,6 +371,7 @@ export default function Catalogo() {
 
   const cargarObras = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       if (search.trim().length >= 2) {
         const res  = await fetch(`${API_URL}/api/obras/buscar?q=${encodeURIComponent(search)}&page=${page}&limit=12`);
@@ -386,7 +388,7 @@ export default function Catalogo() {
         setTotal(json.pagination?.total || 0);
         setTotalPages(json.pagination?.totalPages || 1);
       }
-    } catch { setObras([]); }
+    } catch { setObras([]); setLoadError(true); }
     finally { setLoading(false); }
   }, [search, catActiva, ordenar, page]);
 
@@ -908,7 +910,7 @@ export default function Catalogo() {
             fontSize: 11, color: C.sub, fontFamily: SANS,
             marginTop: 6, fontStyle: "italic",
           }}>
-            {!loading && <>{total} {total === 1 ? "obra" : "obras"} encontradas</>}
+            {!loading && !loadError && <>{total} {total === 1 ? "obra" : "obras"} encontradas</>}
           </div>
         </div>
 
@@ -945,6 +947,24 @@ export default function Catalogo() {
                 opacity: 0.55 - (i % 4) * 0.06,
               }} />
             ))}
+          </div>
+        ) : loadError ? (
+          <div style={{ textAlign: "center", padding: "80px 24px", fontFamily: SANS }}>
+            <div style={{
+              fontFamily: SERIF, fontSize: 20, fontStyle: "italic",
+              color: "rgba(0,0,0,.28)", marginBottom: 12,
+            }}>Las obras necesitan conexión a internet</div>
+            <div style={{ fontSize: 10.5, color: C.sub, letterSpacing: ".1em", marginBottom: 20 }}>
+              No pudimos cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.
+            </div>
+            <button
+              onClick={cargarObras}
+              style={{
+                padding: "12px 28px", background: C.ink, border: "none", borderRadius: 100,
+                color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: ".22em",
+                textTransform: "uppercase", cursor: "pointer", fontFamily: SANS,
+              }}
+            >Reintentar</button>
           </div>
         ) : obras.length === 0 ? (
           <div data-rv style={{ textAlign: "center", padding: "80px 72px", fontFamily: SANS }}>
