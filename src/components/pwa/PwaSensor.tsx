@@ -1,36 +1,32 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ExternalLink, RefreshCw, X } from "lucide-react";
 import { useGeolocation } from "../../hooks/useGeolocation";
 
-// Pin de ubicación estilo Google Maps
-function MapsPin({ size = 22 }: { size?: number }) {
+// Paneles privados donde el sensor no se muestra
+const HIDDEN_PATHS = /^\/(admin|artista(\/|$)|dashboard|mi-cuenta|checkout)/;
+
+// Pin de ubicación (usa currentColor para seguir la paleta de la marca)
+function LocationPin({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-        fill="#EA4335"
+        fill="currentColor"
       />
-      <path
-        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-        fill="none" stroke="#B31412" strokeWidth="0.8"
-      />
-      <circle cx="12" cy="9" r="2.6" fill="#7A0C0B" />
+      <circle cx="12" cy="9" r="2.6" fill="#FFFFFF" />
     </svg>
   );
 }
 
 // Sensor GPS (PWA): botón circular discreto con indicador de estado.
-// Al hacer clic muestra una tarjeta con las coordenadas.
-// Solicita ubicación automáticamente al montar.
+// La ubicación se pide al hacer clic (no al cargar la página), como
+// recomiendan los navegadores para permisos sensibles.
 export default function PwaSensor() {
+  const { pathname } = useLocation();
   const { loading, lat, lng, accuracy, error, getLocation } = useGeolocation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-
-  // Activar sensor GPS al cargar la aplicación
-  useEffect(() => {
-    getLocation();
-  }, [getLocation]);
 
   // Cerrar la tarjeta al hacer clic fuera
   useEffect(() => {
@@ -42,22 +38,29 @@ export default function PwaSensor() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
+  if (HIDDEN_PATHS.test(pathname)) return null;
+
   const hasCoords = lat !== null && lng !== null;
   const status = loading ? "loading" : error ? "error" : hasCoords ? "active" : "idle";
   const statusText = {
     loading: "Obteniendo ubicación…",
     error: error ?? "",
     active: "Ubicación activa",
-    idle: "Sin ubicación",
+    idle: "Ubicación no activada",
   }[status];
+
+  const toggle = () => {
+    if (!open && !hasCoords && !loading) getLocation();
+    setOpen((o) => !o);
+  };
 
   return (
     <>
       <style>{`
         .gps-root {
           position: fixed;
-          bottom: 20px;
-          right: 20px;
+          bottom: 24px;
+          left: 24px;
           z-index: 9998;
           font-family: 'Outfit', sans-serif;
         }
@@ -74,11 +77,12 @@ export default function PwaSensor() {
           transition: border-color .2s, color .2s, box-shadow .2s, transform .2s;
         }
         .gps-btn:hover, .gps-btn.open {
-          border-color: #EA4335;
-          box-shadow: 0 4px 16px rgba(234,67,53,0.18);
+          border-color: #E8640C;
+          color: #E8640C;
+          box-shadow: 0 4px 16px rgba(232,100,12,0.18);
           transform: translateY(-1px);
         }
-        .gps-btn:focus-visible { outline: 2px solid #EA4335; outline-offset: 2px; }
+        .gps-btn:focus-visible { outline: 2px solid #E8640C; outline-offset: 2px; }
         .gps-dot {
           position: absolute;
           top: 5px; right: 5px;
@@ -89,13 +93,13 @@ export default function PwaSensor() {
         .gps-dot.active  { background: #0E8A50; }
         .gps-dot.loading { background: #E8640C; animation: gpsPulse .9s infinite; }
         .gps-dot.error   { background: #C4304A; }
-        .gps-dot.idle    { background: #9896A8; }
+        .gps-dot.idle    { display: none; }
         @keyframes gpsPulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
         .gps-card {
           position: absolute;
-          bottom: 54px; right: 0;
-          width: 240px;
+          bottom: 54px; left: 0;
+          width: 248px;
           background: #FFFFFF;
           border: 1px solid #E6E4EF;
           border-radius: 12px;
@@ -124,7 +128,8 @@ export default function PwaSensor() {
           font-size: 12px; font-weight: 500; color: #5A5870;
           margin-bottom: 8px;
         }
-        .gps-status .gps-dot { position: static; border: none; }
+        .gps-status .gps-dot { position: static; border: none; display: block; }
+        .gps-status .gps-dot.idle { background: #9896A8; }
         .gps-coords {
           font-family: 'JetBrains Mono', 'Fira Code', monospace;
           font-size: 12.5px; font-weight: 600;
@@ -144,7 +149,7 @@ export default function PwaSensor() {
           color: #14121E; text-decoration: none;
           transition: border-color .2s, color .2s;
         }
-        .gps-maps:hover { border-color: #EA4335; color: #B31412; }
+        .gps-maps:hover { border-color: #E8640C; color: #E8640C; }
         .gps-refresh {
           margin-top: 8px; width: 100%;
           display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -158,6 +163,7 @@ export default function PwaSensor() {
         .gps-refresh:disabled { opacity: .55; cursor: default; }
         .gps-refresh .spin { animation: gpsSpin 1s linear infinite; }
         @keyframes gpsSpin { to { transform: rotate(360deg); } }
+        @media (max-width: 480px) { .gps-root { bottom: 16px; left: 16px; } }
       `}</style>
 
       <div className="gps-root" ref={rootRef}>
@@ -190,7 +196,7 @@ export default function PwaSensor() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <MapsPin size={14} />
+                <LocationPin size={14} />
                 Ver en Google Maps
                 <ExternalLink size={11} />
               </a>
@@ -198,18 +204,18 @@ export default function PwaSensor() {
 
             <button className="gps-refresh" onClick={getLocation} disabled={loading}>
               <RefreshCw size={12} className={loading ? "spin" : ""} />
-              {loading ? "Buscando" : "Actualizar"}
+              {loading ? "Buscando" : hasCoords ? "Actualizar" : "Obtener ubicación"}
             </button>
           </div>
         )}
 
         <button
           className={`gps-btn ${open ? "open" : ""}`}
-          onClick={() => setOpen((o) => !o)}
+          onClick={toggle}
           aria-label={`Sensor GPS: ${statusText}`}
           title={`Sensor GPS — ${statusText}`}
         >
-          <MapsPin size={24} />
+          <LocationPin size={22} />
           <span className={`gps-dot ${status}`} />
         </button>
       </div>

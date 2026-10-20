@@ -19,6 +19,8 @@ import VerificarEmail         from "../pages/public/VerificarEmail";
 import ForgotPassword         from "../pages/public/ForgotPassword";
 import Blog                   from "../pages/public/Blog";
 import BlogDetalle             from "../pages/public/BlogDetalle";
+import Terminos                from "../pages/public/Terminos";
+import Privacidad              from "../pages/public/Privacidad";
 
 // Página de error
 import NotFound from "../pages/public/NotFound";
@@ -40,6 +42,10 @@ export default function PublicRoutes() {
       <Route path="/blog"               element={<Blog />} />
       <Route path="/blog/:slug"         element={<BlogDetalle />} />
       <Route path="/sobre-nosotros"     element={<About />} />
+
+      {/* Documentos legales (disponibles sin conexión) */}
+      <Route path="/terminos"           element={<Terminos />} />
+      <Route path="/privacidad"         element={<Privacidad />} />
 
       {/* Contacto SIN layout */}
       <Route path="/contacto" element={<Contact />} />

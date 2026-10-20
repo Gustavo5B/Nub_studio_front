@@ -479,9 +479,13 @@ export default function Register() {
                 </div>
                 <span style={{ fontFamily: SANS, fontSize: 11.5, color: C.sub, lineHeight: 1.6, letterSpacing: ".02em" }}>
                   Acepto los{" "}
-                  <span style={{ color: C.orange, fontWeight: 600 }}>Términos y Condiciones</span>
-                  {" "}y la{" "}
-                  <span style={{ color: C.orange, fontWeight: 600 }}>Política de Privacidad</span>
+                  <a href="/terminos" target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ color: C.orange, fontWeight: 600, textDecoration: "underline" }}>Términos y Condiciones</a>
+                  {" "}y el{" "}
+                  <a href="/privacidad" target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ color: C.orange, fontWeight: 600, textDecoration: "underline" }}>Aviso de Privacidad</a>
                 </span>
               </div>
 

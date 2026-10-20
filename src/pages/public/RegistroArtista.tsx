@@ -368,7 +368,15 @@ export default function RegistroArtista() {
           {form.acepta_terminos && <Check size={10} color="white" strokeWidth={3} />}
         </div>
         <span style={{ fontFamily: SANS, fontSize: 11.5, color: C.sub, lineHeight: 1.6, letterSpacing: ".02em" }}>
-          Acepto los <span style={{ color: C.orange, fontWeight: 600 }}>Términos y Condiciones</span> y entiendo que mi solicitud será revisada por el equipo antes de ser aprobada.
+          Acepto los{" "}
+          <a href="/terminos" target="_blank" rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ color: C.orange, fontWeight: 600, textDecoration: "underline" }}>Términos y Condiciones</a>
+          {" "}y el{" "}
+          <a href="/privacidad" target="_blank" rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ color: C.orange, fontWeight: 600, textDecoration: "underline" }}>Aviso de Privacidad</a>
+          , y entiendo que mi solicitud será revisada por el equipo antes de ser aprobada.
         </span>
       </div>
 

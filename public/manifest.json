@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "NU★B Studio",
   "short_name": "NUB Studio",
   "description": "Galería de Arte Digital — Huasteca Hidalguense",
@@ -9,19 +10,55 @@
   "theme_color": "#E8640C",
   "orientation": "portrait-primary",
   "lang": "es-MX",
+  "dir": "ltr",
   "categories": ["art", "entertainment", "shopping"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catálogo",
+      "short_name": "Catálogo",
+      "description": "Explorar las obras de la galería",
+      "url": "/catalogo",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Artistas",
+      "short_name": "Artistas",
+      "description": "Conocer a los artistas de la Huasteca",
+      "url": "/artistas",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Sobre nosotros",
+      "short_name": "Nosotros",
+      "description": "Historia y valores de NU★B Studio",
+      "url": "/sobre-nosotros",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

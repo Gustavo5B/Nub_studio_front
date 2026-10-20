@@ -169,11 +169,15 @@ export default function Footer() {
             © 2026 Nu-B Studio. Todos los derechos reservados.
           </span>
           <div style={{ display: "flex", gap: 24 }}>
-            {["Términos", "Privacidad", "Cookies"].map(t => (
-              <a key={t} href="#" style={{ fontSize: 12.5, color: C.creamMut, textDecoration: "none", fontFamily: FB, transition: "color .15s" }}
+            {[
+              { label: "Términos",   to: "/terminos"            },
+              { label: "Privacidad", to: "/privacidad"          },
+              { label: "Cookies",    to: "/privacidad#cookies"  },
+            ].map(({ label, to }) => (
+              <Link key={label} to={to} style={{ fontSize: 12.5, color: C.creamMut, textDecoration: "none", fontFamily: FB, transition: "color .15s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = C.orange; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = C.creamMut; }}
-              >{t}</a>
+              >{label}</Link>
             ))}
           </div>
         </div>

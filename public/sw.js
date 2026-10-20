@@ -47,6 +47,8 @@ const PAGES_TO_PRECACHE = [
   '/blog',
   '/sobre-nosotros',
   '/contacto',
+  '/terminos',
+  '/privacidad',
   '/login',
   '/register',
 ];
