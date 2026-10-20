@@ -4,9 +4,13 @@ import { RefreshCw, WifiOff } from "lucide-react";
 import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 // Páginas que funcionan sin internet (estáticas o con datos en cache)
-const OFFLINE_READY = ["/", "/sobre-nosotros", "/contacto", "/terminos", "/privacidad"];
+const OFFLINE_READY = ["/", "/sobre-nosotros", "/contacto", "/terminos", "/privacidad", "/blog"];
 
-const isOfflineReady = (path: string) => OFFLINE_READY.includes(path.replace(/\/+$/, "") || "/");
+// El blog y sus posts se guardan al entrar al sitio (ver sw.js)
+const isOfflineReady = (path: string) => {
+  const clean = path.replace(/\/+$/, "") || "/";
+  return OFFLINE_READY.includes(clean) || clean.startsWith("/blog/");
+};
 
 // Si el usuario entra SIN internet a una sección que necesita la API,
 // se muestra una pantalla de "sin conexión" en lugar de una página vacía.

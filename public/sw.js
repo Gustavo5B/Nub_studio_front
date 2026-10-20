@@ -75,6 +75,31 @@ const API_TO_PRECACHE = [
 // Solo estos datos de la API se guardan; obras, artistas, carrito, etc. NO
 const API_CACHEABLE = new Set(API_TO_PRECACHE);
 
+// Blog (público): lista, detalle y relacionados. Comentarios y reacciones NO se guardan.
+const BLOG_LIST = '/api/blog/posts?limit=12';
+const BLOG_CACHEABLE = /^\/api\/blog\/posts(\/[^/]+(\/relacionados)?)?$/;
+
+// Descarga la lista del blog y, de cada post, su detalle y relacionados
+function precacheBlog() {
+  return caches.open(API_CACHE).then((cache) =>
+    fetch(API_ORIGIN + BLOG_LIST, { mode: 'cors' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        cache.put(API_ORIGIN + BLOG_LIST, res.clone());
+        return res.json();
+      })
+      .then((json) => {
+        const slugs = (json.data || []).map((p) => p.slug).filter(Boolean);
+        const urls = slugs.flatMap((s) => [
+          `${API_ORIGIN}/api/blog/posts/${s}`,
+          `${API_ORIGIN}/api/blog/posts/${s}/relacionados`,
+        ]);
+        return cacheEach(API_CACHE, urls, { mode: 'cors' });
+      })
+      .catch((err) => console.warn('[SW] No se pudo cachear el blog:', err.message))
+  );
+}
+
 const CDN_HOSTS = [
   'cdn.jsdelivr.net',
   'fonts.googleapis.com',
@@ -109,6 +134,7 @@ self.addEventListener('install', (event) => {
       cacheEach(CDN_CACHE, CDN_FILES, { mode: 'cors' }),
       cacheEach(CDN_CACHE, STATIC_IMAGES, { mode: 'no-cors' }),
       cacheEach(API_CACHE, API_TO_PRECACHE.map((p) => API_ORIGIN + p), { mode: 'cors' }),
+      precacheBlog(),
     ]).then(() => {
       console.log(`[SW] Precache listo ✓ (${staticFiles.length} estáticos, ${PAGES_TO_PRECACHE.length} páginas)`);
       return self.skipWaiting();
@@ -204,7 +230,8 @@ self.addEventListener('fetch', (event) => {
 
   // 2. Backend: solo los datos públicos de la lista (Sobre nosotros, etc.)
   if (url.origin === API_ORIGIN) {
-    if (!API_CACHEABLE.has(url.pathname) || request.headers.has('Authorization')) return;
+    const cacheable = API_CACHEABLE.has(url.pathname) || BLOG_CACHEABLE.test(url.pathname);
+    if (!cacheable || request.headers.has('Authorization')) return;
     event.respondWith(networkFirst(request, API_CACHE).catch(() => Response.error()));
     return;
   }

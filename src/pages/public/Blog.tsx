@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Clock, ArrowRight, Mail, Star, Eye } from "lucide-react";
 import { authService } from "../../services/authService";
+import { fetchJsonWithBackup } from "../../utils/offlineStore";
 import estrellaImg from "../../assets/images/Estrella1jpeg.jpeg";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -56,8 +57,9 @@ export default function Blog() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`${API}/api/blog/posts?limit=12`);
-        const json = await res.json();
+        const json = await fetchJsonWithBackup<{ success: boolean; data: Post[] }>(
+          `${API}/api/blog/posts?limit=12`
+        );
         if (json.success) setPosts(json.data);
       } catch {
         // silently fail — show empty state
