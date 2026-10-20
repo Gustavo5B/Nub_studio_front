@@ -115,9 +115,9 @@ export const TERMINOS: LegalDoc = {
           t: "ul",
           x: [
             "Los precios se muestran en pesos mexicanos (MXN)",
-            "NU★B Studio cobra una comisión del [X]% por cada venta exitosa",
+            "NU★B Studio cobra una comisión del 15% por cada venta exitosa, salvo que se haya acordado un porcentaje distinto con el artista al aprobar su registro",
             "Los precios incluyen IVA (16%) según legislación mexicana",
-            "El artista recibirá el pago dentro de [X] días hábiles después de la entrega confirmada",
+            "El artista recibirá el pago dentro de 5 días hábiles después de la entrega confirmada",
           ],
         },
         { t: "h3", x: "6.3 Proceso de compra" },
@@ -138,7 +138,7 @@ export const TERMINOS: LegalDoc = {
           x: [
             "El tiempo de envío varía según la ubicación (5-15 días hábiles)",
             "Los costos de envío se calculan según peso y destino",
-            "El artista es responsable del empaque seguro de la obra",
+            "El artista elige la paquetería, registra el número de rastreo y es responsable del empaque seguro de la obra",
             "NU★B Studio no se hace responsable por daños durante el envío si el empaque es inadecuado",
           ],
         },
