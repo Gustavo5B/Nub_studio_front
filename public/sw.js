@@ -59,9 +59,17 @@ const CDN_FILES = [
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap',
 ];
 
-// Imágenes estáticas externas de "Sobre nosotros" (se descargan al instalar)
+// Imágenes estáticas externas de "Sobre nosotros" y del Home (se descargan al instalar)
 const STATIC_IMAGES = [
   'https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=900&q=80',
+  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=85',
+  'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=300&q=80',
+  'https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?w=300&q=80',
+  'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=700&q=80',
+  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=300&q=80',
+  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&q=80',
+  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=700&q=90',
+  'https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=300&q=80',
 ];
 
 // Datos públicos de la BD que se respaldan desde la instalación
