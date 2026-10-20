@@ -206,7 +206,7 @@ export default function Navbar() {
             {/* Botón carrito con badge */}
             {isLoggedIn && userRol === "cliente" && (
               <button
-                onClick={() => navigate("/carrito")}
+                onClick={() => navigate("/mi-cuenta/carrito")}
                 style={{
                   position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
                   width: 40, height: 40, borderRadius: 11,
@@ -338,7 +338,7 @@ export default function Navbar() {
                       <DropItem icon={<User size={14} />}        label="Mi perfil"      onClick={() => { navigate("/mi-cuenta"); setDropOpen(false); }} />
                       <DropItem icon={<ShoppingBag size={14} />} label="Mis pedidos"    onClick={() => { navigate("/mi-cuenta/pedidos"); setDropOpen(false); }} />
                       <DropItem icon={<Heart size={14} />}       label="Mis favoritos"  onClick={() => { navigate("/mi-cuenta/favoritos"); setDropOpen(false); }} />
-                      <DropItem icon={<Settings size={14} />}    label="Configuración"  onClick={() => { navigate("/mi-cuenta/seguridad"); setDropOpen(false); }} />
+                      <DropItem icon={<Settings size={14} />}    label="Configuración"  onClick={() => { navigate("/mi-cuenta"); setDropOpen(false); }} />
                     </div>
 
                     <div style={{ padding: "8px 0", borderTop: `1px solid #E6E4EF` }}>

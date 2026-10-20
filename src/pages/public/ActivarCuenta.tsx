@@ -275,7 +275,7 @@ export default function ActivarCuenta() {
             <div>
               <div style={{ fontSize: 13.5, color: C.pink, fontWeight: 600, fontFamily: FB }}>{error}</div>
               {correoExp && (
-                <button onClick={() => navigate(`/reenviar-activacion?correo=${encodeURIComponent(correoExp)}`)}
+                <button onClick={() => navigate("/verificar-email")}
                   style={{ background: "none", border: "none", color: C.orange, fontSize: 12.5, cursor: "pointer", padding: 0, marginTop: 4, fontFamily: FB, fontWeight: 600, textDecoration: "underline" }}>
                   Solicitar nuevo enlace →
                 </button>

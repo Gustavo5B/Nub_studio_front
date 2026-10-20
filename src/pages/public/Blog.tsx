@@ -276,7 +276,7 @@ export default function Blog() {
         <Link to="/artistas" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Artistas</Link>
         <Link to="/blog" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:C.orange, padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Blog</Link>
         <Link to="/sobre-nosotros" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Nosotros</Link>
-        <Link to="/contact" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Contacto</Link>
+        <Link to="/contacto" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Contacto</Link>
       </div>
 
       <div className="blog-auth-row" style={{ position: "absolute", top: 30, right: 52, display: "flex", alignItems: "center", gap: 12, animation: "fadeSlideUp 0.8s ease 0.3s both", zIndex: 11 }}>
