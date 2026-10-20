@@ -372,7 +372,7 @@ export default function BlogDetalle() {
         <Link to="/catalogo" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Catálogo</Link>
         <Link to="/artistas" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Artistas</Link>
         <Link to="/blog" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#E8640C", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Blog</Link>
-        <Link to="/about" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Nosotros</Link>
+        <Link to="/sobre-nosotros" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Nosotros</Link>
         <Link to="/contact" onClick={() => setMobileMenu(false)} style={{ fontSize:"9.5px", fontWeight:700, letterSpacing:".18em", textTransform:"uppercase", color:"#14121E", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.06)", textDecoration:"none" }}>Contacto</Link>
       </div>
 
