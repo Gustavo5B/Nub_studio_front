@@ -26,7 +26,8 @@ const STATIC_CACHE = `nub-static-${BUILD_VERSION}`;
 const PAGES_CACHE = `nub-pages-${BUILD_VERSION}`;
 const API_CACHE = `nub-api-${BUILD_VERSION}`;
 const CDN_CACHE = `nub-cdn-${BUILD_VERSION}`;
-const CURRENT_CACHES = [STATIC_CACHE, PAGES_CACHE, API_CACHE, CDN_CACHE];
+const IMG_CACHE = `nub-img-${BUILD_VERSION}`;
+const CURRENT_CACHES = [STATIC_CACHE, PAGES_CACHE, API_CACHE, CDN_CACHE, IMG_CACHE];
 
 // App Shell: lo mínimo para que la app arranque sin internet
 const APP_SHELL_FILES = [
@@ -86,6 +87,74 @@ const API_CACHEABLE = new Set(API_TO_PRECACHE);
 // Blog (público): lista, detalle y relacionados. Comentarios y reacciones NO se guardan.
 const BLOG_LIST = '/api/blog/posts?limit=12';
 const BLOG_CACHEABLE = /^\/api\/blog\/posts(\/[^/]+(\/relacionados)?)?$/;
+
+// Home: las 12 obras recientes y los artistas que muestra la página de inicio.
+// Solo estas dos consultas exactas se guardan (no el resto de /api/obras ni /api/artistas).
+const HOME_OBRAS = '/api/obras?limit=12&ordenar=recientes';
+const HOME_ARTISTAS = '/api/artistas?limit=8';
+const HOME_API = new Set([HOME_OBRAS, HOME_ARTISTAS]);
+const IMG_HOST = 'res.cloudinary.com';
+
+// Guarda las imágenes indicadas (Cloudinary). Con prune=true borra las que ya no se usan.
+// Solo se sirven desde aquí las imágenes de este cache; el resto sigue yendo a la red.
+function cacheImages(urls, prune) {
+  const wanted = [...new Set(urls)].filter((u) => {
+    try { return new URL(u).hostname === IMG_HOST; } catch { return false; }
+  });
+  return caches.open(IMG_CACHE).then((cache) =>
+    cache.keys()
+      .then((keys) =>
+        prune ? Promise.all(keys.filter((r) => !wanted.includes(r.url)).map((r) => cache.delete(r))) : null
+      )
+      .then(() =>
+        Promise.allSettled(
+          wanted.map((u) =>
+            cache.match(u, { ignoreVary: true }).then((hit) =>
+              hit ||
+              fetch(u, { mode: 'cors' })
+                .then((res) => {
+                  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                  return cache.put(u, res);
+                })
+                .catch((err) => {
+                  precacheFailures++;
+                  console.warn('[SW] No se pudo cachear imagen:', u, err.message);
+                })
+            )
+          )
+        )
+      )
+  );
+}
+
+// Descarga las obras y artistas del Home y guarda sus imágenes
+function precacheHome() {
+  return caches.open(API_CACHE).then((cache) => {
+    const load = (path, pick) =>
+      fetch(API_ORIGIN + path, { mode: 'cors' })
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          cache.put(API_ORIGIN + path, res.clone());
+          return res.json();
+        })
+        // El Home muestra 12 obras y 10 artistas como máximo
+        .then((json) => (Array.isArray(json.data) ? json.data : []).slice(0, 12).map(pick))
+        .catch((err) => {
+          precacheFailures++;
+          console.warn('[SW] No se pudo cachear el Home:', path, err.message);
+          return [];
+        });
+
+    return Promise.all([
+      load(HOME_OBRAS, (o) => o.imagen_principal),
+      load(HOME_ARTISTAS, (a) => a.foto_perfil),
+    ]).then(([obras, artistas]) => {
+      const urls = [...obras, ...artistas.slice(0, 10)].filter(Boolean);
+      // Si no se pudo descargar nada (sin red), no se borra lo que ya estaba guardado
+      return urls.length ? cacheImages(urls, true) : null;
+    });
+  });
+}
 
 // Descarga la lista del blog y, de cada post, su detalle y relacionados
 function precacheBlog() {
@@ -151,6 +220,7 @@ function precacheAll() {
     cacheEach(CDN_CACHE, STATIC_IMAGES, { mode: 'no-cors' }),
     cacheEach(API_CACHE, API_TO_PRECACHE.map((p) => API_ORIGIN + p), { mode: 'cors' }),
     precacheBlog(),
+    precacheHome(),
   ]).then(() => {
     if (precacheFailures === 0) {
       console.log(`[SW] Precache listo ✓ (${staticFiles.length} estáticos, ${PAGES_TO_PRECACHE.length} páginas)`);
@@ -254,9 +324,20 @@ self.addEventListener('fetch', (event) => {
 
   // 2. Backend: solo los datos públicos de la lista (Sobre nosotros, etc.)
   if (url.origin === API_ORIGIN) {
-    const cacheable = API_CACHEABLE.has(url.pathname) || BLOG_CACHEABLE.test(url.pathname);
+    const cacheable =
+      API_CACHEABLE.has(url.pathname) ||
+      BLOG_CACHEABLE.test(url.pathname) ||
+      HOME_API.has(url.pathname + url.search);
     if (!cacheable || request.headers.has('Authorization')) return;
     event.respondWith(networkFirst(request, API_CACHE).catch(() => Response.error()));
+    return;
+  }
+
+  // 2b. Imágenes de Cloudinary: solo se sirven desde el cache las del Home; el resto va a la red
+  if (url.hostname === IMG_HOST && request.destination === 'image') {
+    event.respondWith(
+      caches.match(request, { cacheName: IMG_CACHE, ignoreVary: true }).then((hit) => hit || fetch(request))
+    );
     return;
   }
 
@@ -280,5 +361,9 @@ self.addEventListener('message', (event) => {
   // La app avisa que volvió la conexión: se completa lo que faltó en el precache
   if (event.data && event.data.type === 'PRECACHE') {
     event.waitUntil(precacheAll());
+  }
+  // El Home pide guardar las imágenes que está mostrando ahora mismo
+  if (event.data && event.data.type === 'CACHE_IMAGES' && Array.isArray(event.data.urls)) {
+    event.waitUntil(cacheImages(event.data.urls));
   }
 });

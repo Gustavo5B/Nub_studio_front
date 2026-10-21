@@ -182,6 +182,16 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  // PWA: pide al Service Worker guardar las imágenes que el Home muestra, para verlas sin internet
+  useEffect(() => {
+    const urls = [
+      ...obras.slice(0, 12).map(o => o.imagen_principal),
+      ...artistas.slice(0, 10).map(a => a.foto_perfil),
+    ].filter((u): u is string => Boolean(u));
+    if (!urls.length) return;
+    navigator.serviceWorker?.controller?.postMessage({ type: "CACHE_IMAGES", urls });
+  }, [obras, artistas]);
+
   return (
     <div ref={pageRef} style={{ fontFamily: SANS, overflowX: "hidden", background: "#fff", minHeight: "100vh" }}>
 
