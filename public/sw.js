@@ -224,16 +224,30 @@ function precacheAll() {
   ]).then(() => {
     if (precacheFailures === 0) {
       console.log(`[SW] Precache listo ✓ (${staticFiles.length} estáticos, ${PAGES_TO_PRECACHE.length} páginas)`);
+      notifyClients({ type: 'PRECACHE_DONE', version: BUILD_VERSION });
     } else {
       console.warn(`[SW] Precache incompleto: ${precacheFailures} descargas fallaron. Se reintentará al volver la conexión.`);
     }
   });
 }
 
+// Avisa a las pestañas abiertas (la app muestra "Listo para usar sin conexión")
+function notifyClients(message) {
+  return self.clients
+    .matchAll({ includeUncontrolled: true, type: 'window' })
+    .then((clients) => clients.forEach((c) => c.postMessage(message)));
+}
+
 // ── INSTALL ────────────────────────────────────
 self.addEventListener('install', (event) => {
   console.log('[SW] install → versión', BUILD_VERSION);
-  event.waitUntil(precacheAll().then(() => self.skipWaiting()));
+  event.waitUntil(
+    precacheAll().then(() => {
+      // Primera instalación: se activa sola. Si ya había una versión en uso, espera a que el
+      // usuario pulse "Actualizar" en la app (mensaje SKIP_WAITING) para no mezclar versiones.
+      if (!self.registration.active) return self.skipWaiting();
+    })
+  );
 });
 
 // ── ACTIVATE ───────────────────────────────────

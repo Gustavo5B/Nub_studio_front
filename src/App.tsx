@@ -4,6 +4,7 @@ import { CartProvider } from "./context/CartContext";
 import { ToastContainer } from "./components/ui/Toast";
 import OfflineBanner from "./components/pwa/OfflineBanner";
 import PwaSensor from "./components/pwa/PwaSensor";
+import PwaPrompts from "./components/pwa/PwaPrompts";
 import OfflineGate from "./components/pwa/OfflineGate";
 import SessionGuard from "./components/auth/SessionGuard";
 
@@ -13,6 +14,8 @@ function App() {
       <CartProvider>
         {/* PWA: notificación de estado offline/online */}
         <OfflineBanner />
+        {/* PWA: "listo sin conexión", nueva versión disponible e instalar app */}
+        <PwaPrompts />
         {/* PWA: sensor GPS — se activa al hacer clic (solo páginas públicas) */}
         <PwaSensor />
         {/* Auth: cierre automático de sesión cuando el token expira */}
