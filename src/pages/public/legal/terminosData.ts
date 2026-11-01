@@ -1,5 +1,5 @@
 // src/pages/public/legal/terminosData.ts
-import { type LegalDoc, RFC, EMAIL, DOMICILIO } from "./legalTypes";
+import { type LegalDoc, EMAIL, DOMICILIO } from "./legalTypes";
 
 export const TERMINOS: LegalDoc = {
   title: "Términos y Condiciones",
@@ -12,7 +12,6 @@ export const TERMINOS: LegalDoc = {
       title: "1. Información del responsable",
       blocks: [
         { t: "p", x: "**Razón Social:** NU★B Studio" },
-        { t: "p", x: `**RFC:** ${RFC}` },
         { t: "p", x: `**Domicilio:** ${DOMICILIO}` },
         { t: "p", x: `**Correo electrónico:** ${EMAIL}` },
       ],
