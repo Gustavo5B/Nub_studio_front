@@ -25,8 +25,7 @@ export interface LegalDoc {
   sections: LegalSection[];
 }
 
-// Datos pendientes de completar (aparecen tal cual en las páginas)
-export const RFC = "[INSERTAR RFC]";
-export const EMAIL = "[INSERTAR EMAIL DE CONTACTO]";
+// Datos de contacto que aparecen en las páginas legales
+export const EMAIL = "nubstudio.uthh@gmail.com";
 export const DOMICILIO =
   "Carretera México Laredo, Chapulhuacán Hidalgo #2, Barrio la Estación, Hidalgo, México";

@@ -1,11 +1,11 @@
 // src/pages/public/legal/privacidadData.ts
-import { type LegalDoc, RFC, EMAIL, DOMICILIO } from "./legalTypes";
+import { type LegalDoc, EMAIL, DOMICILIO } from "./legalTypes";
 
 export const PRIVACIDAD: LegalDoc = {
   title: "Aviso de Privacidad",
   subtitle: "NU★B Studio — Protección de Datos Personales",
-  version: "1.0",
-  updated: "17 de noviembre de 2025",
+  version: "1.1",
+  updated: "1 de noviembre de 2026",
   intro: {
     t: "box",
     k: "important",
@@ -17,7 +17,6 @@ export const PRIVACIDAD: LegalDoc = {
       title: "1. Información del responsable",
       blocks: [
         { t: "p", x: "**Razón Social:** NU★B Studio" },
-        { t: "p", x: `**RFC:** ${RFC}` },
         { t: "p", x: `**Domicilio:** ${DOMICILIO}` },
         { t: "p", x: `**Correo electrónico para consultas de privacidad:** ${EMAIL}` },
       ],
@@ -354,6 +353,39 @@ export const PRIVACIDAD: LegalDoc = {
             "**Horario:** Lunes a Viernes, 9:00 - 18:00 hrs (Hora del Centro)",
             `**Domicilio:** ${DOMICILIO}`,
           ],
+        },
+      ],
+    },
+    {
+      id: "eliminar-cuenta",
+      title: "17. Eliminar tu cuenta de NUB Studio",
+      blocks: [
+        { t: "p", x: "Puedes eliminar tu cuenta de **NUB Studio** (app para Android y sitio web) en cualquier momento." },
+        { t: "h3", x: "17.1 Desde la app" },
+        {
+          t: "ol",
+          x: [
+            "Abre la app NUB Studio e inicia sesión.",
+            "Ve a **Cuenta → Eliminar mi cuenta**.",
+            "Escribe tu contraseña y confirma.",
+          ],
+        },
+        { t: "h3", x: "17.2 Por correo" },
+        { t: "p", x: `Si ya no tienes la app o tu cuenta es de artista, escribe a ${EMAIL} desde el correo de tu cuenta con el asunto "Eliminar mi cuenta". Te respondemos en un máximo de 20 días hábiles.` },
+        {
+          t: "box",
+          k: "info",
+          x: "**Qué se elimina:**",
+          list: [
+            "Tu nombre, correo, teléfono y contraseña",
+            "Tus favoritos, tu carrito, tus reacciones y las direcciones que no se usaron en compras",
+            "Todas tus sesiones abiertas",
+          ],
+        },
+        {
+          t: "box",
+          k: "warning",
+          x: "**Qué se conserva:** los pedidos y ventas ya realizados se guardan sin tus datos personales durante 5 años por obligación fiscal (SAT). Tus comentarios en el blog quedan como \"Usuario eliminado\". Las copias de seguridad se borran en un máximo de 30 días. Si tienes un pedido en camino, podrás eliminar tu cuenta cuando se entregue o se cancele.",
         },
       ],
     },
